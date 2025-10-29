@@ -1,0 +1,115 @@
+/* src/index.css */
+
+/* --- 1. Bootstrap Import --- */
+@import 'bootstrap/dist/css/bootstrap.min.css'; 
+/* Font Awesome İkonları için yüklenmelidir */
+
+/* --- 2. CSS Değişkenleri (Duolingo'dan İlham Alan Tema) --- */
+:root {
+  /* Ana Renk Paleti (Canlı ve Enerjik) */
+  --bs-primary: #6A60F5; /* Canlı bir Mor/Mavi */
+  --bs-primary-rgb: 106, 96, 245;
+  --bs-success: #58CC02; /* Duolingo Yeşili */
+  --bs-success-rgb: 88, 204, 2;
+  --bs-warning: #FFC800; /* Canlı Sarı */
+  --bs-warning-rgb: 255, 200, 0;
+  --bs-info: #1CB0F6; /* Canlı Mavi */
+  --bs-info-rgb: 28, 176, 246;
+  --bs-danger: #FF4B4B; /* Canlı Kırmızı */
+  --bs-danger-rgb: 255, 75, 75;
+  --bs-light: #F7F7F7;  /* Çok hafif gri arkaplan */
+  --bs-dark: #333333;  /* Koyu gri metin */
+  --bs-secondary: #6c757d; /* Standart Gri */
+
+  /* Renklerin "Soft" (Açık) Versiyonları */
+  --bs-primary-soft: rgba(var(--bs-primary-rgb), 0.1);
+  --bs-success-soft: rgba(var(--bs-success-rgb), 0.1);
+  --bs-info-soft: rgba(var(--bs-info-rgb), 0.1);
+
+  /* Font Ailesi (Poppis kullanıldığı varsayılarak) */
+  --bs-body-font-family: 'Inter', sans-serif;
+
+  /* Tasarım Dili (Daha Yuvarlak ve Yumuşak) */
+  --bs-border-radius: 0.75rem; /* 12px (Daha yuvarlak köşeler) */
+  --bs-border-radius-lg: 1rem; /* 16px */
+  --bs-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --bs-box-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* --- 3. Temel HTML Element Stilleri --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* --- YENİ EKLENEN VARSAYILAN ARKA PLAN --- */
+  background-color: #f8f9fa; /* Açık gri (Bootstrap .bg-light rengi) */
+  color: #343a40;
+}
+
+#root {
+    /* Uygulamanın tamamını kaplamasını sağlar */
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column; /* Sayfa yapısını dikey hizala (Layout için gerekli) */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700; /* Başlıklar daha kalın */
+  line-height: 1.3;
+}
+
+a {
+  color: var(--bs-primary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+a:hover {
+  color: color-mix(in srgb, var(--bs-primary) 80%, black);
+  text-decoration: none; 
+}
+
+/* --- 4. Genel Yardımcı Sınıflar (Bootstrap Ezmeleri) --- */
+
+.card {
+  border: none;
+  border-radius: var(--bs-border-radius-lg); 
+  box-shadow: var(--bs-box-shadow);
+  transition: all 0.3s ease;
+  height: 100%; 
+}
+.card:hover {
+  transform: translateY(-5px); 
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* Duolingo Tarzı "Hap" Butonlar */
+.btn {
+  border-radius: var(--bs-border-radius);
+  transition: all 0.2s ease-in-out;
+  padding: 0.75rem 1.5rem; 
+  font-weight: 700; 
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: var(--bs-box-shadow-sm);
+  border: 2px solid transparent; 
+}
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--bs-box-shadow);
+}
+.btn:active {
+  transform: translateY(-1px); 
+}
+.bg-primary-soft { background-color: var(--bs-primary-soft) !important; }
+.bg-success-soft { background-color: var(--bs-success-soft) !important; }
+.bg-info-soft { background-color: var(--bs-info-soft) !important; }
+.me-2 {
+  margin-right: 0.5rem; /* İkon ve yazı arasına boşluk */
+}

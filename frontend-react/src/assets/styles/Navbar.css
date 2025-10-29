@@ -1,0 +1,161 @@
+/* frontend-react/src/assets/styles/Navbar.module.css */
+/* Giriş/Kayıt Linkleri (Kullanıcı giriş yapmadıysa) */
+.auth-links {
+  display: flex; /* Linkleri yan yana getir */
+  align-items: center; /* Dikey olarak ortala */
+}
+
+.auth-links .nav-link {
+  color: white;
+  text-decoration: none;
+  margin-left: 1rem;
+  padding: 0.5rem 0.5rem; /* Tıklama alanını artır */
+  font-weight: 500;
+}
+
+/* Kayıt Ol Butonu */
+.auth-links .btn-register {
+  background-color: #0d6efd; /* Mavi (Bootstrap primary) */
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.auth-links .btn-register:hover {
+  background-color: #0b5ed7; /* Hover rengi */
+}
+
+.edu-navbar {
+  background-color: #343a40; /* Koyu Gri (Resimdeki gibi) */
+  color: white;
+  padding: 0 2rem;
+  height: 60px; /* Sabit bir yükseklik önemli */
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  /* --- YENİ EKLENEN KURALLAR --- */
+  position: sticky; /* Sayfa kaydırıldığında yapışkan hale getir */
+  top: 0;           /* Ekranın en üstüne yapışsın */
+  z-index: 1000;    /* Diğer içeriklerin üzerinde kalmasını sağla */
+  width: 100%;      /* Genişliğin %100 olduğundan emin ol */
+  /* --- BİTİŞ --- */
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.navbar-logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  text-decoration: none;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+}
+
+/* --- Kullanıcı Menüsü Tetikleyicisi --- */
+.user-menu-trigger {
+  background-color: transparent;
+  border: 1px solid #6c757d; /* Kenarlık */
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+.user-menu-trigger:hover {
+  background-color: #495057;
+}
+
+/* --- Açılır Menü Konteyneri --- */
+.user-menu-container {
+  position: relative; /* Dropdown'ın buna göre konumlanması için */
+}
+
+/* --- Açılır Menünün Kendisi --- */
+.user-dropdown-menu {
+  position: absolute;
+  top: 100%; /* Tetikleyicinin hemen altında */
+  right: 0; /* Sağa hizalı */
+  background-color: white;
+  color: #343a40; /* İç metin rengi */
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 180px; /* Menü genişliği */
+  z-index: 1000;
+  margin-top: 8px; /* Üstten boşluk */
+  padding: 0.5rem 0;
+}
+
+.user-dropdown-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.user-dropdown-menu li {
+  margin: 0;
+}
+
+/* Menü Linkleri */
+.user-dropdown-menu li a {
+  display: block;
+  padding: 0.75rem 1.25rem;
+  text-decoration: none;
+  color: #343a40;
+  font-size: 0.95rem;
+}
+
+.user-dropdown-menu li a:hover {
+  background-color: #f8f9fa; /* Hafif gri hover */
+}
+
+/* Ayırıcı Çizgi */
+.dropdown-divider {
+  height: 1px;
+  background-color: #e9ecef;
+  margin: 0.5rem 0;
+}
+
+/* Çıkış Yap Butonu */
+.logout-button {
+  background: none;
+  border: none;
+  color: #dc3545; /* Kırmızı renk */
+  padding: 0.75rem 1.25rem;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.logout-button:hover {
+  background-color: #f8f9fa;
+}
+
+/* Giriş/Kayıt Linkleri (Kullanıcı giriş yapmadıysa) */
+.auth-links .nav-link {
+  color: white;
+  text-decoration: none;
+  margin-left: 1rem;
+  padding: 0.5rem 0;
+}
+
+.auth-links .btn-register {
+  background-color: #0d6efd; /* Mavi */
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+}

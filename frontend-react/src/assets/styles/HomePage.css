@@ -1,0 +1,403 @@
+/* frontend-react/src/assets/styles/HomePage.css (YAZMA ANİMASYONU KALDIRILDI - SON HALİ) */
+
+/* --- 1. TÜM SAYFA ARKA PLANI (BODY'ye Uygula) --- */
+body {
+  background-image:
+    linear-gradient(rgba(20, 30, 40, 0.85), rgba(20, 30, 40, 0.85)),
+    url('http://googleusercontent.com/image_collection/image_retrieval/7520434529060334501_0');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  color: #343a40;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.homePage {
+  background-image:
+    linear-gradient(rgba(20, 30, 40, 0.85), rgba(20, 30, 40, 0.85)),
+    url('http://googleusercontent.com/image_collection/image_retrieval/7520434529060334501_0');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  
+  flex-grow: 1;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* --- 2. Genel Section Stilleri (Animasyonlar) --- */
+.contentSection, .contentSectionAlternate {
+  padding: 4rem 2rem;
+  background-color: #ffffff;
+  margin: 3rem auto;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  max-width: 1140px;
+  opacity: 0;
+  transform: translateY(50px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.contentSectionAlternate {
+  background-color: #f8f9fa;
+}
+.contentSection.is-visible,
+.contentSectionAlternate.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sectionTitle {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 3.5rem;
+  color: #343a40;
+  text-align: center;
+}
+
+
+/* --- 3. Hero Section (Sola Yaslı, Statik Başlık) --- */
+.heroSection {
+  background-color: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  margin-bottom: 0;
+  color: white;
+  padding: 8rem 1rem;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  opacity: 1;
+  transform: translateY(0);
+  position: relative;
+  z-index: 1;
+}
+.heroSection .container {
+    max-width: 1140px;
+    margin: 0 auto;
+}
+
+.heroTitle {
+  font-size: 4.0rem;
+  line-height: 1.2;
+  color: white;
+  text-shadow: 2px 2px 5px rgba(0,0,0,0.7);
+  margin-bottom: 1.5rem;
+  white-space: normal; /* İki satıra inmesini sağlar */
+  text-align: left; /* Başlığı kendi içinde sola yasla */
+  /* Animasyon stilleri kaldırıldı */
+}
+@media (max-width: 992px) {
+    .heroTitle { font-size: 3.2rem; }
+}
+@media (max-width: 768px) {
+    .heroTitle { font-size: 2.5rem; text-align: center;} /* Mobilde ortala */
+}
+
+/* Alt başlık ve butonlar için animasyon stilleri */
+.heroSubtitle, .heroButtons {
+  opacity: 0;
+  transform: translateY(20px);
+  /* Görünür hale gelme animasyonu */
+  transition: opacity 0.6s ease-out 0.5s, transform 0.6s ease-out 0.5s; /* Gecikmeli başla */
+  max-width: 600px;
+}
+@media (max-width: 992px){ /* Orta ve küçük ekranlarda ortala */
+    .heroSubtitle, .heroButtons {
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 700px;
+    }
+}
+
+/* Görünür olduğunda */
+.heroSubtitle.is-visible, .heroButtons.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.heroSubtitle {
+  font-size: 1.4rem;
+  color: #f1f1f1;
+  margin-bottom: 3rem;
+  line-height: 1.6;
+  font-weight: 300;
+}
+@media (max-width: 768px) {
+    .heroSubtitle { font-size: 1.1rem; }
+}
+
+.heroButtons {
+  /* display, justify-content vs. JSX içinde ayarlandı */
+}
+.heroButtons .btn {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  margin: 0.5rem;
+  margin-right: 1rem;
+  border-width: 2px;
+  transition: all 0.3s ease;
+}
+.btn-primary:hover, .btn-success:hover, .btnOutlineLight:hover {
+  transform: translateY(-2px);
+}
+/* ... (Buton renkleri aynı) ... */
+
+
+/* --- 4. Neden Biz? (Why Us) Section --- */
+.whyUsSection .featureCard {
+  background: white;
+  padding: 2.5rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-top: 4px solid #0d6efd;
+  height: 100%;
+}
+.whyUsSection .featureCard:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+.whyUsSection .featureCard i {
+  margin-bottom: 1rem;
+  font-size: 2.5rem;
+}
+.whyUsSection .cardTitle {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #343a40;
+}
+.whyUsSection .cardText {
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+
+/* --- 5. Ölçme ve Değerlendirme (Assessment) Section --- */
+.assessmentFeatures li {
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+  color: #495057;
+  display: flex;
+  align-items: flex-start;
+}
+.assessmentFeatures i {
+  width: 20px;
+  margin-top: 0.2rem;
+}
+.assessmentImage {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+
+/* --- 6. Dersler (Courses) Section --- */
+.courseCard {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+}
+.courseCard:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+.courseCardImageContainer {
+  padding: 2rem;
+  background-color: #f8f9fa;
+  text-align: center;
+}
+.courseCardBody {
+  padding: 1.5rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+.courseCardBody h5 {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #343a40;
+}
+.courseCardBody p {
+  color: #6c757d;
+  font-size: 0.9rem;
+  flex-grow: 1;
+  margin-bottom: 1rem;
+}
+.courseCardFooter {
+  margin-top: auto;
+}
+
+/* --- 7. Sınavlar (Exams) Section --- */
+.examsFeatures li {
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+  color: #495057;
+  display: flex;
+  align-items: flex-start;
+}
+.examsFeatures i {
+   width: 20px;
+   margin-top: 0.2rem;
+}
+.examIconContainer {
+  font-size: 8rem;
+  color: #ffc107;
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+/* --- 8. Genel İyileştirmeler (Bootstrap ile uyumlu) --- */
+.container {
+  width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+@media (min-width: 576px) { .container { max-width: 540px; } }
+@media (min-width: 768px) { .container { max-width: 720px; } }
+@media (min-width: 992px) { .container { max-width: 960px; } }
+@media (min-width: 1200px) { .container { max-width: 1140px; } }
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -15px;
+  margin-left: -15px;
+}
+.col-lg-6, .col-md-4, .col-md-6, .col-lg-4, .col-lg-8, .col-lg-10 {
+  position: relative;
+  width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+}
+@media (min-width: 768px) {
+  .col-md-4 { flex: 0 0 33.33333%; max-width: 33.33333%; }
+  .col-md-6 { flex: 0 0 50%; max-width: 50%; }
+}
+@media (min-width: 992px) {
+  .col-lg-4 { flex: 0 0 33.33333%; max-width: 33.33333%; }
+  .col-lg-6 { flex: 0 0 50%; max-width: 50%; }
+  .col-lg-8 { flex: 0 0 66.66667%; max-width: 66.66667%; }
+  .col-lg-10 { flex: 0 0 83.33333%; max-width: 83.33333%; }
+  .order-lg-1 { order: 1; }
+  .order-lg-2 { order: 2; }
+  .text-lg-start { text-align: left !important; }
+  .text-lg-end { text-align: right !important; }
+  .d-lg-block { display: block !important; }
+  .justify-content-lg-start { justify-content: flex-start !important; }
+}
+.text-center { text-align: center !important; }
+.text-start { text-align: left !important; }
+.text-end { text-align: right !important; }
+.align-items-center { align-items: center !important; }
+.justify-content-center { justify-content: center !important; }
+.d-flex { display: flex !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+.h-100 { height: 100% !important; }
+.w-100 { width: 100% !important; }
+
+/* Renkler */
+.text-primary { color: #0d6efd !important; }
+.text-success { color: #198754 !important; }
+.text-info { color: #0dcaf0 !important; }
+.text-warning { color: #ffc107 !important; }
+.text-white { color: #fff !important; }
+
+.shadow { box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
+.shadow-sm { box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important; }
+.rounded { border-radius: .25rem !important; }
+.img-fluid { max-width: 100%; height: auto; }
+.list-unstyled { padding-left: 0; list-style: none; }
+
+/* Boşluklar */
+.mb-2 { margin-bottom: .5rem !important; }
+.mb-3 { margin-bottom: 1rem !important; }
+.mb-4 { margin-bottom: 1.5rem !important; }
+.mb-5 { margin-bottom: 3rem !important; }
+.mt-2 { margin-top: .5rem !important; }
+.mt-3 { margin-top: 1rem !important; }
+.mt-4 { margin-top: 1.5rem !important; }
+.mt-5 { margin-top: 3rem !important; }
+.me-1 { margin-right: .25rem !important; }
+.me-2 { margin-right: .5rem !important; }
+.ms-2 { margin-left: .5rem !important; }
+.me-sm-3 { } @media (min-width: 576px) { .me-sm-3 { margin-right: 1rem !important; } }
+.mb-sm-0 { } @media (min-width: 576px) { .mb-sm-0 { margin-bottom: 0 !important; } }
+.mt-sm-0 { } @media (min-width: 576px) { .mt-sm-0 { margin-top: 0 !important; } }
+
+.fw-bold { font-weight: 700 !important; }
+.fw-semibold { font-weight: 600 !important; }
+.lead { font-size: 1.25rem; font-weight: 300; }
+.display-3 { font-size: calc(1.525rem + 3.3vw); font-weight: 300; line-height: 1.2; } @media (min-width: 1200px) { .display-3 { font-size: 4rem; } }
+.gy-4 { --bs-gutter-y: 1.5rem; }
+.g-4 { --bs-gutter-x: 1.5rem; --bs-gutter-y: 1.5rem; }
+.row > * { margin-top: var(--bs-gutter-y); padding-right: calc(var(--bs-gutter-x) / 2); padding-left: calc(var(--bs-gutter-x) / 2); }
+.row { margin-top: calc(var(--bs-gutter-y) * -1); margin-right: calc(var(--bs-gutter-x) / -2); margin-left: calc(var(--bs-gutter-x) / -2); }
+.d-none { display: none !important; }
+
+
+/* ===============================================
+   HAVAI FISEK ANIMASYONU
+   ===============================================
+*/
+.fireworks-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.firework {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background-color: #fff;
+  border-radius: 50%;
+  opacity: 1;
+  animation: firework-burst 1.2s ease-out forwards;
+}
+
+.firework.color1 { background-color: #ffc107; }
+.firework.color2 { background-color: #0dcaf0; }
+.firework.color3 { background-color: #fd7e14; }
+.firework.color4 { background-color: #d63384; }
+
+.firework.delay1 { animation-delay: 0.2s; }
+.firework.delay2 { animation-delay: 0.5s; }
+.firework.delay3 { animation-delay: 0.8s; }
+.firework.delay4 { animation-delay: 1.1s; }
+
+@keyframes firework-burst {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx, 0), var(--ty, 0)) scale(0);
+    opacity: 0;
+  }
+}

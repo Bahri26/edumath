@@ -1,0 +1,144 @@
+/* src/assets/styles/Footer.module.css */
+
+.footer {
+  background-color: #343a40; 
+  color: rgba(255, 255, 255, 0.7); 
+  padding: 2.5rem 0; 
+  margin-top: auto; 
+  font-size: 0.9rem;
+  border-top: 1px solid #495057; 
+}
+
+.container {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 15px;
+  display: flex;
+  flex-direction: column; 
+  align-items: center; 
+  text-align: center; 
+}
+
+/* Orta ve büyük ekranlar için yan yana düzen */
+@media (min-width: 768px) {
+  .container {
+    flex-direction: row; 
+    justify-content: space-between; 
+    text-align: left; 
+  }
+}
+
+.copyright {
+  margin-bottom: 1rem; 
+}
+
+@media (min-width: 768px) {
+  .copyright {
+    margin-bottom: 0; 
+  }
+}
+
+.copyright i {
+    opacity: 0.8;
+}
+
+.links {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0; 
+  display: flex;
+  flex-wrap: wrap; 
+  justify-content: center; 
+}
+
+@media (min-width: 768px) {
+  .links {
+    margin-bottom: 0; 
+    justify-content: flex-end; 
+  }
+}
+
+.links li {
+  margin: 0 0.75rem; 
+}
+
+.link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  position: relative; 
+  padding-bottom: 2px;
+}
+.link::after { 
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 1px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--bs-info); 
+    transition: width 0.3s ease-out;
+}
+
+.link:hover {
+  color: #ffffff; 
+  text-decoration: none;
+}
+.link:hover::after {
+    width: 100%;
+}
+
+.socialIcons {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center; 
+}
+
+@media (min-width: 768px) {
+    .socialIcons {
+        margin-left: 1.5rem; 
+    }
+}
+
+
+.socialIcons li {
+  margin: 0 0.5rem; 
+}
+
+.socialLink {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.3rem; 
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+  display: inline-block; 
+}
+
+.socialLink:hover {
+  color: #ffffff; 
+  transform: scale(1.1) translateY(-2px); 
+}
+
+/* İkon renkleri (isteğe bağlı) */
+.socialLinkTwitter:hover { color: #1DA1F2; }
+.socialLinkFacebook:hover { color: #1877F2; }
+.socialLinkLinkedin:hover { color: #0A66C2; }
+.socialLinkInstagram:hover { color: #E4405F; }
+
+/* Footer.module.css'e ekleyin */
+.footerRight {
+  display: flex;
+  flex-direction: column; /* Mobilde alt alta */
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .footerRight {
+    flex-direction: row; /* Büyük ekranda yan yana */
+    align-items: center;
+  }
+  .socialIcons {
+     margin-left: 1.5rem; /* Büyük ekranda linklerden sonra boşluk */
+  }
+}
