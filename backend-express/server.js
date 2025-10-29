@@ -31,8 +31,8 @@ app.use('/api/questions', questionRoutes); // /api/questions ile başlayanlar i�
 app.use('/api/classes', classRoutes);      // /api/classes ile başlayanlar için
 
 // --- 4. MongoDB Bağlantısı ---
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/edumathDB';
-
+//const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/edumathDB';
+const MONGO_URI = process.env.MONGO_URI;
 mongoose.connect(MONGO_URI)
   .then(() => console.log('MongoDB bağlantısı başarılı.'))
   .catch(err => console.error('MongoDB bağlantı hatası:', err));
