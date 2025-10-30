@@ -1,14 +1,17 @@
-// frontend-react/src/components/common/PageHeader.jsx
+// frontend-react/src/components/common/PageHeader.jsx (SON HALİ)
 
 import React from 'react';
-import '../../assets/styles/PageHeader.css'; // Yeni CSS'i import et
+import '../../assets/styles/PageHeader.css'; // Kendi CSS'ini import eder
 
-function PageHeader({ title }) {
+const PageHeader = ({ title, children }) => {
   return (
     <div className="page-header-container">
-      <h1>{title}</h1>
+      <h1 className="page-header-title">{title}</h1>
+      <div className="page-header-actions">
+        {children} 
+      </div>
     </div>
   );
-}
+};
 
 export default PageHeader;

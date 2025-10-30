@@ -1,35 +1,28 @@
-// backend-express/routes/questionRoutes.js (TAMAMLANMIŞ HALİ)
+// backend-express/routes/questionRoutes.js (SON HALİ)
 
 const express = require('express');
 const router = express.Router();
-
-// Middleware'lerimizi import edelim
-const { protect, checkRole } = require('../middleware/authMiddleware');
-
-// --- GÜNCELLENEN İMPORTLAR ---
-// Controller fonksiyonlarımızı import edelim
-const { 
-  createQuestion, 
-  getMyQuestions,
-  updateQuestion,
-  deleteQuestion
+const {
+    createQuestion,
+    getQuestions,
+    getQuestionById,
+    updateQuestion,
+    deleteQuestion
 } = require('../controllers/questionController');
+const { protect } = require('../middleware/authMiddleware'); // Yetkilendirme
 
-// --- Soru Havuzu (Question Pool) API Rotaları ---
-
-// Rota: /api/questions/
+// GET /api/questions -> Tüm soruları listele
+// POST /api/questions -> Yeni soru oluştur (Giriş yapmış olmalı)
 router.route('/')
-  // Öğretmenin sorularını listele
-  .get(protect, checkRole('teacher'), getMyQuestions) 
-  // Öğretmenin yeni soru oluşturması
-  .post(protect, checkRole('teacher'), createQuestion);
+    .get(getQuestions) 
+    .post(protect, createQuestion); 
 
-// --- YENİ EKLENEN ROTALAR ---
-// Rota: /api/questions/:id
+// GET /api/questions/:id -> Tek soru detayı
+// PUT /api/questions/:id -> Soru güncelle (Giriş yapmış olmalı)
+// DELETE /api/questions/:id -> Soru sil (Giriş yapmış olmalı)
 router.route('/:id')
-  // Bir soruyu güncelle
-  .put(protect, checkRole('teacher'), updateQuestion)
-  // Bir soruyu sil
-  .delete(protect, checkRole('teacher'), deleteQuestion);
+    .get(getQuestionById) 
+    .put(protect, updateQuestion) 
+    .delete(protect, deleteQuestion); 
 
 module.exports = router;

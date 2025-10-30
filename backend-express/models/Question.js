@@ -1,16 +1,13 @@
-// backend-express/models/Question.js (GÜNCEL HALİ)
+// backend-express/models/Question.js (RESİM URL'İ EKLENMİŞ SON HALİ)
 
 const mongoose = require('mongoose');
 
 const questionSchema = new mongoose.Schema({
-  // Soruyu oluşturan öğretmenin kimliği
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    ref: 'User' // User modeline bağlanır
+    ref: 'User'
   },
-
-  // --- YENİ ALANLAR (Adım 1 Formundan) ---
   subject: {
     type: String,
     required: [true, 'Ders alanı zorunludur.'],
@@ -34,39 +31,40 @@ const questionSchema = new mongoose.Schema({
   questionType: {
     type: String,
     required: [true, 'Soru tipi zorunludur.'],
-    // enum, bu alanın sadece bu değerleri alabileceğini garantiler
     enum: ['test', 'dogru-yanlis', 'bosluk-doldurma', 'eslestirme'],
     default: 'test'
   },
-  // --- YENİ ALANLAR BİTİŞİ ---
-  
-  // Soru metni
+  difficulty: {
+    type: String,
+    required: [true, 'Zorluk seviyesi zorunludur.'],
+    enum: ['Kolay', 'Orta', 'Zor'],
+    default: 'Orta'
+  },
   text: {
     type: String,
     required: [true, 'Soru metni zorunludur.'],
     trim: true
   },
-  
-  // Seçenekler (Dinamik Zorunluluk)
   options: {
     type: [String],
-    // Sadece 'test' veya 'dogru-yanlis' ise zorunludur.
-    // 'bosluk-doldurma' için zorunlu DEĞİLDİR.
     required: function() {
       return this.questionType === 'test' || this.questionType === 'dogru-yanlis';
     }
   },
-  
-  // Doğru cevap
-  // 'test' -> "Seçenek metni"
-  // 'dogru-yanlis' -> "Doğru" veya "Yanlış"
-  // 'bosluk-doldurma' -> "Gelecek kelime"
   correctAnswer: {
     type: String,
     required: [true, 'Doğru cevap zorunludur.']
-  }
+  },
 
-}, { timestamps: true }); // createdAt ve updatedAt'i otomatik ekler
+  // --- GÜNCELLENDİ: Metin yerine Resim URL'i ---
+  solutionImage: {
+    type: String,
+    trim: true,
+    default: '' // Cloudinary'den gelen URL'i burada saklayacağız
+  }
+  // --- GÜNCELLEME SONU ---
+
+}, { timestamps: true }); 
 
 const Question = mongoose.model('Question', questionSchema);
 module.exports = Question;
