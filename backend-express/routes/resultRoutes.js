@@ -1,15 +1,18 @@
-// backend-express/routes/resultRoutes.js
+// backend-express/routes/resultRoutes.js (Düzeltilecek Satır)
 
 const express = require('express');
-const { submitExam } = require('../controllers/resultController');
-const { protect } = require('../middleware/authMiddleware'); // Sınavı sadece giriş yapan öğrenci gönderebilir
+// --- KRİTİK DÜZELTME ---
+const { submitExam, getExamResults } = require('../controllers/resultController'); 
+// --- KRİTİK DÜZELTME SONU ---
+const { protect, teacherCheck } = require('../middleware/authMiddleware'); 
 
 const router = express.Router();
 
-// POST /api/results/submit - Öğrencinin cevaplarını kaydeder ve puanı hesaplar
+// POST /api/results/submit - Öğrenci sınavı gönderir
 router.post('/submit', protect, submitExam);
 
 // GET /api/results/:examId - Belirli bir sınavın tüm sonuçlarını getir (Öğretmen için)
-router.get('/:examId', protect, getExamResults); // Daha sonra eklenebilir
+// Bu satırda hata alınıyor
+router.get('/:examId', protect, teacherCheck, getExamResults); 
 
 module.exports = router;
