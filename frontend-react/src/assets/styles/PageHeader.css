@@ -2,28 +2,32 @@
 
 .page-header-container {
   display: flex;
-  justify-content: space-between; /* Başlığı sola, butonları sağa yaslar */
+  justify-content: space-between; 
   align-items: center;
-  padding: 1.25rem 1.5rem; /* 20px 24px */
-  background-color: #ffffff; /* Kart arka planı */
-  border-radius: 0.5rem; /* 8px */
-  margin-bottom: 1.5rem; /* 24px - Başlık ile içerik arası boşluk */
   
-  /* Yumuşak bir gölge */
+  /* --- GÜNCELLEME: Global değişkeni kullan --- */
+  max-width: var(--page-content-max-width); 
+  margin: 0 auto var(--page-spacing-bottom) auto; /* Ortala ve alttan boşluk */
+  /* --- GÜNCELLEME SONU --- */
+  
+  padding: 1.25rem 1.5rem;
+  background-color: #ffffff; 
+  border-radius: 0.5rem; 
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-
-  /* KALDIRILDI: max-width, margin-top, margin-left, margin-right. 
-     Genişlik artık '.teacher-page-container'dan gelecek. */
 }
 
 .page-header-title {
-  font-size: 1.75rem; /* 28px */
+  font-size: 1.75rem;
   font-weight: 700;
-  color: #111827; /* Koyu gri/siyah */
+  color: #111827; 
   margin: 0; 
 }
 
 .page-header-actions {
   display: flex;
-  gap: 0.5rem; /* 8px - Butonlar arası boşluk */
+  gap: 0.5rem;
+}
+
+.page-width-override {
+    max-width: 900px !important; /* VEYA 1000px, kartın tam genişliği neyse */
 }

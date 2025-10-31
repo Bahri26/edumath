@@ -1,19 +1,33 @@
-// frontend-react/src/pages/ProfilePage.jsx (YENİ DOSYA)
+// frontend-react/src/pages/ProfilePage.jsx (GÜNCEL VE İKON AYARLARI EKLENMİŞ HALİ)
 
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-// TeacherPages.css'teki .teacher-page-container ve .page-card stillerini
-// yeniden kullanmak için import edelim.
 import '../assets/styles/TeacherPages.css';
+import PageHeader from '../components/common/PageHeader'; 
+
+// --- GÜNCELLEME 1: Font Awesome İMPORT VE KÜTÜPHANE AYARI ---
+// (Bu ayarlar, ikonların görünmesi için zorunludur)
+import { library } from '@fortawesome/fontawesome-svg-core'; // Temel kütüphane
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Bileşen
+import { 
+  faKey, 
+  faUserEdit, 
+  faEnvelope, 
+  faUserTag, 
+  faGraduationCap // Kullanıcı rollerini göstermek için ekledik (isteğe bağlı)
+} from '@fortawesome/free-solid-svg-icons'; // Kullanacağımız ikonlar
+
+// İkonları kütüphaneye ekle
+library.add(faKey, faUserEdit, faEnvelope, faUserTag, faGraduationCap);
+// --- GÜNCELLEME 1 SONU ---
+
 
 function ProfilePage() {
   const { user } = useAuth();
 
-  // Eğer bir şekilde user yoksa (yükleniyordur veya giriş yapılmamıştır)
   if (!user) {
     return (
       <div className="teacher-page-container">
-        <h1>Profil</h1>
         <p>Profil bilgileri yükleniyor veya kullanıcı bulunamadı...</p>
       </div>
     );
@@ -21,47 +35,67 @@ function ProfilePage() {
 
   // Kullanıcı rolünü belirle
   let roleDisplay = 'Kullanıcı';
+  let roleIcon = faUserTag;
   if (user.roles?.isTeacher) {
     roleDisplay = 'Öğretmen';
+    roleIcon = faUserTag;
   } else if (user.roles?.isStudent) {
     roleDisplay = 'Öğrenci';
+    roleIcon = faGraduationCap;
   }
 
   return (
     <div className="teacher-page-container">
-      <h1>Profil Bilgileri</h1>
+      <PageHeader title="Profil Bilgileri" /> 
 
-      <div className="page-card">
-        <h2>{user.fullName || `${user.firstName} ${user.lastName}`}</h2>
+      <div className="page-card profile-card">
+        
+        <h2 className="profile-name-header">
+          {/* İsim başlığı */}
+          {user.fullName || `${user.firstName} ${user.lastName}`}
+        </h2>
         
         <div className="profile-details">
+          {/* E-posta */}
           <div className="profile-item">
-            <strong>E-posta Adresi:</strong>
-            <span>{user.email}</span>
+            <strong className="profile-label">E-posta Adresi:</strong>
+            <span className="profile-value">
+              <FontAwesomeIcon icon={faEnvelope} className="me-2" />
+              {user.email}
+            </span>
           </div>
+          
+          {/* Kullanıcı Rolü */}
           <div className="profile-item">
-            <strong>Kullanıcı Rolü:</strong>
-            <span className="profile-role-badge">{roleDisplay}</span>
+            <strong className="profile-label">Kullanıcı Rolü:</strong>
+            <span className="profile-role-badge">
+              <FontAwesomeIcon icon={roleIcon} className="me-2" />
+              {roleDisplay}
+            </span>
           </div>
 
           {/* Sadece öğrenciyse sınıfını göster */}
           {user.roles?.isStudent && user.gradeLevel && (
             <div className="profile-item">
-              <strong>Sınıf Düzeyi:</strong>
-              <span>{user.gradeLevel}. Sınıf</span>
+              <strong className="profile-label">Sınıf Düzeyi:</strong>
+              <span className="profile-value">{user.gradeLevel}. Sınıf</span>
             </div>
           )}
-
-          {/* TODO: Backend'den 'user' objesine birthDate eklenmeli */}
-          {/* <div className="profile-item">
-            <strong>Doğum Tarihi:</strong>
-            <span>{new Date(user.birthDate).toLocaleDateString('tr-TR')}</span>
-          </div> */}
+          
         </div>
 
         <div className="profile-actions">
-          <button className="btn-primary"><i className="fas fa-key me-2"></i>Şifreyi Değiştir</button>
-          <button className="btn-secondary"><i className="fas fa-user-edit me-2"></i>Bilgileri Düzenle</button>
+          {/* BUTONLAR: İkonlar FontAwesomeIcon bileşeni ile güncellendi */}
+          <button className="btn-primary">
+            <FontAwesomeIcon icon={faKey} className="me-2" />
+            Şifreyi Değiştir
+          </button>
+          
+          {/* İkinci buton için yeni stil (btn-outline-info) kullanıldı */}
+          <button className="btn-outline-info">
+            <FontAwesomeIcon icon={faUserEdit} className="me-2" />
+            Bilgileri Düzenle
+          </button>
         </div>
 
       </div>

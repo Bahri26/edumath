@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');     // Kullanıcı giriş/kay
 const questionRoutes = require('./routes/questionRoutes'); // Soru havuzu CRUD
 const classRoutes = require('./routes/classRoutes');      // Sınıf (Şube) CRUD
 const examRoutes = require('./routes/examRoutes'); // Sınav CRUD 
+const resultRoutes = require('./routes/resultRoutes'); // Sınav sonuç
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -31,6 +32,7 @@ app.use('/api/auth', authRoutes);       // /api/auth ile başlayanlar için
 app.use('/api/questions', questionRoutes); // /api/questions ile başlayanlar için
 app.use('/api/classes', classRoutes);      // /api/classes ile başlayanlar için
 app.use('/api/exams', examRoutes); // /api/exams ile başlayanlar için
+app.use('/api/results', resultRoutes);
 
 // --- 4. MongoDB Bağlantısı ---
 //const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/edumathDB';
