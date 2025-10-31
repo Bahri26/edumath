@@ -1,21 +1,19 @@
-// backend-express/routes/examRoutes.js
+// backend-express/routes/examRoutes.js (Düzeltilecek Satır)
 
 const express = require('express');
-const { createExam, getExams } = require('../controllers/examController');
+// --- KRİTİK DÜZELTME ---
+const { createExam, getExams, updateQuestionsForExam } = require('../controllers/examController'); 
+// --- KRİTİK DÜZELTME SONU ---
 const { protect } = require('../middleware/authMiddleware'); 
 
 const router = express.Router();
 
-// POST /api/exams  -> Yeni sınav oluştur (7 kolay, 7 orta, 7 zor kuralının uygulanacağı yer)
-// GET /api/exams   -> Tüm sınavları listele
-
 router.route('/')
-    .get(protect, getExams) // Tüm sınavları görmek için yetkili olmalı
-    .post(protect, createExam); // Sınav oluşturmak için yetkili olmalı
+    .get(getExams)
+    .post(protect, createExam); 
 
-// Diğer route'lar (örn: Sınavı başlatma, sonuçları kaydetme) daha sonra eklenecek.
-
+// Hata veren satırın çalıştığı route:
 router.route('/:examId/questions')
-      .put(protect, updateQuestionsForExam);
+    .put(protect, updateQuestionsForExam); // ARTIK TANIMLI
 
 module.exports = router;
