@@ -15,4 +15,7 @@ router.route('/')
 
 // Diğer route'lar (örn: Sınavı başlatma, sonuçları kaydetme) daha sonra eklenecek.
 
+router.route('/:examId/questions')
+      .put(protect, updateQuestionsForExam);
+
 module.exports = router;

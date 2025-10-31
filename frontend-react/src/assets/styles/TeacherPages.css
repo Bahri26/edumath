@@ -5,6 +5,8 @@
   --page-content-max-width: 900px; /* Soru Havuzu ve Sınav Kartları Genişliği */
   --profile-content-max-width: 700px; /* Profile özel içerik genişliği */
   --page-spacing-bottom: 1.5rem;
+  --btn-background: #ffffff; /* Buton arka planı */
+  --btn-border-color: #dee2e6; /* Buton çerçeve rengi */
 }
 
 /* --- 1. Genel Konteyner ve Kart Yapısı --- */
@@ -25,7 +27,7 @@
 
 /* --- 2. Kart Genişlikleri ve Hizalama --- */
 
-/* Soru Havuzu ve Sınavlar İçin Genişlik Standardı */
+/* Soru Havuzu, Sınavlar İçin Genişlik Standardı */
 .form-card,
 .list-card {
   max-width: var(--page-content-max-width); /* 900px */
@@ -65,6 +67,7 @@
   font-weight: 600;
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
+  color: #343a40; /* Label rengi */
 }
 .form-group input[type="text"],
 .form-group input[type="number"],
@@ -78,7 +81,22 @@
   border-radius: 5px;
   font-size: 1rem;
   box-sizing: border-box; 
+  
+  /* Modal görünürlüğü düzeltmesi */
+  color: #212529 !important; 
+  background-color: white !important;
 }
+
+/* Input Focus Stili (Mavi Parlama) */
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #0d6efd !important; 
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+  outline: none;
+}
+
 .form-group textarea {
   font-family: inherit;
   resize: vertical;
@@ -99,7 +117,7 @@
 }
 
 /* --- 4. Buton Stilleri --- */
-.btn-primary, .btn-secondary, .btn-danger, .btn-warning, .btn-outline-info {
+.btn-primary, .btn-secondary, .btn-danger, .btn-warning, .btn-outline-info, .btn-outline-secondary {
   padding: 0.75rem 1.25rem;
   border: none;
   border-radius: 5px;
@@ -109,13 +127,24 @@
   transition: background-color 0.2s;
 }
 .btn-primary { background-color: #0d6efd; color: white; }
-.btn-secondary { background-color: #6c757d; color: white; }
 .btn-danger { background-color: #dc3545; color: white; }
 .btn-warning { background-color: #ffc107; color: #000; }
 .btn-primary:hover { background-color: #0b5ed7; }
-.btn-secondary:hover { background-color: #5a6268; }
 .btn-danger:hover { background-color: #bb2d3b; }
 .btn-warning:hover { background-color: #e0a800; }
+
+/* Çerçeveli Butonlar (Düzenle/Soru Ekle) */
+.btn-secondary, .btn-outline-secondary {
+    background-color: var(--btn-background); /* Beyaz/Hafif Gri Arka Plan */
+    color: #495057; /* Koyu metin */
+    border: 1px solid #adb5bd; /* Gri çerçeve */
+}
+
+.btn-secondary:hover, .btn-outline-secondary:hover {
+    background-color: #f8f9fa; /* Üzerine gelince hafif gri */
+    border-color: #6c757d; /* Çerçeveyi koyulaştır */
+    color: #212529;
+}
 
 .btn-outline-info {
   background-color: transparent;
@@ -329,18 +358,30 @@
   font-size: 1.4rem;
   font-weight: 600;
 }
+
+/* Sınav Kartı Detayları (Soru ve Süre) */
 .exam-details {
-  display: flex;
-  justify-content: space-between;
-  color: #6c757d;
-  font-size: 0.95rem;
-  margin-bottom: 1.5rem;
-  flex-grow: 1; 
+    display: flex;
+    justify-content: flex-start; 
+    align-items: center;
+    color: #6c757d;
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem; 
+    flex-grow: 0; 
+    gap: 1.5rem; 
+    border-bottom: 1px solid #eee; 
+    padding-bottom: 1rem;
 }
 .exam-details .detail-item {
     display: flex;
     align-items: center;
+    font-weight: 500;
 }
+.exam-details .detail-item svg {
+    margin-right: 0.5rem;
+    color: #4b5563; 
+}
+
 .exam-actions {
   display: flex;
   gap: 0.75rem;
@@ -356,19 +397,28 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); 
+  
+  /* --- KRİTİK DÜZELTME: Arka Planı Koyulaştır --- */
+  background-color: rgba(0, 0, 0, 0.7); /* Siyah, %70 şeffaflık */
+  /* --- DÜZELTME SONU --- */
+  
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
 }
+
 .modal-content {
+  /* Bu içeriği Beyaz (background-color: white) ve Mavi gölgeli tutarak öne çıkarıyoruz */
   background-color: white;
   padding: 2.5rem 3rem; 
   border-radius: 12px; 
   width: 90%;
   max-width: 550px; 
-  box-shadow: 0 10px 20px rgba(0,0,0,0.3); 
+  
+  box-shadow: 0 0 0 3px #0d6efd, 0 10px 20px rgba(0,0,0,0.3);
+  
+  color: #343a40; 
   display: flex;
   flex-direction: column;
 }
@@ -376,10 +426,13 @@
   margin-top: 0; 
   font-size: 1.5rem;
   font-weight: 700;
-  color: #343a40;
-  border-bottom: 1px solid #eee; 
+  color: #343a40; /* Başlık metni rengi */
+  border-bottom: 2px solid #0d6efd; /* Mavi çizgi */
   padding-bottom: 1rem;
   margin-bottom: 1.5rem;
+}
+.modal-content form .form-group {
+    margin-bottom: 1.6rem; 
 }
 .modal-content .form-group input,
 .modal-content .form-group select {
@@ -393,7 +446,6 @@
   justify-content: flex-end;
   gap: 0.75rem;
 }
-
 
 /* --- 8. Sekmeli ve Genel Stil İyileştirmeleri --- */
 .page-header-container {
@@ -419,7 +471,6 @@
   border: none;
   border-radius: 999px; 
   cursor: pointer;
-  transition: all 0.3s ease; 
   white-space: nowrap; 
 }
 
@@ -432,4 +483,52 @@
   background-color: #ffffff; 
   color: #3b82f6; 
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.07);
+}
+
+.class-grid-container {
+    max-width: 1000px; /* Sınıf kartları için genişlik */
+    margin: 0 auto;
+    display: grid;
+    /* 3 veya 4 sütunlu bir düzen oluşturur */
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+    gap: 1.5rem;
+    padding: 0 1rem;
+}
+
+.class-card-item {
+    /* page-card'ı miras alır */
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 150px;
+    transition: transform 0.2s;
+}
+
+.class-card-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.12);
+}
+
+.class-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0d6efd; /* Başlık rengi mavi */
+    margin-bottom: 0.5rem;
+}
+
+.class-details {
+    margin-bottom: 1rem;
+    color: #6c757d;
+    font-size: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.class-stat {
+    font-weight: 500;
+}
+
+.class-actions button {
+    width: 100%;
 }

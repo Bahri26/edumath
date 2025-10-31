@@ -31,6 +31,9 @@ import ClassGradeDetail from './pages/teacher/ClassGradeDetail'; // CRUD detay s
 // 404 Sayfası
 import NotFound from './pages/NotFound'; 
 
+// --- Öğrenci
+import StudentDashboard from './pages/student/StudentDashboard';
+import StudentExamInterface from './pages/student/StudentExamInterface'
 
 function App() {
   return (
@@ -53,6 +56,7 @@ function App() {
         <Route element={<RoleProtectedRoute allowedRoles={['teacher']} />}>
           <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
           <Route path="/teacher/question-pool" element={<QuestionPool />} />
+          <Route path="/teacher/questions/edit/:examId" element={<QuestionPool />} />
           <Route path="/teacher/exams" element={<TeacherExams />} />
           
           {/* --- GÜNCELLENEN SINIF ROTALARI --- */}
@@ -61,6 +65,13 @@ function App() {
           
           <Route path="/teacher/students" element={<TeacherStudents />} />
           <Route path="/teacher/surveys" element={<TeacherSurveys />} />
+
+          {/* Öğrenci Paneli Route'u */}
+        <Route path="/student/dashboard" element={<StudentDashboard />} /> 
+    
+          {/* Öğrenci Sınav Çözme Route'u */}
+          <Route path="/student/exam/:examId" element={<StudentExamInterface />} />
+        
         </Route>
 
         {/* === 404 Sayfası === */}

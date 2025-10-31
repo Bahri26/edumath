@@ -1,50 +1,63 @@
-// frontend-react/src/pages/teacher/TeacherClasses.jsx (12 KARTLI ANA SAYFA)
+// frontend-react/src/pages/teacher/TeacherClasses.jsx (SON HATA DÜZELTMELİ HALİ)
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import '../../assets/styles/TeacherPages.css'; // Paylaşılan stiller
+import '../../assets/styles/TeacherPages.css'; 
+import PageHeader from '../../components/common/PageHeader'; 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChild, faBookOpen, faUserGraduate, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 
 // 1'den 12'ye kadar bir dizi oluştur
 const gradeLevels = Array.from({ length: 12 }, (_, i) => i + 1);
 
-// Sınıflara ikon ve renk atamak için (isteğe bağlı)
 const getGradeStyle = (level) => {
-  if (level <= 5) return { icon: 'fa-child', color: '#0d6efd' }; // İlkokul (Mavi)
-  if (level <= 8) return { icon: 'fa-book-open', color: '#198754' }; // Ortaokul (Yeşil)
-  return { icon: 'fa-user-graduate', color: '#6f42c1' }; // Lise (Mor)
+    let icon, color;
+    if (level <= 5) {
+        icon = faChild; 
+        color = '#0d6efd'; // İlkokul (Mavi)
+    } else if (level <= 8) {
+        icon = faBookOpen; 
+        color = '#198754'; // Ortaokul (Yeşil)
+    } else {
+        icon = faUserGraduate; 
+        color = '#6f42c1'; // Lise (Mor)
+    }
+    return { icon, color };
 };
 
 function TeacherClasses() {
+
   return (
     <div className="teacher-page-container">
-      <div className="page-header">
-        <h1>Sınıflar Yönetimi</h1>
-        <p style={{marginTop: '-1rem', color: '#6c757d'}}>
-          Lütfen işlem yapmak istediğiniz sınıf seviyesini seçin.
-        </p>
-      </div>
+        
+      <PageHeader title="Sınıflar Yönetimi">
+        {/* Butonları buraya ekleyebilirsiniz */}
+      </PageHeader>
+      
+      <p className="page-header-description" style={{maxWidth: '1000px', margin: '0 auto 1.5rem auto'}}>
+        Lütfen işlem yapmak istediğiniz sınıf seviyesini seçin.
+      </p>
 
-      {/* --- YENİ: 12 KARTLIK GRID YAPISI --- */}
+      {/* --- KONTROL EDİN: Bu class'lar TeacherPages.css'te tanımlı olmalı --- */}
       <div className="grade-level-grid">
         {gradeLevels.map((level) => {
           const style = getGradeStyle(level);
           return (
             <Link 
               key={level} 
-              to={`/teacher/classes/${level}`} // -> /teacher/classes/1, /teacher/classes/2 ...
-              className="grade-card" 
-              style={{ '--card-color': style.color }} // CSS'e renk göndermek için
+              to={`/teacher/classes/${level}`} 
+              className="page-card grade-card" // Sınıf kartı stili
+              style={{ '--card-color': style.color }} // CSS Değişkeni
             >
               <div className="grade-card-icon">
-                <i className={`fas ${style.icon}`}></i>
+                <FontAwesomeIcon icon={style.icon} />
               </div>
               <div className="grade-card-body">
                 <h3>{level}. Sınıf</h3>
-                {/* TODO: Backend'den gelince burası dolacak */}
                 <p>0 Sınıf, 0 Öğrenci</p> 
               </div>
               <div className="grade-card-footer">
-                Yönet <i className="fas fa-arrow-right"></i>
+                Yönet <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
               </div>
             </Link>
           );

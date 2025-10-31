@@ -100,3 +100,38 @@ exports.getExams = async (req, res) => {
         res.status(500).json({ message: 'Sınavlar listelenirken sunucu hatası oluştu.' });
     }
 };
+
+// PUT /api/exams/:examId/questions ---
+exports.updateQuestionsForExam = async (req, res) => {
+    const { examId } = req.params;
+    // Frontend'den gönderilen yeni soru ID'leri dizisi
+    const { questionIds } = req.body; 
+    const userId = req.user.id; // Öğretmen ID'si
+
+    try {
+        const exam = await Exam.findById(examId);
+
+        if (!exam) {
+            return res.status(404).json({ message: 'Sınav bulunamadı.' });
+        }
+        
+        // YETKİLENDİRME KONTROLÜ (Bu sınavı gerçekten bu öğretmen mi oluşturdu?)
+        if (exam.creator.toString() !== userId) {
+            return res.status(403).json({ message: 'Bu sınava soru ekleme yetkiniz yok.' });
+        }
+
+        // Exam modelindeki questions dizisini, gelen ID'ler ile tamamen değiştir
+        exam.questions = questionIds;
+        await exam.save();
+        
+        res.status(200).json({ 
+            message: 'Sınav soruları başarıyla güncellendi.',
+            questionCount: exam.questions.length,
+            examId: exam._id
+        });
+
+    } catch (error) {
+        console.error('Soru seçme/güncelleme hatası:', error);
+        res.status(500).json({ message: 'Sınav soruları güncellenirken sunucu hatası oluştu.' });
+    }
+}

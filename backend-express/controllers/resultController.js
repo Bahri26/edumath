@@ -100,3 +100,46 @@ exports.submitExam = async (req, res) => {
         res.status(500).json({ message: 'Sınav sonuçları kaydedilirken bir hata oluştu.' });
     }
 };
+
+// --- YENİ EKLENDİ: GET /api/results/:examId ---
+// Belirli bir sınava ait tüm öğrencilerin sonuçlarını getirir (Öğretmen Görünümü)
+exports.getExamResults = async (req, res) => {
+    const { examId } = req.params;
+    
+    // NOT: Gerçek projede, öğretmenin bu sınava yetkili olup olmadığı kontrol edilmelidir (teacherCheck).
+
+    try {
+        // Exam başlığını çekme
+        const exam = await Exam.findById(examId).select('title passMark');
+        if (!exam) {
+            return res.status(404).json({ message: 'Sonuçları istenen sınav bulunamadı.' });
+        }
+
+        // Bu sınava ait tüm sonuçları çek
+        const results = await Result.find({ examId: examId })
+            .populate('studentId', 'firstName lastName email classId') // Öğrenci bilgilerini çek
+            .sort({ score: -1 }); // En yüksek puandan en düşüğe sırala
+
+        // Genel istatistikleri hesapla
+        const totalSubmissions = results.length;
+        const passedCount = results.filter(r => r.passed).length;
+        const avgScore = totalSubmissions > 0 
+            ? results.reduce((sum, r) => sum + r.score, 0) / totalSubmissions
+            : 0;
+            
+        res.status(200).json({
+            examTitle: exam.title,
+            passMark: exam.passMark,
+            stats: {
+                totalSubmissions,
+                passedCount,
+                avgScore: Math.round(avgScore),
+            },
+            studentResults: results // Detaylı öğrenci listesi
+        });
+
+    } catch (error) {
+        console.error('Sınav sonuçlarını getirme hatası:', error);
+        res.status(500).json({ message: 'Sonuçlar listelenirken sunucu hatası oluştu.' });
+    }
+};

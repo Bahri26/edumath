@@ -10,6 +10,6 @@ const router = express.Router();
 router.post('/submit', protect, submitExam);
 
 // GET /api/results/:examId - Belirli bir sınavın tüm sonuçlarını getir (Öğretmen için)
-// router.get('/:examId', protect, getExamResults); // Daha sonra eklenebilir
+router.get('/:examId', protect, getExamResults); // Daha sonra eklenebilir
 
 module.exports = router;

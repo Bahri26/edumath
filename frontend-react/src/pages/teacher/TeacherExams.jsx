@@ -1,4 +1,4 @@
-// frontend-react/src/pages/teacher/TeacherExams.jsx (YENİ ALANLAR EKLENMİŞ SON HALİ)
+// frontend-react/src/pages/teacher/TeacherExams.jsx (TAM VE GÜNCEL SON HALİ)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios'; 
@@ -12,16 +12,20 @@ import {
     faPenToSquare, 
     faUserPlus 
 } from '@fortawesome/free-solid-svg-icons';
+import { useNavigate } from 'react-router-dom';
 
-// --- CURRICULUM DATA (Varsayım: Bu veriler erişilebilir) ---
-const curriculumData = {
-    dersler: ["Matematik", "Fizik", "Kimya", "Biyoloji", "Tarih"],
-    siniflar: ["5. Sınıf", "6. Sınıf", "7. Sınıf", "8. Sınıf", "9. Sınıf", "10. Sınıf", "11. Sınıf", "12. Sınıf"],
-    // ...
-};
+// --- YOL DÜZELTİLDİ: curriculumData.js importu ---
+import { curriculumData } from '../../data/curriculumData';
+// --- YOL DÜZELTME SONU ---
+
+// Soru Seçme Modalını import edin
+import SelectQuestionsModal from './SelectQuestionsModal';
+
+
+// --- DUMMY/SAHTE VERİ ---
 const DUMMY_EXAMS = [
-    { _id: 'e1', title: 'Matematik 1. Vize', questionCount: 20, duration: 45 },
-    { _id: 'e2', title: 'React Temelleri Testi', questionCount: 10, duration: 20 },
+    { _id: 'e1', title: 'Matematik 1. Vize', questionCount: 20, duration: 45, questions: ['q1','q2'] },
+    { _id: 'e2', title: 'React Temelleri Testi', questionCount: 10, duration: 20, questions: ['q3','q4'] },
 ];
 
 const API_URL = 'http://localhost:8000/api/exams';
@@ -30,27 +34,30 @@ const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
 
 
 function TeacherExams() {
+    const navigate = useNavigate();
     const [exams, setExams] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false); 
+    
+    // Yeni Sınav Oluştur modalı
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); 
 
-    // --- YENİ EKLENDİ: Form State'leri ---
+    // Soru Seçme/Düzenleme modalı
+    const [isSelectQuestionsModalOpen, setIsSelectQuestionsModalOpen] = useState(false);
+    const [currentExamToEdit, setCurrentExamToEdit] = useState(null); // Düzenlenecek sınavı tutar
+
+    // --- Form State'leri ---
     const [newExamTitle, setNewExamTitle] = useState('');
     const [newExamDuration, setNewExamDuration] = useState(40);
-    const [newExamCategory, setNewExamCategory] = useState(curriculumData.dersler[0]); // Kategori/Ders
-    const [newExamPassMark, setNewExamPassMark] = useState(50); // Geçme Notu
-    const [newExamClass, setNewExamClass] = useState(''); // Atanacak Sınıf
-    // --- YENİ EKLENDİ SONU ---
+    const [newExamCategory, setNewExamCategory] = useState(curriculumData.dersler[0]);
+    const [newExamPassMark, setNewExamPassMark] = useState(50);
+    const [newExamClass, setNewExamClass] = useState(''); 
 
-    // ... (fetchExams fonksiyonu aynı kalır) ...
     const fetchExams = async () => {
         setLoading(true);
         setError(null);
         try {
-            // Backend'den çekmek için: 
-            // const response = await axios.get(API_URL, axiosConfig); 
-            // setExams(response.data); 
+            // TODO: API'den çekmek için burayı açın: const response = await axios.get(API_URL, axiosConfig); 
             
             setTimeout(() => {
                 setExams(DUMMY_EXAMS);
@@ -67,14 +74,18 @@ function TeacherExams() {
     }, []);
 
     const handleAta = (examId) => {
-        // Öğrenci veya sınıfa sınav atama (Modal açılabilir)
-        alert(`Sınav ID ${examId} öğrencilere atanacak.`);
+        // TODO: AssignmentModal burada açılmalı
+        alert(`Sınav ID ${examId} öğrencilere atanacak. (Atama modalı açılacak)`);
+    };
+    
+    const handleEditQuestions = (exam) => { // exam objesi alır
+        // Düzenlenecek sınavı state'e kaydet ve modalı aç
+        setCurrentExamToEdit(exam);
+        setIsSelectQuestionsModalOpen(true);
     };
 
-    // --- GÜNCELLENDİ: Yeni Alanları Gönderme ---
     const handleCreateExam = async (e) => {
         e.preventDefault();
-        // Sadece başlık, süre ve kategori kontrolü
         if (!newExamTitle || !newExamDuration || !newExamCategory) {
             setError('Başlık, süre ve kategori zorunludur.');
             return;
@@ -83,27 +94,33 @@ function TeacherExams() {
         const newExamData = {
             title: newExamTitle,
             duration: parseInt(newExamDuration),
-            category: newExamCategory, // Yeni
-            passMark: parseInt(newExamPassMark), // Yeni
-            associatedClass: newExamClass || null, // Yeni (Opsiyonel)
+            category: newExamCategory, 
+            passMark: parseInt(newExamPassMark), 
+            associatedClass: newExamClass || null, 
             questions: [], 
         };
 
         try {
-            // TODO: Backend'e axios.post ile gönderilir
-            console.log('Yeni Sınav Oluşturuldu ve Gönderildi:', newExamData);
-
-            // SAHTE VERİ GÜNCELLEMESİ
-            const dummyResponse = { ...newExamData, _id: `e${Date.now()}`, questionCount: 0 };
+            // TODO: Backend'e axios.post ile gönder
+            // const response = await axios.post(API_URL, newExamData, axiosConfig);
+            // const newExamId = response.data._id;
+            
+            // SAHTE VERİ İÇİN:
+            const newExamId = `e${Date.now()}`;
+            const dummyResponse = { ...newExamData, _id: newExamId, questionCount: 0 };
             setExams([dummyResponse, ...exams]); 
             
             // Modalı kapat ve formları temizle
-            setIsModalOpen(false); 
+            setIsCreateModalOpen(false); 
             setNewExamTitle('');
             setNewExamCategory(curriculumData.dersler[0]);
             setNewExamPassMark(50);
             setNewExamClass('');
             setError(null);
+
+            // Yeni sınavı hemen düzenleme modunda (modal) aç
+            handleEditQuestions(dummyResponse); 
+
         } catch (err) {
             setError('Sınav oluşturma hatası: Sunucuya bağlanılamadı.');
         }
@@ -118,7 +135,7 @@ function TeacherExams() {
                     className="btn-primary" 
                     onClick={() => {
                         setError(null);
-                        setIsModalOpen(true);
+                        setIsCreateModalOpen(true); // Yeni Sınav Oluştur modalını aç
                     }}
                 >
                     <FontAwesomeIcon icon={faPlus} className="me-2" />
@@ -130,12 +147,52 @@ function TeacherExams() {
             
             {/* 2. SINAV KARTLARI LİSTESİ */}
             <div className="exams-grid">
-                {/* ... (Liste JSX'i aynı kalır) ... */}
+                {exams.length === 0 && !loading ? (
+                    <div className="page-card" style={{gridColumn: '1 / -1'}}>
+                        Henüz oluşturulmuş bir sınav yok. Başlamak için yukarıdaki butonu kullanın.
+                    </div>
+                ) : (
+                    exams.map((exam) => (
+                        <div key={exam._id} className="page-card exam-card">
+                            
+                            <h3>{exam.title}</h3>
+
+                            <div className="exam-details">
+                                <div className="detail-item">
+                                    <FontAwesomeIcon icon={faListOl} className="me-2" />
+                                    {/* Not: questionCount veya questions.length kullanır */}
+                                    {exam.questionCount || exam.questions?.length || 0} Soru 
+                                </div>
+                                <div className="detail-item">
+                                    <FontAwesomeIcon icon={faClock} className="me-2" />
+                                    {exam.duration} Dakika
+                                </div>
+                            </div>
+                            
+                            <div className="exam-actions">
+                                <button 
+                                    className="btn-secondary btn-sm"
+                                    onClick={() => handleEditQuestions(exam)} // Modal açılır
+                                >
+                                    <FontAwesomeIcon icon={faPenToSquare} className="me-2" />
+                                    Soru Ekle/Düzenle
+                                </button>
+                                <button 
+                                    className="btn-primary btn-sm"
+                                    onClick={() => handleAta(exam._id)}
+                                >
+                                    <FontAwesomeIcon icon={faUserPlus} className="me-2" />
+                                    Ata
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
 
             {/* 3. YENİ SINAV OLUŞTURMA MODALI */}
-            {isModalOpen && (
-                <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+            {isCreateModalOpen && (
+                <div className="modal-overlay" onClick={() => setIsCreateModalOpen(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <h2>Yeni Sınav Oluştur</h2>
                         <form onSubmit={handleCreateExam}>
@@ -143,76 +200,41 @@ function TeacherExams() {
                             {/* Başlık */}
                             <div className="form-group">
                                 <label htmlFor="examTitle">Sınav Başlığı</label>
-                                <input 
-                                    type="text" 
-                                    id="examTitle"
-                                    value={newExamTitle}
-                                    onChange={(e) => setNewExamTitle(e.target.value)}
-                                    placeholder="Örn: 11. Sınıf Fizik 1. Dönem"
-                                    autoFocus
-                                    required
-                                />
+                                <input type="text" id="examTitle" value={newExamTitle} onChange={(e) => setNewExamTitle(e.target.value)} placeholder="Örn: 11. Sınıf Fizik 1. Dönem" autoFocus required/>
                             </div>
                             
-                            {/* Kategori/Ders Seçimi (YENİ EKLENDİ) */}
+                            {/* Kategori/Ders Seçimi */}
                             <div className="form-group">
                                 <label htmlFor="examCategory">Sınav Kategorisi (Ders)</label>
-                                <select 
-                                    id="examCategory" 
-                                    value={newExamCategory} 
-                                    onChange={(e) => setNewExamCategory(e.target.value)}
-                                    required
-                                >
-                                    {curriculumData.dersler.map(ders => (
-                                        <option key={ders} value={ders}>{ders}</option>
-                                    ))}
+                                <select id="examCategory" value={newExamCategory} onChange={(e) => setNewExamCategory(e.target.value)} required>
+                                    {curriculumData.dersler.map(ders => (<option key={ders} value={ders}>{ders}</option>))}
                                 </select>
                             </div>
 
                             {/* Süre */}
                             <div className="form-group">
                                 <label htmlFor="examDuration">Sınav Süresi (Dakika)</label>
-                                <input 
-                                    type="number" 
-                                    id="examDuration"
-                                    value={newExamDuration}
-                                    onChange={(e) => setNewExamDuration(e.target.value)}
-                                    min="5"
-                                    required
-                                />
+                                <input type="number" id="examDuration" value={newExamDuration} onChange={(e) => setNewExamDuration(e.target.value)} min="5" required/>
                             </div>
                             
-                            {/* Geçme Notu (YENİ EKLENDİ) */}
+                            {/* Geçme Notu */}
                             <div className="form-group">
                                 <label htmlFor="passMark">Geçme Notu (%)</label>
-                                <input 
-                                    type="number" 
-                                    id="passMark"
-                                    value={newExamPassMark}
-                                    onChange={(e) => setNewExamPassMark(e.target.value)}
-                                    min="0" max="100"
-                                    required
-                                />
+                                <input type="number" id="passMark" value={newExamPassMark} onChange={(e) => setNewExamPassMark(e.target.value)} min="0" max="100" required/>
                             </div>
                             
-                            {/* Atanacak Sınıf (YENİ EKLENDİ - Opsiyonel) */}
+                            {/* Atanacak Sınıf */}
                             <div className="form-group">
                                 <label htmlFor="examClass">Atanacak Sınıf (Opsiyonel)</label>
-                                <select 
-                                    id="examClass" 
-                                    value={newExamClass} 
-                                    onChange={(e) => setNewExamClass(e.target.value)}
-                                >
+                                <select id="examClass" value={newExamClass} onChange={(e) => setNewExamClass(e.target.value)}>
                                     <option value="">(Sınıf Seçilmedi)</option>
-                                    {curriculumData.siniflar.map(sinif => (
-                                        <option key={sinif} value={sinif}>{sinif}</option>
-                                    ))}
+                                    {curriculumData.siniflar.map(sinif => (<option key={sinif} value={sinif}>{sinif}</option>))}
                                 </select>
                             </div>
 
 
                             <div className="modal-actions">
-                                <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>
+                                <button type="button" className="btn-secondary" onClick={() => setIsCreateModalOpen(false)}>
                                     İptal
                                 </button>
                                 <button type="submit" className="btn-primary">
@@ -223,7 +245,19 @@ function TeacherExams() {
                     </div>
                 </div>
             )}
-
+            
+            {/* 4. SORU SEÇME MODALI */}
+            {currentExamToEdit && (
+                <SelectQuestionsModal
+                    show={isSelectQuestionsModalOpen}
+                    exam={currentExamToEdit}
+                    handleClose={() => {
+                        setIsSelectQuestionsModalOpen(false);
+                        setCurrentExamToEdit(null);
+                        fetchExams(); // Sınav soruları güncellendiği için listeyi yenile
+                    }}
+                />
+            )}
         </div>
     );
 }
