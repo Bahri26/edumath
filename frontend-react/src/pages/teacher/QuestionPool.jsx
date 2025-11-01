@@ -5,6 +5,23 @@ import axios from 'axios';
 import '../../assets/styles/TeacherPages.css';
 import { curriculumData } from '../../data/curriculumData'; 
 import PageHeader from '../../components/common/PageHeader'; 
+import SimulationPlayer from '../../components/SimulationPlayer';
+
+// --- Modal Bileşeni (Yataylık için CSS Güncellendi) ---
+const Modal = ({ isOpen, onClose, children }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      {/* Yatay görünüm için genişlik ayarı */}
+      <div className="modal-content !max-w-[950px] !w-[90%]" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close text-white text-3xl font-bold absolute top-2 right-4 z-50" onClick={onClose}>&times;</button>
+        {children}
+      </div>
+    </div>
+  );
+};
+// --- Modal Bileşeni Sonu ---
+
 
 // API URL'nizi ve Token alma yönteminizi buraya girin
 const API_URL = 'http://localhost:8000/api/questions';
@@ -55,14 +72,17 @@ function QuestionPool() {
   // --- Pagination State'leri ---
   const [currentPage, setCurrentPage] = useState(1); // Mevcut sayfa (1'den başlar)
   const questionsPerPage = 3; // Sayfa başına 3 soru
-  
+
+  // <<< SİMÜLASYON STATE'LERİ >>>
+  const [isSimulationOpen, setIsSimulationOpen] = useState(false);
+  const [simulationData, setSimulationData] = useState(null);
   
   // --- useEffect (Veri Çekme) ---
   useEffect(() => {
     if (activeTab === 'list') {
-      fetchQuestions();
+      // API Çağrısı Aktif Hale Getirildi
+      fetchQuestions(); 
     }
-    // NOT: currentPage, filtreler ve activeTab değiştikçe fetch tetiklenir
   }, [activeTab, filterSinif, filterZorluk, currentPage]); 
 
 
@@ -70,44 +90,84 @@ function QuestionPool() {
     setLoading(true);
     setError(null);
     setMessage(''); 
-    if (!token) {
-      setError('Verileri görmek için giriş yapmalısınız.');
-      setLoading(false);
-      return;
-    }
+    if (!token) { setError('Verileri görmek için giriş yapmalısınız.'); setLoading(false); return; }
 
     const params = {};
     if (filterSinif) params.classLevel = filterSinif;
     if (filterZorluk) params.difficulty = filterZorluk;
 
     try {
-      const response = await axios.get(API_URL, {
-        ...axiosConfig,
-        params: params 
-      });
+      const response = await axios.get(API_URL, { ...axiosConfig, params: params });
       setQuestions(response.data);
     } catch (err) {
       console.error('Sorular yüklenirken hata:', err);
-      setError('Sorular yüklenemedi. Lütfen daha sonra tekrar deneyin.');
+      // Hata durumunda test verisi gösterimi
+      if (err.response?.status === 404 || err.code === 'ERR_NETWORK') {
+           setError('API bağlantısı kurulamadı. Test verileri kullanılıyor.');
+           setQuestions([
+            { _id: '1', subject: 'Matematik', classLevel: '9. Sınıf', topic: 'Mantık', learningOutcome: 'Önermeyi açıklar.', questionType: 'test', difficulty: 'Kolay', text: 'p: 2 tek sayıdır. Önermesinin doğruluk değeri nedir?', options: ['Doğru', 'Yanlış', 'Bilinmez', 'Belirsiz'], correctAnswer: 'Yanlış', solutionText: '2 çift sayıdır, bu nedenle p önermesi yanlıştır. Doğruluk değeri 0 (Yanlış) olur. Bu bir simülasyon cevabıdır.' },
+            { _id: '2', subject: 'Matematik', classLevel: '10. Sınıf', topic: 'Örüntüler', learningOutcome: 'Ardışık sayılar kuralını bulur.', questionType: 'bosluk-doldurma', difficulty: 'Orta', text: '3, 7, 11, ___, 19 örüntüsünde boşluğa ne gelmelidir?', correctAnswer: '15', solutionText: 'Örüntünün kuralı +4\'tür. 11+4=15 olur.' },
+          ]);
+      } else {
+          setError('Sorular yüklenemedi. Lütfen daha sonra tekrar deneyin.');
+      }
     } finally {
       setLoading(false);
     }
   };
   
   // --- Pagination Hesaplamaları ---
-  const totalQuestions = questions.length;
+  const filteredQuestions = questions.filter(q => 
+    (!filterSinif || q.classLevel === filterSinif) && 
+    (!filterZorluk || q.difficulty === filterZorluk)
+  );
+  const totalQuestions = filteredQuestions.length;
   const totalPages = Math.ceil(totalQuestions / questionsPerPage);
 
   const indexOfLastQuestion = currentPage * questionsPerPage;
   const indexOfFirstQuestion = indexOfLastQuestion - questionsPerPage;
-  const currentQuestions = questions.slice(indexOfFirstQuestion, indexOfLastQuestion);
+  const currentQuestions = filteredQuestions.slice(indexOfFirstQuestion, indexOfLastQuestion);
   // --- Pagination Hesaplamaları Sonu ---
 
+  // SİMÜLASYON FONKSİYONLARI
+  const handleShowSolution = (question) => {
+    const allQuestionData = {
+      subject: question.subject,
+      classLevel: question.classLevel,
+      topic: question.topic,
+      learningOutcome: question.learningOutcome,
+      questionType: question.questionType,
+      text: question.text,
+      solutionText: question.solutionText || `Bu sorunun kayıtta çözümü girilmemiş. Soru metni: ${question.text}. Adım adım ilerleyelim: `, 
+      correctAnswer: question.correctAnswer,
+    };
+    setSimulationData(allQuestionData);
+    setIsSimulationOpen(true); 
+  };
+
+  const handleStartSimulation = (e) => {
+    e.preventDefault();
+    if (!step2Data.text) { setError('Lütfen önce soru metnini girin.'); return; }
+
+    const allQuestionData = {
+      subject: selectedDers,
+      classLevel: selectedSinif,
+      topic: selectedKonu,
+      learningOutcome: selectedKazanım,
+      questionType: selectedSoruTipi,
+      text: step2Data.text,
+      solutionText: step2Data.solutionText || `Bu sorunun çözüm adımları girilmemiştir. Soru metni: ${step2Data.text}. Adım adım ilerleyelim: `, 
+      correctAnswer: step2Data.correctAnswer,
+    };
+    
+    setSimulationData(allQuestionData);
+    setIsSimulationOpen(true); 
+  };
   
-  // --- YENİ: Filtre değişimini yöneten helper fonksiyon (Sayfa 1'e döner) ---
+  // --- Diğer Helper Fonksiyonlar ---
   const handleFilterChange = (setter, value) => {
     setter(value);
-    setCurrentPage(1); // Filtre değiştiğinde daima 1. sayfaya dön
+    setCurrentPage(1); 
   };
   
   const handleNextStep = (e) => {
@@ -121,28 +181,17 @@ function QuestionPool() {
   };
   
   const resetForm = (switchToTab = 'list') => {
-    setEditingId(null);
-    setError(null);
-    setMessage('');
-    setStep(1);
-    // Adım 1
-    setSelectedDers(curriculumData.dersler[0]);
-    setSelectedSinif('');
-    setSelectedKonu(curriculumData.konular[0]);
-    setSelectedKazanım('');
-    setSelectedSoruTipi('test');
-    setSelectedDifficulty('Orta'); 
-    // Adım 2
-    setStep2Data(defaultFormState);
-    
-    setActiveTab(switchToTab); 
+    setEditingId(null); setError(null); setMessage(''); setStep(1);
+    setSelectedDers(curriculumData.dersler[0]); setSelectedSinif(''); setSelectedKonu(curriculumData.konular[0]); 
+    setSelectedKazanım(''); setSelectedSoruTipi('test'); setSelectedDifficulty('Orta'); 
+    setStep2Data(defaultFormState); setActiveTab(switchToTab); 
   };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setMessage('');
-    if (!token) { /* ... */ }
+    if (!token) { setError('Giriş yapmalısınız.'); return; }
 
     let questionData = {
       subject: selectedDers,
@@ -157,18 +206,17 @@ function QuestionPool() {
       solutionText: step2Data.solutionText // Düz metin olarak gönderilir
     };
 
-    // Soru tipine göre doldurma
-    if (selectedSoruTipi === 'test') { /* ... */ } 
-    else if (selectedSoruTipi === 'dogru-yanlis') { /* ... */ } 
-    else if (selectedSoruTipi === 'bosluk-doldurma') { /* ... */ }
+    // Soru tipine göre doldurma mantığı buraya eklenmeli
+    // ...
 
     try {
+      let response; 
       if (editingId) {
-        await axios.put(`${API_URL}/${editingId}`, questionData, axiosConfig);
+        response = await axios.put(`${API_URL}/${editingId}`, questionData, axiosConfig); 
         setQuestions(questions.map(q => q._id === editingId ? response.data : q));
         setMessage('Soru başarıyla güncellendi!');
       } else {
-        await axios.post(API_URL, questionData, axiosConfig);
+        response = await axios.post(API_URL, questionData, axiosConfig); 
         setQuestions([response.data, ...questions]); 
         setMessage('Soru başarıyla oluşturuldu!');
       }
@@ -189,7 +237,7 @@ function QuestionPool() {
     try {
       await axios.delete(`${API_URL}/${id}`, axiosConfig);
       setMessage('Soru başarıyla silindi.');
-      fetchQuestions(); // Silme işlemi sonrası listeyi yenile
+      setQuestions(questions.filter(q => q._id !== id));
     } catch (err) {
       console.error('Silme hatası:', err);
       setError(err.response?.data?.message || 'Soru silinemedi.');
@@ -314,7 +362,7 @@ function QuestionPool() {
 
 
   // ==================================================================
-  // --- JSX (ANA RENDER) KISMI ---
+  // --- JSX (ANA RENDER) KISMI) ---
   // ==================================================================
   return (
     <div className="teacher-page-container"> 
@@ -368,61 +416,40 @@ function QuestionPool() {
                 <legend>1. Adım: Soru Detayları</legend>
                 <div className="form-grid-single-column">
                   
-                  <div className="form-group">
-                    <label htmlFor="dersSelect">Ders</label>
+                  <div className="form-group"><label htmlFor="dersSelect">Ders</label>
                     <select id="dersSelect" value={selectedDers} onChange={(e) => setSelectedDers(e.target.value)}>
-                      {curriculumData.dersler.map(ders => (
-                        <option key={ders} value={ders}>{ders}</option>
-                      ))}
+                      {curriculumData.dersler.map(ders => (<option key={ders} value={ders}>{ders}</option>))}
                     </select>
                   </div>
                   
-                  <div className="form-group">
-                    <label htmlFor="sinifSelect">Sınıf Seçin</label>
+                  <div className="form-group"><label htmlFor="sinifSelect">Sınıf Seçin</label>
                     <select id="sinifSelect" value={selectedSinif} onChange={(e) => setSelectedSinif(e.target.value)} required>
                       <option value="">Sınıf seçiniz...</option>
-                      {classLevels.map(sinif => (
-                        <option key={sinif} value={sinif}>{sinif}</option>
-                      ))}
+                      {classLevels.map(sinif => (<option key={sinif} value={sinif}>{sinif}</option>))}
                     </select>
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="konuSelect">Konu / Ünite</label>
+                  <div className="form-group"><label htmlFor="konuSelect">Konu / Ünite</label>
                     <select id="konuSelect" value={selectedKonu} onChange={(e) => setSelectedKonu(e.target.value)}>
-                      {curriculumData.konular.map(konu => (
-                        <option key={konu} value={konu}>{konu}</option>
-                      ))}
+                      {curriculumData.konular.map(konu => (<option key={konu} value={konu}>{konu}</option>))}
                     </select>
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="kazanimInput">Kazanım (MEB Kodu veya Açıklaması)</label>
-                    <textarea id="kazanimInput" rows="3" value={selectedKazanım} 
-                      onChange={(e) => setSelectedKazanım(e.target.value)}
-                      placeholder="İlgili kazanımı yazın (örn: M.10.1.1.2. n elemanlı bir kümenin...)" required />
+                  <div className="form-group"><label htmlFor="kazanimInput">Kazanım (MEB Kodu veya Açıklaması)</label>
+                    <textarea id="kazanimInput" rows="3" value={selectedKazanım} onChange={(e) => setSelectedKazanım(e.target.value)} placeholder="İlgili kazanımı yazın (örn: M.10.1.1.2. n elemanlı bir kümenin...)" required />
                   </div>
                   
-                  <div className="form-group">
-                    <label htmlFor="soruTipiSelect">Soru Tipi Seçin</label>
+                  <div className="form-group"><label htmlFor="soruTipiSelect">Soru Tipi Seçin</label>
                     <select id="soruTipiSelect" value={selectedSoruTipi} onChange={(e) => setSelectedSoruTipi(e.target.value)} required>
-                      {curriculumData.soruTipleri.map(tip => (
-                        <option key={tip.value} value={tip.value} disabled={tip.value === 'eslestirme'}>
-                          {tip.label}
-                        </option>
-                      ))}
+                      {curriculumData.soruTipleri.map(tip => (<option key={tip.value} value={tip.value} disabled={tip.value === 'eslestirme'}>{tip.label}</option>))}
                     </select>
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="difficultySelect">Zorluk Seviyesi</label>
+                  <div className="form-group"><label htmlFor="difficultySelect">Zorluk Seviyesi</label>
                     <select id="difficultySelect" value={selectedDifficulty} onChange={(e) => setSelectedDifficulty(e.target.value)} required>
-                      {difficultyLevels.map(level => (
-                        <option key={level} value={level}>{level}</option>
-                      ))}
+                      {difficultyLevels.map(level => (<option key={level} value={level}>{level}</option>))}
                     </select>
                   </div>
-
                 </div>
                 <div className="step-navigation-buttons" style={{ justifyContent: 'flex-end' }}>
                   <button type="button" className="btn-primary" onClick={handleNextStep}>
@@ -438,15 +465,7 @@ function QuestionPool() {
                 
                 <div className="form-group">
                   <label htmlFor="questionText">Soru Metni</label>
-                  <textarea 
-                    id="questionText" 
-                    name="text" 
-                    rows="5" 
-                    value={step2Data.text} 
-                    onChange={handleStep2Change} 
-                    placeholder="Soru metnini buraya yazın..." 
-                    required 
-                  />
+                  <textarea id="questionText" name="text" rows="5" value={step2Data.text} onChange={handleStep2Change} placeholder="Soru metnini buraya yazın..." required />
                 </div>
 
                 {renderAnswerFields()}
@@ -454,16 +473,18 @@ function QuestionPool() {
                 {/* --- Soru Çözümü: Standart <textarea> --- */}
                 <div className="form-group">
                   <label htmlFor="solutionText">Soru Çözümü (Opsiyonel)</label>
-                  <textarea 
-                    id="solutionText" 
-                    name="solutionText" // State'e bağlanması için
-                    rows="4" 
-                    value={step2Data.solutionText} // State'den değer al
-                    onChange={handleStep2Change} // Standart state güncelleyiciyi kullan
-                    placeholder="Sorunun yazılı çözümünü buraya ekleyebilirsiniz..." 
-                  />
+                  <textarea id="solutionText" name="solutionText" value={step2Data.solutionText} onChange={handleStep2Change} placeholder="Sorunun yazılı çözümünü buraya ekleyebilirsiniz..." rows="4" />
                 </div>
                 {/* --- ÇÖZÜM ALANI SONU --- */}
+
+                <hr className="form-divider" />
+                <div className="form-group text-center">
+                  {/* SİMÜLASYON BUTONU */}
+                  <button type="button" className="btn-secondary" onClick={handleStartSimulation} disabled={!step2Data.text}>
+                    <i className="fas fa-video me-2"></i> Soruyu Anlat (Simülasyon Başlat)
+                  </button>
+                </div>
+                <hr className="form-divider" />
 
 
                 <div className="step-navigation-buttons">
@@ -496,18 +517,14 @@ function QuestionPool() {
               <label htmlFor="filterSinif">Sınıfa Göre Filtrele</label>
               <select id="filterSinif" value={filterSinif} onChange={(e) => handleFilterChange(setFilterSinif, e.target.value)}>
                 <option value="">Tüm Sınıflar</option>
-                {classLevels.map(level => (
-                  <option key={level} value={level}>{level}</option>
-                ))}
+                {classLevels.map(level => (<option key={level} value={level}>{level}</option>))}
               </select>
             </div>
             <div className="form-group">
               <label htmlFor="filterZorluk">Zorluğa Göre Filtrele</label>
               <select id="filterZorluk" value={filterZorluk} onChange={(e) => handleFilterChange(setFilterZorluk, e.target.value)}>
                 <option value="">Tüm Zorluklar</option>
-                {difficultyLevels.map(level => (
-                  <option key={level} value={level}>{level}</option>
-                ))}
+                {difficultyLevels.map(level => (<option key={level} value={level}>{level}</option>))}
               </select>
             </div>
           </div>
@@ -526,9 +543,7 @@ function QuestionPool() {
                     
                     <div className="question-header-tags">
                       <span className="question-subject-badge">{q.subject} - {q.classLevel}</span>
-                      <span className={`question-difficulty-badge difficulty-${q.difficulty?.toLowerCase()}`}>
-                        {q.difficulty}
-                      </span>
+                      <span className={`question-difficulty-badge difficulty-${q.difficulty?.toLowerCase()}`}>{q.difficulty}</span>
                     </div>
 
                     <p className="question-text">{q.text}</p>
@@ -546,28 +561,15 @@ function QuestionPool() {
                       <p><strong>Doğru Cevap:</strong> <span className="correct">{q.correctAnswer}</span></p>
                     )}
 
-                    {/* Soru Çözümü (Düz Metin Olarak Render) */}
-                    {q.solutionText && (
-                      <div className="question-solution">
-                        <strong>Çözüm:</strong>
-                        <pre 
-                          className="solution-text-render"
-                          style={{ 
-                            whiteSpace: 'pre-wrap', 
-                            wordBreak: 'break-word', 
-                            margin: 0, 
-                            paddingTop: '0.5rem',
-                            fontFamily: 'inherit', 
-                            fontSize: '0.95rem',
-                            color: '#495057'
-                          }}
-                        >
-                          {q.solutionText}
-                        </pre>
-                      </div>
-                    )}
-
-                    <div className="question-actions">
+                    <div className="question-actions flex justify-end gap-2">
+                      
+                      {/* ÇÖZÜMÜ GÖSTER BUTONU */}
+                      {(q.solutionText || q.text) && (
+                        <button className="btn-primary btn-sm" onClick={() => handleShowSolution(q)}>
+                          <i className="fas fa-video me-2"></i> Çözümü Göster (Sim.)
+                        </button>
+                      )}
+                      
                       <button className="btn-secondary btn-sm" onClick={() => handleEdit(q)}>
                         <i className="fas fa-edit me-2"></i> Düzenle
                       </button>
@@ -597,6 +599,10 @@ function QuestionPool() {
           )}
         </div>
       )}
+      {/* SİMÜLASYON MODALI */}
+    <Modal isOpen={isSimulationOpen} onClose={() => setIsSimulationOpen(false)}>
+    {simulationData && <SimulationPlayer questionData={simulationData} />}
+    </Modal>
     </div> 
   );
 }
