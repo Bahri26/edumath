@@ -1,62 +1,100 @@
-// backend-express/controllers/studentController.js
+// backend-express/controllers/studentController.js (İYİLEŞTİRİLMİŞ)
 
 const Assignment = require('../models/Assignment');
-const Result = require('../models/Result'); // Sınavın tamamlanıp tamamlanmadığını kontrol etmek için
-const User = require('../models/User'); // Kullanıcı bilgilerine erişim için
+const Result = require('../models/Result');
+const User = require('../models/User');
 
 // GET /api/student/assignments
 // Giriş yapan öğrenciye atanmış aktif sınavları listeler
 exports.getAssignedExams = async (req, res) => {
-    const studentId = req.user.id; // Token'dan gelen ID
+    const studentId = req.user.id;
     
     try {
-        // Öğrencinin sınıf ID'sini bul (Sadece Class tabanlı atamalar için gerekli)
+        // Öğrencinin sınıf ID'sini bul
         const student = await User.findById(studentId).select('classId'); 
         if (!student) {
             return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
         }
-        const studentClassId = student.classId; 
         
-        // --- 1. Sınıfa Atanmış Aktif Sınavları Çek ---
-        const classAssignments = await Assignment.find({ 
-            targetType: 'Class',
-            targetId: studentClassId,
-            isActive: true
+        const studentClassId = student.classId;
+        const now = new Date();
+        
+        // --- 1. Tüm aktif atamaları çek (sınıf + bireysel) ---
+        const assignments = await Assignment.find({
+            $or: [
+                { targetType: 'Class', targetId: studentClassId },
+                { targetType: 'Student', targetId: studentId }
+            ],
+            isActive: true,
+            dueDate: { $gte: now } // ✅ Sadece tarihi GEÇMEMİŞ sınavlar
+        }).populate({
+            path: 'examId',
+            select: 'title duration questions' // ✅ questions array'i de dahil edildi
         });
 
-        // --- 2. Bireysel Atanmış Aktif Sınavları Çek ---
-        const individualAssignments = await Assignment.find({
-            targetType: 'Student',
-            targetId: studentId,
-            isActive: true
-        });
+        // --- 2. Tamamlanmış sınavları bul ---
+        const completedResults = await Result.find({ 
+            studentId,
+            isSubmitted: true // Sadece submit edilmiş sonuçlar
+        }).select('examId');
+        
+        const completedExamIds = new Set(
+            completedResults.map(r => r.examId.toString())
+        );
 
-        // --- 3. İki listeyi birleştir ve tekrarları temizle ---
-        const allAssignments = [...classAssignments, ...individualAssignments];
-
-        // --- 4. Daha önce tamamlanmış sınavları filtrele ---
-        const completedExams = await Result.find({ studentId }).select('examId');
-        const completedExamIds = completedExams.map(result => result.examId.toString());
-
-        const activeAssignments = allAssignments.filter(assignment => {
-            // Teslim tarihi geçmiş mi kontrolü
-            const isDue = new Date(assignment.dueDate) < new Date();
-            // Daha önce tamamlanmış mı kontrolü
-            const isCompleted = completedExamIds.includes(assignment.examId.toString());
+        // --- 3. Tamamlanmamış sınavları filtrele + Tekrar eden atamaları temizle ---
+        const uniqueAssignments = new Map();
+        
+        assignments.forEach(assignment => {
+            const examId = assignment.examId?._id.toString();
             
-            return !isDue && !isCompleted;
+            // Sınav tamamlanmamış ve daha önce eklenmediyse
+            if (examId && !completedExamIds.has(examId) && !uniqueAssignments.has(examId)) {
+                uniqueAssignments.set(examId, {
+                    _id: assignment._id,
+                    examId: assignment.examId,
+                    dueDate: assignment.dueDate,
+                    targetType: assignment.targetType,
+                    assignedBy: assignment.assignedBy
+                });
+            }
         });
 
-        // Sınav başlıklarını ve sürelerini eklemek için populate et
-        await Assignment.populate(activeAssignments, {
-            path: 'examId', 
-            select: 'title duration' 
-        });
+        // Map'i array'e çevir
+        const activeAssignments = Array.from(uniqueAssignments.values());
 
-        res.status(200).json(activeAssignments);
+        // --- 4. Her sınav için ek bilgiler ekle ---
+        const enrichedAssignments = activeAssignments.map(assignment => ({
+            ...assignment,
+            questionCount: assignment.examId?.questions?.length || 0,
+            timeRemaining: calculateTimeRemaining(assignment.dueDate),
+            status: 'pending' // not_started, in_progress olabilir
+        }));
+
+        res.status(200).json(enrichedAssignments);
 
     } catch (error) {
-        console.error('Atama listeleme hatası (Öğrenci):', error);
-        res.status(500).json({ message: 'Atanan sınavlar listelenirken bir hata oluştu.' });
+        console.error('Atama listeleme hatası:', error);
+        res.status(500).json({ 
+            message: 'Atanan sınavlar listelenirken bir hata oluştu.',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
+
+// Yardımcı fonksiyon: Kalan süreyi hesapla
+function calculateTimeRemaining(dueDate) {
+    if (!dueDate) return null;
+    
+    const now = new Date();
+    const due = new Date(dueDate);
+    const diffMs = due - now;
+    
+    if (diffMs <= 0) return { expired: true };
+    
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return { days, hours, minutes, expired: false };
+}

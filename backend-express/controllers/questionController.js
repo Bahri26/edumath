@@ -17,7 +17,7 @@ exports.createQuestion = async (req, res) => {
             text,
             options,
             correctAnswer,
-            solutionImage 
+            solutionText 
         } = req.body;
 
         const createdBy = req.user.id;
@@ -33,7 +33,7 @@ exports.createQuestion = async (req, res) => {
             text,
             options,
             correctAnswer,
-            solutionImage 
+            solutionText 
         });
 
         const createdQuestion = await question.save();

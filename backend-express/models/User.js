@@ -1,6 +1,4 @@
-// backend-express/models/User.js (GÜNCEL HALİ)
-
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
@@ -15,7 +13,7 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Şifre zorunludur.'],
     minlength: [6, 'Şifre en az 6 karakter olmalıdır.'],
-    select: false, // findOne ile şifreyi otomatik çekme
+    select: false,
   },
   firstName: {
     type: String,
@@ -27,7 +25,6 @@ const UserSchema = new mongoose.Schema({
     required: [true, 'Soyad zorunludur.'],
     trim: true,
   },
-  // --- ROLLER ---
   isStudent: {
     type: Boolean,
     default: false,
@@ -36,8 +33,10 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-
-  // --- YENİ EKLENEN ALANLAR ---
+  isStaff: {
+    type: Boolean,
+    default: false,
+  },
   birthDate: {
     type: Date,
     required: [true, 'Doğum tarihi zorunludur.'],
@@ -46,22 +45,116 @@ const UserSchema = new mongoose.Schema({
     type: Number,
     min: 1,
     max: 12,
-    // Sınıf düzeyi, SADECE kullanıcı öğrenciyse zorunludur.
     required: [
-        function() { return this.isStudent; }, // 'this' dokümanı temsil eder
-        'Öğrenciler için sınıf düzeyi zorunludur.'
+      function() { return this.isStudent; },
+      'Öğrenciler için sınıf düzeyi zorunludur.'
     ]
+  },
+  classId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Class',
+    default: null
+  },
+  gamification: {
+    xp: {
+      type: Number,
+      default: 0
+    },
+    level: {
+      type: Number,
+      default: 1
+    },
+    gems: {
+      type: Number,
+      default: 0
+    },
+    hearts: {
+      current: {
+        type: Number,
+        default: 5,
+        max: 5
+      },
+      lastRefillTime: {
+        type: Date,
+        default: Date.now
+      },
+      unlimited: {
+        type: Boolean,
+        default: false
+      }
+    },
+    streak: {
+      current: {
+        type: Number,
+        default: 0
+      },
+      longest: {
+        type: Number,
+        default: 0
+      },
+      lastActivity: {
+        type: Date,
+        default: null
+      },
+      freezes: {
+        type: Number,
+        default: 0
+      }
+    },
+    dailyGoal: {
+      target: {
+        type: Number,
+        default: 20 // Günlük XP hedefi
+      },
+      progress: {
+        type: Number,
+        default: 0
+      },
+      lastReset: {
+        type: Date,
+        default: Date.now
+      },
+      completedDays: {
+        type: Number,
+        default: 0
+      }
+    },
+    achievements: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Achievement'
+    }],
+    badges: [{
+      type: {
+        type: String,
+        enum: ['bronze', 'silver', 'gold', 'platinum']
+      },
+      category: String,
+      earnedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }]
+  },
+  analytics: {
+    lastActivity: Date,
+    totalTimeSpent: Number,
+    averageScore: Number,
+    completedTopics: Number,
+    learningStyle: String,
+    performanceMetrics: {
+      accuracy: Number,
+      speed: Number,
+      consistency: Number
+    }
   }
-  // --- YENİ EKLENEN ALANLAR BİTİŞ ---
+}, { 
+  timestamps: true
+});
 
-}, { timestamps: true }); // createdAt ve updatedAt'i otomatik ekler
-
-// Sanal Alan (Virtual Property) - Ad ve Soyad'ı birleştirir
 UserSchema.virtual('fullName').get(function() {
   return `${this.firstName} ${this.lastName}`;
 });
 
-// Şifreyi Kaydetmeden Önce Hash'le (pre-save hook)
 UserSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     return next();
@@ -71,10 +164,14 @@ UserSchema.pre('save', async function(next) {
   next();
 });
 
-// Şifre Doğrulama Metodu
+UserSchema.methods.matchPassword = async function(enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
 UserSchema.methods.comparePassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
 const User = mongoose.model('User', UserSchema);
 module.exports = User;
+

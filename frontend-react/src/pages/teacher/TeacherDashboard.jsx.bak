@@ -1,0 +1,73 @@
+// frontend-react/src/pages/teacher/TeacherDashboard.jsx (TEMİZLENMİŞ HALİ)
+
+import React from 'react';
+import { Link } from 'react-router-dom';
+import PageHeader from '../../components/common/PageHeader';
+import '../../assets/styles/TeacherPages.css'; 
+
+function TeacherDashboard() {
+  return (
+    <>
+      <PageHeader title="Öğretmen Paneli" />
+
+      {/* teacher-page-container'dan inline stili kaldırdık */}
+      <div className="teacher-page-container container-no-padding-top"> 
+        
+        <div className="exams-grid">
+          
+          {/* 👇 Yeni class: "card-primary" 👇 */}
+          <div className="page-card exam-card card-primary">
+            <h3><i className="fas fa-layer-group"></i> Soru Havuzu</h3>
+            
+            {/* Inline stil kaldırıldı, CSS yönetecek */}
+            <div className="exam-details"> 
+              <strong>0</strong>
+              <span>Soru</span>
+            </div>
+            
+            <div className="exam-actions">
+              <Link to="/teacher/question-pool" className="btn-primary" style={{width: '100%'}}>
+                <i className="fas fa-plus me-2"></i> Soru Ekle
+              </Link>
+            </div>
+          </div>
+
+          {/* 👇 Yeni class: "card-success" 👇 */}
+          <div className="page-card exam-card card-success">
+            <h3><i className="fas fa-school"></i> Sınıflar</h3>
+            
+            <div className="exam-details">
+              <strong>0</strong>
+              <span>Sınıf</span>
+            </div>
+            
+            <div className="exam-actions">
+               <Link to="/teacher/classes" className="btn-success" style={{width: '100%'}}> 
+                 <i className="fas fa-edit me-2"></i> Sınıfları Yönet
+               </Link>
+            </div>
+          </div>
+          
+          {/* 👇 Yeni class: "card-info" 👇 */}
+          <div className="page-card exam-card card-info">
+            <h3><i className="fas fa-user-graduate"></i> Öğrenciler</h3>
+            
+            <div className="exam-details">
+              <strong>0</strong>
+              <span>Öğrenci</span>
+            </div>
+            
+            <div className="exam-actions">
+               <Link to="/teacher/students" className="btn-info" style={{width: '100%'}}> 
+                 <i className="fas fa-users me-2"></i> Öğrencilerim
+               </Link>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default TeacherDashboard;

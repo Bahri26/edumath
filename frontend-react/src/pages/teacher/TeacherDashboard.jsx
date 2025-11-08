@@ -1,68 +1,241 @@
-// frontend-react/src/pages/teacher/TeacherDashboard.jsx (BAŞLIKLI VE KARTLI - SON HALİ)
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Link } from 'react-router-dom';
-import PageHeader from '../../components/common/PageHeader'; // Yeni başlık bileşeni
-import '../../assets/styles/TeacherPages.css'; // Ortak stil dosyası
+import PageHeader from '../../components/common/PageHeader';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faLayerGroup, 
+  faSchool, 
+  faUserGraduate, 
+  faBook,
+  faChalkboardTeacher,
+  faChartLine,
+  faPlus,
+  faArrowRight,
+  faGraduationCap,
+  faTasks
+} from '@fortawesome/free-solid-svg-icons';
+import '../../assets/styles/TeacherPages.css';
+import '../../assets/styles/Dashboard.css';
 
 function TeacherDashboard() {
-  return (
-    <>
-      {/* --- 1. YENİ BAŞLIK --- */}
-      <PageHeader title="Öğretmen Paneli" />
+	const [dashboardData, setDashboardData] = useState({
+		questionCount: 0,
+		classCount: 0,
+		studentCount: 0,
+	});
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState(null);
 
-      {/* --- 2. PANO İÇERİĞİ (Özet Kartlar) --- */}
-      <div className="teacher-page-container" style={{paddingTop: 0}}>
-        
-        {/* Sınavlar/Sınıflar için kullandığımız 3 sütunlu grid yapısı */}
-        <div className="exams-grid">
-          
-          <div className="page-card exam-card">
-            <h3><i className="fas fa-layer-group me-2 text-primary"></i> Soru Havuzu</h3>
-            <div className="exam-details" style={{fontSize: '1.5rem', justifyContent: 'center', margin: '1rem 0'}}>
-              {/* TODO: Backend'den Soru Sayısı Çekilecek */}
-              <strong>0</strong>
-              <span style={{fontSize: '0.9rem', color: '#6c757d', marginLeft: '0.5rem'}}>Soru</span>
-            </div>
-            <div className="exam-actions">
-              <Link to="/teacher/question-pool" className="btn-primary" style={{width: '100%'}}>
-                <i className="fas fa-plus me-2"></i> Soru Ekle
-              </Link>
-            </div>
-          </div>
+	useEffect(() => {
+		const fetchDashboardData = async () => {
+			setLoading(true);
+			setError(null);
 
-          <div className="page-card exam-card">
-            <h3><i className="fas fa-school me-2 text-success"></i> Sınıflar</h3>
-            <div className="exam-details" style={{fontSize: '1.5rem', justifyContent: 'center', margin: '1rem 0'}}>
-              {/* TODO: Backend'den Sınıf Sayısı Çekilecek */}
-              <strong>0</strong>
-               <span style={{fontSize: '0.9rem', color: '#6c757d', marginLeft: '0.5rem'}}>Sınıf</span>
-            </div>
-            <div className="exam-actions">
-               <Link to="/teacher/classes" className="btn-success" style={{width: '100%'}}> {/* Renk değişti */}
-                 <i className="fas fa-edit me-2"></i> Sınıfları Yönet
-               </Link>
-            </div>
-          </div>
-          
-           <div className="page-card exam-card">
-            <h3><i className="fas fa-user-graduate me-2 text-info"></i> Öğrenciler</h3>
-            <div className="exam-details" style={{fontSize: '1.5rem', justifyContent: 'center', margin: '1rem 0'}}>
-              {/* TODO: Backend'den Öğrenci Sayısı Çekilecek */}
-              <strong>0</strong>
-               <span style={{fontSize: '0.9rem', color: '#6c757d', marginLeft: '0.5rem'}}>Öğrenci</span>
-            </div>
-            <div className="exam-actions">
-               <Link to="/teacher/students" className="btn-info" style={{width: '100%', color: 'white'}}> {/* Renk değişti */}
-                 <i className="fas fa-users me-2"></i> Öğrencilerim
-               </Link>
-            </div>
-          </div>
+			const token = localStorage.getItem('token');
+			const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        </div>
-      </div>
-    </>
-  );
+			try {
+				// Use safer calls and tolerate partial failures. The backend currently does not expose
+				// /count endpoints for classes/students, so request the endpoints that exist and
+				// derive counts where possible.
+				const [questionsRes, examsRes] = await Promise.allSettled([
+					axios.get('http://localhost:8000/api/questions', config),
+					axios.get('http://localhost:8000/api/exams', config),
+				]);
+
+				const questionCount = questionsRes.status === 'fulfilled' && Array.isArray(questionsRes.value.data)
+					? questionsRes.value.data.length
+					: 0;
+
+				const examCount = examsRes.status === 'fulfilled' && Array.isArray(examsRes.value.data)
+					? examsRes.value.data.length
+					: 0;
+
+				// classes and students endpoints for simple counts are not implemented in the backend yet.
+				// We'll leave them as 0 until backend provides reliable count endpoints.
+				setDashboardData({
+					questionCount,
+					classCount: 0,
+					studentCount: 0,
+					examCount,
+				});
+			} catch (err) {
+				// This block is a last-resort; most per-request failures are handled above.
+				setError('Dashboard verisi yüklenirken bir hata oluştu.');
+				console.error('Dashboard veri hatası:', err);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchDashboardData();
+	}, []);
+
+	if (loading) {
+		return (
+			<div className="teacher-page-container">
+				<PageHeader title="Öğretmen Paneli" />
+				<div className="loading-spinner">Yükleniyor...</div>
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="teacher-page-container">
+				<PageHeader title="Öğretmen Paneli" />
+				<div className="alert alert-danger">{error}</div>
+			</div>
+		);
+	}
+
+	const dashboardCards = [
+		{
+			icon: 'layer-group',
+			title: 'Soru Havuzu',
+			count: dashboardData.questionCount,
+			countLabel: 'Soru',
+			buttonText: 'Soru Ekle',
+			buttonIcon: 'plus',
+			linkTo: '/teacher/question-pool',
+			variant: 'primary'
+		},
+		{
+			icon: 'school',
+			title: 'Sınıflar',
+			count: dashboardData.classCount,
+			countLabel: 'Sınıf',
+			buttonText: 'Sınıfları Yönet',
+			buttonIcon: 'edit',
+			linkTo: '/teacher/classes',
+			variant: 'success'
+		},
+		{
+			icon: 'user-graduate',
+			title: 'Öğrenciler',
+			count: dashboardData.studentCount,
+			countLabel: 'Öğrenci',
+			buttonText: 'Öğrencilerim',
+			buttonIcon: 'users',
+			linkTo: '/teacher/students',
+			variant: 'info'
+		}
+	];
+
+	return (
+		<div className="dashboard-container">
+			<PageHeader title="Öğretmen Paneli" />
+			
+			<div className="dashboard-stats">
+				<div className="stat-card">
+					<div className="stat-info">
+						<h3>Toplam Soru</h3>
+						<p className="count">{dashboardData.questionCount}</p>
+					</div>
+					<div className="stat-icon primary">
+						<FontAwesomeIcon icon={faBook} />
+					</div>
+				</div>
+				
+				<div className="stat-card">
+					<div className="stat-info">
+						<h3>Aktif Sınıf</h3>
+						<p className="count">{dashboardData.classCount}</p>
+					</div>
+					<div className="stat-icon success">
+						<FontAwesomeIcon icon={faSchool} />
+					</div>
+				</div>
+				
+				<div className="stat-card">
+					<div className="stat-info">
+						<h3>Toplam Öğrenci</h3>
+						<p className="count">{dashboardData.studentCount}</p>
+					</div>
+					<div className="stat-icon info">
+						<FontAwesomeIcon icon={faUserGraduate} />
+					</div>
+				</div>
+				
+				<div className="stat-card">
+					<div className="stat-info">
+						<h3>Aktif Sınav</h3>
+						<p className="count">{dashboardData.examCount || 0}</p>
+					</div>
+					<div className="stat-icon warning">
+						<FontAwesomeIcon icon={faTasks} />
+					</div>
+				</div>
+			</div>
+			
+			<div className="dashboard-sections">
+				<div className="section-card">
+					<div className="section-header">
+						<h2>Hızlı İşlemler</h2>
+					</div>
+					<div className="quick-actions">
+						<Link to="/teacher/question-pool/add" className="action-button">
+							<div className="icon">
+								<FontAwesomeIcon icon={faPlus} />
+							</div>
+							<div className="text">
+								<h4>Yeni Soru Ekle</h4>
+								<p>Soru havuzuna yeni soru ekleyin</p>
+							</div>
+							<FontAwesomeIcon icon={faArrowRight} className="arrow" />
+						</Link>
+						
+						<Link to="/teacher/classes" className="action-button">
+							<div className="icon">
+								<FontAwesomeIcon icon={faSchool} />
+							</div>
+							<div className="text">
+								<h4>Sınıfları Yönet</h4>
+								<p>Sınıflarınızı görüntüleyin ve yönetin</p>
+							</div>
+							<FontAwesomeIcon icon={faArrowRight} className="arrow" />
+						</Link>
+						
+						<Link to="/teacher/students" className="action-button">
+							<div className="icon">
+								<FontAwesomeIcon icon={faUserGraduate} />
+							</div>
+							<div className="text">
+								<h4>Öğrencilerim</h4>
+								<p>Öğrenci listesi ve yönetimi</p>
+							</div>
+							<FontAwesomeIcon icon={faArrowRight} className="arrow" />
+						</Link>
+						
+						<Link to="/teacher/exams" className="action-button">
+							<div className="icon">
+								<FontAwesomeIcon icon={faGraduationCap} />
+							</div>
+							<div className="text">
+								<h4>Sınavlar</h4>
+								<p>Sınav oluşturun ve yönetin</p>
+							</div>
+							<FontAwesomeIcon icon={faArrowRight} className="arrow" />
+						</Link>
+					</div>
+				</div>
+				
+				<div className="section-card">
+					<div className="section-header">
+						<h2>Genel İstatistikler</h2>
+					</div>
+					<div className="stats-preview">
+						{/* Buraya grafik bileşenleri eklenecek */}
+						<p className="text-center text-muted">
+							<FontAwesomeIcon icon={faChartLine} className="me-2" />
+							Detaylı istatistikler yakında eklenecek
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 export default TeacherDashboard;

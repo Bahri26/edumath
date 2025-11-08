@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom'; // useParams'ı import et
-import axios from 'axios';
 import '../../assets/styles/TeacherPages.css';
 
 // SAHTE VERİ (Sadece bu sayfayı test etmek için)

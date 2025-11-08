@@ -15,20 +15,28 @@ const dummyStudents = [
 ];
 
 function TeacherStudents() {
+  // read token inside component so login state is reflected
+  const token = localStorage.getItem('token');
+  const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
+
   // --- STATE'LER ---
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState(''); // Arama filtresi için
 
-  // --- EFFECT ---
-  useEffect(() => {
+  // --- FETCH ---
+  const fetchStudents = React.useCallback(() => {
     setLoading(true);
-    // TODO: Backend'den 'axios.get('/api/teacher/students')' ile öğrencileri çek
+    // TODO: replace with: axios.get('/api/teacher/students', axiosConfig)
     setTimeout(() => {
       setStudents(dummyStudents);
       setLoading(false);
     }, 500);
-  }, []);
+  }, [token]);
+
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]);
 
   // --- FİLTRELENMİŞ ÖĞRENCİLER ---
   // Arama kutusuna yazılan değere göre listeyi filtrele

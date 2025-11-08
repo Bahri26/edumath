@@ -1,26 +1,31 @@
-// backend-express/routes/classRoutes.js (YENİ DOSYA)
+// backend-express/routes/classRoutes.js
 
 const express = require('express');
 const router = express.Router();
-const { protect, checkRole } = require('../middleware/authMiddleware');
 const {
-  createClass,
-  getClassesByGrade,
-  deleteClass
+    createClass,
+    getClassesByGrade,
+    deleteClass,
+    joinClass,
+    getClassStudentsWithStats,
+    getClassesCount
 } = require('../controllers/classController');
+const { protect, teacherCheck, studentCheck } = require('../middleware/authMiddleware');
 
-// Koruma: Bu rotaların tamamı sadece giriş yapmış öğretmenler içindir
-router.use(protect, checkRole('teacher'));
+router.route('/count')
+    .get(protect, teacherCheck, getClassesCount); // YENİ: Sınıf sayısını getiren route
 
-// GET /api/classes?gradeLevel=9  (Bir seviyedeki sınıfları getir)
-// POST /api/classes              (Yeni bir sınıf oluştur)
 router.route('/')
-  .get(getClassesByGrade)
-  .post(createClass);
+    .post(protect, teacherCheck, createClass) // Öğretmen sınıf oluşturur
+    .get(protect, teacherCheck, getClassesByGrade); // Öğretmen sınıflarını listeler
 
-// DELETE /api/classes/:id        (Bir sınıfı sil)
+router.route('/join')
+    .post(protect, studentCheck, joinClass); // Öğrenci sınıfa katılır
+
 router.route('/:id')
-  .delete(deleteClass);
-// .put(updateClass); // -> Güncelleme eklenebilir
+    .delete(protect, teacherCheck, deleteClass); // Öğretmen sınıfı siler
+
+router.route('/:id/students')
+    .get(protect, teacherCheck, getClassStudentsWithStats); // Öğretmen, sınıfındaki öğrencileri listeler
 
 module.exports = router;

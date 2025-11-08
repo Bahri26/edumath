@@ -13,6 +13,11 @@ const examRoutes = require('./routes/examRoutes'); // Sınav CRUD
 const resultRoutes = require('./routes/resultRoutes'); // Sınav sonuç
 const assignmentRoutes = require('./routes/assignmentRoutes');
 const studentRoutes = require('./routes/studentRoutes');
+const gamificationRoutes = require('./routes/gamificationRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const learningPathRoutes = require('./routes/learningPathRoutes');
+const dailyChallengeRoutes = require('./routes/dailyChallengeRoutes');
+const leaderboardRoutes = require('./routes/leaderboardRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -37,6 +42,11 @@ app.use('/api/exams', examRoutes); // /api/exams ile başlayanlar için
 app.use('/api/results', resultRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/student', studentRoutes);
+app.use('/api/gamification', gamificationRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/learning-paths', learningPathRoutes);
+app.use('/api/challenges', dailyChallengeRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 // --- 4. MongoDB Bağlantısı ---
 //const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/edumathDB';

@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext'; 
 // Yönlendirme için 'Navigate' import edildi
 import { Link, Navigate } from 'react-router-dom'; 
-import '../assets/styles/Accounts.css'; 
+//import '../assets/styles/Accounts.css'; 
+import '../index.css'
 
 function Login() {
   const [email, setEmail] = useState('');

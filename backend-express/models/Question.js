@@ -56,13 +56,11 @@ const questionSchema = new mongoose.Schema({
     required: [true, 'Doğru cevap zorunludur.']
   },
 
-  // --- GÜNCELLENDİ: Metin yerine Resim URL'i ---
-  solutionImage: {
+  solutionText: {
     type: String,
     trim: true,
-    default: '' // Cloudinary'den gelen URL'i burada saklayacağız
+    default: ''
   }
-  // --- GÜNCELLEME SONU ---
 
 }, { timestamps: true }); 
 

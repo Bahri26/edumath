@@ -12,6 +12,9 @@ const dummySurveys = [
 ];
 
 function TeacherSurveys() {
+  const token = localStorage.getItem('token');
+  const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
+
   // --- STATE'LER ---
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,15 +24,19 @@ function TeacherSurveys() {
   const [newSurveyTitle, setNewSurveyTitle] = useState('');
   const [newTargetClass, setNewTargetClass] = useState('Tüm Sınıflar'); // Veya bir sınıf ID'si
 
-  // --- EFFECT ---
-  useEffect(() => {
+  const fetchSurveys = React.useCallback(() => {
     setLoading(true);
-    // TODO: Backend'den 'axios.get('/api/surveys')' ile anketleri çek
+    // TODO: use axios.get('/api/surveys', axiosConfig)
     setTimeout(() => {
       setSurveys(dummySurveys);
       setLoading(false);
     }, 500);
-  }, []);
+  }, [token]);
+
+  // --- EFFECT ---
+  useEffect(() => {
+    fetchSurveys();
+  }, [fetchSurveys]);
 
   // --- EVENT HANDLERS ---
   const handleCreateSurvey = (e) => {

@@ -3,7 +3,8 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import '../assets/styles/TeacherPages.css';
-import PageHeader from '../components/common/PageHeader'; 
+import '../assets/styles/ProfilePage.css';
+// PageHeader kullanımı bu sayfadan kaldırıldı; yerine basit bir başlık eklenecek
 
 // --- GÜNCELLEME 1: Font Awesome İMPORT VE KÜTÜPHANE AYARI ---
 // (Bu ayarlar, ikonların görünmesi için zorunludur)
@@ -27,8 +28,8 @@ function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="teacher-page-container">
-        <p>Profil bilgileri yükleniyor veya kullanıcı bulunamadı...</p>
+      <div className="page-container">
+        <div className="loading-spinner" />
       </div>
     );
   }
@@ -36,68 +37,78 @@ function ProfilePage() {
   // Kullanıcı rolünü belirle
   let roleDisplay = 'Kullanıcı';
   let roleIcon = faUserTag;
+  let roleColor = 'var(--gray)';
+
   if (user.roles?.isTeacher) {
     roleDisplay = 'Öğretmen';
     roleIcon = faUserTag;
+    roleColor = 'var(--primary-color)';
   } else if (user.roles?.isStudent) {
     roleDisplay = 'Öğrenci';
     roleIcon = faGraduationCap;
+    roleColor = 'var(--info-color)';
   }
 
   return (
-    <div className="teacher-page-container">
-      <PageHeader title="Profil Bilgileri" /> 
+    <div className="page-container">
+      {/* Basit içerik başlığı (PageHeader yerine) */}
+      <div style={{ padding: '1rem 0 0.5rem 0' }}>
+        <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600 }}>Profil Bilgileri</h2>
+      </div>
 
-      <div className="page-card profile-card">
-        
-        <h2 className="profile-name-header">
-          {/* İsim başlığı */}
-          {user.fullName || `${user.firstName} ${user.lastName}`}
-        </h2>
-        
-        <div className="profile-details">
-          {/* E-posta */}
-          <div className="profile-item">
-            <strong className="profile-label">E-posta Adresi:</strong>
-            <span className="profile-value">
-              <FontAwesomeIcon icon={faEnvelope} className="me-2" />
-              {user.email}
-            </span>
+      <div className="profile-container">
+        <div className="profile-header">
+          <div className="profile-avatar">
+            <FontAwesomeIcon icon={faUserTag} size="2x" />
           </div>
-          
-          {/* Kullanıcı Rolü */}
-          <div className="profile-item">
-            <strong className="profile-label">Kullanıcı Rolü:</strong>
-            <span className="profile-role-badge">
-              <FontAwesomeIcon icon={roleIcon} className="me-2" />
-              {roleDisplay}
-            </span>
-          </div>
-
-          {/* Sadece öğrenciyse sınıfını göster */}
-          {user.roles?.isStudent && user.gradeLevel && (
-            <div className="profile-item">
-              <strong className="profile-label">Sınıf Düzeyi:</strong>
-              <span className="profile-value">{user.gradeLevel}. Sınıf</span>
+          <div className="profile-title">
+            <h1>{user.fullName || `${user.firstName} ${user.lastName}`}</h1>
+            <div className="profile-role" style={{ backgroundColor: roleColor }}>
+              <FontAwesomeIcon icon={roleIcon} />
+              <span>{roleDisplay}</span>
             </div>
-          )}
-          
+          </div>
         </div>
 
-        <div className="profile-actions">
-          {/* BUTONLAR: İkonlar FontAwesomeIcon bileşeni ile güncellendi */}
-          <button className="btn-primary">
-            <FontAwesomeIcon icon={faKey} className="me-2" />
-            Şifreyi Değiştir
-          </button>
-          
-          {/* İkinci buton için yeni stil (btn-outline-info) kullanıldı */}
-          <button className="btn-outline-info">
-            <FontAwesomeIcon icon={faUserEdit} className="me-2" />
-            Bilgileri Düzenle
-          </button>
-        </div>
+        <div className="profile-content">
+          <div className="profile-section">
+            <h3>Kişisel Bilgiler</h3>
+            <div className="profile-grid">
+              <div className="profile-item">
+                <div className="profile-item-icon">
+                  <FontAwesomeIcon icon={faEnvelope} />
+                </div>
+                <div className="profile-item-content">
+                  <label>E-posta</label>
+                  <span>{user.email}</span>
+                </div>
+              </div>
 
+              {user.roles?.isStudent && user.gradeLevel && (
+                <div className="profile-item">
+                  <div className="profile-item-icon">
+                    <FontAwesomeIcon icon={faGraduationCap} />
+                  </div>
+                  <div className="profile-item-content">
+                    <label>Sınıf Düzeyi</label>
+                    <span>{user.gradeLevel}. Sınıf</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="profile-actions">
+            <button className="btn btn-primary">
+              <FontAwesomeIcon icon={faUserEdit} />
+              <span>Profili Düzenle</span>
+            </button>
+            <button className="btn btn-secondary">
+              <FontAwesomeIcon icon={faKey} />
+              <span>Şifre Değiştir</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

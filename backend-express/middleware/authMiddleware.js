@@ -1,69 +1,113 @@
-// backend-express/middleware/authMiddleware.js (TAM VE GÜNCEL SON HAL)
+// backend-express/middleware/authMiddleware.js (İYİLEŞTİRİLMİŞ)
 
 const jwt = require('jsonwebtoken');
-const User = require('../models/User'); // Kullanıcı modelini import et
+const User = require('../models/User');
 
-// Bu fonksiyon, korumalı route'lara erişimden önce çalışır.
+// Token doğrulama ve kullanıcı kimlik kontrolü
 const protect = async (req, res, next) => {
-  let token;
+  let token;
 
-  // 1. Header'da 'Authorization' alanını kontrol et
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
+  // 1. Header'da 'Authorization' alanını kontrol et
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      // Token'ı ayıkla
+      token = req.headers.authorization.split(' ')[1];
+      
+      // 2. Token'ı Doğrula (Verify)
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // 2. Token'ı Doğrula (Verify)
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // 3. Kullanıcıyı ID'sine göre bul ve req objesine ekle
+      const user = await User.findById(decoded.id).select('-password');
+      
+      // Kullanıcı silinmiş veya bulunamıyorsa
+      if (!user) {
+        return res.status(401).json({ 
+          message: 'Kullanıcı bulunamadı. Token geçersiz.' 
+        });
+      }
 
-      // 3. Kullanıcıyı ID'sine göre bul ve req objesine ekle
-      req.user = await User.findById(decoded.id).select('-password');
-
-      next();
-    } catch (error) {
-      console.error('Token doğrulama hatası:', error);
-      res.status(401).json({ message: 'Yetkilendirme başarısız, geçersiz token.' });
-    }
-  }
-
-  if (!token) {
-    res.status(401).json({ message: 'Yetkilendirme başarısız, token bulunamadı.' });
-  }
+      // Kullanıcı bilgilerini request'e ekle
+      req.user = user;
+      
+      next(); // Bir sonraki middleware'e geç
+      
+    } catch (error) {
+      console.error('Token doğrulama hatası:', error);
+      
+      // Token expire olmuşsa özel mesaj
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ 
+          message: 'Token süresi doldu. Lütfen yeniden giriş yapın.',
+          expired: true 
+        });
+      }
+      
+      // Token formatı yanlışsa
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ 
+          message: 'Geçersiz token formatı.' 
+        });
+      }
+      
+      // Diğer hatalar
+      return res.status(401).json({ 
+        message: 'Yetkilendirme başarısız, geçersiz token.' 
+      });
+    }
+  } else {
+    // ✅ DÜZELTME: Token yoksa return ekledik
+    return res.status(401).json({ 
+      message: 'Yetkilendirme başarısız, token bulunamadı.' 
+    });
+  }
 };
 
-// Rol bazlı yetkilendirme (Yüksek mertebeden fonksiyon)
-const checkRole = (role) => (req, res, next) => {
-    // protect middleware'i zaten çalışıp req.user'ı ekledi
-    if (!req.user) {
-        return res.status(401).json({ message: 'Önce giriş yapmalısınız.' });
-    }
+// Rol bazlı yetkilendirme (Higher-order function)
+const checkRole = (...roles) => (req, res, next) => {
+  // protect middleware'i zaten çalışıp req.user'ı ekledi
+  if (!req.user) {
+    return res.status(401).json({ 
+      message: 'Önce giriş yapmalısınız.' 
+    });
+  }
 
-    let isAuthorized = false;
-    
-    // Rol kontrolü (isTeacher, isStudent, isStaff kontrolü)
-    if (role === 'teacher' && req.user.isTeacher) {
-        isAuthorized = true;
-    } else if (role === 'student' && req.user.isStudent) {
-        isAuthorized = true;
-    } else if (role === 'admin' && req.user.isStaff) { // isStaff alanı admin rolü için varsayılmıştır
-        isAuthorized = true;
-    }
+  let isAuthorized = false;
+  
+  // Birden fazla rol kontrolü (flexible)
+  if (roles.includes('teacher') && req.user.isTeacher) {
+    isAuthorized = true;
+  }
+  if (roles.includes('student') && req.user.isStudent) {
+    isAuthorized = true;
+  }
+  if (roles.includes('admin') && req.user.isStaff) {
+    isAuthorized = true;
+  }
 
-    if (isAuthorized) {
-        next(); // Yetkisi varsa devam et
-    } else {
-        res.status(403).json({ message: `Erişim reddedildi. ${role} yetkisi gereklidir.` });
-    }
+  if (isAuthorized) {
+    next(); // Yetkisi varsa devam et
+  } else {
+    return res.status(403).json({ 
+      message: `Erişim reddedildi. Gerekli rol: ${roles.join(' veya ')}` 
+    });
+  }
 };
 
-// --- KRİTİK DÜZELTME: İhtiyaç duyulan rolleri checkRole ile tanımla ---
-const teacherCheck = checkRole('teacher'); // resultRoutes.js için zorunlu
+// Önceden tanımlanmış rol kontrol fonksiyonları
+const teacherCheck = checkRole('teacher');
 const studentCheck = checkRole('student');
-// --- KRİTİK DÜZELTME SONU ---
+const adminCheck = checkRole('admin');
 
+// Birden fazla rol kabul eden kontroller
+const teacherOrAdmin = checkRole('teacher', 'admin');
+const anyRole = checkRole('teacher', 'student', 'admin');
 
 module.exports = { 
-    protect, 
-    checkRole, 
-    teacherCheck, // <-- resultRoutes.js'deki hatayı çözen dışa aktarım
-    studentCheck
+  protect, 
+  checkRole, 
+  teacherCheck,
+  studentCheck,
+  adminCheck,
+  teacherOrAdmin,
+  anyRole
 };

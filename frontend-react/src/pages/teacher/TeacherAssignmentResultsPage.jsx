@@ -15,34 +15,33 @@ import { useNavigate } from 'react-router-dom'; // Yönlendirme için
 import '../../assets/styles/TeacherPages.css';
 
 const API_URL = 'http://localhost:8000/api/assignments'; // Atama listesini çeker
-const token = localStorage.getItem('token'); 
-
-const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
 
 
 function TeacherAssignmentResultsPage() { // <-- İSİM BURADA GÜNCELLENDİ
     const navigate = useNavigate(); // <-- Yönlendirme kancası
-    const [assignments, setAssignments] = useState([]); 
+    const token = localStorage.getItem('token');
+    const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
+    const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        fetchAssignments();
-    }, []);
-
-    const fetchAssignments = async () => {
+    const fetchAssignments = React.useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await axios.get(API_URL, axiosConfig); 
-            setAssignments(response.data); 
+            const response = await axios.get(API_URL, axiosConfig);
+            setAssignments(response.data);
         } catch (err) {
             console.error("Atamalar yüklenemedi:", err);
             setError("Atama listesi yüklenirken bir hata oluştu.");
         } finally {
             setLoading(false);
         }
-    };
+    }, [token]);
+
+    useEffect(() => {
+        fetchAssignments();
+    }, [fetchAssignments]);
 
     const handleViewResults = (examId) => {
         // Detaylı sonuçlar sayfasına yönlendir. 

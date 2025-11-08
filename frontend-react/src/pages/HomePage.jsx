@@ -1,10 +1,13 @@
 // frontend-react/src/pages/HomePage.jsx (YAZMA ANİMASYONU KALDIRILDI - SON HALİ)
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import '../assets/styles/HomePage.css';
-import assessmentImage from '../assets/images/abakus.jpg'; // Bu resmi assets/images altına eklediğinizden emin olun
+import assessmentImage from '../assets/images/abakus.jpg';
+import gamificationService from '../services/gamificationService';
+import dailyChallengeService from '../services/dailyChallengeService';
+import learningPathService from '../services/learningPathService';
 
 // Havai Fişek Bileşeni
 const Fireworks = () => {
@@ -29,6 +32,78 @@ const Fireworks = () => {
 
 const HomePage = () => {
     const { user } = useAuth();
+    const [stats, setStats] = useState({ questions: 0, students: 0, xp: 0 });
+    const [displayStats, setDisplayStats] = useState({ questions: 0, students: 0, xp: 0 });
+    const [dashboardData, setDashboardData] = useState(null);
+    const [dailyChallenges, setDailyChallenges] = useState([]);
+    const [pathPreview, setPathPreview] = useState(null);
+    const [loadingChallenges, setLoadingChallenges] = useState(false);
+    const [loadingPath, setLoadingPath] = useState(false);
+    const [ctaHover, setCtaHover] = useState(false);
+
+    // Fake baseline stats (later can be replaced with real analytics endpoint)
+    useEffect(() => {
+        // Rough placeholders scaled per time; could be replaced by API
+        const base = {
+            questions: 1240,
+            students: 312,
+            xp: 48210
+        };
+        setStats(base);
+    }, []);
+
+    // Animated counter
+    useEffect(() => {
+        let frame = 0;
+        const duration = 900; // ms
+        const start = performance.now();
+        const animate = (ts) => {
+            const progress = Math.min((ts - start) / duration, 1);
+            setDisplayStats({
+                questions: Math.floor(progress * stats.questions),
+                students: Math.floor(progress * stats.students),
+                xp: Math.floor(progress * stats.xp)
+            });
+            if (progress < 1) requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+    }, [stats]);
+
+    // Load gamification & challenges if logged in
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!user) return;
+            try {
+                const dash = await gamificationService.getDashboard();
+                setDashboardData(dash);
+                setLoadingChallenges(true);
+                const ch = await dailyChallengeService.getMyChallenges();
+                setDailyChallenges(ch.slice(0, 3));
+            } catch (e) {
+                console.warn('Gamification data unavailable:', e.message);
+            } finally {
+                setLoadingChallenges(false);
+            }
+        };
+        fetchData();
+    }, [user]);
+
+    // Learning path preview for grade (1 or user.gradeLevel)
+    useEffect(() => {
+        const loadPath = async () => {
+            const grade = user?.gradeLevel || 1;
+            setLoadingPath(true);
+            try {
+                const path = await learningPathService.getByGrade(grade);
+                setPathPreview(path);
+            } catch (e) {
+                console.warn('Path preview yok:', e.message);
+            } finally {
+                setLoadingPath(false);
+            }
+        };
+        loadPath();
+    }, [user]);
 
     // --- Animasyon Ref'leri ---
     const whyUsRef = useRef(null);
@@ -72,37 +147,250 @@ const HomePage = () => {
         return '/';
     };
 
+    const gradeTaglineMap = {
+        1: '1. Sınıf temel örüntüler ile başlayın',
+        4: '4. Sınıf sayı & şekil örüntülerinde ustalaşın',
+        8: '8. Sınıf cebirsel örüntü dönüşümleri sizi bekliyor',
+        9: 'Lise başlangıcı: sistematik düşünme ve pattern analizi'
+    };
+    const dynamicTagline = gradeTaglineMap[user?.gradeLevel] || 'Örüntüler öğrenme yolunu açın';
+
     return (
         <div className="homePage">
             <Fireworks />
             {/* ========= Hero Section (Sola Yaslı Metin, STATİK BAŞLIK) ========= */}
             <section className="heroSection text-white">
-                <div className="container">
-                    <div className="row align-items-center">
-                        <div className="col-lg-8 heroText text-center text-lg-start">
-                            {/* Başlık artık statik */}
-                            <h1 className="display-3 fw-bold mb-4 heroTitle">
-                                Geleceğin Eğitim Platformuna<br />Hoş Geldiniz
-                            </h1>
-                            {/* Alt başlık (direkt görünür) */}
-                            <p ref={subtitleRef} className="lead mb-5 heroSubtitle is-visible">
-                                Bilgiyi keşfedin, becerilerinizi geliştirin ve potansiyelinizi bizimle ortaya çıkarın.
-                            </p>
-                            {/* Butonlar (direkt görünür) */}
-                            <div ref={buttonsRef} className="heroButtons mt-4 d-flex flex-wrap justify-content-center justify-content-lg-start is-visible">
+                <div className="container heroGrid">
+                    {/* LEFT SIDE CONTENT */}
+                    <div className="heroLeft">
+                        <h1 className="display-3 fw-bold mb-4 heroTitle">
+                            Geleceğin Eğitim Platformuna<br />Hoş Geldiniz
+                        </h1>
+                        <p ref={subtitleRef} className="lead mb-4 heroSubtitle is-visible">
+                            <span className="taglineAccent">{dynamicTagline.split(':')[0]}</span>{dynamicTagline.includes(':') && (<><br /><span className="taglineSub">{dynamicTagline.split(':').slice(1).join(':').trim()}</span></>)}
+                        </p>
+                        <div className="glassRow">
+                            <div className="gCard">
+                                <div className="gIcon"><i className="fas fa-database"></i></div>
+                                <div className="gContent">
+                                    <div className="gTitle">Soru Havuzu</div>
+                                    <div className="gValue">{displayStats.questions.toLocaleString()}</div>
+                                </div>
+                            </div>
+                            <div className="gCard">
+                                <div className="gIcon"><i className="fas fa-user-graduate"></i></div>
+                                <div className="gContent">
+                                    <div className="gTitle">Aktif Öğrenci</div>
+                                    <div className="gValue">{displayStats.students.toLocaleString()}</div>
+                                </div>
+                            </div>
+                            <div className="gCard">
+                                <div className="gIcon"><i className="fas fa-bolt"></i></div>
+                                <div className="gContent">
+                                    <div className="gTitle">Toplam XP</div>
+                                    <div className="gValue">{displayStats.xp.toLocaleString()} XP</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div ref={buttonsRef} className="heroButtons mt-4 is-visible">
+                            <div className="ctaDeck">
                                 {user ? (
-                                    <Link to={getDashboardPath()} className="btn btn-primary btn-lg me-sm-3 mb-2 mb-sm-0 shadow">
-                                        <i className="fas fa-chart-line me-2"></i>Panelime Git
+                                    <Link to={getDashboardPath()} className="ctaPrimary">
+                                        <i className="fas fa-rocket me-2"></i> Macerana Devam Et
                                     </Link>
                                 ) : (
-                                    <Link to="/register" className="btn btn-success btn-lg me-sm-3 mb-2 mb-sm-0 shadow">
-                                        <i className="fas fa-user-plus me-2"></i> Ücretsiz Başla
+                                    <Link to="/register" className="ctaPrimary">
+                                        <i className="fas fa-rocket me-2"></i> Macerana Başla
                                     </Link>
                                 )}
-                                <Link to="/teacher/classes" className="btn btn-outline-light btn-lg btnOutlineLight mt-2 mt-sm-0 shadow-sm">
-                                    <i className="fas fa-search me-2"></i> Sınıfları Keşfet
+                                <Link to="/teacher/classes" className="ctaSecondary">
+                                    <i className="fas fa-compass me-2"></i> Sınıfları Keşfet
                                 </Link>
+                                {!user && (
+                                    <Link to="/login" className="ctaGhost">
+                                        <i className="fas fa-bolt me-2"></i> Hemen Katıl
+                                    </Link>
+                                )}
                             </div>
+                        </div>
+                    </div>
+                    {/* RIGHT SIDE DECORATIVE PANEL */}
+                    <div className="heroRight">
+                        <div className="gradientOrb"></div>
+                        <div className="meshLines"></div>
+                        <div className={`floatingGroup ${!dashboardData ? 'loading' : ''}`}> 
+                            {dashboardData ? (
+                                <>
+                                    <div className="glassCard cardA fadeInCard">
+                                        <div className="miniLabel"><i className="fas fa-heart"></i> Kalpler</div>
+                                        <div className="miniValue">{`${dashboardData.gamification.hearts.current}/5`}</div>
+                                    </div>
+                                    <div className="glassCard cardB fadeInCard">
+                                        <div className="miniLabel"><i className="fas fa-fire"></i> Streak</div>
+                                        <div className="miniValue">{`${dashboardData.gamification.streak.current} gün`}</div>
+                                        <div className="miniBar"><div style={{width: `${Math.min(dashboardData.gamification.streak.current, 30)/30*100}%`}}></div></div>
+                                    </div>
+                                    <div className="glassCard cardC fadeInCard">
+                                        <div className="miniLabel"><i className="fas fa-trophy"></i> Rozetler</div>
+                                        <div className="miniValue">{dashboardData.achievements?.completedCount || 0} / {dashboardData.achievements?.totalCount || 0}</div>
+                                    </div>
+                                    <div className="glassCard cardD fadeInCard">
+                                        <div className="miniLabel"><i className="fas fa-star"></i> Seviye</div>
+                                        <div className="miniValue">{dashboardData.gamification.level}</div>
+                                        <div className="miniBar level"><div style={{width: `${(dashboardData.gamification.xp % 100)}%`}}></div></div>
+                                    </div>
+                                </>
+                            ) : (
+                                // Skeleton shimmer placeholders
+                                <>
+                                    <div className="glassCard cardA skeleton">
+                                        <div className="shimmerBar short"></div>
+                                        <div className="shimmerText w40"></div>
+                                    </div>
+                                    <div className="glassCard cardB skeleton">
+                                        <div className="shimmerBar medium"></div>
+                                        <div className="shimmerText w60"></div>
+                                        <div className="miniBar"><div className="shimmerFill"></div></div>
+                                    </div>
+                                    <div className="glassCard cardC skeleton">
+                                        <div className="shimmerBar long"></div>
+                                        <div className="shimmerText w50"></div>
+                                    </div>
+                                    <div className="glassCard cardD skeleton">
+                                        <div className="shimmerBar short"></div>
+                                        <div className="shimmerText w30"></div>
+                                        <div className="miniBar level"><div className="shimmerFill"></div></div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Öğrenme Deneyimi (Adaptif, İpucu, Görev Zinciri, Hızlı Mod) */}
+            <section className="pillarsSection contentSection">
+                <div className="container">
+                    <h2 className="sectionTitle text-center">Öğrenme Deneyimi</h2>
+                    <div className="pillGrid">
+                        {[
+                            { icon:'🎯', title:'Adaptif Zorluk', desc:'Performansına göre soru seviyesi otomatik ayarlanır.', chips:['Kolay','Orta','Zor'], demo:'difficulty' },
+                            { icon:'💡', title:'Anında İpucu', desc:'Yanlışta neden yanlışı ve ipuçları görürsün.', chips:['Neden?','İpucu'] },
+                            { icon:'⛓️', title:'Görev Zinciri', desc:'Ardışık görevlerde ekstra bonus ve çarpan.', chips:['+XP','Bonus'] },
+                            { icon:'⚡', title:'Hızlı Mod', desc:'60 sn seri çözüm, combo ile XP yağmuru.', chips:['x2 combo','60s'], demo:'combo' },
+                        ].map((p,idx)=> (
+                            <div key={idx} className="pillCard">
+                                <div className="pillIcon">{p.icon}</div>
+                                <div className="pillBody">
+                                    <h5>{p.title}</h5>
+                                    <p>{p.desc}</p>
+                                    <div className="pillChips">
+                                        {p.chips.map((c,i)=> <span key={i} className="chip">{c}</span>)}
+                                    </div>
+                                    {p.demo === 'difficulty' && (
+                                        <div className="miniDemo difficultyBar" aria-label="Zorluk seviyesi">
+                                            <div className="segment easy"></div>
+                                            <div className="segment mid"></div>
+                                            <div className="segment hard"></div>
+                                            <div className="indicator" style={{left:'58%'}}></div>
+                                        </div>
+                                    )}
+                                    {p.demo === 'combo' && (
+                                        <div className="miniDemo comboRow" aria-label="Combo göstergesi">
+                                            <span className="dot active"></span>
+                                            <span className="dot active"></span>
+                                            <span className="dot"></span>
+                                            <span className="dot"></span>
+                                            <span className="comboBadge">x2</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Öğretmen Mini-Panel Şeridi (statik demo) */}
+            <section className="teacherRibbon contentSectionAlternate">
+                <div className="container">
+                    <div className="ribbon">
+                        <div className="rItem"><i className="fas fa-users"></i> Sınıf canlı: <strong>23</strong></div>
+                        <div className="rItem"><i className="fas fa-clock"></i> Ortalama süre: <strong>18 dk</strong></div>
+                        <div className="rItem"><i className="fas fa-calendar-day"></i> Bugün aktif: <strong>57 öğrenci</strong></div>
+                        <Link to="/teacher/dashboard" className="rCta">Öğretmen Paneline Git</Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* Seasonal Banner */}
+            <section className="seasonBanner">
+                <div className="container seasonInner">
+                    <div className="sLeft">
+                        <div className="sKicker">Duyuru</div>
+                        <h3>Pattern Sprint Week</h3>
+                        <p>Bu hafta örüntü sprintine katıl, ekstra görevlerle %20 bonus XP kazan!</p>
+                    </div>
+                    <div className="sRight">
+                        <Link to={user ? '/student/dashboard' : '/register'} className="sCta">Katıl</Link>
+                    </div>
+                </div>
+            </section>
+
+            
+
+            {/* Gamification Teaser */}
+            <section className="gamificationTeaser contentSectionAlternate">
+                <div className="container">
+                    <div className="row align-items-center">
+                        <div className="col-lg-6 mb-4 mb-lg-0">
+                            <h2 className="sectionSubtitle">Oyunlaştırılmış Öğrenme</h2>
+                            <p className="text-muted mb-3">Kalpler, XP, seviye atlama, günlük görevler ve rozetlerle sürekli motive olun.</p>
+                            {dashboardData ? (
+                                <div className="gamificationMetrics">
+                                    <div className="metric"><i className="fas fa-heart"></i><span>{dashboardData.gamification.hearts.current} / 5 Kalp</span></div>
+                                    <div className="metric"><i className="fas fa-fire"></i><span>{dashboardData.gamification.streak.current} Gün Streak</span></div>
+                                    <div className="metric xpBar">
+                                        <span>Seviye {dashboardData.gamification.level}</span>
+                                        <div className="bar"><div style={{width: `${(dashboardData.gamification.xp % 100)}%`}}></div></div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="blurredPreview">
+                                    <div className="metric"><i className="fas fa-heart"></i><span>•• / 5 Kalp</span></div>
+                                    <div className="metric"><i className="fas fa-fire"></i><span>•• Gün Streak</span></div>
+                                    <div className="metric xpBar">
+                                        <span>Seviye ••</span>
+                                        <div className="bar"><div style={{width: '35%'}}></div></div>
+                                    </div>
+                                    <div className="overlayText">Giriş yapınca açılır</div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="col-lg-6 dailyChallengesPreview">
+                            <h3 className="mb-3">Bugünün Görevleri</h3>
+                            {user ? (
+                                loadingChallenges ? <p>Yükleniyor...</p> : (
+                                    <div className="challengeGrid">
+                                        {dailyChallenges.map(ch => (
+                                            <div key={ch._id} className={`challengeCard ${ch.isCompleted ? 'completed' : ''}`}>
+                                                <div className="challengeIcon">{ch.icon || '🎯'}</div>
+                                                <div className="challengeBody">
+                                                    <h6>{ch.title}</h6>
+                                                    <p>{ch.description}</p>
+                                                    <div className="progressLine">
+                                                        <div style={{width: `${ch.progress?.percentage || 0}%`}}></div>
+                                                    </div>
+                                                </div>
+                                                {ch.isCompleted && <span className="badgeComplete">Tamamlandı</span>}
+                                            </div>
+                                        ))}
+                                        {dailyChallenges.length === 0 && <p>Bugün görev bulunamadı.</p>}
+                                    </div>
+                                )
+                            ) : (
+                                <p className="text-muted">Görevleri görmek için giriş yapın.</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -172,7 +460,38 @@ const HomePage = () => {
                  </div>
              </section>
 
-             {/* ========= Dersler Section ========= */}
+            {/* ========= Learning Path Preview ========= */}
+            <section className="learningPathPreview contentSectionAlternate">
+                <div className="container">
+                    <h2 className="sectionTitle text-center">Öğrenme Yolu Önizleme</h2>
+                    {loadingPath && <p>Yükleniyor...</p>}
+                    {!loadingPath && pathPreview ? (
+                        <div className="unitsRail">
+                            {pathPreview.units.slice(0,5).map(unit => (
+                                <div key={unit.unitNumber} className={`unitBox ${unit.isUnlocked ? 'unlocked' : 'locked'}`}> 
+                                    <div className="unitHeader">
+                                        <span className="unitEmoji">{unit.icon || '📐'}</span>
+                                        <span className="unitTitle">{unit.title}</span>
+                                    </div>
+                                    <div className="lessonsRow">
+                                        {unit.lessons.slice(0,4).map(lesson => (
+                                            <div key={lesson.lessonNumber} className={`lessonDot ${lesson.isLocked ? 'locked' : lesson.isCompleted ? 'completed' : 'open'}`}></div>
+                                        ))}
+                                        {unit.lessons.length > 4 && <span className="moreDots">+{unit.lessons.length - 4}</span>}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (!loadingPath && <p className="text-muted">Henüz öğrenme yolu oluşturulmamış.</p>)}
+                    <div className="text-center mt-4">
+                        <Link to={user ? getDashboardPath() : '/register'} className="btn btn-primary btn-lg shadow">
+                            {user ? 'Yoluma Devam Et' : 'Öğrenme Yolunu Başlat'}
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* ========= Dersler Section ========= */}
             <section ref={coursesRef} className="coursesSection contentSection">
                 <div className="container">
                     <h2 className="sectionTitle text-center">Popüler Dersler</h2>
@@ -229,7 +548,7 @@ const HomePage = () => {
                 </div>
             </section>
 
-             {/* ========= Sınavlar Section ========= */}
+            {/* ========= Sınavlar Section ========= */}
              <section ref={examsRef} className="examsSection contentSectionAlternate">
                  <div className="container">
                      <h2 className="sectionTitle text-center">Esnek Sınav Sistemi</h2>
@@ -258,7 +577,22 @@ const HomePage = () => {
                  </div>
              </section>
 
-        </div> // .homePage kapanışı
+            {/* ========= Footer CTA ========= */}
+            <section className="footerCtaStrip">
+                <div className="container footerCtaInner">
+                    <h3>Hazır mısınız?</h3>
+                    <p>Pattern temelli öğrenme ile bilişsel hızınızı ve soyut düşünme becerinizi artırın.</p>
+                    <Link
+                        to={user ? getDashboardPath() : '/register'}
+                        className={`ctaButton ${ctaHover ? 'hover' : ''}`}
+                        onMouseEnter={() => setCtaHover(true)}
+                        onMouseLeave={() => setCtaHover(false)}
+                    >
+                        {user ? 'Panelime Git' : 'Hemen Başla'} <i className="fas fa-arrow-right ms-2"></i>
+                    </Link>
+                </div>
+            </section>
+        </div>
     );
 };
 

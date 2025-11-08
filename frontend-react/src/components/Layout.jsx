@@ -1,31 +1,48 @@
-// frontend-react/src/components/Layout.jsx (GÜNCEL HALİ - Footer Eklendi)
-
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import Navbar from './Navbar'; 
-import Footer from './Footer'; // <<< 1. Footer'ı import et
+import React, { useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import Navbar from './Navbar';
+import Footer from './Footer';
+import Sidebar from './Sidebar';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBars } from '@fortawesome/free-solid-svg-icons';
+import '../assets/styles/TeacherPages.css';
+import '../assets/styles/Sidebar.css';
 
 function Layout() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+  const isAuthPage = ['/login', '/register', '/'].includes(location.pathname);
+
   return (
-    // <<< 2. Flexbox yapısını ayarla
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div className="app-container">
+      {!isAuthPage && (
+        <>
+          <Sidebar className={isSidebarOpen ? 'open' : ''} />
+          {/* Overlay for mobile when sidebar is open */}
+          <div
+            className={`sidebar-overlay ${isSidebarOpen ? 'visible' : ''}`}
+            onClick={() => setIsSidebarOpen(false)}
+          />
+          <button
+            className="sidebar-toggle"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            aria-expanded={isSidebarOpen}
+            aria-label="Toggle sidebar"
+          >
+            <FontAwesomeIcon icon={faBars} />
+          </button>
+        </>
+      )}
       
-      {/* Üst Gezinme Çubuğu */}
-      <Navbar />
+      <div className={`main-wrapper ${!isAuthPage ? 'with-sidebar' : ''}`}>
+        <Navbar />
+        
+        <main className="main-content">
+          <Outlet />
+        </main>
 
-      {/* Değişken Sayfa İçeriği Alanı */}
-      {/* <<< 3. Main elementine flex: 1 ekle */}
-      <main style={{ flex: 1, padding: '0' }}> 
-        {/* Sayfa içerikleri artık kendi padding'lerini yönetmeli veya 
-            buradaki padding'i ihtiyacınıza göre ayarlayın (örn: padding: '2rem') */}
-        <Outlet /> 
-      </main>
-
-      {/* Alt Bilgi (Footer) */}
-      {/* <<< 4. Footer bileşenini en alta ekle */}
-      <Footer />
+        <Footer />
+      </div>
     </div>
   );
-}
-
-export default Layout;
+}export default Layout;

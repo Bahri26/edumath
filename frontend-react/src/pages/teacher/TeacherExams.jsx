@@ -1,7 +1,6 @@
 // frontend-react/src/pages/teacher/TeacherExams.jsx (TAM VE GÜNCEL SON HALİ)
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; 
 import '../../assets/styles/TeacherPages.css';
 import PageHeader from '../../components/common/PageHeader'; 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -12,7 +11,6 @@ import {
     faPenToSquare, 
     faUserPlus 
 } from '@fortawesome/free-solid-svg-icons';
-import { useNavigate } from 'react-router-dom';
 
 // --- YOL DÜZELTİLDİ: curriculumData.js importu ---
 import { curriculumData } from '../../data/curriculumData';
@@ -20,6 +18,7 @@ import { curriculumData } from '../../data/curriculumData';
 
 // Soru Seçme Modalını import edin
 import SelectQuestionsModal from './SelectQuestionsModal';
+import ExamCard from '../../components/common/ExamCard';
 
 
 // --- DUMMY/SAHTE VERİ ---
@@ -29,12 +28,8 @@ const DUMMY_EXAMS = [
 ];
 
 const API_URL = 'http://localhost:8000/api/exams';
-const token = localStorage.getItem('token'); 
-const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
-
 
 function TeacherExams() {
-    const navigate = useNavigate();
     const [exams, setExams] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -64,9 +59,10 @@ function TeacherExams() {
                 setLoading(false);
             }, 500); 
 
-        } catch (err) {
+        } catch (error) {
             setError('Sınav listesi yüklenirken bir hata oluştu.');
             setLoading(false);
+            console.error('Hata:', error);
         }
     };
     useEffect(() => {
@@ -121,8 +117,9 @@ function TeacherExams() {
             // Yeni sınavı hemen düzenleme modunda (modal) aç
             handleEditQuestions(dummyResponse); 
 
-        } catch (err) {
+        } catch (error) {
             setError('Sınav oluşturma hatası: Sunucuya bağlanılamadı.');
+            console.error('Hata:', error);
         }
     };
 
@@ -153,39 +150,12 @@ function TeacherExams() {
                     </div>
                 ) : (
                     exams.map((exam) => (
-                        <div key={exam._id} className="page-card exam-card">
-                            
-                            <h3>{exam.title}</h3>
-
-                            <div className="exam-details">
-                                <div className="detail-item">
-                                    <FontAwesomeIcon icon={faListOl} className="me-2" />
-                                    {/* Not: questionCount veya questions.length kullanır */}
-                                    {exam.questionCount || exam.questions?.length || 0} Soru 
-                                </div>
-                                <div className="detail-item">
-                                    <FontAwesomeIcon icon={faClock} className="me-2" />
-                                    {exam.duration} Dakika
-                                </div>
-                            </div>
-                            
-                            <div className="exam-actions">
-                                <button 
-                                    className="btn-secondary btn-sm"
-                                    onClick={() => handleEditQuestions(exam)} // Modal açılır
-                                >
-                                    <FontAwesomeIcon icon={faPenToSquare} className="me-2" />
-                                    Soru Ekle/Düzenle
-                                </button>
-                                <button 
-                                    className="btn-primary btn-sm"
-                                    onClick={() => handleAta(exam._id)}
-                                >
-                                    <FontAwesomeIcon icon={faUserPlus} className="me-2" />
-                                    Ata
-                                </button>
-                            </div>
-                        </div>
+                        <ExamCard
+                            key={exam._id}
+                            exam={exam}
+                            onEditQuestions={handleEditQuestions}
+                            onAssign={handleAta}
+                        />
                     ))
                 )}
             </div>

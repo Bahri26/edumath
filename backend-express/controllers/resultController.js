@@ -112,8 +112,36 @@ const getExamResults = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Giriş yapmış öğrencinin tüm sınav sonuçlarını getirir (Karne sayfası için)
+ * @route   GET /api/results/my-results
+ * @access  Private (Student)
+ */
+const getMyResults = async (req, res) => {
+    const studentId = req.user._id;
+
+    try {
+        // Öğrencinin ID'sine göre tüm sonuçları bul
+        const myResults = await Result.find({ studentId: studentId })
+            // Her sonucun ilişkili olduğu sınavın bilgilerini de getir
+            .populate({
+                path: 'examId',
+                select: 'title category passMark' // Sadece gerekli alanları seç
+            })
+            // En yeniden eskiye doğru sırala
+            .sort({ createdAt: -1 });
+
+        res.status(200).json(myResults);
+
+    } catch (error) {
+        console.error('Öğrenci sonuçlarını getirme hatası:', error);
+        res.status(500).json({ message: 'Sınav sonuçlarınız listelenirken bir hata oluştu.' });
+    }
+};
+
 // --- KRİTİK DÜZELTME: Tüm fonksiyonları dışa aktar ---
 module.exports = {
     submitExam,
-    getExamResults
+    getExamResults,
+    getMyResults // Yeni fonksiyonu export et
 };

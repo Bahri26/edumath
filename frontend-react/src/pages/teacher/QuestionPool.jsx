@@ -1,7 +1,12 @@
-// frontend-react/src/pages/teacher/QuestionPool.jsx (TAM VE GÜNCEL SON HALİ)
+// frontend-react/src/pages/teacher/QuestionPool.jsx (MARKDOWN DESTEĞİ EKLENDİ)
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import MDEditor from '@uiw/react-md-editor';
+import rehypeKatex from 'rehype-katex';
+import remarkMath from 'remark-math';
+import 'katex/dist/katex.min.css'; // KaTeX CSS
+
 import '../../assets/styles/TeacherPages.css';
 import { curriculumData } from '../../data/curriculumData'; 
 import PageHeader from '../../components/common/PageHeader'; 
@@ -13,7 +18,7 @@ const Modal = ({ isOpen, onClose, children }) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
       {/* Yatay görünüm için genişlik ayarı */}
-      <div className="modal-content !max-w-[950px] !w-[90%]" onClick={(e) => e.stopPropagation()}>
+  <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '950px', width: '90%' }}>
         <button className="modal-close text-white text-3xl font-bold absolute top-2 right-4 z-50" onClick={onClose}>&times;</button>
         {children}
       </div>
@@ -23,21 +28,14 @@ const Modal = ({ isOpen, onClose, children }) => {
 // --- Modal Bileşeni Sonu ---
 
 
-// API URL'nizi ve Token alma yönteminizi buraya girin
+// API URL
 const API_URL = 'http://localhost:8000/api/questions';
-const token = localStorage.getItem('token'); 
-
-const axiosConfig = {
-  headers: {
-    Authorization: `Bearer ${token}`
-  }
-};
 
 const defaultFormState = {
-  text: '',
+  text: '**Soru:** \n\n$x^2+5=30$ ise $x$ kaçtır?',
   options: ['', '', '', ''], 
   correctAnswer: '', 
-  solutionText: '' // Düz Metin olarak saklanacak
+  solutionText: '**Çözüm:** \n\n1. Adım: $x^2 = 30-5$ \n2. Adım: $x^2=25$ \n3. Adım: $x=5$ veya $x=-5$'
 };
 
 const difficultyLevels = ['Kolay', 'Orta', 'Zor'];
@@ -45,6 +43,9 @@ const classLevels = curriculumData.siniflar || ["5. Sınıf", "6. Sınıf", "7. 
 
 
 function QuestionPool() {
+  // read token inside component to reflect login changes
+  const token = localStorage.getItem('token');
+  const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
   // --- STATE'LER ---
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,18 +79,10 @@ function QuestionPool() {
   const [simulationData, setSimulationData] = useState(null);
   
   // --- useEffect (Veri Çekme) ---
-  useEffect(() => {
-    if (activeTab === 'list') {
-      // API Çağrısı Aktif Hale Getirildi
-      fetchQuestions(); 
-    }
-  }, [activeTab, filterSinif, filterZorluk, currentPage]); 
-
-
-  const fetchQuestions = async () => {
+  const fetchQuestions = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setMessage(''); 
+    setMessage('');
     if (!token) { setError('Verileri görmek için giriş yapmalısınız.'); setLoading(false); return; }
 
     const params = {};
@@ -105,8 +98,8 @@ function QuestionPool() {
       if (err.response?.status === 404 || err.code === 'ERR_NETWORK') {
            setError('API bağlantısı kurulamadı. Test verileri kullanılıyor.');
            setQuestions([
-            { _id: '1', subject: 'Matematik', classLevel: '9. Sınıf', topic: 'Mantık', learningOutcome: 'Önermeyi açıklar.', questionType: 'test', difficulty: 'Kolay', text: 'p: 2 tek sayıdır. Önermesinin doğruluk değeri nedir?', options: ['Doğru', 'Yanlış', 'Bilinmez', 'Belirsiz'], correctAnswer: 'Yanlış', solutionText: '2 çift sayıdır, bu nedenle p önermesi yanlıştır. Doğruluk değeri 0 (Yanlış) olur. Bu bir simülasyon cevabıdır.' },
-            { _id: '2', subject: 'Matematik', classLevel: '10. Sınıf', topic: 'Örüntüler', learningOutcome: 'Ardışık sayılar kuralını bulur.', questionType: 'bosluk-doldurma', difficulty: 'Orta', text: '3, 7, 11, ___, 19 örüntüsünde boşluğa ne gelmelidir?', correctAnswer: '15', solutionText: 'Örüntünün kuralı +4\'tür. 11+4=15 olur.' },
+            { _id: '1', subject: 'Matematik', classLevel: '9. Sınıf', topic: 'Mantık', learningOutcome: 'Önermeyi açıklar.', questionType: 'test', difficulty: 'Kolay', text: '`p: 2 tek sayıdır.` Önermesinin doğruluk değeri nedir?', options: ['Doğru', 'Yanlış', 'Bilinmez', 'Belirsiz'], correctAnswer: 'Yanlış', solutionText: '2 çift sayıdır, bu nedenle p önermesi yanlıştır. Doğruluk değeri 0 (Yanlış) olur. Bu bir simülasyon cevabıdır.' },
+            { _id: '2', subject: 'Matematik', classLevel: '10. Sınıf', topic: 'Örüntüler', learningOutcome: 'Ardışık sayılar kuralını bulur.', questionType: 'bosluk-doldurma', difficulty: 'Orta', text: '3, 7, 11, ___, 19 örüntüsünde boşluğa ne gelmelidir?', correctAnswer: '15', solutionText: 'Örüntünün kuralı `+4`\'tür. $11+4=15$ olur.' },
           ]);
       } else {
           setError('Sorular yüklenemedi. Lütfen daha sonra tekrar deneyin.');
@@ -114,7 +107,14 @@ function QuestionPool() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterSinif, filterZorluk, token]);
+
+  useEffect(() => {
+    if (activeTab === 'list') {
+      // API Çağrısı Aktif Hale Getirildi
+      fetchQuestions();
+    }
+  }, [activeTab, fetchQuestions, currentPage]); 
   
   // --- Pagination Hesaplamaları ---
   const filteredQuestions = questions.filter(q => 
@@ -201,13 +201,10 @@ function QuestionPool() {
       questionType: selectedSoruTipi,
       difficulty: selectedDifficulty, 
       text: step2Data.text,
-      options: [],
-      correctAnswer: '',
-      solutionText: step2Data.solutionText // Düz metin olarak gönderilir
+      options: step2Data.options,
+      correctAnswer: step2Data.correctAnswer,
+      solutionText: step2Data.solutionText
     };
-
-    // Soru tipine göre doldurma mantığı buraya eklenmeli
-    // ...
 
     try {
       let response; 
@@ -268,6 +265,10 @@ function QuestionPool() {
     window.scrollTo(0, 0); 
   };
 
+  // --- MARKDOWN DEĞİŞİKLİK YAKALAYICI ---
+  const handleEditorChange = (value, name) => {
+    setStep2Data(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleStep2Change = (e) => {
     setStep2Data({ ...step2Data, [e.target.name]: e.target.value });
@@ -463,19 +464,31 @@ function QuestionPool() {
               <fieldset>
                 <legend>2. Adım: Soru Hazırlama ({selectedSoruTipi})</legend>
                 
-                <div className="form-group">
-                  <label htmlFor="questionText">Soru Metni</label>
-                  <textarea id="questionText" name="text" rows="5" value={step2Data.text} onChange={handleStep2Change} placeholder="Soru metnini buraya yazın..." required />
+                <div className="form-group" data-color-mode="dark">
+                  <label htmlFor="questionText">Soru Metni (Markdown ve LaTeX destekler)</label>
+                  <MDEditor
+                    value={step2Data.text}
+                    onChange={(value) => handleEditorChange(value, 'text')}
+                    previewOptions={{
+                      rehypePlugins: [[rehypeKatex, { output: 'mathml' }]],
+                      remarkPlugins: [remarkMath],
+                    }}
+                  />
                 </div>
 
                 {renderAnswerFields()}
 
-                {/* --- Soru Çözümü: Standart <textarea> --- */}
-                <div className="form-group">
-                  <label htmlFor="solutionText">Soru Çözümü (Opsiyonel)</label>
-                  <textarea id="solutionText" name="solutionText" value={step2Data.solutionText} onChange={handleStep2Change} placeholder="Sorunun yazılı çözümünü buraya ekleyebilirsiniz..." rows="4" />
+                <div className="form-group" data-color-mode="dark">
+                  <label htmlFor="solutionText">Soru Çözümü (Opsiyonel, Markdown ve LaTeX destekler)</label>
+                   <MDEditor
+                    value={step2Data.solutionText}
+                    onChange={(value) => handleEditorChange(value, 'solutionText')}
+                    previewOptions={{
+                      rehypePlugins: [[rehypeKatex, { output: 'mathml' }]],
+                      remarkPlugins: [remarkMath],
+                    }}
+                  />
                 </div>
-                {/* --- ÇÖZÜM ALANI SONU --- */}
 
                 <hr className="form-divider" />
                 <div className="form-group text-center">
@@ -546,7 +559,13 @@ function QuestionPool() {
                       <span className={`question-difficulty-badge difficulty-${q.difficulty?.toLowerCase()}`}>{q.difficulty}</span>
                     </div>
 
-                    <p className="question-text">{q.text}</p>
+                    <div className="question-text" data-color-mode="dark">
+                       <MDEditor.Markdown 
+                          source={q.text} 
+                          rehypePlugins={[[rehypeKatex, { output: 'mathml' }]]}
+                          remarkPlugins={[remarkMath]}
+                       />
+                    </div>
                     
                     {q.questionType === 'test' && (
                       <ul className="question-options">

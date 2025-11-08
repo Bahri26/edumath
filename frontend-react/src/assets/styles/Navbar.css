@@ -43,6 +43,22 @@
   /* --- BİTİŞ --- */
 }
 
+/* If the layout has a visible sidebar, shift the navbar/right-size it so it doesn't sit under the fixed sidebar */
+@media (min-width: 769px) {
+  .main-wrapper.with-sidebar .edu-navbar {
+    width: calc(100% - var(--sidebar-width)); /* use variable */
+    margin-left: var(--sidebar-width);
+  }
+}
+
+/* On small screens the sidebar is toggled, navbar should remain full width */
+@media (max-width: 768px) {
+  .main-wrapper.with-sidebar .edu-navbar {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
 .navbar-container {
   display: flex;
   justify-content: space-between;
@@ -62,89 +78,60 @@
   align-items: center;
 }
 
-/* --- Kullanıcı Menüsü Tetikleyicisi --- */
-.user-menu-trigger {
-  background-color: transparent;
-  border: 1px solid #6c757d; /* Kenarlık */
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 0.9rem;
+/* Simplified user bar (name + logout) */
+.navbar-user-bar {
   display: flex;
   align-items: center;
+  gap: 0.75rem;
 }
 
-.user-menu-trigger:hover {
-  background-color: #495057;
+.navbar-user {
+  color: white;
+  font-weight: 600;
+  margin-right: 0.5rem;
 }
 
-/* --- Açılır Menü Konteyneri --- */
-.user-menu-container {
-  position: relative; /* Dropdown'ın buna göre konumlanması için */
-}
-
-/* --- Açılır Menünün Kendisi --- */
-.user-dropdown-menu {
-  position: absolute;
-  top: 100%; /* Tetikleyicinin hemen altında */
-  right: 0; /* Sağa hizalı */
-  background-color: white;
-  color: #343a40; /* İç metin rengi */
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 180px; /* Menü genişliği */
-  z-index: 1000;
-  margin-top: 8px; /* Üstten boşluk */
-  padding: 0.5rem 0;
-}
-
-.user-dropdown-menu ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.user-dropdown-menu li {
-  margin: 0;
-}
-
-/* Menü Linkleri */
-.user-dropdown-menu li a {
-  display: block;
-  padding: 0.75rem 1.25rem;
-  text-decoration: none;
-  color: #343a40;
-  font-size: 0.95rem;
-}
-
-.user-dropdown-menu li a:hover {
-  background-color: #f8f9fa; /* Hafif gri hover */
-}
-
-/* Ayırıcı Çizgi */
-.dropdown-divider {
-  height: 1px;
-  background-color: #e9ecef;
-  margin: 0.5rem 0;
-}
-
-/* Çıkış Yap Butonu */
-.logout-button {
-  background: none;
-  border: none;
-  color: #dc3545; /* Kırmızı renk */
-  padding: 0.75rem 1.25rem;
-  width: 100%;
-  text-align: left;
+.btn-logout {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: white;
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
-.logout-button:hover {
-  background-color: #f8f9fa;
+.btn-logout:hover {
+  background: rgba(255,255,255,0.06);
 }
+
+/* icon inside logout */
+.logout-icon {
+  margin-right: 0.45rem;
+}
+
+/* Truncate long user names */
+.navbar-user {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* hide logout text on very small screens to save space, keep icon */
+@media (max-width: 420px) {
+  .logout-text {
+    display: none;
+  }
+  .navbar-user {
+    max-width: 110px;
+  }
+}
+
+/* --- Kullanıcı Menüsü Tetikleyicisi --- */
+/* removed dropdown styles - using simplified user bar instead */
 
 /* Giriş/Kayıt Linkleri (Kullanıcı giriş yapmadıysa) */
 .auth-links .nav-link {

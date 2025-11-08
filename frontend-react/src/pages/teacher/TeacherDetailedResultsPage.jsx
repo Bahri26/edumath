@@ -1,6 +1,6 @@
 // frontend-react/src/pages/teacher/TeacherDetailedResultsPage.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
@@ -15,9 +15,6 @@ import {
 import '../../assets/styles/TeacherPages.css'; 
 
 const API_URL = 'http://localhost:8000/api/results'; // POST ve GET /:examId için
-const token = localStorage.getItem('token'); 
-
-const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
 
 // Yardımcı İstatistik Kartı Bileşeni
 const StatsCard = ({ icon, label, value, color }) => (
@@ -37,15 +34,14 @@ function TeacherDetailedResultsPage() {
     const { examId } = useParams(); // URL'den sınav ID'sini alır
     const navigate = useNavigate();
     
+    const token = localStorage.getItem('token');
+    const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
+
     const [resultsData, setResultsData] = useState(null); // Tüm sonuç objesi (stats + studentResults)
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        fetchResults();
-    }, [examId]);
-
-    const fetchResults = async () => {
+    const fetchResults = useCallback(async () => {
         setLoading(true);
         setError(null);
         if (!token) {
@@ -64,7 +60,11 @@ function TeacherDetailedResultsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [examId, token]);
+
+    useEffect(() => {
+        fetchResults();
+    }, [fetchResults]);
 
     if (loading) return <p className="teacher-page-container">Rapor yükleniyor...</p>;
     if (error) return <p className="teacher-page-container alert alert-danger page-card">{error}</p>;
