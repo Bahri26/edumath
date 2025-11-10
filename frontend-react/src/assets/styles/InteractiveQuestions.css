@@ -1,0 +1,157 @@
+/* Interactive Question CSS Additions */
+
+.interactive-section {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+}
+
+.interaction-selector {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.interaction-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.interaction-btn:hover {
+  border-color: #6366f1;
+  background: #eef2ff;
+}
+
+.interaction-btn.active {
+  border-color: #6366f1;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+}
+
+.config-editor {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 10px;
+  border: 2px solid #d1d5db;
+}
+
+.pair-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.pair-row input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.pair-row input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.btn-add-pair, .btn-shuffle {
+  margin-top: 0.5rem;
+  padding: 0.625rem 1rem;
+  border: 2px solid #10b981;
+  border-radius: 10px;
+  background: white;
+  color: #10b981;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-pair:hover, .btn-shuffle:hover {
+  background: #10b981;
+  color: white;
+}
+
+/* Interactive Question Component Styles */
+
+.iq-empty {
+  padding: 1rem;
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.iq-match {
+  margin-top: 1rem;
+}
+
+.iq-columns {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.iq-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.iq-chip {
+  padding: 0.5rem 0.75rem;
+  background: #eef2ff;
+  border: 2px solid #c7d2fe;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #312e81;
+}
+
+.iq-chip.alt {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #78350f;
+}
+
+.iq-hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.iq-anagram, .iq-grouping {
+  margin-top: 1rem;
+}
+
+.iq-row {
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.iq-group {
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.iq-bucket {
+  min-height: 40px;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}

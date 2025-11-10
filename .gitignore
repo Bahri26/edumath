@@ -1,0 +1,33 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+backend-express/node_modules/
+frontend-react/node_modules/
+
+# Builds and caches
+build/
+dist/
+.cache/
+.vite/
+.next/
+out/
+coverage/
+
+# Env files (DO NOT COMMIT SECRETS)
+.env
+.env.*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
