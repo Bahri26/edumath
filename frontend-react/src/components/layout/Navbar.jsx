@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
+import StreakDisplay from '../gamification/StreakDisplay';
+import HeartsDisplay from '../gamification/HeartsDisplay';
+import AchievementsModal from '../gamification/AchievementsModal';
 import './Navbar.css';
 
 function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [achievementsOpen, setAchievementsOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -39,6 +43,14 @@ function Navbar() {
                     <span className="nav-icon">📚</span>
                     <span>Öğren</span>
                   </Link>
+                      <Link to="/student/analytics" className="nav-item">
+                        <span className="nav-icon">📈</span>
+                        <span>Analiz</span>
+                      </Link>
+                      <Link to="/student/streak" className="nav-item">
+                        <span className="nav-icon">🔥</span>
+                        <span>Seri</span>
+                      </Link>
                   <Link to="/student/assignments" className="nav-item">
                     <span className="nav-icon">✏️</span>
                     <span>Ödevler</span>
@@ -70,6 +82,35 @@ function Navbar() {
         <div className="navbar-actions">
           {user ? (
             <div className="user-section">
+              {/* Gamification Stats - Only for Students */}
+              {user.role === 'student' && (
+                <div style={{ display: 'flex', gap: '12px', marginRight: '16px', alignItems: 'center' }}>
+                  <button 
+                    onClick={() => setAchievementsOpen(true)}
+                    style={{
+                      background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+                      border: 'none',
+                      color: 'white',
+                      padding: '8px 16px',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      fontSize: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                    onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                  >
+                    🏆 Başarılar
+                  </button>
+                  <StreakDisplay />
+                  <HeartsDisplay />
+                </div>
+              )}
+              
               <div className="user-profile">
                 <span className="user-avatar">👤</span>
                 <span className="user-name">{displayName}</span>
@@ -118,6 +159,14 @@ function Navbar() {
                     <span className="nav-icon">📚</span>
                     <span>Öğren</span>
                   </Link>
+                      <Link to="/student/analytics" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                        <span className="nav-icon">📈</span>
+                        <span>Analiz</span>
+                      </Link>
+                      <Link to="/student/streak" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                        <span className="nav-icon">🔥</span>
+                        <span>Seri</span>
+                      </Link>
                   <Link to="/student/assignments" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
                     <span className="nav-icon">✏️</span>
                     <span>Ödevler</span>
@@ -159,6 +208,12 @@ function Navbar() {
           )}
         </div>
       )}
+      
+      {/* Achievements Modal */}
+      <AchievementsModal 
+        isOpen={achievementsOpen} 
+        onClose={() => setAchievementsOpen(false)} 
+      />
     </header>
   );
 }

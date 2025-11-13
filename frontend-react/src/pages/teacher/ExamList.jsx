@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -11,13 +11,10 @@ import {
   faClock,
   faUsers,
   faChartLine,
-  faCalendar,
   faCheckCircle,
-  faTimesCircle,
-  faFilter,
   faSearch
 } from '@fortawesome/free-solid-svg-icons';
-import PageHeader from '../../components/common/PageHeader';
+import PageHeader from '../../components/ui/common/PageHeader';
 
 const Container = styled.div`
   max-width: 1400px;
@@ -126,7 +123,7 @@ const ExamCard = styled(motion.div)`
     width: 4px;
     height: 100%;
     background: ${props => {
-      switch(props.status) {
+      switch(props.$status) {
         case 'Aktif': return '#4834d4';
         case 'Taslak': return '#f39c12';
         case 'Sona Erdi': return '#e74c3c';
@@ -160,7 +157,7 @@ const StatusBadge = styled.span`
   font-size: 12px;
   font-weight: 500;
   background: ${props => {
-    switch(props.status) {
+    switch(props.$status) {
       case 'Aktif': return '#eceaff';
       case 'Taslak': return '#fff3e0';
       case 'Sona Erdi': return '#feeff0';
@@ -168,7 +165,7 @@ const StatusBadge = styled.span`
     }
   }};
   color: ${props => {
-    switch(props.status) {
+    switch(props.$status) {
       case 'Aktif': return '#4834d4';
       case 'Taslak': return '#f39c12';
       case 'Sona Erdi': return '#e74c3c';
@@ -239,20 +236,20 @@ const ActionButton = styled.button`
   border: 1px solid #e1e1e1;
   border-radius: 6px;
   background: white;
-  color: ${props => props.color || '#666'};
+  color: ${props => props.$color || '#666'};
   cursor: pointer;
   font-size: 13px;
   transition: all 0.2s;
 
   &:hover {
-    background: ${props => props.hoverBg || '#f8f9fa'};
-    border-color: ${props => props.color || '#666'};
+    background: ${props => props.$hoverBg || '#f8f9fa'};
+    border-color: ${props => props.$color || '#666'};
     transform: translateY(-2px);
   }
 `;
 
 function ExamList() {
-  const [exams, setExams] = useState([
+  const [exams] = useState([
     {
       id: 1,
       title: '10. Sınıf Matematik Dönem Sonu Sınavı',
@@ -312,9 +309,9 @@ function ExamList() {
     }));
   };
 
-  const handleDelete = (examId) => {
+  const handleDelete = (/* examId */) => {
     if (window.confirm('Bu sınavı silmek istediğinizden emin misiniz?')) {
-      // Silme işlemi
+      // TODO: Silme işlemi implement edilecek
     }
   };
 
@@ -367,14 +364,14 @@ function ExamList() {
         {exams.map(exam => (
           <ExamCard
             key={exam.id}
-            status={exam.status}
+            $status={exam.status}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
             <CardHeader>
               <ExamTitle>{exam.title}</ExamTitle>
-              <StatusBadge status={exam.status}>{exam.status}</StatusBadge>
+              <StatusBadge $status={exam.status}>{exam.status}</StatusBadge>
             </CardHeader>
 
             <p style={{ color: '#666', fontSize: '14px', margin: '0 0 16px 0' }}>
@@ -416,17 +413,17 @@ function ExamList() {
             </ExamStats>
 
             <ActionButtons>
-              <ActionButton color="#4834d4" hoverBg="#eceaff">
+              <ActionButton $color="#4834d4" $hoverBg="#eceaff">
                 <FontAwesomeIcon icon={faEye} />
                 Görüntüle
               </ActionButton>
-              <ActionButton color="#2e7d32" hoverBg="#edf7ed">
+              <ActionButton $color="#2e7d32" $hoverBg="#edf7ed">
                 <FontAwesomeIcon icon={faEdit} />
                 Düzenle
               </ActionButton>
               <ActionButton 
-                color="#d32f2f" 
-                hoverBg="#feeff0"
+                $color="#d32f2f" 
+                $hoverBg="#feeff0"
                 onClick={() => handleDelete(exam.id)}
               >
                 <FontAwesomeIcon icon={faTrash} />

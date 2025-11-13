@@ -117,7 +117,7 @@ const LeaderboardTab = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [timeframe, setTimeframe] = useState('week');
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState(null); // Giriş yapmış kullanıcının ID'si
+  const [userId] = useState(null); // Giriş yapmış kullanıcının ID'si
 
   useEffect(() => {
     const fetchLeaderboard = async () => {

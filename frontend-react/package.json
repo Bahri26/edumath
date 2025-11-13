@@ -24,10 +24,12 @@
     "prop-types": "^15.8.1",
     "react": "^19.1.1",
     "react-beautiful-dnd": "^13.1.1",
+    "react-confetti": "^6.4.0",
     "react-dom": "^19.1.1",
+    "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.9.4",
     "react-swipeable": "^7.0.2",
-    "recharts": "^3.3.0",
+    "recharts": "^3.4.1",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
     "styled-components": "^6.1.19"

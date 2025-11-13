@@ -1,9 +1,7 @@
 // frontend-react/src/pages/ProfilePage.jsx (GÜNCEL VE İKON AYARLARI EKLENMİŞ HALİ)
 
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import '../assets/styles/TeacherPages.css';
-import '../assets/styles/ProfilePage.css';
+import { useAuth } from '../hooks/useAuth';
 // PageHeader kullanımı bu sayfadan kaldırıldı; yerine basit bir başlık eklenecek
 
 // --- GÜNCELLEME 1: Font Awesome İMPORT VE KÜTÜPHANE AYARI ---
@@ -27,87 +25,75 @@ function ProfilePage() {
   const { user } = useAuth();
 
   if (!user) {
-    return (
-      <div className="page-container">
-        <div className="loading-spinner" />
-      </div>
-    );
+    return <div className="kids-loading">Yükleniyor</div>;
   }
 
-  // Kullanıcı rolünü belirle
+  // Kullanıcı rolünü belirle (kids theme renkleri)
   let roleDisplay = 'Kullanıcı';
   let roleIcon = faUserTag;
-  let roleColor = 'var(--gray)';
+  let roleClass = 'kids-badge purple';
 
   if (user.roles?.isTeacher) {
     roleDisplay = 'Öğretmen';
     roleIcon = faUserTag;
-    roleColor = 'var(--primary-color)';
+    roleClass = 'kids-badge pink';
   } else if (user.roles?.isStudent) {
     roleDisplay = 'Öğrenci';
     roleIcon = faGraduationCap;
-    roleColor = 'var(--info-color)';
+    roleClass = 'kids-badge turquoise';
   }
 
   return (
-    <div className="page-container">
-      {/* Basit içerik başlığı (PageHeader yerine) */}
-      <div style={{ padding: '1rem 0 0.5rem 0' }}>
-        <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600 }}>Profil Bilgileri</h2>
+    <div className="teacher-page-container">
+      <div className="kids-card mb-3 d-flex align-items-center gap-3">
+        <div className="kids-badge purple" style={{ fontSize: '1.2rem' }}>
+          <FontAwesomeIcon icon={faUserTag} />
+        </div>
+        <div>
+          <h2 className="m-0">Profil Bilgileri</h2>
+          <p className="m-0 muted">Kullanıcıya ait temel bilgiler</p>
+        </div>
       </div>
 
-      <div className="profile-container">
-        <div className="profile-header">
-          <div className="profile-avatar">
-            <FontAwesomeIcon icon={faUserTag} size="2x" />
-          </div>
-          <div className="profile-title">
-            <h1>{user.fullName || `${user.firstName} ${user.lastName}`}</h1>
-            <div className="profile-role" style={{ backgroundColor: roleColor }}>
-              <FontAwesomeIcon icon={roleIcon} />
-              <span>{roleDisplay}</span>
+      <div className="kids-grid-2">
+        <div className="kids-card">
+          <h3 className="mb-3">Kişisel Bilgiler</h3>
+          <div className="d-flex flex-column gap-2">
+            <div className="page-card d-flex justify-content-between">
+              <span className="muted">Ad Soyad</span>
+              <span>{user.fullName || `${user.firstName} ${user.lastName}`}</span>
+            </div>
+            <div className="page-card d-flex justify-content-between">
+              <span className="muted">E-posta</span>
+              <span>{user.email}</span>
+            </div>
+            {user.roles?.isStudent && user.gradeLevel && (
+              <div className="page-card d-flex justify-content-between">
+                <span className="muted">Sınıf</span>
+                <span>{user.gradeLevel}. Sınıf</span>
+              </div>
+            )}
+            <div className="page-card d-flex justify-content-between align-items-center">
+              <span className="muted">Rol</span>
+              <span className={roleClass} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                <FontAwesomeIcon icon={roleIcon} /> {roleDisplay}
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="profile-content">
-          <div className="profile-section">
-            <h3>Kişisel Bilgiler</h3>
-            <div className="profile-grid">
-              <div className="profile-item">
-                <div className="profile-item-icon">
-                  <FontAwesomeIcon icon={faEnvelope} />
-                </div>
-                <div className="profile-item-content">
-                  <label>E-posta</label>
-                  <span>{user.email}</span>
-                </div>
-              </div>
-
-              {user.roles?.isStudent && user.gradeLevel && (
-                <div className="profile-item">
-                  <div className="profile-item-icon">
-                    <FontAwesomeIcon icon={faGraduationCap} />
-                  </div>
-                  <div className="profile-item-content">
-                    <label>Sınıf Düzeyi</label>
-                    <span>{user.gradeLevel}. Sınıf</span>
-                  </div>
-                </div>
-              )}
+        <div className="kids-card">
+          <h3 className="mb-3">İşlemler</h3>
+            <div className="d-flex gap-2 flex-wrap">
+              <button className="kids-btn primary d-flex align-items-center gap-2">
+                <FontAwesomeIcon icon={faUserEdit} />
+                <span>Profili Düzenle</span>
+              </button>
+              <button className="kids-btn warning d-flex align-items-center gap-2">
+                <FontAwesomeIcon icon={faKey} />
+                <span>Şifre Değiştir</span>
+              </button>
             </div>
-          </div>
-
-          <div className="profile-actions">
-            <button className="btn btn-primary">
-              <FontAwesomeIcon icon={faUserEdit} />
-              <span>Profili Düzenle</span>
-            </button>
-            <button className="btn btn-secondary">
-              <FontAwesomeIcon icon={faKey} />
-              <span>Şifre Değiştir</span>
-            </button>
-          </div>
         </div>
       </div>
     </div>

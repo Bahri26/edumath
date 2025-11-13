@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import axios from 'axios';
-import { AuthContext } from '../../contexts/AuthContext';
+import { AuthContext } from '../../contexts/authContextBase';
 import styles from './CreateClassModal.module.css';
 
 const CreateClassModal = ({ isOpen, onClose, onClassCreated }) => {

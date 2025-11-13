@@ -1,5 +1,6 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
-@import './assets/styles/variables.css';
+/* Standard Kids Theme (includes variables) */
+@import './assets/styles/KidsTheme.css';
 
 /* Reset & Base Styles */
 *, *::before, *::after {
@@ -159,8 +160,9 @@ a {
   transition: all 0.2s ease;
 }
 a:hover {
-  color: color-mix(in srgb, var(--bs-primary) 80%, black);
-  text-decoration: none; 
+  /* Use Bootstrap primary variable with a subtle darkening. color-mix is progressive-enhancement. */
+  color: color-mix(in srgb, var(--bs-primary) 85%, black);
+  text-decoration: none;
 }
 
 /* --- 4. Genel Yardımcı Sınıflar (Bootstrap Ezmeleri) --- */
@@ -257,7 +259,8 @@ a:hover {
 .btn-primary:hover,
 .btn-success:hover {
     transform: translateY(-3px); 
-    box-shadow: 0 8px 20px rgba(rgba(var(--bs-primary-rgb), 0.3));
+  /* Fix invalid nested rgba(): previously rgba(rgba(var(--bs-primary-rgb),0.3)) */
+  box-shadow: 0 8px 20px rgba(var(--bs-primary-rgb), 0.3);
 }
 .btn-success:hover {
     box-shadow: 0 8px 20px rgba(var(--bs-success-rgb), 0.3);

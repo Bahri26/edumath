@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 function Sidebar({ className = '' }) {
   const [query, setQuery] = useState('');
@@ -23,6 +23,7 @@ function Sidebar({ className = '' }) {
       { path: '/student/dashboard', emoji: '🏠', label: 'Dashboard' },
       { path: '/student/exams', emoji: '✏️', label: 'Sınavlarım' },
       { path: '/student/results', emoji: '📈', label: 'Sonuçlarım' },
+      { path: '/student/surveys', emoji: '📊', label: 'Anketler' },
       { path: '/profile', emoji: '👤', label: 'Profil' }
     ];
 

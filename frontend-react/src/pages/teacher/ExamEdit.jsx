@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import PageHeader from '../../components/common/PageHeader';
-import { useI18n } from '../../contexts/I18nContext';
+import PageHeader from '../../components/ui/common/PageHeader';
+import { useI18n } from '../../hooks/useI18n';
 import '../../assets/styles/ExamPages.css';
 
 const API_URL = 'http://localhost:8000/api/exams';
@@ -304,3 +304,4 @@ function ExamEdit() {
 }
 
 export default ExamEdit;
+

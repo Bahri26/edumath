@@ -62,17 +62,34 @@ exports.getGlobalLeaderboard = async (req, res) => {
 };
 
 // @desc    Haftalık leaderboard'u getir
-// @route   GET /api/leaderboard/weekly
+// @route   GET /api/leaderboard/weekly veya GET /api/leaderboard?period=week&limit=5
 // @access  Private
 exports.getWeeklyLeaderboard = async (req, res) => {
   try {
-    const { metric = 'xp' } = req.query;
+    const { metric = 'xp', limit = 10, period } = req.query;
     
     const leaderboard = await Leaderboard.getOrCreate('weekly', {}, metric);
     
     await leaderboard.populate('entries.userId', 'firstName lastName gamification analytics');
     
-    res.json(leaderboard);
+    // Limit parametresi varsa, sadece top N kullanıcıyı döndür
+    let entries = leaderboard.entries || [];
+    const limitNum = parseInt(limit);
+    if (limitNum && limitNum > 0) {
+      entries = entries.slice(0, limitNum);
+    }
+    
+    // Basitleştirilmiş format (frontend için)
+    const simplified = entries.map((entry, index) => ({
+      rank: index + 1,
+      userId: entry.userId?._id,
+      name: entry.userId ? `${entry.userId.firstName} ${entry.userId.lastName}` : 'Unknown',
+      score: entry.score || 0,
+      xp: entry.userId?.gamification?.xp || 0,
+      level: entry.userId?.gamification?.level || 1
+    }));
+    
+    res.json(simplified);
   } catch (error) {
     res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }

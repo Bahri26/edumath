@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
-import PerformanceChart from '../../../components/analytics/PerformanceChart';
+import PerformanceChart from '../../../components/features/analytics/PerformanceChart';
 
 const Container = styled.div`
   padding: 20px;

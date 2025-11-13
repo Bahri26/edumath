@@ -1,8 +1,8 @@
 // frontend-react/src/pages/teacher/TeacherAssignmentResultsPage.jsx (Yeni adıyla güncel hali)
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import PageHeader from '../../components/common/PageHeader';
+import { getAssignments } from '../../services/assignmentService';
+import PageHeader from '../../components/ui/common/PageHeader';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
     faCalendarAlt, 
@@ -12,15 +12,13 @@ import {
     faChevronRight
 } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom'; // Yönlendirme için
-import '../../assets/styles/TeacherPages.css';
 
-const API_URL = 'http://localhost:8000/api/assignments'; // Atama listesini çeker
+// API URL servis katmanında yönetiliyor.
 
 
 function TeacherAssignmentResultsPage() { // <-- İSİM BURADA GÜNCELLENDİ
     const navigate = useNavigate(); // <-- Yönlendirme kancası
-    const token = localStorage.getItem('token');
-    const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
+    // const token = localStorage.getItem('token'); // token header'ı servis interceptors üzerinden ekleniyor
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -29,15 +27,15 @@ function TeacherAssignmentResultsPage() { // <-- İSİM BURADA GÜNCELLENDİ
         setLoading(true);
         setError(null);
         try {
-            const response = await axios.get(API_URL, axiosConfig);
-            setAssignments(response.data);
+            const data = await getAssignments();
+            setAssignments(data);
         } catch (err) {
             console.error("Atamalar yüklenemedi:", err);
             setError("Atama listesi yüklenirken bir hata oluştu.");
         } finally {
             setLoading(false);
         }
-    }, [token]);
+    }, []);
 
     useEffect(() => {
         fetchAssignments();
@@ -58,7 +56,28 @@ function TeacherAssignmentResultsPage() { // <-- İSİM BURADA GÜNCELLENDİ
         });
     };
 
-    if (loading) return <p className="teacher-page-container">Atamalar yükleniyor...</p>;
+    if (loading) {
+        return (
+            <div className="teacher-page-container">
+                <PageHeader title="Sınav Sonuçları ve Atamalar">
+                    <div className="skeleton btn" style={{ width: '160px' }}></div>
+                </PageHeader>
+                <div className="exams-grid">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="page-card exam-card">
+                            <div className="skeleton text mb-2" style={{ width: '50%' }}></div>
+                            <div className="flex-col gap-1 mb-2">
+                                <div className="skeleton text" style={{ width: '70%' }}></div>
+                                <div className="skeleton text" style={{ width: '40%' }}></div>
+                                <div className="skeleton text" style={{ width: '55%' }}></div>
+                            </div>
+                            <div className="skeleton btn" style={{ width: '100%' }}></div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="teacher-page-container">
@@ -75,45 +94,38 @@ function TeacherAssignmentResultsPage() { // <-- İSİM BURADA GÜNCELLENDİ
             {/* ATAMA KARTLARI LİSTESİ */}
             <div className="exams-grid">
                 {assignments.length === 0 ? (
-                    <div className="page-card" style={{gridColumn: '1 / -1'}}>
-                        Henüz öğrencilere atanmış bir sınav yok.
+                    <div className="page-card flex-col gap-2" style={{ gridColumn: '1 / -1' }}>
+                        <p className="text-muted">Henüz öğrencilere veya sınıflara atanmış bir sınav bulunmuyor.</p>
+                        <p className="text-small">Önce bir sınav oluşturup ardından atama akışını kullanın.</p>
+                        <button className="kids-btn primary" onClick={fetchAssignments}>
+                            <FontAwesomeIcon icon={faChartBar} className="me-2" /> Yeniden Dene
+                        </button>
                     </div>
                 ) : (
                     assignments.map((assignment) => (
                         <div key={assignment._id} className="page-card exam-card">
-                            
-                            {/* Sınav Başlığı */}
-                            <h3>{assignment.examId?.title || 'Bilinmeyen Sınav'}</h3>
-                            
-                            {/* Atama Detayları */}
-                            <div className="exam-details" style={{flexDirection: 'column', gap: '0.5rem'}}>
-                                
+                            <h3 className="mb-2">{assignment.examId?.title || 'Bilinmeyen Sınav'}</h3>
+                            <div className="flex-col gap-1 mb-2">
                                 <div className="detail-item">
                                     <FontAwesomeIcon icon={faUsers} className="me-2" />
                                     Hedef: <strong>{assignment.targetId?.name || assignment.targetType}</strong>
                                 </div>
-                                
                                 <div className="detail-item">
                                     <FontAwesomeIcon icon={faCalendarAlt} className="me-2" />
-                                    Teslim Tarihi: <strong>{formatDueDate(assignment.dueDate)}</strong>
+                                    Teslim: <strong>{formatDueDate(assignment.dueDate)}</strong>
                                 </div>
-                                
                                 <div className="detail-item status-indicator">
-                                    <FontAwesomeIcon icon={faCheckCircle} className="me-2" style={{color: '#198754'}} />
-                                    Tamamlanma: (TODO: Buraya tamamlama yüzdesi gelecek)
+                                    <FontAwesomeIcon icon={faCheckCircle} className="me-2 text-success" />
+                                    Tamamlanma: <span className="badge neutral">% (yakında)</span>
                                 </div>
                             </div>
-                            
-                            {/* Eylemler */}
                             <div className="exam-actions">
-                                <button 
-                                    className="btn-primary btn-sm"
-                                    // Buraya examId'yi değil, Assignment'ın kendisini gönderiyoruz. 
-                                    // Detay sayfasında sadece examId gerekiyor.
-                                    onClick={() => handleViewResults(assignment.examId._id)} 
+                                <button
+                                    className="kids-btn primary btn-sm"
+                                    disabled={!assignment.examId?._id}
+                                    onClick={() => handleViewResults(assignment.examId._id)}
                                 >
-                                    <FontAwesomeIcon icon={faChevronRight} className="me-2" />
-                                    Sonuçları Gör
+                                    <FontAwesomeIcon icon={faChevronRight} className="me-2" /> Sonuçları Gör
                                 </button>
                             </div>
                         </div>

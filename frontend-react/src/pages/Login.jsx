@@ -1,112 +1,135 @@
-// frontend-react/src/pages/Login.jsx (TAM VE GÜNCEL HALİ)
-
-import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext'; 
-// Yönlendirme için 'Navigate' import edildi
-import { Link, Navigate } from 'react-router-dom'; 
-//import '../assets/styles/Accounts.css'; 
-import '../index.css'
+﻿import React, { useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { Link, Navigate } from 'react-router-dom';
+import '../assets/styles/Auth.css';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState('');
   
-  // 'user' state'i de AuthContext'ten alındı
-  const { login, user } = useAuth(); 
+  const { login, user } = useAuth();
 
-  // --- 1. KONTROL: KULLANICI ZATEN GİRİŞ YAPMIŞ MI? ---
   if (user) {
-    // 'user' varsa (giriş yapılmışsa), onu ilgili dashboard'a yönlendir.
     if (user.roles?.isTeacher) {
       return <Navigate to="/teacher/dashboard" replace />;
     }
     if (user.roles?.isStudent) {
       return <Navigate to="/student/dashboard" replace />;
     }
-    return <Navigate to="/" replace />; // Diğer roller için ana sayfa
+    return <Navigate to="/" replace />;
   }
 
-  // --- 2. FORM GÖNDERME ---
-  const handleSubmit = async (e) => {
-    e.preventDefault(); 
-    if (!email || !password) {
-      setError('Lütfen e-posta ve şifre alanlarını doldurun.');
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    
-    try {
-      await login(email, password); 
-      // Başarılı olursa, 'user' state'i dolacak ve bileşen
-      // yeniden render olunca üstteki 'if (user)' bloğuna girecek.
-    } catch (err) {
-      setError(err.message || 'Giriş Başarız. Bilgilerinizi kontrol edin.');
-    } finally {
-        setLoading(false);
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    if (value && !validateEmail(value)) {
+      setEmailError('Geçerli bir e-posta adresi girin');
+    } else {
+      setEmailError('');
     }
   };
 
-  // --- 3. RENDER (Kullanıcı giriş yapmamışsa) ---
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setEmailError('');
+
+    if (!email || !password) {
+      setError('Lütfen tüm alanları doldurun! 📝');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setEmailError('Geçerli bir e-posta adresi girin');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      await login(email, password);
+    } catch (err) {
+      setError(err.message || 'Giriş başarısız! 😔 Bilgilerini kontrol et.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="accountPage"> 
-      <div className="accountContainer card"> 
-        <div className="cardBody">
-            <h2 className="accountHeader">
-                <i className="fas fa-sign-in-alt me-2 text-primary"></i>
-                Giriş Yap
-            </h2>
-            <form onSubmit={handleSubmit}>
-                
-                {error && <div className="alert alert-danger mb-4">{error}</div>}
-                
-                <div className="mb-3">
-                    <label className="form-label" htmlFor="emailInput">E-posta Adresi</label>
-                    <input
-                      type="email"
-                      id="emailInput"
-                      className="form-control"
-                      placeholder="adiniz@alanadi.com"
-                      value={email}
-                      // --- DÜZELTME BURADA ---
-                      onChange={(e) => setEmail(e.target.value)} 
-                      required
-                    />
-                </div>
+    <div className="kids-auth-page">
+      <div className="auth-container">
+        <div className="auth-header">
+          <div className="auth-emoji">🚀</div>
+          <h1 className="auth-title">Hoş Geldin!</h1>
+          <p className="auth-subtitle">Matematik macerana devam et</p>
+        </div>
 
-                <div className="mb-4">
-                    <label className="form-label" htmlFor="passwordInput">Şifre</label>
-                    <input
-                      type="password"
-                      id="passwordInput"
-                      className="form-control"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)} // Bu zaten doğruydu
-                      required
-                    />
-                </div>
+        {error && <div className="auth-error">{error}</div>}
 
-                <button 
-                    type="submit" 
-                    className="btn btn-primary w-100" 
-                    disabled={loading}
-                >
-                    {loading ? 'Yükleniyor...' : (
-                        <>
-                            {/* Resimdeki ikon fa-arrow-right, ancak fa-sign-in-alt daha yaygın */}
-                            <i className="fas fa-sign-in-alt me-2"></i> GİRİŞ YAP
-                        </>
-                    )}
-                </button>
-            </form>
+                <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">📧 E-posta</label>
+            <div className="input-wrapper">
+              <input
+                type="email"
+                className={`form-input ${emailError ? 'input-error' : ''}`}
+                placeholder="ornek@email.com"
+                value={email}
+                onChange={handleEmailChange}
+                disabled={loading}
+              />
+              {emailError && <span className="input-error-text">{emailError}</span>}
+            </div>
+          </div>
 
-            <p className="accountFooterText">
-                Hesabın yok mu? 
-                <Link to="/register" className="ms-2 fw-bold text-success">Kaydol</Link>
-            </p>
+          <div className="form-group">
+            <label className="form-label">🔒 Şifre</label>
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="form-input"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex="-1"
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" className="btn-auth" disabled={loading || emailError}>
+            {loading ? (
+              <>
+                <span className="spinner"></span>
+                Giriş Yapılıyor...
+              </>
+            ) : (
+              'Giriş Yap 🚀'
+            )}
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          Hesabın yok mu?{' '}
+          <Link to="/register" className="auth-link">
+            Hemen Kayıt Ol! 
+          </Link>
         </div>
       </div>
     </div>

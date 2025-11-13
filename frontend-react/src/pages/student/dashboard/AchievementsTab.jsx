@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
-import AchievementCard from '../../../components/gamification/AchievementCard';
-import ProgressBar from '../../../components/gamification/ProgressBar';
+import AchievementCard from '../../../components/features/gamification/AchievementCard';
+import ProgressBar from '../../../components/features/gamification/ProgressBar';
 
 const Container = styled.div`
   padding: 20px;

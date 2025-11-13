@@ -1,7 +1,7 @@
 // frontend-react/src/components/common/PageHeader.jsx (SON HALİ)
 
 import React from 'react';
-import '../../assets/styles/PageHeader.css'; // Kendi CSS'ini import eder
+import '../../../assets/styles/PageHeader.css'; // Kendi CSS'ini import eder
 
 const PageHeader = ({ title, children }) => {
   return (

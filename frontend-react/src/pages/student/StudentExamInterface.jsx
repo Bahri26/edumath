@@ -1,37 +1,23 @@
 // frontend-react/src/pages/student/StudentExamInterface.jsx (SON KONTROL VE TAM HALİ)
 
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
+import { startExam as startExamService } from '../../services/examService';
+import { submitExamResult } from '../../services/resultService';
 import { useParams, useNavigate } from 'react-router-dom';
-// ÖNEMLİ: CSS yolunun doğru olduğundan emin olun
-import '../../assets/styles/TeacherPages.css'; 
+import './StudentExamInterface.css';
 
-const API_URL = 'http://localhost:8000/api';
-const token = localStorage.getItem('token'); 
-const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
+// Base URL servis katmanında yönetiliyor.
 
 
-// --- SAHTE VERİ (Backend entegrasyonu için örnek) ---
-const DUMMY_EXAM = {
-    _id: 'e123',
-    title: 'Örnek Matematik Sınavı',
-    duration: 60, // 60 dakika
-    questions: [
-        { _id: 'q1', text: '3x + 5 = 14 ise x kaçtır?', options: ['3', '5', '7'], type: 'test' },
-        { _id: 'q2', text: 'Dünya Güneş etrafında döner. (D/Y)', options: ['Doğru', 'Yanlış'], type: 'dogru-yanlis' },
-        { _id: 'q3', text: '1/4 + 1/2 = ___', type: 'bosluk-doldurma' },
-    ],
-};
-// --- SAHTE VERİ SONU ---
+// Dummy fallback kaldırıldı; başarısız durumda kullanıcıya mesaj gösterilecek.
 
 
 function StudentExamInterface() {
     const { examId } = useParams(); // URL'den sınav ID'sini al
     const navigate = useNavigate();
     
-    // Yüklenme durumunda exam verisini kullanmak için
-    const [exam, setExam] = useState(DUMMY_EXAM); 
-    const [loading, setLoading] = useState(true); // Yüklenme state'i
+    const [exam, setExam] = useState(null);
+    const [loading, setLoading] = useState(true);
     
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0); 
     const [answers, setAnswers] = useState([]); 
@@ -40,20 +26,86 @@ function StudentExamInterface() {
     const [submissionResult, setSubmissionResult] = useState(null);
     const [error, setError] = useState(null);
     
-    // Sınavı Yükle
+    // Sınavı yükle ve başlat
     useEffect(() => {
-        // Gerçek API çağrısı burada yapılmalı:
-        // axios.get(`${API_URL}/exams/${examId}`).then(res => { setExam(res.data); setTimeLeft(res.data.duration * 60); })
-        
-        // SAHTE VERİ YÜKLEME
-        setAnswers(DUMMY_EXAM.questions.map(q => ({
-            questionId: q._id,
-            submittedAnswer: '',
-        })));
-        setTimeLeft(DUMMY_EXAM.duration * 60);
-        setLoading(false);
+        let mounted = true;
+        const fetchExam = async () => {
+            setLoading(true);
+            try {
+                const data = await startExamService(examId);
+                if (!mounted) return;
+                
+                if (!data || !data.questions || data.questions.length === 0) {
+                    if (mounted) setError('Sınav bulunamadı veya sınav soruları yok.');
+                    return;
+                }
+                
+                // Backend'den gelen soru yapısını normalize et
+                const normalizedExam = {
+                    ...data,
+                    questions: data.questions.map(q => ({
+                        ...q,
+                        _id: q._id || q.id,
+                        type: q.type || q.questionType || 'test'
+                    }))
+                };
+                
+                setExam(normalizedExam);
+                setAnswers(normalizedExam.questions.map(q => ({ questionId: q._id, submittedAnswer: '' })));
+                setTimeLeft((data.duration || 60) * 60);
+            } catch (e) {
+                console.error('Sınav yüklenemedi:', e);
+                if (mounted) setError(e.response?.data?.message || 'Sınav verisi alınamadı.');
+            } finally {
+                mounted && setLoading(false);
+            }
+        };
+        fetchExam();
+        return () => { mounted = false; };
     }, [examId]);
 
+
+    // Cevapları Yönetme
+    const handleAnswerChange = (value) => {
+        if (!exam || !exam.questions || !exam.questions[currentQuestionIndex]) return;
+        const questionId = exam.questions[currentQuestionIndex]._id;
+        
+        const updatedAnswers = answers.map(ans => {
+            if (ans.questionId === questionId) {
+                return { ...ans, submittedAnswer: value };
+            }
+            return ans;
+        });
+
+        setAnswers(updatedAnswers);
+    };
+
+    // Sınavı Gönderme (Backend Controller'ı Kullanma)
+    const handleSubmit = useCallback(async () => {
+        if (isSubmitted) return; 
+        setIsSubmitted(true);
+        setError(null);
+        if (!exam) {
+            setError('Sınav bulunamadı.');
+            return;
+        }
+        const payload = {
+            examId: exam._id,
+            answers,
+            completionTime: (exam.duration || 60) * 60 - timeLeft,
+        };
+
+        try {
+            // Backend'e POST isteği: /api/results/submit (Puanlama burada gerçekleşir)
+            const resp = await submitExamResult(payload);
+            setSubmissionResult(resp.summary);
+            
+            // Sonuç sayfasına yönlendirme veya sonuç özetini gösterme
+        } catch (err) {
+            setError(err.response?.data?.message || 'Sınav gönderimi sırasında kritik bir hata oluştu.');
+            setIsSubmitted(false); // Başarısız olursa tekrar denemeye izin ver
+        }
+    }, [isSubmitted, exam, answers, timeLeft]);
 
     // Zamanlayıcı Mantığı
     useEffect(() => {
@@ -69,46 +121,7 @@ function StudentExamInterface() {
         }
 
         return () => clearInterval(intervalId);
-    }, [timeLeft, isSubmitted, loading]);
-
-
-    // Cevapları Yönetme
-    const handleAnswerChange = (value) => {
-        const questionId = exam.questions[currentQuestionIndex]._id;
-        
-        const updatedAnswers = answers.map(ans => {
-            if (ans.questionId === questionId) {
-                return { ...ans, submittedAnswer: value };
-            }
-            return ans;
-        });
-
-        setAnswers(updatedAnswers);
-    };
-
-    // Sınavı Gönderme (Backend Controller'ı Kullanma)
-    const handleSubmit = async () => {
-        if (isSubmitted) return; 
-        setIsSubmitted(true);
-        setError(null);
-
-        const payload = {
-            examId: exam._id,
-            answers: answers,
-            completionTime: exam.duration * 60 - timeLeft, // Harcanan süre
-        };
-
-        try {
-            // Backend'e POST isteği: /api/results/submit (Puanlama burada gerçekleşir)
-            const response = await axios.post(`${API_URL}/results/submit`, payload, axiosConfig);
-            setSubmissionResult(response.data.summary);
-            
-            // Sonuç sayfasına yönlendirme veya sonuç özetini gösterme
-        } catch (err) {
-            setError(err.response?.data?.message || 'Sınav gönderimi sırasında kritik bir hata oluştu.');
-            setIsSubmitted(false); // Başarısız olursa tekrar denemeye izin ver
-        }
-    };
+    }, [timeLeft, isSubmitted, loading, handleSubmit]);
 
 
     // Yardımcı Fonksiyonlar
@@ -118,11 +131,19 @@ function StudentExamInterface() {
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
 
-    const currentQuestion = exam.questions[currentQuestionIndex];
-    const currentAnswer = answers.find(ans => ans.questionId === currentQuestion._id)?.submittedAnswer || '';
-    const totalQuestions = exam.questions.length;
+    const currentQuestion = exam?.questions?.[currentQuestionIndex];
+    const currentAnswer = currentQuestion ? (answers.find(ans => ans.questionId === currentQuestion._id)?.submittedAnswer || '') : '';
+    const totalQuestions = exam?.questions?.length || 0;
 
     if (loading) return <p className="teacher-page-container">Sınav verileri yükleniyor...</p>;
+    
+    if (!exam || !exam.questions || exam.questions.length === 0) {
+        return (
+            <div className="teacher-page-container">
+                <div className="alert alert-danger">Sınav bulunamadı veya sınav soruları yüklenemedi.</div>
+            </div>
+        );
+    }
     
     if (isSubmitted && submissionResult) {
         return (

@@ -1,0 +1,357 @@
+/* TeacherClasses.css - Modern Sınıflar Yönetimi Tasarımı */
+
+.teacher-classes-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header Section */
+.classes-header {
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.classes-header h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+  animation: titleSlide 0.8s ease-out;
+}
+
+@keyframes titleSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.classes-header p {
+  color: #6b7280;
+  font-size: 1.1rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* Grid Layout */
+.classes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+/* Class Card */
+.class-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  padding: 2rem;
+  border: 2px solid #e5e7eb;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  animation: cardSlideUp 0.6s ease-out backwards;
+}
+
+@keyframes cardSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered animation delay for cards */
+.class-card:nth-child(1) { animation-delay: 0.1s; }
+.class-card:nth-child(2) { animation-delay: 0.2s; }
+.class-card:nth-child(3) { animation-delay: 0.3s; }
+.class-card:nth-child(4) { animation-delay: 0.4s; }
+.class-card:nth-child(5) { animation-delay: 0.5s; }
+.class-card:nth-child(6) { animation-delay: 0.6s; }
+.class-card:nth-child(7) { animation-delay: 0.7s; }
+.class-card:nth-child(8) { animation-delay: 0.8s; }
+.class-card:nth-child(9) { animation-delay: 0.9s; }
+.class-card:nth-child(10) { animation-delay: 1s; }
+.class-card:nth-child(11) { animation-delay: 1.1s; }
+.class-card:nth-child(12) { animation-delay: 1.2s; }
+
+.class-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transition: left 0.6s;
+}
+
+.class-card:hover::before {
+  left: 100%;
+}
+
+.class-card:hover {
+  transform: translateY(-12px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border-color: currentColor;
+}
+
+/* Card Content */
+.class-card-content {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.class-icon-wrapper {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  flex-shrink: 0;
+  position: relative;
+  animation: iconFloat 3s ease-in-out infinite;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes iconFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.class-icon-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: inherit;
+  opacity: 0.3;
+  filter: blur(10px);
+  z-index: -1;
+}
+
+.class-info {
+  flex: 1;
+}
+
+.class-grade {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+}
+
+.class-stats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-weight: 600;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.class-arrow {
+  color: #9ca3af;
+  font-size: 1.2rem;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.class-card:hover .class-arrow {
+  color: currentColor;
+  transform: translateX(8px);
+}
+
+/* Color Variants */
+.class-card.primary {
+  border-left: 6px solid #0d6efd;
+}
+
+.class-card.primary .class-icon-wrapper {
+  background: linear-gradient(135deg, #0d6efd 0%, #0056d2 100%);
+  color: white;
+}
+
+.class-card.success {
+  border-left: 6px solid #198754;
+}
+
+.class-card.success .class-icon-wrapper {
+  background: linear-gradient(135deg, #198754 0%, #0f5132 100%);
+  color: white;
+}
+
+.class-card.purple {
+  border-left: 6px solid #6f42c1;
+}
+
+.class-card.purple .class-icon-wrapper {
+  background: linear-gradient(135deg, #6f42c1 0%, #4a2a7a 100%);
+  color: white;
+}
+
+/* Loading State */
+.classes-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  font-size: 2rem;
+  color: #667eea;
+}
+
+.classes-loading svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error State */
+.classes-error {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 2px solid #ef4444;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  animation: shake 0.5s;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.classes-error p {
+  margin: 0 0 1rem 0;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.retry-button {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.retry-button:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .teacher-classes-container {
+    padding: 1rem;
+  }
+
+  .classes-header h1 {
+    font-size: 2rem;
+  }
+
+  .classes-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .class-card {
+    padding: 1.5rem;
+  }
+
+  .class-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+
+  .class-grade {
+    font-size: 1.5rem;
+  }
+
+  .class-stats {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+/* Empty State */
+.classes-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #6b7280;
+}
+
+.classes-empty-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.classes-empty h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #1f2937;
+}
+
+.classes-empty p {
+  font-size: 1.1rem;
+  color: #9ca3af;
+}

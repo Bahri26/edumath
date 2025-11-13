@@ -58,14 +58,10 @@ const createClass = async (req, res) => {
 const getClassesByGrade = async (req, res) => {
   try {
     const gradeLevel = req.query.gradeLevel;
-    if (!gradeLevel) {
-      return res.status(400).json({ message: 'Sınıf seviyesi (gradeLevel) sorgusu gerekli.' });
-    }
+    const query = { createdBy: req.user._id };
+    if (gradeLevel) query.gradeLevel = gradeLevel;
 
-    const classes = await Class.find({
-      createdBy: req.user._id,
-      gradeLevel: gradeLevel
-    }).sort({ createdAt: -1 });
+    const classes = await Class.find(query).sort({ createdAt: -1 });
 
     res.status(200).json(classes);
 
@@ -315,6 +311,38 @@ const getClassesCount = async (req, res) => {
   }
 };
 
+/**
+ * @desc   Öğretmenin sınıflarını seviye bazında özetler
+ * @route  GET /api/classes/summary
+ * @access Private (Teacher)
+ */
+const getClassesSummary = async (req, res) => {
+  try {
+    const agg = await Class.aggregate([
+      { $match: { createdBy: req.user._id } },
+      {
+        $project: {
+          gradeLevel: 1,
+          studentCount: { $size: { $ifNull: ['$students', []] } }
+        }
+      },
+      {
+        $group: {
+          _id: '$gradeLevel',
+          classCount: { $sum: 1 },
+          studentCount: { $sum: '$studentCount' }
+        }
+      },
+      { $project: { _id: 0, gradeLevel: '$_id', classCount: 1, studentCount: 1 } },
+      { $sort: { gradeLevel: 1 } }
+    ]);
+    res.status(200).json(agg);
+  } catch (error) {
+    console.error('Sınıf özeti alınırken hata:', error);
+    res.status(500).json({ message: 'Sunucu hatası.' });
+  }
+};
+
 module.exports = {
   createClass,
   getClassesByGrade,
@@ -324,4 +352,5 @@ module.exports = {
   getClassStudentsWithStats,
   removeStudentFromClass,
   getClassesCount
+  ,getClassesSummary
 };

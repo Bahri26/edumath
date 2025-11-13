@@ -1,9 +1,10 @@
 // frontend-react/src/contexts/AuthContext.jsx (GÜNCEL HALİ)
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-const AuthContext = createContext();
+// Create context
+export const AuthContext = createContext(null);
 
 // Backend API adresiniz
 const API_URL = 'http://localhost:8000/api/auth'; 
@@ -101,9 +102,4 @@ export const AuthProvider = ({ children }) => {
       {!loading ? children : <p>Yükleniyor...</p>}
     </AuthContext.Provider>
   );
-};
-
-// Hook
-export const useAuth = () => {
-  return useContext(AuthContext);
 };

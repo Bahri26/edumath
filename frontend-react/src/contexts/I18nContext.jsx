@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
+
+// Create context
+export const I18nContext = createContext(null);
 
 const translations = {
   tr: {
@@ -26,6 +29,60 @@ const translations = {
     home_hero_title: 'Matematik Macerası',
     home_hero_sub: 'Örüntülerle Eğlenceli Öğrenme Dünyası',
     home_hero_desc: 'Sayılar, şekiller ve renklerle dolu harika bir yolculuğa hazır mısın? Hadi birlikte örüntüleri keşfedelim! 🚀',
+    // Home page
+    home_public_hero_title: '🎯 Örüntü Macerası 🚀',
+    home_public_hero_subtitle: 'Matematiği eğlenceli hale getiren platform! 🎨',
+    home_start_btn: '🎉 Hemen Başla',
+    home_login_btn: '🔑 Giriş Yap',
+    home_stats_students: 'Mutlu Öğrenci',
+    home_stats_lessons: 'Eğlenceli Ders',
+    home_stats_success: 'Başarı Oranı',
+    home_features_title: '✨ Neden Bizi Seçmelisin?',
+    home_feature_gamification: 'Oyunlaştırma',
+    home_feature_gamification_desc: 'Rozetler kazan, seviyeleri geç! 🏅',
+    home_feature_design: 'Renkli Tasarım',
+    home_feature_design_desc: 'Çocuklar için eğlenceli arayüz! 🌈',
+    home_feature_progress: 'İlerleme Takibi',
+    home_feature_progress_desc: 'Gelişimini takip et, hedeflerine ulaş! 📈',
+    home_feature_teachers: 'Uzman Öğretmenler',
+    home_feature_teachers_desc: 'Deneyimli öğretmen içerikleri! ⭐',
+    home_feature_personalized: 'Kişisel Öğrenme',
+    home_feature_personalized_desc: 'Sana özel öğrenme planı! 💡',
+    home_feature_daily: 'Günlük Görevler',
+    home_feature_daily_desc: 'Her gün yeni görevler ve ödüller! 🎁',
+    home_cta_title: '🚀 Maceraya Hazır mısın?',
+    home_cta_subtitle: 'Hemen katıl, öğrenmeye başla!',
+    home_teacher_welcome: '👩‍🏫 Hoşgeldiniz',
+    home_teacher_subtitle: 'Bugün sınıflarınızı ileri taşımaya hazır mısınız? 🚀',
+    home_student_welcome: '👨‍🎓 Merhaba',
+    home_student_subtitle: 'Öğrenme macerana devam etmeye hazır mısın? 🌈',
+    home_quick_actions: '⚡ Hızlı Aksiyonlar',
+    home_create_exam: '➕ Sınav Oluştur',
+    home_create_survey: '📝 Anket Oluştur',
+    home_add_class: '🏫 Sınıf Ekle',
+    home_question_pool: '❓ Soru Havuzu',
+    home_continue_learning: '📚 Öğrenmeye Devam Et',
+    home_my_exams: '🧪 Sınavlarım',
+    home_surveys: '📝 Anketler',
+    home_daily_challenge: '🔥 Günlük Görev',
+    home_upcoming_exams: '🧪 Yaklaşan Sınavlar',
+    home_upcoming_exams_teacher_hint: 'Sizin oluşturduklarınız',
+    home_upcoming_exams_student_hint: 'Sizin için planlananlar',
+    home_surveys_preview: '📝 Anketler',
+    home_surveys_teacher_hint: 'Son oluşturduklarınız',
+    home_surveys_student_hint: 'Cevaplaman gerekenler',
+    home_daily_challenge_title: '🔥 Günlük Görev',
+    home_daily_challenge_hint: 'Bugüne özel!',
+    home_daily_challenge_solve: 'Hemen Çöz',
+    home_daily_challenge_empty: 'Bugün için görev yok, yarın tekrar kontrol et! 🎯',
+    home_leaderboard: '🏆 Haftalık Liderler',
+    home_points: 'puan',
+    home_loading: 'Yükleniyor…',
+    home_error: 'Hata',
+    home_no_exams: 'Şimdilik sınav bulunmuyor.',
+    home_no_surveys: 'Şimdilik anket yok.',
+    home_view: 'Görüntüle',
+    home_open: 'Aç',
     stats_section: 'İstatistikler',
     stat_questions: 'Eğlenceli Soru',
     stat_students: 'Mutlu Öğrenci',
@@ -66,7 +123,7 @@ const translations = {
     all_difficulties: 'Tüm Zorluklar',
     no_questions_for_level: 'için soru bulunamadı. Lütfen soru havuzuna soru ekleyin.',
     select_class_level_first: 'Lütfen önce sınıf seviyesi seçin.',
-    preview: 'Önizle',
+    preview_exam: 'Önizle',
     save_exam: 'Sınavı Kaydet',
     no_classes_yet: 'Henüz oluşturulmuş sınıf bulunmuyor. Önce sınıf oluşturmalısınız.',
     class_suffix: 'Sınıf',
@@ -108,7 +165,61 @@ const translations = {
     language: 'Language',
     home_hero_title: 'Math Adventure',
     home_hero_sub: 'A Fun World of Learning with Patterns',
-    home_hero_desc: 'Are you ready for a journey full of numbers, shapes and colors? Let’s discover patterns together! 🚀',
+    home_hero_desc: 'Are you ready for a journey full of numbers, shapes and colors? Let us discover patterns together! 🚀',
+    // Home page EN
+    home_public_hero_title: '🎯 Pattern Adventure 🚀',
+    home_public_hero_subtitle: 'Making math fun! 🎨',
+    home_start_btn: '🎉 Get Started',
+    home_login_btn: '🔑 Login',
+    home_stats_students: 'Happy Students',
+    home_stats_lessons: 'Fun Lessons',
+    home_stats_success: 'Success Rate',
+    home_features_title: '✨ Why Choose Us?',
+    home_feature_gamification: 'Gamification',
+    home_feature_gamification_desc: 'Earn badges, level up! 🏅',
+    home_feature_design: 'Colorful Design',
+    home_feature_design_desc: 'Fun UI for kids! 🌈',
+    home_feature_progress: 'Progress Tracking',
+    home_feature_progress_desc: 'Track your growth, reach your goals! 📈',
+    home_feature_teachers: 'Expert Teachers',
+    home_feature_teachers_desc: 'Experienced educator content! ⭐',
+    home_feature_personalized: 'Personalized Learning',
+    home_feature_personalized_desc: 'Custom learning path for you! 💡',
+    home_feature_daily: 'Daily Challenges',
+    home_feature_daily_desc: 'New tasks and rewards every day! 🎁',
+    home_cta_title: '🚀 Ready for Adventure?',
+    home_cta_subtitle: 'Join now, start learning!',
+    home_teacher_welcome: '👩‍🏫 Welcome',
+    home_teacher_subtitle: 'Ready to elevate your classes today? 🚀',
+    home_student_welcome: '👨‍🎓 Hello',
+    home_student_subtitle: 'Ready to continue your learning adventure? 🌈',
+    home_quick_actions: '⚡ Quick Actions',
+    home_create_exam: '➕ Create Exam',
+    home_create_survey: '📝 Create Survey',
+    home_add_class: '🏫 Add Class',
+    home_question_pool: '❓ Question Pool',
+    home_continue_learning: '📚 Continue Learning',
+    home_my_exams: '🧪 My Exams',
+    home_surveys: '📝 Surveys',
+    home_daily_challenge: '🔥 Daily Challenge',
+    home_upcoming_exams: '🧪 Upcoming Exams',
+    home_upcoming_exams_teacher_hint: 'Your created exams',
+    home_upcoming_exams_student_hint: 'Planned for you',
+    home_surveys_preview: '📝 Surveys',
+    home_surveys_teacher_hint: 'Your recent surveys',
+    home_surveys_student_hint: 'Need your response',
+    home_daily_challenge_title: '🔥 Daily Challenge',
+    home_daily_challenge_hint: 'Today only!',
+    home_daily_challenge_solve: 'Solve Now',
+    home_daily_challenge_empty: 'No challenge today, check back tomorrow! 🎯',
+    home_leaderboard: '🏆 Weekly Leaders',
+    home_points: 'points',
+    home_loading: 'Loading…',
+    home_error: 'Error',
+    home_no_exams: 'No exams at the moment.',
+    home_no_surveys: 'No surveys at the moment.',
+    home_view: 'View',
+    home_open: 'Open',
     stats_section: 'Statistics',
     stat_questions: 'Fun Questions',
     stat_students: 'Happy Students',
@@ -149,7 +260,7 @@ const translations = {
     all_difficulties: 'All Difficulties',
     no_questions_for_level: 'has no questions. Please add to the question bank.',
     select_class_level_first: 'Please select class level first.',
-    preview: 'Preview',
+    preview_exam: 'Preview',
     save_exam: 'Save Exam',
     no_classes_yet: 'No classes created yet. Please create a class first.',
     class_suffix: 'Class',
@@ -169,8 +280,6 @@ const translations = {
   }
 };
 
-const I18nContext = createContext();
-
 export function I18nProvider({ children }) {
   const [lang, setLang] = useState(() => localStorage.getItem('lang') || 'tr');
 
@@ -178,18 +287,14 @@ export function I18nProvider({ children }) {
     localStorage.setItem('lang', lang);
   }, [lang]);
 
-  const t = (key) => translations[lang][key] || key;
+  const t = useCallback((key) => translations[lang][key] || key, [lang]);
 
   const value = useMemo(() => ({
     lang,
     setLang,
     t,
     toggleLang: () => setLang((prev) => (prev === 'tr' ? 'en' : 'tr'))
-  }), [lang]);
+  }), [lang, t]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
-}
-
-export function useI18n() {
-  return useContext(I18nContext);
 }

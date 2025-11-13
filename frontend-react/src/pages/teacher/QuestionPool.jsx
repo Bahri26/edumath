@@ -1,25 +1,43 @@
-// frontend-react/src/pages/teacher/QuestionPool.jsx (MARKDOWN DESTEĞİ EKLENDİ)
-
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import MDEditor from '@uiw/react-md-editor';
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
-import 'katex/dist/katex.min.css'; // KaTeX CSS
-
-import '../../assets/styles/TeacherPages.css';
+import 'katex/dist/katex.min.css';
 import { curriculumData } from '../../data/curriculumData'; 
-import PageHeader from '../../components/common/PageHeader'; 
-import SimulationPlayer from '../../components/SimulationPlayer';
+import PageHeader from '../../components/ui/common/PageHeader'; 
+import QuestionSolver from '../../components/interactive/QuestionSolver';
+import './QuestionPool.css';
 
 // --- Modal Bileşeni (Yataylık için CSS Güncellendi) ---
 const Modal = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '1rem', zIndex: 1000
+      }}
+    >
       {/* Yatay görünüm için genişlik ayarı */}
-  <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '950px', width: '90%' }}>
-        <button className="modal-close text-white text-3xl font-bold absolute top-2 right-4 z-50" onClick={onClose}>&times;</button>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: '950px', width: '90%', background: '#fff', borderRadius: 16,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.25)', position: 'relative', padding: '1rem'
+        }}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Kapat"
+          style={{
+            position: 'absolute', top: 8, right: 12, border: 0, background: 'transparent',
+            fontSize: 28, lineHeight: 1, cursor: 'pointer', color: '#333'
+          }}
+        >
+          &times;
+        </button>
         {children}
       </div>
     </div>
@@ -28,8 +46,8 @@ const Modal = ({ isOpen, onClose, children }) => {
 // --- Modal Bileşeni Sonu ---
 
 
-// API URL
-const API_URL = 'http://localhost:8000/api/questions';
+// Service base via shared api instance
+import { getQuestions, createQuestion, updateQuestion, deleteQuestion } from '../../services/questionService';
 
 const defaultFormState = {
   text: '**Soru:** \n\n$x^2+5=30$ ise $x$ kaçtır?',
@@ -43,9 +61,7 @@ const classLevels = curriculumData.siniflar || ["5. Sınıf", "6. Sınıf", "7. 
 
 
 function QuestionPool() {
-  // read token inside component to reflect login changes
   const token = localStorage.getItem('token');
-  const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
   // --- STATE'LER ---
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,29 +96,24 @@ function QuestionPool() {
   
   // --- useEffect (Veri Çekme) ---
   const fetchQuestions = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setMessage('');
+    setLoading(true); setError(null); setMessage('');
     if (!token) { setError('Verileri görmek için giriş yapmalısınız.'); setLoading(false); return; }
-
     const params = {};
     if (filterSinif) params.classLevel = filterSinif;
     if (filterZorluk) params.difficulty = filterZorluk;
-
     try {
-      const response = await axios.get(API_URL, { ...axiosConfig, params: params });
-      setQuestions(response.data);
+      const data = await getQuestions(params);
+      setQuestions(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Sorular yüklenirken hata:', err);
-      // Hata durumunda test verisi gösterimi
       if (err.response?.status === 404 || err.code === 'ERR_NETWORK') {
-           setError('API bağlantısı kurulamadı. Test verileri kullanılıyor.');
-           setQuestions([
-            { _id: '1', subject: 'Matematik', classLevel: '9. Sınıf', topic: 'Mantık', learningOutcome: 'Önermeyi açıklar.', questionType: 'test', difficulty: 'Kolay', text: '`p: 2 tek sayıdır.` Önermesinin doğruluk değeri nedir?', options: ['Doğru', 'Yanlış', 'Bilinmez', 'Belirsiz'], correctAnswer: 'Yanlış', solutionText: '2 çift sayıdır, bu nedenle p önermesi yanlıştır. Doğruluk değeri 0 (Yanlış) olur. Bu bir simülasyon cevabıdır.' },
-            { _id: '2', subject: 'Matematik', classLevel: '10. Sınıf', topic: 'Örüntüler', learningOutcome: 'Ardışık sayılar kuralını bulur.', questionType: 'bosluk-doldurma', difficulty: 'Orta', text: '3, 7, 11, ___, 19 örüntüsünde boşluğa ne gelmelidir?', correctAnswer: '15', solutionText: 'Örüntünün kuralı `+4`\'tür. $11+4=15$ olur.' },
-          ]);
+        setError('API bağlantısı kurulamadı. Test verileri kullanılıyor.');
+        setQuestions([
+          { _id: '1', subject: 'Matematik', classLevel: '9. Sınıf', topic: 'Mantık', learningOutcome: 'Önermeyi açıklar.', questionType: 'test', difficulty: 'Kolay', text: '`p: 2 tek sayıdır.` Önermesinin doğruluk değeri nedir?', options: ['Doğru', 'Yanlış', 'Bilinmez', 'Belirsiz'], correctAnswer: 'Yanlış', solutionText: '2 çift sayıdır, bu nedenle p önermesi yanlıştır. Doğruluk değeri 0 (Yanlış) olur. Bu bir simülasyon cevabıdır.' },
+          { _id: '2', subject: 'Matematik', classLevel: '10. Sınıf', topic: 'Örüntüler', learningOutcome: 'Ardışık sayılar kuralını bulur.', questionType: 'bosluk-doldurma', difficulty: 'Orta', text: '3, 7, 11, ___, 19 örüntüsünde boşluğa ne gelmelidir?', correctAnswer: '15', solutionText: 'Örüntünün kuralı `+4`\'tür. $11+4=15$ olur.' },
+        ]);
       } else {
-          setError('Sorular yüklenemedi. Lütfen daha sonra tekrar deneyin.');
+        setError('Sorular yüklenemedi. Lütfen daha sonra tekrar deneyin.');
       }
     } finally {
       setLoading(false);
@@ -207,18 +218,16 @@ function QuestionPool() {
     };
 
     try {
-      let response; 
       if (editingId) {
-        response = await axios.put(`${API_URL}/${editingId}`, questionData, axiosConfig); 
-        setQuestions(questions.map(q => q._id === editingId ? response.data : q));
+        const updated = await updateQuestion(editingId, questionData);
+        setQuestions(questions.map(q => q._id === editingId ? updated : q));
         setMessage('Soru başarıyla güncellendi!');
       } else {
-        response = await axios.post(API_URL, questionData, axiosConfig); 
-        setQuestions([response.data, ...questions]); 
+        const created = await createQuestion(questionData);
+        setQuestions([created, ...questions]);
         setMessage('Soru başarıyla oluşturuldu!');
       }
-      resetForm('list'); 
-
+      resetForm('list');
     } catch (err) {
       console.error('Form gönderme hatası:', err);
       setError(err.response?.data?.message || 'Soru kaydedilemedi.');
@@ -232,7 +241,7 @@ function QuestionPool() {
     }
     if (!token) { setError('Silmek için giriş yapmalısınız.'); return; }
     try {
-      await axios.delete(`${API_URL}/${id}`, axiosConfig);
+      await deleteQuestion(id);
       setMessage('Soru başarıyla silindi.');
       setQuestions(questions.filter(q => q._id !== id));
     } catch (err) {
@@ -366,46 +375,39 @@ function QuestionPool() {
   // --- JSX (ANA RENDER) KISMI) ---
   // ==================================================================
   return (
-    <div className="teacher-page-container"> 
-    
-      <PageHeader title="Soru Havuzu" className="w-900">
-        <div className="header-tab-group">
-          <button 
-            className={`header-tab-button ${activeTab === 'list' ? 'active' : ''}`}
-            onClick={() => {
-              if (editingId) resetForm('list');
-              setActiveTab('list');
-            }}
+  <div className="container pt-2">
+
+      <div className="kids-card mb-2 flex justify-between items-center" style={{ gap:'1rem', flexWrap:'wrap' }}>
+        <div className="flex flex-column" style={{ gap:4 }}>
+          <h2 className="m-0">Soru Havuzu</h2>
+          <p className="muted m-0" style={{ fontSize:'.85rem' }}>Soruları oluştur, filtrele, düzenle.</p>
+        </div>
+        <div className="flex" style={{ gap:8 }}>
+          <button
+            className={`kids-btn ${activeTab === 'list' ? 'primary' : 'secondary'} sm`}
+            onClick={() => { if (editingId) resetForm('list'); setActiveTab('list'); }}
           >
-            <i className="fas fa-list me-2"></i> Soru Listesi
+            📋 Liste
           </button>
-          <button 
-            className={`header-tab-button ${activeTab === 'create' ? 'active' : ''}`}
-            onClick={() => {
-              if (editingId) resetForm('create');
-              setActiveTab('create');
-            }}
+          <button
+            className={`kids-btn ${activeTab === 'create' ? 'primary' : 'secondary'} sm`}
+            onClick={() => { if (editingId) resetForm('create'); setActiveTab('create'); }}
           >
-            <i className="fas fa-plus me-2"></i> Yeni Soru Oluştur
+            ➕ Yeni Soru
           </button>
         </div>
-      </PageHeader>
+      </div>
       
       {/* YENİ SORU EKLEME / GÜNCELLEME FORMU */}
       {activeTab === 'create' && (
-        <div className="page-card form-card"> 
-          <h2>{editingId ? 'Soruyu Güncelle' : 'Yeni Soru Ekle'}</h2>
+        <div className="kids-card"> 
+          <h2 className="m-0 mb-1">{editingId ? 'Soruyu Güncelle' : 'Yeni Soru Ekle'}</h2>
           
-          <div className="stepper">
-            <div className={`step-item ${step === 1 ? 'active' : (step > 1 ? 'completed' : '')}`}>
-              <div className="step-number">1</div>
-              <div className="step-label">Soru Detayları</div>
-            </div>
-            <div className="step-line"></div>
-            <div className={`step-item ${step === 2 ? 'active' : ''}`}>
-              <div className="step-number">2</div>
-              <div className="step-label">Soru Hazırlama</div>
-            </div>
+          {/* Basit stepper */}
+          <div className="flex items-center" style={{ gap:8, marginBottom:12 }}>
+            <span className={`kids-badge ${step >= 1 ? 'success' : 'warning'}`}>1. Detaylar</span>
+            <span style={{ opacity:.6 }}>→</span>
+            <span className={`kids-badge ${step >= 2 ? 'success' : 'warning'}`}>2. Hazırlama</span>
           </div>
           
           <form onSubmit={handleSubmit}>
@@ -415,46 +417,46 @@ function QuestionPool() {
             {step === 1 && (
               <fieldset>
                 <legend>1. Adım: Soru Detayları</legend>
-                <div className="form-grid-single-column">
+                <div className="d-flex flex-column gap-3">
                   
-                  <div className="form-group"><label htmlFor="dersSelect">Ders</label>
-                    <select id="dersSelect" value={selectedDers} onChange={(e) => setSelectedDers(e.target.value)}>
+                  <div className="form-group"><label className="form-label" htmlFor="dersSelect">Ders</label>
+                    <select className="kids-select" id="dersSelect" value={selectedDers} onChange={(e) => setSelectedDers(e.target.value)}>
                       {curriculumData.dersler.map(ders => (<option key={ders} value={ders}>{ders}</option>))}
                     </select>
                   </div>
                   
-                  <div className="form-group"><label htmlFor="sinifSelect">Sınıf Seçin</label>
-                    <select id="sinifSelect" value={selectedSinif} onChange={(e) => setSelectedSinif(e.target.value)} required>
+                  <div className="form-group"><label className="form-label" htmlFor="sinifSelect">Sınıf Seçin</label>
+                    <select className="kids-select" id="sinifSelect" value={selectedSinif} onChange={(e) => setSelectedSinif(e.target.value)} required>
                       <option value="">Sınıf seçiniz...</option>
                       {classLevels.map(sinif => (<option key={sinif} value={sinif}>{sinif}</option>))}
                     </select>
                   </div>
 
-                  <div className="form-group"><label htmlFor="konuSelect">Konu / Ünite</label>
-                    <select id="konuSelect" value={selectedKonu} onChange={(e) => setSelectedKonu(e.target.value)}>
+                  <div className="form-group"><label className="form-label" htmlFor="konuSelect">Konu / Ünite</label>
+                    <select className="kids-select" id="konuSelect" value={selectedKonu} onChange={(e) => setSelectedKonu(e.target.value)}>
                       {curriculumData.konular.map(konu => (<option key={konu} value={konu}>{konu}</option>))}
                     </select>
                   </div>
 
-                  <div className="form-group"><label htmlFor="kazanimInput">Kazanım (MEB Kodu veya Açıklaması)</label>
-                    <textarea id="kazanimInput" rows="3" value={selectedKazanım} onChange={(e) => setSelectedKazanım(e.target.value)} placeholder="İlgili kazanımı yazın (örn: M.10.1.1.2. n elemanlı bir kümenin...)" required />
+                  <div className="form-group"><label className="form-label" htmlFor="kazanimInput">Kazanım (MEB Kodu veya Açıklaması)</label>
+                    <textarea className="kids-input" id="kazanimInput" rows="3" value={selectedKazanım} onChange={(e) => setSelectedKazanım(e.target.value)} placeholder="İlgili kazanımı yazın (örn: M.10.1.1.2. n elemanlı bir kümenin...)" required />
                   </div>
                   
-                  <div className="form-group"><label htmlFor="soruTipiSelect">Soru Tipi Seçin</label>
-                    <select id="soruTipiSelect" value={selectedSoruTipi} onChange={(e) => setSelectedSoruTipi(e.target.value)} required>
+                  <div className="form-group"><label className="form-label" htmlFor="soruTipiSelect">Soru Tipi Seçin</label>
+                    <select className="kids-select" id="soruTipiSelect" value={selectedSoruTipi} onChange={(e) => setSelectedSoruTipi(e.target.value)} required>
                       {curriculumData.soruTipleri.map(tip => (<option key={tip.value} value={tip.value} disabled={tip.value === 'eslestirme'}>{tip.label}</option>))}
                     </select>
                   </div>
 
-                  <div className="form-group"><label htmlFor="difficultySelect">Zorluk Seviyesi</label>
-                    <select id="difficultySelect" value={selectedDifficulty} onChange={(e) => setSelectedDifficulty(e.target.value)} required>
+                  <div className="form-group"><label className="form-label" htmlFor="difficultySelect">Zorluk Seviyesi</label>
+                    <select className="kids-select" id="difficultySelect" value={selectedDifficulty} onChange={(e) => setSelectedDifficulty(e.target.value)} required>
                       {difficultyLevels.map(level => (<option key={level} value={level}>{level}</option>))}
                     </select>
                   </div>
                 </div>
-                <div className="step-navigation-buttons" style={{ justifyContent: 'flex-end' }}>
-                  <button type="button" className="btn-primary" onClick={handleNextStep}>
-                    İleri <i className="fas fa-arrow-right ms-2"></i>
+                <div className="flex justify-end" style={{ gap:8 }}>
+                  <button type="button" className="kids-btn primary" onClick={handleNextStep}>
+                    İleri →
                   </button>
                 </div>
               </fieldset>
@@ -465,7 +467,7 @@ function QuestionPool() {
                 <legend>2. Adım: Soru Hazırlama ({selectedSoruTipi})</legend>
                 
                 <div className="form-group" data-color-mode="dark">
-                  <label htmlFor="questionText">Soru Metni (Markdown ve LaTeX destekler)</label>
+                  <label className="form-label" htmlFor="questionText">Soru Metni (Markdown ve LaTeX destekler)</label>
                   <MDEditor
                     value={step2Data.text}
                     onChange={(value) => handleEditorChange(value, 'text')}
@@ -479,7 +481,7 @@ function QuestionPool() {
                 {renderAnswerFields()}
 
                 <div className="form-group" data-color-mode="dark">
-                  <label htmlFor="solutionText">Soru Çözümü (Opsiyonel, Markdown ve LaTeX destekler)</label>
+                  <label className="form-label" htmlFor="solutionText">Soru Çözümü (Opsiyonel, Markdown ve LaTeX destekler)</label>
                    <MDEditor
                     value={step2Data.solutionText}
                     onChange={(value) => handleEditorChange(value, 'solutionText')}
@@ -493,25 +495,24 @@ function QuestionPool() {
                 <hr className="form-divider" />
                 <div className="form-group text-center">
                   {/* SİMÜLASYON BUTONU */}
-                  <button type="button" className="btn-secondary" onClick={handleStartSimulation} disabled={!step2Data.text}>
+                  <button type="button" className="kids-btn secondary" onClick={handleStartSimulation} disabled={!step2Data.text}>
                     <i className="fas fa-video me-2"></i> Soruyu Anlat (Simülasyon Başlat)
                   </button>
                 </div>
                 <hr className="form-divider" />
 
 
-                <div className="step-navigation-buttons">
-                  <button type="button" className="btn-secondary" onClick={() => setStep(1)}>
-                    <i className="fas fa-arrow-left me-2"></i> Geri
+                <div className="flex" style={{ gap:8, justifyContent:'flex-end' }}>
+                  <button type="button" className="kids-btn secondary" onClick={() => setStep(1)}>
+                    ← Geri
                   </button>
                   {editingId && (
-                    <button type="button" className="btn-warning" onClick={() => resetForm('list')}>
-                      <i className="fas fa-times me-2"></i> İptal
+                    <button type="button" className="kids-btn warning" onClick={() => resetForm('list')}>
+                      İptal
                     </button>
                   )}
-                  <button type="submit" className="btn-primary" disabled={selectedSoruTipi === 'eslestirme'}>
-                    <i className="fas fa-save me-2"></i> 
-                    {editingId ? 'Soruyu Güncelle' : 'Soruyu Kaydet'}
+                  <button type="submit" className="kids-btn primary" disabled={selectedSoruTipi === 'eslestirme'}>
+                    {editingId ? 'Güncelle' : 'Kaydet'}
                   </button>
                 </div>
               </fieldset>
@@ -522,93 +523,96 @@ function QuestionPool() {
       
       {/* --- MEVCUT SORULAR LİSTESİ --- */}
       {activeTab === 'list' && (
-        <div className="page-card list-card"> 
-          <h2>Mevcut Sorular ({totalQuestions})</h2>
+        <div className="kids-card"> 
+          <h2 className="m-0 mb-1">Mevcut Sorular ({totalQuestions})</h2>
           
-          <div className="filter-bar">
-            <div className="form-group">
-              <label htmlFor="filterSinif">Sınıfa Göre Filtrele</label>
-              <select id="filterSinif" value={filterSinif} onChange={(e) => handleFilterChange(setFilterSinif, e.target.value)}>
+          <div className="d-flex gap-3 flex-wrap mb-3">
+            <div className="form-group" style={{ minWidth: 220 }}>
+              <label className="form-label" htmlFor="filterSinif">Sınıfa Göre Filtrele</label>
+              <select className="kids-select" id="filterSinif" value={filterSinif} onChange={(e) => handleFilterChange(setFilterSinif, e.target.value)}>
                 <option value="">Tüm Sınıflar</option>
                 {classLevels.map(level => (<option key={level} value={level}>{level}</option>))}
               </select>
             </div>
-            <div className="form-group">
-              <label htmlFor="filterZorluk">Zorluğa Göre Filtrele</label>
-              <select id="filterZorluk" value={filterZorluk} onChange={(e) => handleFilterChange(setFilterZorluk, e.target.value)}>
+            <div className="form-group" style={{ minWidth: 220 }}>
+              <label className="form-label" htmlFor="filterZorluk">Zorluğa Göre Filtrele</label>
+              <select className="kids-select" id="filterZorluk" value={filterZorluk} onChange={(e) => handleFilterChange(setFilterZorluk, e.target.value)}>
                 <option value="">Tüm Zorluklar</option>
                 {difficultyLevels.map(level => (<option key={level} value={level}>{level}</option>))}
               </select>
             </div>
           </div>
 
-          {loading && <p>Sorular yükleniyor...</p>}
+          {loading && (
+            <div className="d-flex flex-column gap-2">
+              {[1,2,3].map(i => (
+                <div key={i} className="kids-card">
+                  <div className="skeleton text mb-1" style={{ width:'50%' }}></div>
+                  <div className="skeleton text mb-1" style={{ width:'70%' }}></div>
+                  <div className="skeleton text" style={{ width:'40%' }}></div>
+                </div>
+              ))}
+            </div>
+          )}
           {message && <div className="alert alert-success mb-4">{message}</div>}
-          {!loading && error && <p className="error">{error}</p>}
+          {!loading && error && <div className="kids-error mb-2">{error}</div>}
           
           {!loading && !error && (
-            <ul className="question-list">
+            <div className="d-flex flex-column gap-3">
               {totalQuestions === 0 ? (
                 <p>Bu filtrelere uygun soru bulunamadı.</p>
               ) : (
                 currentQuestions.map((q) => (
-                  <li key={q._id} className="question-item">
-                    
-                    <div className="question-header-tags">
-                      <span className="question-subject-badge">{q.subject} - {q.classLevel}</span>
-                      <span className={`question-difficulty-badge difficulty-${q.difficulty?.toLowerCase()}`}>{q.difficulty}</span>
+                  <div key={q._id} className="kids-card">
+                    <div className="flex justify-between items-center mb-2" style={{ gap:8, flexWrap:'wrap' }}>
+                      <span className="kids-badge turquoise">{q.subject} - {q.classLevel}</span>
+                      <span className={`kids-badge ${q.difficulty === 'Zor' ? 'danger' : q.difficulty === 'Orta' ? 'warning' : 'success'}`}>{q.difficulty || '—'}</span>
                     </div>
-
-                    <div className="question-text" data-color-mode="dark">
+                    <div data-color-mode="dark" className="mb-2">
                        <MDEditor.Markdown 
                           source={q.text} 
                           rehypePlugins={[[rehypeKatex, { output: 'mathml' }]]}
                           remarkPlugins={[remarkMath]}
                        />
                     </div>
-                    
-                    {q.questionType === 'test' && (
-                      <ul className="question-options">
+                    {q.questionType === 'test' && Array.isArray(q.options) && (
+                      <ul style={{ listStyle:'none', padding:0, margin:0, display:'grid', gap:6 }}>
                         {q.options.map((opt, index) => (
-                          <li key={index} className={opt === q.correctAnswer ? 'correct' : ''}>
-                            {String.fromCharCode(65 + index)}. {opt}
+                          <li key={index} style={{ padding:'8px 10px', borderRadius:10, background: opt === q.correctAnswer ? 'rgba(107,207,127,.15)' : '#f9fafb' }}>
+                            <strong>{String.fromCharCode(65 + index)}.</strong> {opt}
                           </li>
                         ))}
                       </ul>
                     )}
                     {(q.questionType === 'dogru-yanlis' || q.questionType === 'bosluk-doldurma') && (
-                      <p><strong>Doğru Cevap:</strong> <span className="correct">{q.correctAnswer}</span></p>
+                      <p className="muted"><strong>Doğru Cevap:</strong> {q.correctAnswer}</p>
                     )}
-
-                    <div className="question-actions flex justify-end gap-2">
-                      
-                      {/* ÇÖZÜMÜ GÖSTER BUTONU */}
+                    <div className="flex justify-end" style={{ gap:8, marginTop:8 }}>
                       {(q.solutionText || q.text) && (
-                        <button className="btn-primary btn-sm" onClick={() => handleShowSolution(q)}>
-                          <i className="fas fa-video me-2"></i> Çözümü Göster (Sim.)
+                        <button className="kids-btn primary sm" onClick={() => handleShowSolution(q)}>
+                          Çözüm
                         </button>
                       )}
-                      
-                      <button className="btn-secondary btn-sm" onClick={() => handleEdit(q)}>
-                        <i className="fas fa-edit me-2"></i> Düzenle
+                      <button className="kids-btn secondary sm" onClick={() => handleEdit(q)}>
+                        Düzenle
                       </button>
-                      <button className="btn-danger btn-sm" onClick={() => handleDelete(q._id)}>
-                        <i className="fas fa-trash me-2"></i> Sil
+                      <button className="kids-btn danger sm" onClick={() => handleDelete(q._id)}>
+                        Sil
                       </button>
                     </div>
-                  </li>
+                  </div>
                 ))
               )}
-            </ul>
+            </div>
           )}
           
           {/* Sayfalama Kontrolleri */}
           {totalPages > 1 && (
-            <div className="pagination-container">
+            <div className="flex gap-2 justify-center mt-3">
               {Array.from({ length: totalPages }, (_, i) => (
                 <button
                   key={i + 1}
-                  className={`page-button ${currentPage === i + 1 ? 'active' : ''}`}
+                  className={`kids-btn ${currentPage === i + 1 ? 'primary' : 'secondary'} sm`}
                   onClick={() => setCurrentPage(i + 1)}
                 >
                   {i + 1}
@@ -620,7 +624,13 @@ function QuestionPool() {
       )}
       {/* SİMÜLASYON MODALI */}
     <Modal isOpen={isSimulationOpen} onClose={() => setIsSimulationOpen(false)}>
-    {simulationData && <SimulationPlayer questionData={simulationData} />}
+      {simulationData && (
+        <QuestionSolver
+          questionData={simulationData}
+          onSolved={(r) => console.log('Çözüm sonucu:', r)}
+          onClose={() => setIsSimulationOpen(false)}
+        />
+      )}
     </Modal>
     </div> 
   );

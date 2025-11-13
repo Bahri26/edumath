@@ -1,9 +1,7 @@
 // frontend-react/src/pages/teacher/TeacherDetailedResultsPage.jsx
-
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import PageHeader from '../../components/common/PageHeader';
+import PageHeader from '../../components/ui/common/PageHeader';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
     faTachometerAlt, 
@@ -12,132 +10,136 @@ import {
     faTimesCircle,
     faChartLine
 } from '@fortawesome/free-solid-svg-icons';
-import '../../assets/styles/TeacherPages.css'; 
+import { getExamResults } from '../../services/resultService';
 
-const API_URL = 'http://localhost:8000/api/results'; // POST ve GET /:examId için
-
-// Yardımcı İstatistik Kartı Bileşeni
-const StatsCard = ({ icon, label, value, color }) => (
-    <div className="stat-card" style={{ borderLeft: `5px solid ${color}`, minWidth: '220px' }}>
-        <div className="stat-icon" style={{ color: color }}>
-            <FontAwesomeIcon icon={icon} />
+// Yardımcı İstatistik Kartı Bileşeni (BEM Approach)
+const StatsCard = ({ icon, label, value, variant = 'purple' }) => (
+    <div className="kids-card">
+        <div className="flex items-center gap-1 mb-1">
+            <span className={`kids-badge ${variant}`}>
+                <FontAwesomeIcon icon={icon} />
+            </span>
+            <span className="muted">{label}</span>
         </div>
-        <div className="stat-content">
-            <p className="stat-label">{label}</p>
-            <h4 className="stat-value">{value}</h4>
-        </div>
+        <h3 className="m-0">{value}</h3>
     </div>
 );
 
 
 function TeacherDetailedResultsPage() {
-    const { examId } = useParams(); // URL'den sınav ID'sini alır
+    const { examId } = useParams();
     const navigate = useNavigate();
-    
-    const token = localStorage.getItem('token');
-    const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
 
-    const [resultsData, setResultsData] = useState(null); // Tüm sonuç objesi (stats + studentResults)
+    const [resultsData, setResultsData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const fetchResults = useCallback(async () => {
         setLoading(true);
         setError(null);
-        if (!token) {
-             setError("Yetki hatası. Lütfen yeniden giriş yapın.");
-             setLoading(false);
-             return;
-        }
-
         try {
-            // GET /api/results/:examId
-            const response = await axios.get(`${API_URL}/${examId}`, axiosConfig); 
-            setResultsData(response.data); // examTitle, passMark, stats, studentResults
+            const data = await getExamResults(examId);
+            setResultsData(data);
         } catch (err) {
-            console.error("Sonuçlar yüklenemedi:", err);
-            setError(err.response?.data?.message || "Sonuçlar listelenirken bir hata oluştu.");
+            console.error('Sonuçlar yüklenemedi:', err);
+            setError(err.response?.data?.message || 'Sonuçlar listelenirken bir hata oluştu.');
         } finally {
             setLoading(false);
         }
-    }, [examId, token]);
+    }, [examId]);
 
-    useEffect(() => {
-        fetchResults();
-    }, [fetchResults]);
+    useEffect(() => { fetchResults(); }, [fetchResults]);
 
-    if (loading) return <p className="teacher-page-container">Rapor yükleniyor...</p>;
-    if (error) return <p className="teacher-page-container alert alert-danger page-card">{error}</p>;
-    if (!resultsData || resultsData.studentResults.length === 0) {
-        return (
-            <div className="teacher-page-container">
-                <PageHeader title="Rapor Yok" />
-                <div className="page-card">
-                    Bu sınav ({resultsData?.examTitle || examId}) henüz hiçbir öğrenci tarafından tamamlanmamıştır.
-                </div>
-            </div>
-        );
-    }
-
-    const { examTitle, passMark, stats, studentResults } = resultsData;
+    const examTitle = resultsData?.examTitle;
+    const passMark = resultsData?.passMark;
+    const stats = resultsData?.stats;
+    const studentResults = resultsData?.studentResults || [];
 
     return (
-        <div className="teacher-page-container">
-            <PageHeader title={`Detaylı Sınav Raporu: ${examTitle}`}>
-                <button className="btn-primary" onClick={() => navigate('/teacher/assignments')}>
-                    <FontAwesomeIcon icon={faChartLine} className="me-2" />
-                    Atamalar Listesine Dön
+        <div className="container pt-2">
+            <PageHeader title={`Detaylı Sınav Raporu: ${examTitle || '...'}`}>
+                <button className="kids-btn primary" onClick={() => navigate('/teacher/assignments')}>
+                    <FontAwesomeIcon icon={faChartLine} className="mr-1" /> Atamalar Listesine Dön
                 </button>
             </PageHeader>
 
-            {/* --- 1. GENEL İSTATİSTİKLER --- */}
-            <div className="stats-grid">
-                <StatsCard icon={faUsers} label="Katılımcı Sayısı" value={stats.totalSubmissions} color="#0d6efd" />
-                <StatsCard icon={faTachometerAlt} label="Sınıf Ortalaması" value={`${stats.avgScore}%`} color="#ffc107" />
-                <StatsCard icon={faCheckDouble} label="Geçen Öğrenci" value={stats.passedCount} color="#198754" />
-                <StatsCard icon={faTimesCircle} label="Kalan Öğrenci" value={stats.totalSubmissions - stats.passedCount} color="#dc3545" />
-            </div>
+            {error && <div className="kids-error mb-2">{error}</div>}
 
-            {/* --- 2. ÖĞRENCİ DETAY TABLOSU --- */}
-            <div className="page-card mt-4">
-                <h3>Öğrenci Bazında Performans</h3>
-                <p>Geçme Notu: <strong>{passMark}%</strong></p>
-                
-                <div className="table-container">
-                    <table className="student-table">
-                        <thead>
-                            <tr>
-                                <th>Öğrenci Adı</th>
-                                <th>E-posta</th>
-                                <th>Doğru</th>
-                                <th>Yanlış</th>
-                                <th>Boş</th>
-                                <th>Puan (%)</th>
-                                <th>Durum</th>
-                                <th>Süre (dk)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {studentResults.map((result) => (
-                                <tr key={result._id} className={result.passed ? 'table-success' : 'table-danger'}>
-                                    <td>{result.studentId.firstName} {result.studentId.lastName}</td>
-                                    <td>{result.studentId.email}</td>
-                                    <td>{result.correctAnswers}</td>
-                                    <td>{result.wrongAnswers}</td>
-                                    <td>{result.answers.length - (result.correctAnswers + result.wrongAnswers)}</td> {/* Boş bıraktıklarını hesapla */}
-                                    <td><strong>{result.score}%</strong></td>
-                                    <td>
-                                        <span className={`status-badge status-${result.passed ? 'passed' : 'failed'}`}>
-                                            {result.passed ? 'GEÇTİ' : 'KALDI'}
-                                        </span>
-                                    </td>
-                                    <td>{Math.round(result.completionTime / 60)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+            {loading ? (
+                <>
+                    <div className="kids-grid-3 mb-2">
+                        {[1,2,3].map(i => (
+                            <div key={i} className="kids-card">
+                                <div className="skeleton text mb-2" style={{ width: '40%' }}></div>
+                                <div className="skeleton text" style={{ width: '30%' }}></div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="kids-card">
+                        <div className="skeleton text mb-2" style={{ width: '60%' }}></div>
+                        {[1,2,3,4].map(i => (
+                            <div key={i} className="skeleton text mb-1"></div>
+                        ))}
+                    </div>
+                </>
+            ) : (!resultsData || studentResults.length === 0) ? (
+                <div className="kids-card text-center">
+                    <h3 className="m-0 mb-1">Rapor Yok</h3>
+                    <p className="muted">Bu sınav ({examTitle || examId}) henüz hiçbir öğrenci tarafından tamamlanmamıştır.</p>
                 </div>
-            </div>
+            ) : (
+                <>
+                    <div className="kids-grid-3">
+                        <StatsCard icon={faUsers} label="Katılımcı Sayısı" value={stats.totalSubmissions} variant="purple" />
+                        <StatsCard icon={faTachometerAlt} label="Sınıf Ortalaması" value={`${stats.avgScore}%`} variant="yellow" />
+                        <StatsCard icon={faCheckDouble} label="Geçen Öğrenci" value={stats.passedCount} variant="green" />
+                        <StatsCard icon={faTimesCircle} label="Kalan Öğrenci" value={stats.totalSubmissions - stats.passedCount} variant="red" />
+                    </div>
+
+                    <div className="kids-card mt-2">
+                        <h3 className="m-0 mb-1">Öğrenci Bazında Performans</h3>
+                        <p className="muted mb-2">Geçme Notu: <strong>{passMark}%</strong></p>
+
+                        <div className="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Öğrenci Adı</th>
+                                        <th>E-posta</th>
+                                        <th>Doğru</th>
+                                        <th>Yanlış</th>
+                                        <th>Boş</th>
+                                        <th>Puan (%)</th>
+                                        <th>Durum</th>
+                                        <th>Süre (dk)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {studentResults.map((result) => {
+                                        const blank = (result.answers?.length || 0) - ((result.correctAnswers || 0) + (result.wrongAnswers || 0));
+                                        return (
+                                            <tr key={result._id}>
+                                                <td>{result.studentId?.firstName} {result.studentId?.lastName}</td>
+                                                <td>{result.studentId?.email}</td>
+                                                <td>{result.correctAnswers}</td>
+                                                <td>{result.wrongAnswers}</td>
+                                                <td>{blank < 0 ? 0 : blank}</td>
+                                                <td><strong>{result.score}%</strong></td>
+                                                <td>
+                                                    <span className={`kids-badge ${result.passed ? 'green' : 'red'}`}>
+                                                        {result.passed ? 'GEÇTİ' : 'KALDI'}
+                                                    </span>
+                                                </td>
+                                                <td>{Math.round((result.completionTime || 0) / 60)}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 }

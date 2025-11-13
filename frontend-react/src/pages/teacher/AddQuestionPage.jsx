@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createQuestion } from '../../services/questionService';
 import { patternsCurriculum } from '../../data/patternsCurriculum';
 import { curriculumData } from '../../data/curriculumData';
-import '../../assets/styles/TeacherPages.css';
-import PageHeader from '../../components/common/PageHeader';
+import PageHeader from '../../components/ui/common/PageHeader';
 
 const AddQuestionPage = () => {
   const navigate = useNavigate();
@@ -279,3 +278,4 @@ const AddQuestionPage = () => {
 };
 
 export default AddQuestionPage;
+

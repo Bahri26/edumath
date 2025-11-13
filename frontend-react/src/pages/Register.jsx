@@ -1,192 +1,253 @@
-// frontend-react/src/pages/Register.jsx (GÜNCEL HALİ)
-
-import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext'; 
-import { Link, Navigate } from 'react-router-dom'; 
-import '../assets/styles/Accounts.css'; 
+﻿import React, { useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { Link, Navigate } from 'react-router-dom';
+import '../assets/styles/Auth.css';
 
 function Register() {
-  const [firstName, setFirstName] = useState(''); 
-  const [lastName, setLastName] = useState(''); 
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('student'); 
-  
-  // --- YENİ EKLENEN STATE'LER ---
-  const [birthDate, setBirthDate] = useState(''); // Doğum tarihi için
-  const [gradeLevel, setGradeLevel] = useState(''); // Sınıf düzeyi için (1-12)
-  // --- YENİ STATE'LER BİTİŞ ---
-
+  const [role, setRole] = useState('student');
+  const [birthDate, setBirthDate] = useState('');
+  const [gradeLevel, setGradeLevel] = useState('');
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null); 
-  const [loading, setLoading] = useState(false); 
+  const [success, setSuccess] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
-  const { register, user } = useAuth(); // Yönlendirme için user'ı da al
+  const { register, user } = useAuth();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault(); 
-    setError(null); 
-    setSuccess(null);
-    setLoading(true);
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
-    // --- GÜNCELLENEN DOĞRULAMA ---
-    if (!firstName || !lastName || !email || !password || !birthDate) {
-      setError('Lütfen tüm zorunlu alanları doldurun.');
-      setLoading(false);
-      return;
-    }
-    if (role === 'student' && !gradeLevel) {
-      setError('Öğrenciler için sınıf düzeyi seçmek zorunludur.');
-      setLoading(false);
-      return;
-    }
-    // --- DOĞRULAMA BİTİŞ ---
-    
-    try {
-      // --- GÜNCELLENEN REGISTER ÇAĞRISI ---
-      await register(
-        firstName, 
-        lastName, 
-        email, 
-        password, 
-        role, 
-        birthDate, // YENİ
-        role === 'student' ? gradeLevel : null // YENİ (Öğrenci değilse null yolla)
-      ); 
-      
-      setSuccess('Kayıt başarılı! Yönlendiriliyorsunuz... ✅');
-      // Otomatik login (AuthContext'te) başarılı olduğunda 'user' state'i dolacak
-      // ve aşağıdaki <Navigate> componenti yönlendirmeyi yapacak.
+  const calculatePasswordStrength = (password) => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return Math.min(strength, 5);
+  };
 
-    } catch (err) {
-      // AuthContext'ten fırlatılan hatayı yakala
-      setError(err.message || 'Kayıt başarısız oldu. Bilgilerinizi kontrol edin.');
-    } finally {
-        setLoading(false); 
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    if (value && !validateEmail(value)) {
+      setEmailError('Geçerli bir e-posta adresi girin');
+    } else {
+      setEmailError('');
     }
   };
 
-  // Eğer AuthContext'teki 'user' state'i dolduysa (otomatik login başarılı olduysa)
-  // Kullanıcıyı dashboard'a yönlendir.
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    setPassword(value);
+    setPasswordStrength(calculatePasswordStrength(value));
+    
+    let errors = [];
+    if (value.length < 8) errors.push('En az 8 karakter');
+    if (!/[A-Z]/.test(value)) errors.push('Büyük harf');
+    if (!/[a-z]/.test(value)) errors.push('Küçük harf');
+    if (!/[0-9]/.test(value)) errors.push('Rakam');
+    
+    setPasswordError(errors.length > 0 ? `Eksikler: ${errors.join(', ')}` : '');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
+
+    // Comprehensive validation
+    if (!firstName || !lastName || !email || !password || !birthDate) {
+      setError('Lütfen tüm alanları doldur! 📝');
+      setLoading(false);
+      return;
+    }
+
+    if (firstName.length < 2 || lastName.length < 2) {
+      setError('Ad ve soyad en az 2 karakter olmalıdır! ✏️');
+      setLoading(false);
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setError('Geçerli bir e-posta adresi girin! 📧');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      setError('Şifre en az 8 karakter olmalıdır! 🔒');
+      setLoading(false);
+      return;
+    }
+
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      setError('Şifre büyük harf, küçük harf ve rakam içermelidir! 🔐');
+      setLoading(false);
+      return;
+    }
+
+    if (role === 'student' && !gradeLevel) {
+      setError('Öğrenciler sınıf seçmeli! 🏫');
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      await register(firstName, lastName, email, password, role, birthDate, role === 'student' ? gradeLevel : null);
+      setSuccess('Kayıt başarılı! Hoş geldin! ');
+    } catch (err) {
+      setError(err.message || 'Kayıt başarısız!  Tekrar dene.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (user) {
-    // Ayrı dashboardlarınız olacağı için:
     if (user.roles?.isTeacher) {
       return <Navigate to="/teacher/dashboard" replace />;
     }
     if (user.roles?.isStudent) {
       return <Navigate to="/student/dashboard" replace />;
     }
-    // Genel bir dashboard varsa:
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
-
   return (
-    <div className="accountPage">
-      <div className="accountContainer card">
-        <div className="cardBody">
-            <h2 className="accountHeader">
-                <i className="fas fa-user-plus me-2 text-success"></i>
-                Yeni Hesap Oluştur
-            </h2>
-            <form onSubmit={handleSubmit}>
-                
-                {error && <div className="alert alert-danger mb-4">{error}</div>}
-                {success && <div className="alert alert-success mb-4">{success}</div>}
+    <div className="kids-auth-page">
+      <div className="auth-container">
+        <div className="auth-header">
+          <div className="auth-emoji">🎉</div>
+          <h1 className="auth-title">Aramıza Katıl!</h1>
+          <p className="auth-subtitle">Matematik dünyasına hoş geldin</p>
+        </div>
 
-                {/* Rol Seçimi Toggle */}
-                <div className="userTypeToggle mb-4">
-                    <input 
-                        type="radio" value="student" id="roleStudent"
-                        checked={role === 'student'} 
-                        onChange={(e) => setRole(e.target.value)} 
-                    /> 
-                    <label htmlFor="roleStudent" className="d-flex align-items-center justify-content-center">
-                        <i className="fas fa-user-graduate"></i> Öğrenci
-                    </label>
-                    
-                    <input 
-                        type="radio" value="teacher" id="roleTeacher"
-                        checked={role === 'teacher'} 
-                        onChange={(e) => setRole(e.target.value)} 
-                    /> 
-                    <label htmlFor="roleTeacher" className="d-flex align-items-center justify-content-center">
-                        <i className="fas fa-chalkboard-teacher"></i> Öğretmen
-                    </label>
-                </div>
-                
-                {/* İsim Alanları */}
-                <div className="row">
-                    <div className="col-md-6 mb-3">
-                        <label className="form-label" htmlFor="firstNameInput">Ad</label>
-                        <input type="text" id="firstNameInput" className="form-control"
-                          placeholder="Adınız" value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)} required />
-                    </div>
-                    <div className="col-md-6 mb-3">
-                        <label className="form-label" htmlFor="lastNameInput">Soyad</label>
-                        <input type="text" id="lastNameInput" className="form-control"
-                          placeholder="Soyadınız" value={lastName}
-                          onChange={(e) => setLastName(e.target.value)} required />
-                    </div>
-                </div>
+        {error && <div className="auth-error">{error}</div>}
+        {success && <div className="auth-error" style={{background: 'var(--gradient-success)'}}>{success}</div>}
 
-                {/* --- YENİ ALAN: DOĞUM TARİHİ --- */}
-                <div className="mb-3">
-                    <label className="form-label" htmlFor="birthDateInput">Doğum Tarihi</label>
-                    <input
-                      type="date" 
-                      id="birthDateInput"
-                      className="form-control"
-                      value={birthDate}
-                      onChange={(e) => setBirthDate(e.target.value)}
-                      required
-                    />
-                </div>
+        <form onSubmit={handleSubmit}>
+          <div className="role-toggle">
+            <button type="button" className={'role-btn ' + (role === 'student' ? 'active' : '')} onClick={() => setRole('student')}>
+              <span className="role-emoji">🎓</span>Öğrenci
+            </button>
+            <button type="button" className={'role-btn ' + (role === 'teacher' ? 'active' : '')} onClick={() => setRole('teacher')}>
+              <span className="role-emoji">👩‍🏫</span>Öğretmen
+            </button>
+          </div>
 
-                {/* --- YENİ ALAN: SINIF DÜZEYİ (Koşullu) --- */}
-                {/* Sadece rol 'student' ise bu alanı göster */}
-                {role === 'student' && (
-                  <div className="mb-3">
-                      <label className="form-label" htmlFor="gradeLevelInput">Sınıf Düzeyi</label>
-                      <select 
-                        id="gradeLevelInput" 
-                        className="form-select"
-                        value={gradeLevel}
-                        onChange={(e) => setGradeLevel(e.target.value)}
-                        required={role === 'student'} // Öğrenciyse zorunlu yap
-                      >
-                        <option value="">Lütfen sınıf seçin...</option>
-                        {[...Array(12).keys()].map(i => (
-                          <option key={i + 1} value={i + 1}>{i + 1}. Sınıf</option>
-                        ))}
-                      </select>
-                  </div>
-                )}
-                
-                {/* E-posta ve Şifre */}
-                <div className="mb-3">
-                    <label className="form-label" htmlFor="regEmailInput">E-posta Adresi</label>
-                    <input type="email" id="regEmailInput" className="form-control"
-                      placeholder="adiniz@alanadi.com" value={email}
-                      onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-                <div className="mb-4">
-                    <label className="form-label" htmlFor="regPasswordInput">Şifre</label>
-                    <input type="password" id="regPasswordInput" className="form-control"
-                      placeholder="••••••••" value={password}
-                      onChange={(e) => setPassword(e.target.value)} required />
-                </div>
+          <div className="form-group">
+            <label className="form-label"> Ad</label>
+            <input type="text" className="form-input" placeholder="Adın" value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={loading} />
+          </div>
 
-                <button type="submit" className="btn btn-success w-100" disabled={loading}>
-                    {loading ? 'Kaydediliyor...' : 'KAYDOL'}
-                </button>
-            </form>
+          <div className="form-group">
+            <label className="form-label"> Soyad</label>
+            <input type="text" className="form-input" placeholder="Soyadın" value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={loading} />
+          </div>
 
-            <p className="accountFooterText">
-                Zaten hesabın var mı? 
-                <Link to="/login" className="ms-2 fw-bold text-primary">Giriş Yap</Link>
-            </p>
+          <div className="form-group">
+            <label className="form-label">📧 E-posta</label>
+            <div className="input-wrapper">
+              <input 
+                type="email" 
+                className={`form-input ${emailError ? 'input-error' : ''}`}
+                placeholder="ornek@email.com" 
+                value={email} 
+                onChange={handleEmailChange} 
+                disabled={loading} 
+              />
+              {emailError && <span className="input-error-text">{emailError}</span>}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">🔒 Şifre</label>
+            <div className="password-input-wrapper">
+              <input 
+                type={showPassword ? 'text' : 'password'}
+                className="form-input" 
+                placeholder="Güçlü bir şifre seç" 
+                value={password} 
+                onChange={handlePasswordChange} 
+                disabled={loading} 
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex="-1"
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
+            {password && (
+              <div className="password-strength-container">
+                <div className="password-strength-bar">
+                  <div 
+                    className={`password-strength-fill strength-${passwordStrength}`}
+                    style={{ width: `${(passwordStrength / 5) * 100}%` }}
+                  ></div>
+                </div>
+                <span className="password-strength-text">
+                  {passwordStrength === 0 && 'Çok Zayıf 😰'}
+                  {passwordStrength === 1 && 'Zayıf 😟'}
+                  {passwordStrength === 2 && 'Orta 😐'}
+                  {passwordStrength === 3 && 'İyi 😊'}
+                  {passwordStrength === 4 && 'Güçlü 😃'}
+                  {passwordStrength === 5 && 'Çok Güçlü 🔥'}
+                </span>
+              </div>
+            )}
+            {passwordError && <span className="input-hint-text">{passwordError}</span>}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label"> Doğum Tarihi</label>
+            <input type="date" className="form-input" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} disabled={loading} />
+          </div>
+
+          {role === 'student' && (
+            <div className="form-group">
+              <label className="form-label"> Sınıf Seviyesi</label>
+              <select className="form-select" value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)} disabled={loading}>
+                <option value="">Sınıfını seç</option>
+                {[1,2,3,4,5,6,7,8,9,10,11,12].map(grade => (
+                  <option key={grade} value={grade}>{grade}. Sınıf</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button 
+            type="submit" 
+            className="btn-auth" 
+            disabled={loading || emailError || (password && passwordStrength < 2)}
+          >
+            {loading ? (
+              <>
+                <span className="spinner"></span>
+                Kayıt Yapılıyor...
+              </>
+            ) : (
+              'Kayıt Ol 🎉'
+            )}
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          Zaten hesabın var mı?{' '}
+          <Link to="/login" className="auth-link">Giriş Yap! </Link>
         </div>
       </div>
     </div>

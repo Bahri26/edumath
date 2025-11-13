@@ -1,19 +1,11 @@
 // frontend-react/src/pages/teacher/ClassGradeDetail.jsx (YENİ CRUD SAYFASI)
 
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom'; // useParams'ı import et
-import '../../assets/styles/TeacherPages.css';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import PageHeader from '../../components/ui/common/PageHeader';
+import { createClass, getClasses } from '../../services/classService';
 
-// SAHTE VERİ (Sadece bu sayfayı test etmek için)
-const dummySubClasses = {
-  '9': [
-    { id: 'c1', name: '9-A Fen Lisesi', subject: 'Fizik', studentCount: 22, classCode: 'A1-B2C' },
-    { id: 'c2', name: '9-B Anadolu', subject: 'Matematik', studentCount: 30, classCode: 'XF-9Z1' },
-  ],
-  '10': [
-    { id: 'c3', name: '10-A Matematik', subject: 'Matematik', studentCount: 25, classCode: 'P9-KLY' },
-  ],
-};
+// Not: dummySubClasses kaldırıldı. Artık gerçek API çağrısı kullanılıyor.
 
 function ClassGradeDetail() {
   // --- STATE'LER ---
@@ -30,54 +22,46 @@ function ClassGradeDetail() {
   const { gradeLevel } = useParams(); // URL'deki :gradeLevel parametresini alır (örn: "9")
 
   // --- EFFECT ---
-  useEffect(() => {
+  const fetchClasses = useCallback(async () => {
     setLoading(true);
     setError(null);
-    // TODO: Backend'i bağlayınca bu API çağrısı kullanılacak
-    // const fetchClasses = async () => {
-    //   try {
-    //     const response = await axios.get(`/api/classes?gradeLevel=${gradeLevel}`);
-    //     setSubClasses(response.data);
-    //   } catch (err) {
-    //     setError('Sınıflar yüklenemedi.');
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-    // fetchClasses();
-
-    // Şimdilik sahte veriyi kullan
-    setTimeout(() => {
-      setSubClasses(dummySubClasses[gradeLevel] || []);
+    try {
+      const data = await getClasses(gradeLevel); // filtreli liste
+      setSubClasses(data);
+    } catch (err) {
+      console.error('getClasses failed', err);
+      setError('Sınıflar yüklenemedi.');
+    } finally {
       setLoading(false);
-    }, 500);
-    
-  }, [gradeLevel]); // gradeLevel değiştikçe (örn: 9'dan 10'a geçerse) veriyi yeniden çek
+    }
+  }, [gradeLevel]);
+
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
 
   // --- EVENT HANDLERS (CRUD) ---
-  const handleCreateClass = (e) => {
+  const handleCreateClass = async (e) => {
     e.preventDefault();
     if (!newClassName || !newSubject) {
       setError('Sınıf adı ve ders alanı zorunludur.');
       return;
     }
-
-    const newClass = {
-      id: `c${Math.floor(Math.random() * 100)}`,
-      name: newClassName,
-      subject: newSubject,
-      studentCount: 0, 
-      classCode: `RND-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
-      gradeLevel: gradeLevel // -> Bu sınıfa ait olduğunu belirtir
-    };
-
-    // TODO: Backend'e 'axios.post('/api/classes', newClass)' ile gönder
-    console.log('Yeni Sınıf Oluşturuldu:', newClass);
-
-    setSubClasses([newClass, ...subClasses]);
-    setIsModalOpen(false);
-    setNewClassName('');
-    setNewSubject('Genel');
+    try {
+      const payload = {
+        name: newClassName,
+        subject: newSubject,
+        gradeLevel: gradeLevel,
+      };
+      const created = await createClass(payload);
+      setSubClasses([created, ...subClasses]);
+      setIsModalOpen(false);
+      setNewClassName('');
+      setNewSubject('Genel');
+    } catch (err) {
+      console.error('createClass failed', err);
+      setError('Sınıf oluşturulamadı.');
+    }
   };
 
   return (
@@ -98,19 +82,23 @@ function ClassGradeDetail() {
       {/* --- MEVCUT SINIF LİSTESİ (Kart/Grid) --- */}
       {loading ? (
         <p>Sınıflar yükleniyor...</p>
+      ) : error ? (
+        <div className="alert alert-danger">{error}</div>
       ) : subClasses.length === 0 ? (
         <div className="alert alert-info">Bu sınıf seviyesi için henüz bir şube oluşturmamışsınız.</div>
       ) : (
         <div className="exams-grid">
           {subClasses.map((cls) => (
-            <div key={cls.id} className="page-card exam-card">
-              <div className="class-code-badge">
-                Sınıf Kodu: <strong>{cls.classCode}</strong>
-              </div>
+            <div key={cls.id || cls._id} className="page-card exam-card">
+              {cls.classCode && (
+                <div className="class-code-badge">
+                  Sınıf Kodu: <strong>{cls.classCode}</strong>
+                </div>
+              )}
               <h3>{cls.name}</h3>
               <p className="class-subject">{cls.subject}</p>
               <div className="exam-details">
-                <span><i className="fas fa-users"></i> {cls.studentCount} Öğrenci</span>
+                <span><i className="fas fa-users"></i> {(cls.studentCount ?? cls.students?.length) || 0} Öğrenci</span>
               </div>
               <div className="exam-actions">
                 <button className="btn-primary"><i className="fas fa-tasks me-2"></i>Ödev/Sınav Ata</button>

@@ -74,13 +74,14 @@ const checkRole = (...roles) => (req, res, next) => {
   let isAuthorized = false;
   
   // Birden fazla rol kontrolü (flexible)
-  if (roles.includes('teacher') && req.user.isTeacher) {
+  // Hem nested (roles.isTeacher) hem de düz (isTeacher) yapıyı destekle
+  if (roles.includes('teacher') && (req.user.roles?.isTeacher || req.user.isTeacher)) {
     isAuthorized = true;
   }
-  if (roles.includes('student') && req.user.isStudent) {
+  if (roles.includes('student') && (req.user.roles?.isStudent || req.user.isStudent)) {
     isAuthorized = true;
   }
-  if (roles.includes('admin') && req.user.isStaff) {
+  if (roles.includes('admin') && (req.user.roles?.isStaff || req.user.isStaff)) {
     isAuthorized = true;
   }
 

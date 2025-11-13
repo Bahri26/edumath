@@ -3,9 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faTimes, faFilter } from '@fortawesome/free-solid-svg-icons';
-import { curriculumData } from '../../data/curriculumData'; 
-import '../../assets/styles/TeacherPages.css';
+import { faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 const API_QUESTIONS_URL = 'http://localhost:8000/api/questions';
 const API_EXAMS_URL = 'http://localhost:8000/api/exams';
@@ -41,7 +39,7 @@ const SelectQuestionsModal = ({ show, handleClose, exam }) => {
 
             const response = await axios.get(API_QUESTIONS_URL, config);
             setAllQuestions(response.data);
-        } catch (err) {
+        } catch {
             setError("Soru havuzu yüklenirken hata oluştu.");
         } finally {
             setLoading(false);

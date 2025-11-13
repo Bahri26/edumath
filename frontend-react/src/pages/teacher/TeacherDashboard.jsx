@@ -1,67 +1,85 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getDashboardStats } from '../../services/teacherService';
 import { Link } from 'react-router-dom';
-import PageHeader from '../../components/common/PageHeader';
+import PageHeader from '../../components/ui/common/PageHeader';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faLayerGroup, 
   faSchool, 
   faUserGraduate, 
   faBook,
-  faChalkboardTeacher,
   faChartLine,
   faPlus,
-  faArrowRight,
   faGraduationCap,
-  faTasks
+  faTasks,
+  faClipboardList,
+  faTrophy,
+  faClock,
+  faCheckCircle
 } from '@fortawesome/free-solid-svg-icons';
-import '../../assets/styles/TeacherPages.css';
-import '../../assets/styles/Dashboard.css';
+import './TeacherDashboard.css';
 
 function TeacherDashboard() {
 	const [dashboardData, setDashboardData] = useState({
 		questionCount: 0,
 		classCount: 0,
 		studentCount: 0,
+		examCount: 0,
+		activeExams: 0,
+		completedExams: 0,
+		avgScore: 0,
+		recentActivity: []
 	});
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	const [greeting, setGreeting] = useState('');
 
 	useEffect(() => {
+		// Karşılama mesajı
+		const hour = new Date().getHours();
+		if (hour < 12) setGreeting('🌅 Günaydın');
+		else if (hour < 18) setGreeting('☀️ İyi Günler');
+		else setGreeting('🌙 İyi Akşamlar');
+
 		const fetchDashboardData = async () => {
 			setLoading(true);
 			setError(null);
 
-			const token = localStorage.getItem('token');
-			const config = { headers: { Authorization: `Bearer ${token}` } };
-
 			try {
-				// Use safer calls and tolerate partial failures. The backend currently does not expose
-				// /count endpoints for classes/students, so request the endpoints that exist and
-				// derive counts where possible.
-				const [questionsRes, examsRes] = await Promise.allSettled([
-					axios.get('http://localhost:8000/api/questions', config),
-					axios.get('http://localhost:8000/api/exams', config),
-				]);
+				// Gerçek backend'den dashboard istatistiklerini çek
+				const stats = await getDashboardStats();
 
-				const questionCount = questionsRes.status === 'fulfilled' && Array.isArray(questionsRes.value.data)
-					? questionsRes.value.data.length
-					: 0;
+				// Icon'ları ekle
+				const recentActivityWithIcons = (stats.recentActivity || []).map(activity => {
+					let icon = faBook;
+					let color = '#667eea';
 
-				const examCount = examsRes.status === 'fulfilled' && Array.isArray(examsRes.value.data)
-					? examsRes.value.data.length
-					: 0;
+					if (activity.type === 'exam') {
+						icon = faClipboardList;
+						color = '#f093fb';
+					} else if (activity.type === 'student') {
+						icon = faUserGraduate;
+						color = '#4facfe';
+					}
 
-				// classes and students endpoints for simple counts are not implemented in the backend yet.
-				// We'll leave them as 0 until backend provides reliable count endpoints.
+					return {
+						...activity,
+						icon,
+						color
+					};
+				});
+
 				setDashboardData({
-					questionCount,
-					classCount: 0,
-					studentCount: 0,
-					examCount,
+					questionCount: stats.questionCount || 0,
+					classCount: stats.classCount || 0,
+					studentCount: stats.studentCount || 0,
+					examCount: stats.examCount || 0,
+					activeExams: stats.activeExams || 0,
+					completedExams: stats.completedExams || 0,
+					avgScore: stats.avgScore || 0,
+					recentActivity: recentActivityWithIcons,
+					upcomingExams: stats.upcomingExams || []
 				});
 			} catch (err) {
-				// This block is a last-resort; most per-request failures are handled above.
 				setError('Dashboard verisi yüklenirken bir hata oluştu.');
 				console.error('Dashboard veri hatası:', err);
 			} finally {
@@ -74,163 +92,250 @@ function TeacherDashboard() {
 
 	if (loading) {
 		return (
-			<div className="teacher-page-container">
+			<div className="container pt-2">
 				<PageHeader title="Öğretmen Paneli" />
-				<div className="loading-spinner">Yükleniyor...</div>
+				<div className="kids-grid-4 mb-2">
+					{[1,2,3,4].map(i => (
+						<div key={i} className="kids-card">
+							<div className="skeleton text mb-1" style={{ width: '40%' }}></div>
+							<div className="skeleton text mb-1" style={{ width: '20%' }}></div>
+						</div>
+					))}
+				</div>
+				<div className="kids-card">
+					<div className="skeleton text mb-1" style={{ width: '30%' }}></div>
+					{[1,2].map(i => (<div key={i} className="skeleton text mb-1"></div>))}
+				</div>
 			</div>
 		);
 	}
 
 	if (error) {
 		return (
-			<div className="teacher-page-container">
+			<div className="container pt-2">
 				<PageHeader title="Öğretmen Paneli" />
-				<div className="alert alert-danger">{error}</div>
+				<div className="kids-error">{error}</div>
 			</div>
 		);
 	}
 
-	const dashboardCards = [
-		{
-			icon: 'layer-group',
-			title: 'Soru Havuzu',
-			count: dashboardData.questionCount,
-			countLabel: 'Soru',
-			buttonText: 'Soru Ekle',
-			buttonIcon: 'plus',
-			linkTo: '/teacher/question-pool',
-			variant: 'primary'
-		},
-		{
-			icon: 'school',
-			title: 'Sınıflar',
-			count: dashboardData.classCount,
-			countLabel: 'Sınıf',
-			buttonText: 'Sınıfları Yönet',
-			buttonIcon: 'edit',
-			linkTo: '/teacher/classes',
-			variant: 'success'
-		},
-		{
-			icon: 'user-graduate',
-			title: 'Öğrenciler',
-			count: dashboardData.studentCount,
-			countLabel: 'Öğrenci',
-			buttonText: 'Öğrencilerim',
-			buttonIcon: 'users',
-			linkTo: '/teacher/students',
-			variant: 'info'
-		}
-	];
-
 	return (
-		<div className="dashboard-container">
-			<PageHeader title="Öğretmen Paneli" />
-			
-			<div className="dashboard-stats">
-				<div className="stat-card">
-					<div className="stat-info">
-						<h3>Toplam Soru</h3>
-						<p className="count">{dashboardData.questionCount}</p>
+		<div className="teacher-dashboard-container">
+			<PageHeader title="Öğretmen Paneli">
+				<div className="greeting-message">{greeting}</div>
+			</PageHeader>
+
+			{/* İstatistik Kartları - Modern Design */}
+			<div className="dashboard-stats-grid">
+				<div className="stat-card stat-card-purple">
+					<div className="stat-icon-wrapper">
+						<FontAwesomeIcon icon={faBook} className="stat-icon" />
 					</div>
-					<div className="stat-icon primary">
-						<FontAwesomeIcon icon={faBook} />
+					<div className="stat-content">
+						<div className="stat-label">Toplam Soru</div>
+						<div className="stat-value">{dashboardData.questionCount}</div>
+						<div className="stat-badge">Soru Havuzu</div>
 					</div>
-				</div>
-				
-				<div className="stat-card">
-					<div className="stat-info">
-						<h3>Aktif Sınıf</h3>
-						<p className="count">{dashboardData.classCount}</p>
-					</div>
-					<div className="stat-icon success">
-						<FontAwesomeIcon icon={faSchool} />
+					<div className="stat-progress">
+						<div className="stat-progress-bar" style={{ width: '75%' }}></div>
 					</div>
 				</div>
-				
-				<div className="stat-card">
-					<div className="stat-info">
-						<h3>Toplam Öğrenci</h3>
-						<p className="count">{dashboardData.studentCount}</p>
+
+				<div className="stat-card stat-card-blue">
+					<div className="stat-icon-wrapper">
+						<FontAwesomeIcon icon={faSchool} className="stat-icon" />
 					</div>
-					<div className="stat-icon info">
-						<FontAwesomeIcon icon={faUserGraduate} />
+					<div className="stat-content">
+						<div className="stat-label">Aktif Sınıf</div>
+						<div className="stat-value">{dashboardData.classCount}</div>
+						<div className="stat-badge">Sınıflar</div>
+					</div>
+					<div className="stat-progress">
+						<div className="stat-progress-bar" style={{ width: '60%' }}></div>
 					</div>
 				</div>
-				
-				<div className="stat-card">
-					<div className="stat-info">
-						<h3>Aktif Sınav</h3>
-						<p className="count">{dashboardData.examCount || 0}</p>
+
+				<div className="stat-card stat-card-pink">
+					<div className="stat-icon-wrapper">
+						<FontAwesomeIcon icon={faUserGraduate} className="stat-icon" />
 					</div>
-					<div className="stat-icon warning">
-						<FontAwesomeIcon icon={faTasks} />
+					<div className="stat-content">
+						<div className="stat-label">Toplam Öğrenci</div>
+						<div className="stat-value">{dashboardData.studentCount}</div>
+						<div className="stat-badge">Öğrenciler</div>
+					</div>
+					<div className="stat-progress">
+						<div className="stat-progress-bar" style={{ width: '85%' }}></div>
+					</div>
+				</div>
+
+				<div className="stat-card stat-card-orange">
+					<div className="stat-icon-wrapper">
+						<FontAwesomeIcon icon={faTasks} className="stat-icon" />
+					</div>
+					<div className="stat-content">
+						<div className="stat-label">Toplam Sınav</div>
+						<div className="stat-value">{dashboardData.examCount}</div>
+						<div className="stat-badge">{dashboardData.activeExams} Aktif</div>
+					</div>
+					<div className="stat-progress">
+						<div className="stat-progress-bar" style={{ width: '90%' }}></div>
 					</div>
 				</div>
 			</div>
-			
-			<div className="dashboard-sections">
-				<div className="section-card">
-					<div className="section-header">
-						<h2>Hızlı İşlemler</h2>
+
+			{/* Orta Kısım - İki Kolon */}
+			<div className="dashboard-middle-section">
+
+				{/* Sol Kolon - Hızlı İşlemler */}
+				<div className="dashboard-left-column">
+					<div className="quick-actions-card">
+						<h3 className="section-title">
+							<FontAwesomeIcon icon={faPlus} />
+							Hızlı İşlemler
+						</h3>
+						<div className="quick-actions-grid">
+							<Link to="/teacher/question-pool/add" className="quick-action-item">
+								<div className="quick-action-icon purple">
+									<FontAwesomeIcon icon={faPlus} />
+								</div>
+								<div className="quick-action-content">
+									<h4>Yeni Soru Ekle</h4>
+									<p>Soru havuzuna ekle</p>
+								</div>
+							</Link>
+
+							<Link to="/teacher/exams/create" className="quick-action-item">
+								<div className="quick-action-icon blue">
+									<FontAwesomeIcon icon={faClipboardList} />
+								</div>
+								<div className="quick-action-content">
+									<h4>Sınav Oluştur</h4>
+									<p>Yeni sınav hazırla</p>
+								</div>
+							</Link>
+
+							<Link to="/teacher/classes" className="quick-action-item">
+								<div className="quick-action-icon green">
+									<FontAwesomeIcon icon={faSchool} />
+								</div>
+								<div className="quick-action-content">
+									<h4>Sınıf Yönet</h4>
+									<p>Sınıfları düzenle</p>
+								</div>
+							</Link>
+
+							<Link to="/teacher/students" className="quick-action-item">
+								<div className="quick-action-icon pink">
+									<FontAwesomeIcon icon={faUserGraduate} />
+								</div>
+								<div className="quick-action-content">
+									<h4>Öğrenciler</h4>
+									<p>Öğrenci yönetimi</p>
+								</div>
+							</Link>
+						</div>
 					</div>
-					<div className="quick-actions">
-						<Link to="/teacher/question-pool/add" className="action-button">
-							<div className="icon">
-								<FontAwesomeIcon icon={faPlus} />
+
+					{/* Performans Özeti */}
+					<div className="performance-card">
+						<h3 className="section-title">
+							<FontAwesomeIcon icon={faChartLine} />
+							Performans Özeti
+						</h3>
+						<div className="performance-stats">
+							<div className="performance-item">
+								<div className="performance-label">
+									<FontAwesomeIcon icon={faTrophy} />
+									<span>Ortalama Başarı</span>
+								</div>
+								<div className="performance-value">{dashboardData.avgScore}%</div>
+								<div className="performance-bar">
+									<div className="performance-fill" style={{ width: `${dashboardData.avgScore}%` }}></div>
+								</div>
 							</div>
-							<div className="text">
-								<h4>Yeni Soru Ekle</h4>
-								<p>Soru havuzuna yeni soru ekleyin</p>
+
+							<div className="performance-item">
+								<div className="performance-label">
+									<FontAwesomeIcon icon={faCheckCircle} />
+									<span>Tamamlanan</span>
+								</div>
+								<div className="performance-value">{dashboardData.completedExams}</div>
+								<div className="performance-bar">
+									<div className="performance-fill success" style={{ width: '65%' }}></div>
+								</div>
 							</div>
-							<FontAwesomeIcon icon={faArrowRight} className="arrow" />
-						</Link>
-						
-						<Link to="/teacher/classes" className="action-button">
-							<div className="icon">
-								<FontAwesomeIcon icon={faSchool} />
+
+							<div className="performance-item">
+								<div className="performance-label">
+									<FontAwesomeIcon icon={faClock} />
+									<span>Aktif Sınavlar</span>
+								</div>
+								<div className="performance-value">{dashboardData.activeExams}</div>
+								<div className="performance-bar">
+									<div className="performance-fill warning" style={{ width: '45%' }}></div>
+								</div>
 							</div>
-							<div className="text">
-								<h4>Sınıfları Yönet</h4>
-								<p>Sınıflarınızı görüntüleyin ve yönetin</p>
-							</div>
-							<FontAwesomeIcon icon={faArrowRight} className="arrow" />
-						</Link>
-						
-						<Link to="/teacher/students" className="action-button">
-							<div className="icon">
-								<FontAwesomeIcon icon={faUserGraduate} />
-							</div>
-							<div className="text">
-								<h4>Öğrencilerim</h4>
-								<p>Öğrenci listesi ve yönetimi</p>
-							</div>
-							<FontAwesomeIcon icon={faArrowRight} className="arrow" />
-						</Link>
-						
-						<Link to="/teacher/exams" className="action-button">
-							<div className="icon">
-								<FontAwesomeIcon icon={faGraduationCap} />
-							</div>
-							<div className="text">
-								<h4>Sınavlar</h4>
-								<p>Sınav oluşturun ve yönetin</p>
-							</div>
-							<FontAwesomeIcon icon={faArrowRight} className="arrow" />
-						</Link>
+						</div>
 					</div>
 				</div>
-				
-				<div className="section-card">
-					<div className="section-header">
-						<h2>Genel İstatistikler</h2>
+
+				{/* Sağ Kolon - Son Aktiviteler */}
+				<div className="dashboard-right-column">
+					<div className="recent-activity-card">
+						<h3 className="section-title">
+							<FontAwesomeIcon icon={faClock} />
+							Son Aktiviteler
+						</h3>
+						<div className="activity-list">
+							{dashboardData.recentActivity.map(activity => (
+								<div key={activity.id} className="activity-item">
+									<div className="activity-icon" style={{ background: activity.color }}>
+										<FontAwesomeIcon icon={activity.icon} />
+									</div>
+									<div className="activity-content">
+										<div className="activity-text">{activity.text}</div>
+										<div className="activity-time">{activity.time}</div>
+									</div>
+								</div>
+							))}
+						</div>
+						<Link to="/teacher/activity" className="view-all-link">
+							Tüm Aktiviteleri Gör →
+						</Link>
 					</div>
-					<div className="stats-preview">
-						{/* Buraya grafik bileşenleri eklenecek */}
-						<p className="text-center text-muted">
-							<FontAwesomeIcon icon={faChartLine} className="me-2" />
-							Detaylı istatistikler yakında eklenecek
-						</p>
+
+					{/* Yaklaşan Sınavlar */}
+					<div className="upcoming-exams-card">
+						<h3 className="section-title">
+							<FontAwesomeIcon icon={faGraduationCap} />
+							Yaklaşan Sınavlar
+						</h3>
+						<div className="upcoming-exams-list">
+							<div className="upcoming-exam-item">
+								<div className="exam-date">
+									<span className="exam-day">15</span>
+									<span className="exam-month">Kas</span>
+								</div>
+								<div className="exam-details">
+									<h4>Matematik Sınavı</h4>
+									<p>9-A Sınıfı • 40 dk</p>
+								</div>
+							</div>
+							<div className="upcoming-exam-item">
+								<div className="exam-date">
+									<span className="exam-day">18</span>
+									<span className="exam-month">Kas</span>
+								</div>
+								<div className="exam-details">
+									<h4>Geometri Testi</h4>
+									<p>10-B Sınıfı • 30 dk</p>
+								</div>
+							</div>
+						</div>
+						<Link to="/teacher/exams" className="view-all-link">
+							Tüm Sınavları Gör →
+						</Link>
 					</div>
 				</div>
 			</div>

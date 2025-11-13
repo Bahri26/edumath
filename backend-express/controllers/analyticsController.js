@@ -56,7 +56,7 @@ const getStudentAnalytics = async (req, res) => {
 
 const getLearningPath = async (req, res) => {
   try {
-    let learningPath = await LearningPath.findOne({ student: req.user._id });
+  let learningPath = await LearningPath.findOne({ student: req.user._id });
     
     if (!learningPath) {
       // Yeni öğrenme yolu oluştur
@@ -103,8 +103,56 @@ const updateAnalytics = async (req, res) => {
   }
 };
 
+// Öğretmen için özet istatistikler
+const getTeacherSummary = async (req, res) => {
+  try {
+    const Exam = require('../models/Exam');
+    const Result = require('../models/Result');
+    const Student = require('../models/Student');
+    
+    // Öğretmenin sınavlarını bul
+    const exams = await Exam.find({ teacher: req.user._id });
+    const examIds = exams.map(e => e._id);
+    
+    // Son 30 gündeki sonuçlar
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const recentResults = await Result.find({ 
+      exam: { $in: examIds },
+      createdAt: { $gte: thirtyDaysAgo }
+    });
+    
+    // Ortalama skor hesapla
+    const avgScore = recentResults.length > 0
+      ? recentResults.reduce((sum, r) => sum + (r.score || 0), 0) / recentResults.length
+      : 0;
+    
+    // Aktif öğrenci sayısı (son 30 günde sınava giren)
+    const activeStudents = new Set(recentResults.map(r => r.student.toString())).size;
+    
+    // Son aktiviteler
+    const recentActivity = {
+      examAttempts: recentResults.length,
+      newStudents: await Student.countDocuments({ 
+        createdAt: { $gte: thirtyDaysAgo }
+      })
+    };
+    
+    res.json({
+      totalExams: exams.length,
+      avgScore: Math.round(avgScore),
+      activeStudents,
+      recentActivity
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getStudentAnalytics,
   getLearningPath,
-  updateAnalytics
+  updateAnalytics,
+  getTeacherSummary
 };

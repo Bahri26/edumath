@@ -14,19 +14,23 @@ const {
   getMyAllPositions
 } = require('../controllers/leaderboardController');
 
-// General
-router.get('/class/:classId', protect, getClassLeaderboard);
-router.get('/grade/:gradeLevel', protect, getGradeLeaderboard);
+// ÖNEMLI: Spesifik route'lar parametreli route'lardan ÖNCE gelmeli
+// Spesifik route'lar önce
 router.get('/global', protect, getGlobalLeaderboard);
 router.get('/weekly', protect, getWeeklyLeaderboard);
 router.get('/monthly', protect, getMonthlyLeaderboard);
-
-// User specific
-router.get('/:type/:id/my-rank', protect, getMyRank);
 router.get('/my-positions', protect, getMyAllPositions);
+
+// Root route (query params kabul eder: ?period=week&limit=5)
+router.get('/', protect, getWeeklyLeaderboard); // Default: haftalık liderlik tablosu
+
+// Parametreli route'lar en sona
+router.get('/class/:classId', protect, getClassLeaderboard);
+router.get('/grade/:gradeLevel', protect, getGradeLeaderboard);
+router.get('/:type/:id/my-rank', protect, getMyRank);
+router.get('/:type/:id/top/:count', protect, getTopUsers);
 
 // Admin/manual
 router.post('/:type/:id/update', protect, updateLeaderboard);
-router.get('/:type/:id/top/:count', protect, getTopUsers);
 
 module.exports = router;

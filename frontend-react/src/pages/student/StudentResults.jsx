@@ -1,14 +1,14 @@
 // frontend-react/src/pages/student/StudentResults.jsx
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import '../../assets/styles/TeacherPages.css';
-
-const API_URL = 'http://localhost:8000/api/results';
+import { getStudentResults } from '../../services/studentService';
+import PageHeader from '../../components/ui/common/PageHeader';
+import './StudentResults.css';
 
 export default function StudentResults() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedResult, setSelectedResult] = useState(null);
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -16,196 +16,235 @@ export default function StudentResults() {
     const fetchResults = async () => {
       setLoading(true);
       setError(null);
-      if (!token || !user.id) {
+      if (!token) {
         setError('Giriş yapmalısınız.');
         setLoading(false);
         return;
       }
       try {
-        // Backend'den öğrenciye ait sonuçları çek
-        const resp = await axios.get(`${API_URL}/student/${user.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setResults(resp.data);
+        // Backend'den öğrencinin kendi sonuçlarını çek (user.id parametresi artık gerekmiyor)
+        const data = await getStudentResults();
+        setResults(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error('Sonuçlar yüklenemedi:', e);
-        setError('Sonuçlar yüklenemedi. Backend çalışıyor mu?');
+        setError(e.response?.data?.message || 'Sonuçlar yüklenemedi. Backend çalışıyor mu?');
       } finally {
         setLoading(false);
       }
     };
     fetchResults();
-  }, [token, user.id]);
+  }, [token]);
 
   const calculateGrade = (score) => {
-    if (score >= 90) return { grade: 'A+', color: '#10b981', emoji: '🌟' };
-    if (score >= 80) return { grade: 'A', color: '#22c55e', emoji: '⭐' };
-    if (score >= 70) return { grade: 'B', color: '#3b82f6', emoji: '👍' };
-    if (score >= 60) return { grade: 'C', color: '#f59e0b', emoji: '👌' };
-    return { grade: 'D', color: '#ef4444', emoji: '💪' };
+    if (score >= 90) return { grade: 'A+', color: '#10b981', emoji: '🌟', avatar: '🎓', message: 'Muhteşem! Süpersin!' };
+    if (score >= 80) return { grade: 'A', color: '#22c55e', emoji: '⭐', avatar: '😊', message: 'Harika! Tebrikler!' };
+    if (score >= 70) return { grade: 'B', color: '#3b82f6', emoji: '👍', avatar: '😃', message: 'İyi iş çıkardın!' };
+    if (score >= 60) return { grade: 'C', color: '#f59e0b', emoji: '👌', avatar: '🙂', message: 'Fena değil, devam et!' };
+    return { grade: 'D', color: '#ef4444', emoji: '💪', avatar: '😔', message: 'Çalışmaya devam, başarırsın!' };
   };
 
+  const calculateStats = () => {
+    if (results.length === 0) return { avgScore: 0, totalExams: 0, bestScore: 0, recentTrend: 'neutral' };
+    
+    const avgScore = Math.round(results.reduce((sum, r) => sum + r.score, 0) / results.length);
+    const bestScore = Math.max(...results.map(r => r.score));
+    
+    // Son 3 sınavın trend analizi
+    const recent = results.slice(-3);
+    let trend = 'neutral';
+    if (recent.length >= 2) {
+      const first = recent[0].score;
+      const last = recent[recent.length - 1].score;
+      if (last > first + 10) trend = 'up';
+      else if (last < first - 10) trend = 'down';
+    }
+    
+    return { avgScore, totalExams: results.length, bestScore, recentTrend: trend };
+  };
+
+  const stats = calculateStats();
+
   return (
-    <div className="teacher-page-container">
-      <div className="page-header">
-        <div className="title">
-          <span>📈</span>
-          <h1>Sonuçlarım</h1>
+    <div className="student-results-container">
+      <PageHeader title="📊 Sınav Sonuçlarım">
+        <div className="header-user-info">
+          <div className="user-avatar">
+            {user.firstName ? user.firstName.charAt(0).toUpperCase() : '👤'}
+          </div>
+          <span className="user-name">{user.firstName || 'Öğrenci'}</span>
         </div>
-      </div>
+      </PageHeader>
 
-      {error && <div className="alert-error">{error}</div>}
-
-      {loading ? (
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Sonuçlar yükleniyor...</p>
-        </div>
-      ) : results.length === 0 ? (
-        <div className="empty-state">
-          <span className="empty-icon">📊</span>
-          <h3>Henüz sonuç yok</h3>
-          <p>Sınav çözünce sonuçların burada görünecek.</p>
-        </div>
-      ) : (
-        <div className="results-grid">
-          {results.map(result => {
-            const gradeInfo = calculateGrade(result.score);
-            return (
-              <div key={result._id} className="result-card">
-                <div className="result-header">
-                  <h3>{result.exam?.title || 'Sınav'}</h3>
-                  <span className="grade-badge" style={{ background: gradeInfo.color }}>
-                    {gradeInfo.emoji} {gradeInfo.grade}
-                  </span>
-                </div>
-                <div className="result-body">
-                  <div className="score-display">
-                    <div className="score-circle" style={{ borderColor: gradeInfo.color }}>
-                      <span className="score-value">{result.score}</span>
-                      <span className="score-max">/100</span>
-                    </div>
-                  </div>
-                  <div className="result-stats">
-                    <div className="stat">
-                      <span className="stat-label">Doğru</span>
-                      <span className="stat-value" style={{ color: '#10b981' }}>✓ {result.correctAnswers || 0}</span>
-                    </div>
-                    <div className="stat">
-                      <span className="stat-label">Yanlış</span>
-                      <span className="stat-value" style={{ color: '#ef4444' }}>✗ {result.wrongAnswers || 0}</span>
-                    </div>
-                    <div className="stat">
-                      <span className="stat-label">Boş</span>
-                      <span className="stat-value" style={{ color: '#94a3b8' }}>⊘ {result.emptyAnswers || 0}</span>
-                    </div>
-                  </div>
-                  <div className="result-date">
-                    📅 {new Date(result.completedAt || result.createdAt).toLocaleDateString('tr-TR')}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+      {error && (
+        <div className="results-error-alert">
+          <span className="error-icon">⚠️</span>
+          <span>{error}</span>
         </div>
       )}
 
-      <style jsx="true">{`
-        .results-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-          gap: 1.5rem;
-          margin-top: 1.5rem;
-        }
-        .result-card {
-          background: white;
-          border-radius: 16px;
-          padding: 1.5rem;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-          border: 2px solid #e5e7eb;
-          transition: all 0.3s ease;
-        }
-        .result-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 8px 12px rgba(0,0,0,0.1);
-        }
-        .result-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1rem;
-          padding-bottom: 1rem;
-          border-bottom: 2px solid #f3f4f6;
-        }
-        .result-header h3 {
-          margin: 0;
-          font-size: 1.1rem;
-          color: #1f2937;
-        }
-        .grade-badge {
-          padding: 0.5rem 1rem;
-          border-radius: 999px;
-          color: white;
-          font-weight: 700;
-          font-size: 0.9rem;
-        }
-        .result-body {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-        .score-display {
-          display: flex;
-          justify-content: center;
-          margin: 1rem 0;
-        }
-        .score-circle {
-          width: 120px;
-          height: 120px;
-          border-radius: 50%;
-          border: 6px solid;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
-        }
-        .score-value {
-          font-size: 2.5rem;
-          font-weight: 800;
-          color: #1f2937;
-        }
-        .score-max {
-          font-size: 0.9rem;
-          color: #6b7280;
-        }
-        .result-stats {
-          display: flex;
-          justify-content: space-around;
-          gap: 1rem;
-        }
-        .stat {
-          text-align: center;
-        }
-        .stat-label {
-          display: block;
-          font-size: 0.75rem;
-          color: #6b7280;
-          margin-bottom: 0.25rem;
-        }
-        .stat-value {
-          display: block;
-          font-size: 1.1rem;
-          font-weight: 700;
-        }
-        .result-date {
-          text-align: center;
-          font-size: 0.85rem;
-          color: #6b7280;
-          padding-top: 1rem;
-          border-top: 1px solid #e5e7eb;
-        }
-      `}</style>
+      {loading ? (
+        <div className="results-loading">
+          <div className="loading-avatar">📚</div>
+          <div className="loading-text">Sonuçlar yükleniyor...</div>
+          <div className="loading-spinner"></div>
+        </div>
+      ) : results.length === 0 ? (
+        <div className="empty-results-state">
+          <div className="empty-avatar">📊</div>
+          <h3>Henüz Sınav Sonucu Yok</h3>
+          <p>Sınav çözünce sonuçların burada görünecek.</p>
+          <div className="encouragement-message">
+            <span className="encouragement-icon">💪</span>
+            <span>Hazırsan ilk sınavını çözmeye başla!</span>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Stats Overview */}
+          <div className="results-stats-overview">
+            <div className="stat-overview-card total">
+              <div className="stat-icon">📚</div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.totalExams}</div>
+                <div className="stat-label">Toplam Sınav</div>
+              </div>
+            </div>
+            
+            <div className="stat-overview-card average">
+              <div className="stat-icon">📊</div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.avgScore}</div>
+                <div className="stat-label">Ortalama</div>
+              </div>
+            </div>
+            
+            <div className="stat-overview-card best">
+              <div className="stat-icon">🏆</div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.bestScore}</div>
+                <div className="stat-label">En İyi Puan</div>
+              </div>
+            </div>
+            
+            <div className={`stat-overview-card trend ${stats.recentTrend}`}>
+              <div className="stat-icon">
+                {stats.recentTrend === 'up' && '📈'}
+                {stats.recentTrend === 'down' && '📉'}
+                {stats.recentTrend === 'neutral' && '➡️'}
+              </div>
+              <div className="stat-content">
+                <div className="stat-value">
+                  {stats.recentTrend === 'up' && 'Yükseliş'}
+                  {stats.recentTrend === 'down' && 'Düşüş'}
+                  {stats.recentTrend === 'neutral' && 'Stabil'}
+                </div>
+                <div className="stat-label">Trend</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Results Grid */}
+          <div className="results-grid">
+            {results.map((result, index) => {
+              const gradeInfo = calculateGrade(result.score);
+              return (
+                <div 
+                  key={result._id} 
+                  className="result-card"
+                  style={{ '--card-color': gradeInfo.color, '--animation-delay': `${index * 0.1}s` }}
+                  onClick={() => setSelectedResult(selectedResult?._id === result._id ? null : result)}
+                >
+                  {/* Card Header with Avatar */}
+                  <div className="result-card-header">
+                    <div className="result-avatar-wrapper">
+                      <div className="result-avatar" style={{ background: gradeInfo.color }}>
+                        {gradeInfo.avatar}
+                      </div>
+                      <div className="avatar-pulse"></div>
+                    </div>
+                    <div className="result-grade-badge" style={{ background: gradeInfo.color }}>
+                      {gradeInfo.emoji} {gradeInfo.grade}
+                    </div>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="result-card-body">
+                    <h3 className="result-exam-title">{result.exam?.title || 'Sınav'}</h3>
+                    
+                    <div className="result-score-display">
+                      <div className="score-circle" style={{ '--score-color': gradeInfo.color, '--score-percent': result.score }}>
+                        <svg className="score-ring-svg" viewBox="0 0 120 120">
+                          <circle className="score-ring-bg" cx="60" cy="60" r="52" />
+                          <circle className="score-ring-progress" cx="60" cy="60" r="52" 
+                            style={{ 
+                              strokeDasharray: `${result.score * 3.27} 327`,
+                              stroke: gradeInfo.color 
+                            }}
+                          />
+                        </svg>
+                        <div className="score-value">
+                          <span className="score-number">{result.score}</span>
+                          <span className="score-max">/100</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="result-message" style={{ color: gradeInfo.color }}>
+                      {gradeInfo.message}
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="result-stats-grid">
+                      <div className="result-stat correct">
+                        <div className="stat-icon-small">✓</div>
+                        <div className="stat-value-small">{result.correctAnswers || 0}</div>
+                        <div className="stat-label-small">Doğru</div>
+                      </div>
+                      <div className="result-stat wrong">
+                        <div className="stat-icon-small">✗</div>
+                        <div className="stat-value-small">{result.wrongAnswers || 0}</div>
+                        <div className="stat-label-small">Yanlış</div>
+                      </div>
+                      <div className="result-stat empty">
+                        <div className="stat-icon-small">○</div>
+                        <div className="stat-value-small">{result.emptyAnswers || 0}</div>
+                        <div className="stat-label-small">Boş</div>
+                      </div>
+                    </div>
+
+                    {/* Date */}
+                    <div className="result-date">
+                      📅 {new Date(result.completedAt || result.createdAt).toLocaleDateString('tr-TR', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </div>
+
+                    {/* Expand Details */}
+                    {selectedResult?._id === result._id && (
+                      <div className="result-details-expanded">
+                        <div className="detail-row">
+                          <span className="detail-label">Süre:</span>
+                          <span className="detail-value">{result.completionTime ? `${Math.floor(result.completionTime / 60)} dk` : 'Bilinmiyor'}</span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="detail-label">Başarı Oranı:</span>
+                          <span className="detail-value">{result.score}%</span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="detail-label">Toplam Soru:</span>
+                          <span className="detail-value">{(result.correctAnswers || 0) + (result.wrongAnswers || 0) + (result.emptyAnswers || 0)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
