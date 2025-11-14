@@ -1,3 +1,29 @@
 {
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    
+    // Disable Java extensions for this JavaScript/Node.js project
+    "java.enabled": false,
+    "java.jdt.ls.enabled": false,
+    
+    // Disable specific Java extensions that cause MCP server errors
+    "vscjava.migrate-java-to-azure.enabled": false,
+    
+    // Configure for Node.js/JavaScript/React project
+    "javascript.suggest.autoImports": true,
+    "typescript.suggest.autoImports": true,
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    
+    // Editor settings for better JavaScript/React development
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    
+    // File associations
+    "files.associations": {
+        "*.jsx": "javascriptreact",
+        "*.tsx": "typescriptreact"
+    }
 }

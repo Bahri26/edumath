@@ -41,7 +41,9 @@ pnpm-debug.log*
 logs/
 
 # Editor/IDE
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
 *.sublime-project
 *.sublime-workspace
