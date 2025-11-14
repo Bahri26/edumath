@@ -1,0 +1,157 @@
+# AI-FastAPI İçin Backend Entegrasyon Dosyası
+# Bu dosyayı backend-express/services/ klasörüne kopyalayın
+
+const axios = require('axios');
+
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8001';
+
+/**
+ * Yapay zeka servisi ile iletişim
+ */
+class AIService {
+  
+  /**
+   * Otomatik soru üretme
+   */
+  static async generateQuestions(topic, difficulty = 'orta', count = 5) {
+    try {
+      const response = await axios.post(
+        `${AI_SERVICE_URL}/api/ai/generate-questions`,
+        {
+          topic,
+          difficulty,
+          count,
+          question_type: 'coktan_secmeli',
+          language: 'tr'
+        },
+        { timeout: 30000 }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('AI Soru Üretme Hatası:', error.message);
+      throw new Error('Soru üretilemedi: ' + error.message);
+    }
+  }
+
+  /**
+   * Öğrenci çözümünü analiz et
+   */
+  static async analyzeSolution(question, correctAnswer, studentAnswer, studentWork = '') {
+    try {
+      const response = await axios.post(
+        `${AI_SERVICE_URL}/api/ai/analyze-solution`,
+        {
+          question,
+          correct_answer: correctAnswer,
+          student_answer: studentAnswer,
+          student_work: studentWork,
+          max_score: 100
+        },
+        { timeout: 20000 }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('AI Çözüm Analizi Hatası:', error.message);
+      throw new Error('Çözüm analiz edilemedi: ' + error.message);
+    }
+  }
+
+  /**
+   * Öğrenciye kişiselleştirilmiş öneriler
+   */
+  static async getRecommendations(studentId, performanceData) {
+    try {
+      const response = await axios.post(
+        `${AI_SERVICE_URL}/api/ai/recommend`,
+        {
+          student_id: studentId,
+          performance_data: performanceData,
+          recommendation_count: 5
+        },
+        { timeout: 15000 }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('AI Öneri Hatası:', error.message);
+      throw new Error('Öneriler alınamadı: ' + error.message);
+    }
+  }
+
+  /**
+   * Chatbot ile konuşma
+   */
+  static async chat(message, conversationHistory = []) {
+    try {
+      const response = await axios.post(
+        `${AI_SERVICE_URL}/api/ai/chat`,
+        {
+          message,
+          conversation_history: conversationHistory
+        },
+        { timeout: 20000 }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('AI Chat Hatası:', error.message);
+      throw new Error('Chat yanıtı alınamadı: ' + error.message);
+    }
+  }
+
+  /**
+   * Performans tahmini
+   */
+  static async predictPerformance(studentId, historicalScores, studyHours, topicMastery, upcomingTopics) {
+    try {
+      const response = await axios.post(
+        `${AI_SERVICE_URL}/api/ai/predict-performance`,
+        {
+          student_id: studentId,
+          historical_scores: historicalScores,
+          study_hours: studyHours,
+          topic_mastery: topicMastery,
+          upcoming_exam_topics: upcomingTopics
+        },
+        { timeout: 15000 }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('AI Performans Tahmini Hatası:', error.message);
+      throw new Error('Performans tahmini yapılamadı: ' + error.message);
+    }
+  }
+
+  /**
+   * OCR ile matematik tanıma
+   */
+  static async recognizeMath(imageBase64) {
+    try {
+      const response = await axios.post(
+        `${AI_SERVICE_URL}/api/ai/ocr/math`,
+        {
+          image_base64: imageBase64,
+          language: 'tr'
+        },
+        { timeout: 30000 }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('AI OCR Hatası:', error.message);
+      throw new Error('Görüntü işlenemedi: ' + error.message);
+    }
+  }
+
+  /**
+   * AI servis sağlık kontrolü
+   */
+  static async healthCheck() {
+    try {
+      const response = await axios.get(`${AI_SERVICE_URL}/health`, { timeout: 5000 });
+      return response.data;
+    } catch (error) {
+      console.error('AI Servis erişilemez:', error.message);
+      return { status: 'unhealthy', error: error.message };
+    }
+  }
+}
+
+module.exports = AIService;

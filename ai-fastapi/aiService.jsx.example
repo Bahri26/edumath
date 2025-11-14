@@ -1,0 +1,173 @@
+// React için AI Service örneği
+// frontend-react/src/services/aiService.js olarak kullanılabilir
+
+import axios from 'axios';
+
+const AI_API_URL = import.meta.env.VITE_AI_API_URL || 'http://localhost:8001/api/ai';
+
+/**
+ * Yapay zeka servisi API çağrıları
+ */
+
+/**
+ * Otomatik soru üretme
+ */
+export const generateQuestions = async (topic, difficulty = 'orta', count = 5, questionType = 'coktan_secmeli') => {
+  try {
+    const response = await axios.post(`${AI_API_URL}/generate-questions`, {
+      topic,
+      difficulty,
+      count,
+      question_type: questionType,
+      language: 'tr'
+    });
+    return response.data;
+  } catch (error) {
+    console.error('AI Soru Üretme Hatası:', error);
+    throw new Error(error.response?.data?.detail || 'Soru üretilemedi');
+  }
+};
+
+/**
+ * Çözüm analizi
+ */
+export const analyzeSolution = async (question, correctAnswer, studentAnswer, studentWork = '') => {
+  try {
+    const response = await axios.post(`${AI_API_URL}/analyze-solution`, {
+      question,
+      correct_answer: correctAnswer,
+      student_answer: studentAnswer,
+      student_work: studentWork,
+      max_score: 100
+    });
+    return response.data;
+  } catch (error) {
+    console.error('AI Çözüm Analizi Hatası:', error);
+    throw new Error(error.response?.data?.detail || 'Çözüm analiz edilemedi');
+  }
+};
+
+/**
+ * Kişiselleştirilmiş öneriler
+ */
+export const getRecommendations = async (studentId, performanceData) => {
+  try {
+    const response = await axios.post(`${AI_API_URL}/recommend`, {
+      student_id: studentId,
+      performance_data: performanceData,
+      recommendation_count: 5
+    });
+    return response.data;
+  } catch (error) {
+    console.error('AI Öneri Hatası:', error);
+    throw new Error(error.response?.data?.detail || 'Öneriler alınamadı');
+  }
+};
+
+/**
+ * AI Chatbot
+ */
+export const sendChatMessage = async (message, conversationHistory = []) => {
+  try {
+    const response = await axios.post(`${AI_API_URL}/chat`, {
+      message,
+      conversation_history: conversationHistory
+    });
+    return response.data;
+  } catch (error) {
+    console.error('AI Chat Hatası:', error);
+    throw new Error(error.response?.data?.detail || 'Chat yanıtı alınamadı');
+  }
+};
+
+/**
+ * Performans tahmini
+ */
+export const predictPerformance = async (studentId, data) => {
+  try {
+    const response = await axios.post(`${AI_API_URL}/predict-performance`, {
+      student_id: studentId,
+      historical_scores: data.historicalScores,
+      study_hours: data.studyHours,
+      topic_mastery: data.topicMastery,
+      upcoming_exam_topics: data.upcomingTopics
+    });
+    return response.data;
+  } catch (error) {
+    console.error('AI Performans Tahmini Hatası:', error);
+    throw new Error(error.response?.data?.detail || 'Performans tahmini yapılamadı');
+  }
+};
+
+/**
+ * OCR Matematik tanıma
+ */
+export const recognizeMath = async (imageFile) => {
+  try {
+    // Resmi base64'e çevir
+    const base64 = await fileToBase64(imageFile);
+    
+    const response = await axios.post(`${AI_API_URL}/ocr/math`, {
+      image_base64: base64,
+      language: 'tr'
+    });
+    return response.data;
+  } catch (error) {
+    console.error('AI OCR Hatası:', error);
+    throw new Error(error.response?.data?.detail || 'Görüntü işlenemedi');
+  }
+};
+
+/**
+ * Mevcut konuları listele
+ */
+export const getAvailableTopics = async () => {
+  try {
+    const response = await axios.get(`${AI_API_URL}/topics`);
+    return response.data;
+  } catch (error) {
+    console.error('Konular alınamadı:', error);
+    throw new Error('Konular yüklenemedi');
+  }
+};
+
+/**
+ * AI Servis sağlık kontrolü
+ */
+export const checkAIServiceHealth = async () => {
+  try {
+    const response = await axios.get(`${AI_API_URL.replace('/api/ai', '')}/health`);
+    return response.data;
+  } catch (error) {
+    return { status: 'unhealthy', error: error.message };
+  }
+};
+
+// Yardımcı fonksiyonlar
+
+/**
+ * File'ı Base64'e çevir
+ */
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      // "data:image/png;base64," kısmını kaldır
+      const base64 = reader.result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+export default {
+  generateQuestions,
+  analyzeSolution,
+  getRecommendations,
+  sendChatMessage,
+  predictPerformance,
+  recognizeMath,
+  getAvailableTopics,
+  checkAIServiceHealth
+};

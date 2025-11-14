@@ -1,0 +1,66 @@
+# .gitignore for AI-FastAPI
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+
+# Data
+data/training/*
+data/cache/*
+!data/training/.gitkeep
+!data/cache/.gitkeep
+
+# ML Models
+app/ml_models/*.pkl
+app/ml_models/*.h5
+app/ml_models/*.pth
+app/ml_models/*.joblib
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
