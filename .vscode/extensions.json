@@ -1,0 +1,36 @@
+{
+    "recommendations": [
+        // Essential for JavaScript/Node.js development
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        
+        // React development
+        "dsznajder.es7-react-js-snippets",
+        
+        // MongoDB
+        "mongodb.mongodb-vscode",
+        
+        // Git integration
+        "eamodio.gitlens",
+        
+        // Package management
+        "christian-kohler.npm-intellisense",
+        
+        // Path intellisense
+        "christian-kohler.path-intellisense",
+        
+        // REST client for API testing
+        "humao.rest-client"
+    ],
+    
+    "unwantedRecommendations": [
+        // Explicitly exclude Java extensions to prevent MCP server errors
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-java-debug",
+        "vscjava.vscode-java-test",
+        "vscjava.vscode-maven",
+        "vscjava.vscode-java-dependency",
+        "vscjava.migrate-java-to-azure",
+        "redhat.java"
+    ]
+}
