@@ -2,6 +2,7 @@
 
 const Question = require('../models/Question');
 const User = require('../models/User'); 
+const { sanitizeInput } = require('../utils/sanitize');
 
 // POST /api/questions - Yeni Soru Oluşturma
 exports.createQuestion = async (req, res) => {
@@ -18,7 +19,7 @@ exports.createQuestion = async (req, res) => {
             options,
             correctAnswer,
             solutionText 
-        } = req.body;
+        } = sanitizeInput(req.body);
 
         const createdBy = req.user.id;
         
@@ -49,10 +50,10 @@ exports.createQuestion = async (req, res) => {
 };
 
 
-// GET /api/questions - Tüm Soruları Getir (FİLTRELİ)
+// GET /api/questions - Tüm Soruları Getir (GELİŞMİŞ FİLTRELEME)
 exports.getQuestions = async (req, res) => {
     try {
-        const { classLevel, difficulty } = req.query; 
+        const { classLevel, difficulty, topic, questionType, search } = req.query; 
         const queryFilter = {};
 
         // queryFilter.createdBy = req.user.id; // Gerekirse
@@ -62,6 +63,19 @@ exports.getQuestions = async (req, res) => {
         }
         if (difficulty) {
             queryFilter.difficulty = difficulty;
+        }
+        if (topic) {
+            queryFilter.topic = topic;
+        }
+        if (questionType) {
+            queryFilter.questionType = questionType;
+        }
+        if (search) {
+            // Tam metin araması (soru metni ve konu)
+            queryFilter.$or = [
+                { text: { $regex: search, $options: 'i' } },
+                { topic: { $regex: search, $options: 'i' } }
+            ];
         }
 
         const questions = await Question.find(queryFilter) 
@@ -105,7 +119,7 @@ exports.updateQuestion = async (req, res) => {
         // req.body 'solutionImage' alanını da içerecektir
         const updatedQuestion = await Question.findByIdAndUpdate(
             req.params.id,
-            req.body, 
+            sanitizeInput(req.body), 
             { new: true, runValidators: true } 
         );
 

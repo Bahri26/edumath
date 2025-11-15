@@ -3,6 +3,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
 require('dotenv').config();
 
 // --- 1. Rota (Route) Dosyalarını Import Etme ---
@@ -30,13 +33,70 @@ const PORT = process.env.PORT || 8000;
 // --- 2. CRITICAL BÖLÜM: MİDDLEWARE'LER ---
 // Bu sıralama önemlidir. Middleware'ler, rotalardan önce gelmelidir.
 
-// CORS (Cross-Origin Resource Sharing)
-// Frontend'in (localhost:5173) backend'e (localhost:8000) istek atmasına izin verir
-app.use(cors()); 
+// Security headers (Helmet) - CORS'tan önce
+app.use(helmet());
+
+// CORS (Cross-Origin Resource Sharing) - whitelist ile sınırla
+const defaultAllowed = [
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+const envAllowed = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+const allowedOrigins = envAllowed.length ? envAllowed : defaultAllowed;
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy tarafından engellendi'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 
 // Gelen JSON verisini işleyen middleware
 // Bu, 'req.body'nin 'undefined' gelmesini engeller
-app.use(express.json()); 
+app.use(express.json());
+
+// NoSQL injection koruması
+app.use(mongoSanitize());
+
+// Rate Limiting - genel ve auth özel limitler
+const apiLimiter = rateLimit({
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
+  max: Number(process.env.RATE_LIMIT_MAX || 100),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Çok fazla istek. Lütfen daha sonra tekrar deneyin.'
+  }
+});
+
+const loginLimiter = rateLimit({
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
+  max: 5,
+  skipSuccessfulRequests: true,
+  message: {
+    error: 'Çok fazla başarısız giriş denemesi. Lütfen daha sonra tekrar deneyin.'
+  }
+});
+
+// Rotalardan önce uygula
+app.use('/api/', apiLimiter);
+app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/register', loginLimiter);
+// v1 için de limitler
+app.use('/api/v1/', apiLimiter);
+app.use('/api/v1/auth/login', loginLimiter);
+app.use('/api/v1/auth/register', loginLimiter);
 
 // --- 3. Rota (Route) Tanımlamaları ---
 // Gelen isteğin yoluna göre ilgili rota dosyasına yönlendirme
@@ -71,6 +131,42 @@ app.use('/api/social', require('./routes/socialRoutes'));
 app.use('/api/adaptive-difficulty', require('./routes/adaptiveDifficultyRoutes'));
 app.use('/api/videos', require('./routes/videoRoutes'));
 
+// API Versioning - v1 (geriye uyumluluk için mevcut /api yolları korunuyor)
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/questions', questionRoutes);
+app.use('/api/v1/classes', classRoutes);
+app.use('/api/v1/exams', examRoutes);
+app.use('/api/v1/results', resultRoutes);
+app.use('/api/v1/assignments', assignmentRoutes);
+app.use('/api/v1/student', studentRoutes);
+app.use('/api/v1/gamification', gamificationRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/learning-paths', learningPathRoutes);
+app.use('/api/v1/challenges', dailyChallengeRoutes);
+app.use('/api/v1/leaderboard', leaderboardRoutes);
+app.use('/api/v1/surveys', surveyRoutes);
+app.use('/api/v1/teacher', teacherRoutes);
+app.use('/api/v1/streak', streakRoutes);
+app.use('/api/v1/streak-advanced', require('./routes/streakAdvancedRoutes'));
+app.use('/api/v1/hearts', heartsRoutes);
+app.use('/api/v1/interactive-exercises', interactiveExerciseRoutes);
+app.use('/api/v1/achievements', require('./routes/achievementRoutes'));
+app.use('/api/v1/student-analytics', require('./routes/studentAnalyticsRoutes'));
+app.use('/api/v1/social', require('./routes/socialRoutes'));
+app.use('/api/v1/adaptive-difficulty', require('./routes/adaptiveDifficultyRoutes'));
+app.use('/api/v1/videos', require('./routes/videoRoutes'));
+
+// Production ortamında HTTPS'i zorunlu tut (proxy arkasında çalışıyorsa)
+if (process.env.NODE_ENV === 'production') {
+  app.enable('trust proxy');
+  app.use((req, res, next) => {
+    if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+      return next();
+    }
+    return res.redirect('https://' + req.headers.host + req.url);
+  });
+}
+
 // Sağlık ve echo debug endpoint'leri
 app.get('/api/health', (req,res)=>{
   res.json({ status:'ok', time:new Date().toISOString() });
@@ -80,16 +176,20 @@ app.get('/api/debug/echo', (req,res)=>{
 });
 
 // --- 4. MongoDB Bağlantısı ---
-//const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/edumathDB';
+const { logger } = require('./utils/logger');
 const MONGO_URI = process.env.MONGO_URI;
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('MongoDB bağlantısı başarılı.'))
-  .catch(err => console.error('MongoDB bağlantı hatası:', err));
+  .then(() => logger.info('MongoDB bağlantısı başarılı.'))
+  .catch(err => logger.error('MongoDB bağlantı hatası', { error: err.message, stack: err.stack }));
 
 // --- 5. Sunucuyu Başlatma ---
 app.get('/', (req, res) => {
   res.send('Edu-Platform Express sunucusu çalışıyor.');
 });
+
+// Error handler middleware (tüm route'lardan sonra)
+const errorHandler = require('./middleware/errorHandler');
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Express sunucusu http://localhost:${PORT} adresinde çalışıyor.`);

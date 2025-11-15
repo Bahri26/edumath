@@ -41,6 +41,14 @@ function TeacherDashboard() {
 		else setGreeting('🌙 İyi Akşamlar');
 
 		const fetchDashboardData = async () => {
+			// Token kontrolü
+			const token = localStorage.getItem('token');
+			if (!token) {
+				setError('Lütfen giriş yapın.');
+				setLoading(false);
+				return;
+			}
+
 			setLoading(true);
 			setError(null);
 
@@ -80,7 +88,13 @@ function TeacherDashboard() {
 					upcomingExams: stats.upcomingExams || []
 				});
 			} catch (err) {
-				setError('Dashboard verisi yüklenirken bir hata oluştu.');
+				if (err.response?.status === 401) {
+					setError('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+					localStorage.removeItem('token');
+					localStorage.removeItem('userRole');
+				} else {
+					setError('Dashboard verisi yüklenirken bir hata oluştu.');
+				}
 				console.error('Dashboard veri hatası:', err);
 			} finally {
 				setLoading(false);

@@ -109,8 +109,7 @@ const studentAnalyticsSchema = new mongoose.Schema({
   lastUpdated: { type: Date, default: Date.now }
 });
 
-// Index for efficient queries
-studentAnalyticsSchema.index({ userId: 1 });
+// Index for efficient queries (userId index already created via unique: true)
 studentAnalyticsSchema.index({ 'topicPerformance.topic': 1 });
 studentAnalyticsSchema.index({ 'weeklyStats.weekStart': -1 });
 studentAnalyticsSchema.index({ 'dailyActivity.date': -1 });

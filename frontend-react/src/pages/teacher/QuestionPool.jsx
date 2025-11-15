@@ -82,13 +82,27 @@ function QuestionPool() {
   // --- Adım 2 State'leri ---
   const [step2Data, setStep2Data] = useState(defaultFormState);
 
+  // --- Çoklu Soru Oluşturma State'leri ---
+  const [multiQuestionMode, setMultiQuestionMode] = useState(false);
+  const [numberOfQuestions, setNumberOfQuestions] = useState(1);
+  const [multiQuestions, setMultiQuestions] = useState([defaultFormState]);
+
   // --- Filtre State'leri ---
   const [filterSinif, setFilterSinif] = useState(''); 
-  const [filterZorluk, setFilterZorluk] = useState(''); 
+  const [filterZorluk, setFilterZorluk] = useState('');
+  const [filterKonu, setFilterKonu] = useState('');
+  const [filterTip, setFilterTip] = useState('');
+  const [searchText, setSearchText] = useState('');
+
+  // --- Bulk İşlem State'leri ---
+  const [selectedQuestions, setSelectedQuestions] = useState([]);
+  const [bulkMode, setBulkMode] = useState(false);
+
+  // --- Görünüm State'i ---
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' veya 'compact'
 
   // --- Pagination State'leri ---
   const [currentPage, setCurrentPage] = useState(1); // Mevcut sayfa (1'den başlar)
-  const questionsPerPage = 3; // Sayfa başına 3 soru
 
   // <<< SİMÜLASYON STATE'LERİ >>>
   const [isSimulationOpen, setIsSimulationOpen] = useState(false);
@@ -101,6 +115,9 @@ function QuestionPool() {
     const params = {};
     if (filterSinif) params.classLevel = filterSinif;
     if (filterZorluk) params.difficulty = filterZorluk;
+    if (filterKonu) params.topic = filterKonu;
+    if (filterTip) params.questionType = filterTip;
+    if (searchText) params.search = searchText;
     try {
       const data = await getQuestions(params);
       setQuestions(Array.isArray(data) ? data : []);
@@ -118,20 +135,26 @@ function QuestionPool() {
     } finally {
       setLoading(false);
     }
-  }, [filterSinif, filterZorluk, token]);
+  }, [filterSinif, filterZorluk, filterKonu, filterTip, searchText, token]);
 
   useEffect(() => {
     if (activeTab === 'list') {
-      // API Çağrısı Aktif Hale Getirildi
       fetchQuestions();
     }
-  }, [activeTab, fetchQuestions, currentPage]); 
+  }, [activeTab, fetchQuestions]); 
   
   // --- Pagination Hesaplamaları ---
-  const filteredQuestions = questions.filter(q => 
-    (!filterSinif || q.classLevel === filterSinif) && 
-    (!filterZorluk || q.difficulty === filterZorluk)
-  );
+  const questionsPerPage = viewMode === 'compact' ? 10 : 6; // Dinamik sayfa başına soru sayısı
+  const filteredQuestions = questions.filter(q => {
+    const matchSinif = !filterSinif || q.classLevel === filterSinif;
+    const matchZorluk = !filterZorluk || q.difficulty === filterZorluk;
+    const matchKonu = !filterKonu || q.topic === filterKonu;
+    const matchTip = !filterTip || q.questionType === filterTip;
+    const matchSearch = !searchText || 
+      q.text?.toLowerCase().includes(searchText.toLowerCase()) ||
+      q.topic?.toLowerCase().includes(searchText.toLowerCase());
+    return matchSinif && matchZorluk && matchKonu && matchTip && matchSearch;
+  });
   const totalQuestions = filteredQuestions.length;
   const totalPages = Math.ceil(totalQuestions / questionsPerPage);
 
@@ -139,6 +162,21 @@ function QuestionPool() {
   const indexOfFirstQuestion = indexOfLastQuestion - questionsPerPage;
   const currentQuestions = filteredQuestions.slice(indexOfFirstQuestion, indexOfLastQuestion);
   // --- Pagination Hesaplamaları Sonu ---
+
+  // --- İstatistikler ---
+  const stats = {
+    total: questions.length,
+    byDifficulty: {
+      Kolay: questions.filter(q => q.difficulty === 'Kolay').length,
+      Orta: questions.filter(q => q.difficulty === 'Orta').length,
+      Zor: questions.filter(q => q.difficulty === 'Zor').length
+    },
+    byType: {
+      test: questions.filter(q => q.questionType === 'test').length,
+      'dogru-yanlis': questions.filter(q => q.questionType === 'dogru-yanlis').length,
+      'bosluk-doldurma': questions.filter(q => q.questionType === 'bosluk-doldurma').length
+    }
+  };
 
   // SİMÜLASYON FONKSİYONLARI
   const handleShowSolution = (question) => {
@@ -180,6 +218,58 @@ function QuestionPool() {
     setter(value);
     setCurrentPage(1); 
   };
+
+  // --- Bulk İşlem Fonksiyonları ---
+  const toggleQuestionSelect = (id) => {
+    setSelectedQuestions(prev => 
+      prev.includes(id) ? prev.filter(qId => qId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedQuestions.length === currentQuestions.length) {
+      setSelectedQuestions([]);
+    } else {
+      setSelectedQuestions(currentQuestions.map(q => q._id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedQuestions.length === 0) {
+      setError('Lütfen en az bir soru seçin.');
+      return;
+    }
+    if (!window.confirm(`Seçili ${selectedQuestions.length} soruyu silmek istediğinizden emin misiniz?`)) {
+      return;
+    }
+    try {
+      await Promise.all(selectedQuestions.map(id => deleteQuestion(id)));
+      setMessage(`${selectedQuestions.length} soru başarıyla silindi.`);
+      setQuestions(questions.filter(q => !selectedQuestions.includes(q._id)));
+      setSelectedQuestions([]);
+      setBulkMode(false);
+    } catch (err) {
+      console.error('Toplu silme hatası:', err);
+      setError('Sorular silinirken hata oluştu.');
+    }
+  };
+
+  const handleBulkExport = () => {
+    if (selectedQuestions.length === 0) {
+      setError('Lütfen en az bir soru seçin.');
+      return;
+    }
+    const exportData = questions.filter(q => selectedQuestions.includes(q._id));
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `sorular_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage(`${selectedQuestions.length} soru dışa aktarıldı.`);
+  };
   
   const handleNextStep = (e) => {
     e.preventDefault();
@@ -188,6 +278,13 @@ function QuestionPool() {
       return;
     }
     setError(null);
+    
+    // Çoklu soru modundaysa array oluştur
+    if (multiQuestionMode && numberOfQuestions > 1) {
+      const newQuestions = Array.from({ length: numberOfQuestions }, () => ({ ...defaultFormState }));
+      setMultiQuestions(newQuestions);
+    }
+    
     setStep(2);
   };
   
@@ -195,7 +292,8 @@ function QuestionPool() {
     setEditingId(null); setError(null); setMessage(''); setStep(1);
     setSelectedDers(curriculumData.dersler[0]); setSelectedSinif(''); setSelectedKonu(curriculumData.konular[0]); 
     setSelectedKazanım(''); setSelectedSoruTipi('test'); setSelectedDifficulty('Orta'); 
-    setStep2Data(defaultFormState); setActiveTab(switchToTab); 
+    setStep2Data(defaultFormState); setActiveTab(switchToTab);
+    setMultiQuestionMode(false); setNumberOfQuestions(1); setMultiQuestions([defaultFormState]);
   };
   
   const handleSubmit = async (e) => {
@@ -204,34 +302,100 @@ function QuestionPool() {
     setMessage('');
     if (!token) { setError('Giriş yapmalısınız.'); return; }
 
-    let questionData = {
-      subject: selectedDers,
-      classLevel: selectedSinif,
-      topic: selectedKonu,
-      learningOutcome: selectedKazanım,
-      questionType: selectedSoruTipi,
-      difficulty: selectedDifficulty, 
-      text: step2Data.text,
-      options: step2Data.options,
-      correctAnswer: step2Data.correctAnswer,
-      solutionText: step2Data.solutionText
-    };
-
     try {
-      if (editingId) {
-        const updated = await updateQuestion(editingId, questionData);
-        setQuestions(questions.map(q => q._id === editingId ? updated : q));
-        setMessage('Soru başarıyla güncellendi!');
+      if (multiQuestionMode && numberOfQuestions > 1) {
+        // Çoklu soru oluşturma
+        const createdQuestions = [];
+        for (let i = 0; i < multiQuestions.length; i++) {
+          const qData = multiQuestions[i];
+          
+          // İnteraktif config objesi oluştur
+          const interactiveConfig = buildInteractiveConfig(qData);
+          
+          const questionData = {
+            subject: selectedDers,
+            classLevel: selectedSinif,
+            topic: selectedKonu,
+            learningOutcome: selectedKazanım,
+            questionType: selectedSoruTipi,
+            difficulty: selectedDifficulty,
+            text: qData.text,
+            options: qData.options,
+            correctAnswer: qData.correctAnswer,
+            solutionText: qData.solutionText,
+            interactiveConfig: Object.keys(interactiveConfig).length > 0 ? interactiveConfig : undefined
+          };
+          
+          const created = await createQuestion(questionData);
+          createdQuestions.push(created);
+        }
+        
+        setQuestions([...createdQuestions, ...questions]);
+        setMessage(`${createdQuestions.length} soru başarıyla oluşturuldu!`);
+        resetForm('list');
       } else {
-        const created = await createQuestion(questionData);
-        setQuestions([created, ...questions]);
-        setMessage('Soru başarıyla oluşturuldu!');
+        // Tekli soru oluşturma/güncelleme
+        const interactiveConfig = buildInteractiveConfig(step2Data);
+        
+        let questionData = {
+          subject: selectedDers,
+          classLevel: selectedSinif,
+          topic: selectedKonu,
+          learningOutcome: selectedKazanım,
+          questionType: selectedSoruTipi,
+          difficulty: selectedDifficulty, 
+          text: step2Data.text,
+          options: step2Data.options,
+          correctAnswer: step2Data.correctAnswer,
+          solutionText: step2Data.solutionText,
+          interactiveConfig: Object.keys(interactiveConfig).length > 0 ? interactiveConfig : undefined
+        };
+
+        if (editingId) {
+          const updated = await updateQuestion(editingId, questionData);
+          setQuestions(questions.map(q => q._id === editingId ? updated : q));
+          setMessage('Soru başarıyla güncellendi!');
+        } else {
+          const created = await createQuestion(questionData);
+          setQuestions([created, ...questions]);
+          setMessage('Soru başarıyla oluşturuldu!');
+        }
+        resetForm('list');
       }
-      resetForm('list');
     } catch (err) {
       console.error('Form gönderme hatası:', err);
       setError(err.response?.data?.message || 'Soru kaydedilemedi.');
     }
+  };
+  
+  // Helper fonksiyon - interactiveConfig oluşturur
+  const buildInteractiveConfig = (qData) => {
+    const interactiveConfig = {};
+    
+    if (['eslestirme', 'surukle-birak', 'hafiza-karti', 'eslesmeyi-bul'].includes(selectedSoruTipi)) {
+      interactiveConfig.leftItems = qData.leftItems ? JSON.parse(qData.leftItems) : [];
+      interactiveConfig.rightItems = qData.rightItems ? JSON.parse(qData.rightItems) : [];
+      interactiveConfig.matchingPairs = qData.correctAnswer ? JSON.parse(qData.correctAnswer) : {};
+    } else if (['siralama', 'kelime-corbasi', 'grup-siralama', 'anagram'].includes(selectedSoruTipi)) {
+      interactiveConfig.items = qData.items ? JSON.parse(qData.items) : [];
+      interactiveConfig.correctOrder = qData.correctAnswer ? JSON.parse(qData.correctAnswer) : [];
+    } else if (['cizim', 'grafik-ciz', 'geometri-cizim'].includes(selectedSoruTipi)) {
+      interactiveConfig.drawingType = qData.drawingType || 'graph';
+      interactiveConfig.expectedResult = qData.correctAnswer ? JSON.parse(qData.correctAnswer) : {};
+    } else if (selectedSoruTipi === 'sayi-dogrusu') {
+      interactiveConfig.numberLineMin = parseInt(qData.numberLineMin) || -10;
+      interactiveConfig.numberLineMax = parseInt(qData.numberLineMax) || 10;
+    } else if (selectedSoruTipi === 'kesir-gorsel') {
+      interactiveConfig.fractionType = qData.fractionType || 'circle';
+      interactiveConfig.totalParts = parseInt(qData.totalParts) || 8;
+    } else if (selectedSoruTipi === 'denklem-kur') {
+      interactiveConfig.operators = qData.operators || '+,-,*,/,(,)';
+      interactiveConfig.variables = qData.variables || 'x,y';
+    } else if (['carkifelek', 'kutu-ac', 'eslesme-oyunu', 'cumle-tamamla'].includes(selectedSoruTipi)) {
+      interactiveConfig.options = qData.items ? JSON.parse(qData.items) : [];
+    }
+    
+    return interactiveConfig;
   };
   
   
@@ -359,14 +523,308 @@ function QuestionPool() {
             <small>Not: Soru metnine boşluk için ___ (3 alt çizgi) koyunuz.</small>
           </div>
         );
+      // İnteraktif Sorular - Eşleştirme Tabanlı
       case 'eslestirme':
+      case 'surukle-birak':
+      case 'hafiza-karti':
+      case 'eslesmeyi-bul':
         return (
           <div className="alert alert-info">
-            Eşleştirme tipi soru hazırlama modülü yakında eklenecektir.
+            <h5>🎯 {selectedSoruTipi === 'eslestirme' ? 'Eşleştirme' : selectedSoruTipi === 'surukle-birak' ? 'Sürükle-Bırak' : selectedSoruTipi === 'hafiza-karti' ? 'Hafıza Kartları' : 'Eşleşmeyi Bul'} Soru Konfigürasyonu</h5>
+            <p>Bu interaktif soru tipi için sol ve sağ öğeleri JSON formatında tanımlayın:</p>
+            <div className="form-group">
+              <label>Sol Öğeler (JSON array)</label>
+              <textarea 
+                className="kids-input" 
+                rows="3"
+                name="leftItems"
+                value={step2Data.leftItems || '["A", "B", "C"]'}
+                onChange={(e) => setStep2Data(prev => ({ ...prev, leftItems: e.target.value }))}
+                placeholder='["Türkiye", "Fransa", "Almanya"]'
+              />
+            </div>
+            <div className="form-group">
+              <label>Sağ Öğeler (JSON array)</label>
+              <textarea 
+                className="kids-input" 
+                rows="3"
+                name="rightItems"
+                value={step2Data.rightItems || '["1", "2", "3"]'}
+                onChange={(e) => setStep2Data(prev => ({ ...prev, rightItems: e.target.value }))}
+                placeholder='["Ankara", "Paris", "Berlin"]'
+              />
+            </div>
+            <div className="form-group">
+              <label>Doğru Eşleşmeler (JSON object)</label>
+              <textarea 
+                className="kids-input" 
+                rows="2"
+                name="correctAnswer"
+                value={correctAnswer || '{"A":"1", "B":"2", "C":"3"}'}
+                onChange={handleStep2Change}
+                placeholder='{"Türkiye":"Ankara", "Fransa":"Paris"}'
+              />
+            </div>
           </div>
         );
+      
+      // İnteraktif Sorular - Sıralama Tabanlı
+      case 'siralama':
+      case 'kelime-corbasi':
+      case 'grup-siralama':
+      case 'anagram':
+        return (
+          <div className="alert alert-warning">
+            <h5>🔢 {selectedSoruTipi === 'siralama' ? 'Sıralama' : selectedSoruTipi === 'kelime-corbasi' ? 'Kelime Çorbası' : selectedSoruTipi === 'grup-siralama' ? 'Grup Sıralaması' : 'Anagram'} Soru Konfigürasyonu</h5>
+            <p>Sıralanacak öğeleri ve doğru sırayı tanımlayın:</p>
+            <div className="form-group">
+              <label>Öğeler (JSON array - karışık sırada)</label>
+              <textarea 
+                className="kids-input" 
+                rows="3"
+                name="items"
+                value={step2Data.items || '["B", "A", "C", "D"]'}
+                onChange={(e) => setStep2Data(prev => ({ ...prev, items: e.target.value }))}
+                placeholder='["3", "1", "4", "2"]'
+              />
+            </div>
+            <div className="form-group">
+              <label>Doğru Sıralama (JSON array)</label>
+              <textarea 
+                className="kids-input" 
+                rows="2"
+                name="correctAnswer"
+                value={correctAnswer || '["A", "B", "C", "D"]'}
+                onChange={handleStep2Change}
+                placeholder='["1", "2", "3", "4"]'
+              />
+            </div>
+          </div>
+        );
+      
+      // İnteraktif Sorular - Görsel/Çizim
+      case 'cizim':
+      case 'grafik-ciz':
+      case 'geometri-cizim':
+        return (
+          <div className="alert alert-success">
+            <h5>🎨 {selectedSoruTipi === 'cizim' ? 'Çizim' : selectedSoruTipi === 'grafik-ciz' ? 'Grafik Çizimi' : 'Geometri Çizimi'} Soru Konfigürasyonu</h5>
+            <p>Öğrencinin çizeceği şeklin/grafiğin beklenen özelliklerini tanımlayın:</p>
+            <div className="form-group">
+              <label>Beklenen Çizim Tipi</label>
+              <select 
+                className="kids-select"
+                name="drawingType"
+                value={step2Data.drawingType || 'graph'}
+                onChange={(e) => setStep2Data(prev => ({ ...prev, drawingType: e.target.value }))}
+              >
+                <option value="graph">Grafik (y=f(x))</option>
+                <option value="shape">Geometrik Şekil</option>
+                <option value="free">Serbest Çizim</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Beklenen Sonuç (JSON)</label>
+              <textarea 
+                className="kids-input" 
+                rows="3"
+                name="correctAnswer"
+                value={correctAnswer || '{"type":"parabola", "equation":"y=x^2"}'}
+                onChange={handleStep2Change}
+                placeholder='{"type":"circle", "center":[0,0], "radius":5}'
+              />
+            </div>
+          </div>
+        );
+      
+      case 'sayi-dogrusu':
+        return (
+          <div className="alert alert-primary">
+            <h5>📏 Sayı Doğrusu Soru Konfigürasyonu</h5>
+            <div className="form-group">
+              <label>Sayı Aralığı (min)</label>
+              <input 
+                type="number" 
+                className="kids-input"
+                name="numberLineMin"
+                value={step2Data.numberLineMin || -10}
+                onChange={(e) => setStep2Data(prev => ({ ...prev, numberLineMin: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>Sayı Aralığı (max)</label>
+              <input 
+                type="number" 
+                className="kids-input"
+                name="numberLineMax"
+                value={step2Data.numberLineMax || 10}
+                onChange={(e) => setStep2Data(prev => ({ ...prev, numberLineMax: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>Doğru İşaretlenecek Sayı</label>
+              <input 
+                type="number" 
+                className="kids-input"
+                name="correctAnswer"
+                value={correctAnswer || 0}
+                onChange={handleStep2Change}
+              />
+            </div>
+          </div>
+        );
+      
+      case 'kesir-gorsel':
+        return (
+          <div className="alert alert-info" style={{ background: 'linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%)' }}>
+            <h5>🍕 Kesir Görseli Soru Konfigürasyonu</h5>
+            <div className="form-group">
+              <label>Kesir Türü</label>
+              <select 
+                className="kids-select"
+                name="fractionType"
+                value={step2Data.fractionType || 'circle'}
+                onChange={(e) => setStep2Data(prev => ({ ...prev, fractionType: e.target.value }))}
+              >
+                <option value="circle">Daire (Pizza)</option>
+                <option value="rectangle">Dikdörtgen (Çikolata)</option>
+                <option value="bar">Çubuk (Bar)</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Bölünecek Parça Sayısı</label>
+              <input 
+                type="number" 
+                className="kids-input"
+                name="totalParts"
+                value={step2Data.totalParts || 8}
+                onChange={(e) => setStep2Data(prev => ({ ...prev, totalParts: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label>Boyalı Parça Sayısı (Doğru Cevap)</label>
+              <input 
+                type="number" 
+                className="kids-input"
+                name="correctAnswer"
+                value={correctAnswer || 3}
+                onChange={handleStep2Change}
+              />
+            </div>
+          </div>
+        );
+      
+      case 'denklem-kur':
+        return (
+          <div className="alert alert-secondary">
+            <h5>🧮 Denklem Kurma Soru Konfigürasyonu</h5>
+            <p>Öğrencinin oluşturacağı matematiksel denklemi tanımlayın:</p>
+            <div className="form-group">
+              <label>Kullanılabilir Operatörler</label>
+              <input 
+                type="text" 
+                className="kids-input"
+                name="operators"
+                value={step2Data.operators || '+,-,*,/,(,)'}
+                onChange={(e) => setStep2Data(prev => ({ ...prev, operators: e.target.value }))}
+                placeholder="+,-,*,/,(,)"
+              />
+            </div>
+            <div className="form-group">
+              <label>Kullanılabilir Sayılar/Değişkenler</label>
+              <input 
+                type="text" 
+                className="kids-input"
+                name="variables"
+                value={step2Data.variables || 'x,y,1,2,3,4,5'}
+                onChange={(e) => setStep2Data(prev => ({ ...prev, variables: e.target.value }))}
+                placeholder="x,y,1,2,3"
+              />
+            </div>
+            <div className="form-group">
+              <label>Doğru Denklem</label>
+              <input 
+                type="text" 
+                className="kids-input"
+                name="correctAnswer"
+                value={correctAnswer || '2*x + 3 = 11'}
+                onChange={handleStep2Change}
+                placeholder="2*x + 3 = 11"
+              />
+            </div>
+          </div>
+        );
+      
+      // Özel İnteraktif Sorular
+      case 'carkifelek':
+      case 'kutu-ac':
+      case 'eslesme-oyunu':
+      case 'cumle-tamamla':
+        return (
+          <div className="alert alert-dark">
+            <h5>🎮 {selectedSoruTipi === 'carkifelek' ? 'Çarkıfelek' : selectedSoruTipi === 'kutu-ac' ? 'Kutuyu Aç' : selectedSoruTipi === 'eslesme-oyunu' ? 'Eşleşme Oyunu' : 'Cümle Tamamlama'} Soru Konfigürasyonu</h5>
+            <p>Bu özel interaktif soru tipi için seçenekleri ve doğru cevabı tanımlayın:</p>
+            <div className="form-group">
+              <label>Seçenekler (JSON array)</label>
+              <textarea 
+                className="kids-input" 
+                rows="4"
+                name="items"
+                value={step2Data.items || '["Seçenek 1", "Seçenek 2", "Seçenek 3"]'}
+                onChange={(e) => setStep2Data(prev => ({ ...prev, items: e.target.value }))}
+                placeholder='["2+2", "3+3", "4+4", "5+5"]'
+              />
+            </div>
+            <div className="form-group">
+              <label>Doğru Cevap</label>
+              <input 
+                type="text" 
+                className="kids-input"
+                name="correctAnswer"
+                value={correctAnswer || ''}
+                onChange={handleStep2Change}
+                placeholder="Doğru seçeneği yazın"
+              />
+            </div>
+          </div>
+        );
+      
+      case 'acik-uclu':
+        return (
+          <div className="alert alert-light border">
+            <h5>📝 Açık Uçlu Soru</h5>
+            <p>Bu soru tipi için öğrenci serbest metin yazacaktır. Değerlendirme öğretmen tarafından manuel yapılır.</p>
+            <div className="form-group">
+              <label>Örnek Cevap / Puanlama Rehberi</label>
+              <textarea 
+                className="kids-input" 
+                rows="4"
+                name="correctAnswer"
+                value={correctAnswer || ''}
+                onChange={handleStep2Change}
+                placeholder="Beklenen cevap veya puanlama kriterlerini yazın..."
+              />
+            </div>
+          </div>
+        );
+      
       default:
-        return null;
+        return (
+          <div className="alert alert-warning">
+            <p>⚠️ Seçilen soru tipi için henüz özel alanlar tanımlanmamış. Varsayılan metin cevap alanı kullanılacak.</p>
+            <div className="form-group">
+              <label htmlFor="correctAnswerDefault">Doğru Cevap</label>
+              <input 
+                type="text" 
+                id="correctAnswerDefault" 
+                name="correctAnswer" 
+                value={correctAnswer} 
+                onChange={handleStep2Change} 
+                placeholder="Doğru cevabı yazın..." 
+              />
+            </div>
+          </div>
+        );
     }
   };
 
@@ -379,8 +837,8 @@ function QuestionPool() {
 
       <div className="kids-card mb-2 flex justify-between items-center" style={{ gap:'1rem', flexWrap:'wrap' }}>
         <div className="flex flex-column" style={{ gap:4 }}>
-          <h2 className="m-0">Soru Havuzu</h2>
-          <p className="muted m-0" style={{ fontSize:'.85rem' }}>Soruları oluştur, filtrele, düzenle.</p>
+          <h2 className="m-0">📚 Soru Havuzu</h2>
+          <p className="muted m-0" style={{ fontSize:'.85rem' }}>Soruları oluştur, filtrele, düzenle ve yönet.</p>
         </div>
         <div className="flex" style={{ gap:8 }}>
           <button
@@ -397,7 +855,36 @@ function QuestionPool() {
           </button>
         </div>
       </div>
-      
+
+      {/* İSTATİSTİKLER KARTI */}
+      {activeTab === 'list' && !loading && (
+        <div className="kids-card mb-3">
+          <h3 className="mb-2" style={{ fontSize: '1.1rem', fontWeight: 600 }}>📊 İstatistikler</h3>
+          <div className="d-flex gap-3 flex-wrap">
+            <div style={{ flex: '1 1 150px', padding: '1rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: 12, color: 'white' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.total}</div>
+              <div style={{ fontSize: '.85rem', opacity: 0.9 }}>Toplam Soru</div>
+            </div>
+            <div style={{ flex: '1 1 150px', padding: '1rem', background: 'linear-gradient(135deg, #6bcf7f 0%, #48bb78 100%)', borderRadius: 12, color: 'white' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.byDifficulty.Kolay}</div>
+              <div style={{ fontSize: '.85rem', opacity: 0.9 }}>Kolay</div>
+            </div>
+            <div style={{ flex: '1 1 150px', padding: '1rem', background: 'linear-gradient(135deg, #f6ad55 0%, #ed8936 100%)', borderRadius: 12, color: 'white' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.byDifficulty.Orta}</div>
+              <div style={{ fontSize: '.85rem', opacity: 0.9 }}>Orta</div>
+            </div>
+            <div style={{ flex: '1 1 150px', padding: '1rem', background: 'linear-gradient(135deg, #fc8181 0%, #f56565 100%)', borderRadius: 12, color: 'white' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.byDifficulty.Zor}</div>
+              <div style={{ fontSize: '.85rem', opacity: 0.9 }}>Zor</div>
+            </div>
+          </div>
+          <div className="d-flex gap-2 mt-3" style={{ fontSize: '.9rem' }}>
+            <span className="kids-badge info">📝 Test: {stats.byType.test}</span>
+            <span className="kids-badge info">✓ D/Y: {stats.byType['dogru-yanlis']}</span>
+            <span className="kids-badge info">🔤 Boşluk: {stats.byType['bosluk-doldurma']}</span>
+          </div>
+        </div>
+      )}
       {/* YENİ SORU EKLEME / GÜNCELLEME FORMU */}
       {activeTab === 'create' && (
         <div className="kids-card"> 
@@ -444,7 +931,19 @@ function QuestionPool() {
                   
                   <div className="form-group"><label className="form-label" htmlFor="soruTipiSelect">Soru Tipi Seçin</label>
                     <select className="kids-select" id="soruTipiSelect" value={selectedSoruTipi} onChange={(e) => setSelectedSoruTipi(e.target.value)} required>
-                      {curriculumData.soruTipleri.map(tip => (<option key={tip.value} value={tip.value} disabled={tip.value === 'eslestirme'}>{tip.label}</option>))}
+                      <option value="">Soru tipi seçin...</option>
+                      {['Klasik', 'İnteraktif', 'Görsel', 'Özel'].map(kategori => {
+                        const tipsInCategory = curriculumData.soruTipleri.filter(t => t.category === kategori);
+                        return tipsInCategory.length > 0 ? (
+                          <optgroup key={kategori} label={`🎯 ${kategori} Sorular`}>
+                            {tipsInCategory.map(tip => (
+                              <option key={tip.value} value={tip.value}>
+                                {tip.icon} {tip.label}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ) : null;
+                      })}
                     </select>
                   </div>
 
@@ -452,6 +951,42 @@ function QuestionPool() {
                     <select className="kids-select" id="difficultySelect" value={selectedDifficulty} onChange={(e) => setSelectedDifficulty(e.target.value)} required>
                       {difficultyLevels.map(level => (<option key={level} value={level}>{level}</option>))}
                     </select>
+                  </div>
+                  
+                  {/* Çoklu Soru Oluşturma Seçeneği */}
+                  <div className="kids-card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '1rem' }}>
+                    <div className="form-group mb-2">
+                      <label className="flex items-center" style={{ gap: 8, cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={multiQuestionMode}
+                          onChange={(e) => setMultiQuestionMode(e.target.checked)}
+                          style={{ width: '18px', height: '18px' }}
+                        />
+                        <span style={{ fontWeight: 600, fontSize: '1.05rem' }}>🚀 Çoklu Soru Oluştur</span>
+                      </label>
+                      <small style={{ opacity: 0.9, display: 'block', marginTop: 4 }}>
+                        Aynı özelliklere sahip birden fazla soru oluşturun
+                      </small>
+                    </div>
+                    
+                    {multiQuestionMode && (
+                      <div className="form-group">
+                        <label style={{ fontSize: '.9rem' }}>Kaç soru oluşturulacak?</label>
+                        <input 
+                          type="number" 
+                          className="kids-input"
+                          min="2"
+                          max="20"
+                          value={numberOfQuestions}
+                          onChange={(e) => setNumberOfQuestions(parseInt(e.target.value) || 2)}
+                          style={{ background: 'white' }}
+                        />
+                        <small style={{ opacity: 0.9, display: 'block', marginTop: 4 }}>
+                          💡 2-20 arası soru oluşturabilirsiniz
+                        </small>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex justify-end" style={{ gap:8 }}>
@@ -464,14 +999,120 @@ function QuestionPool() {
 
             {step === 2 && (
               <fieldset>
-                <legend>2. Adım: Soru Hazırlama ({selectedSoruTipi})</legend>
+                <legend>2. Adım: Soru Hazırlama ({selectedSoruTipi}) {multiQuestionMode && `- ${numberOfQuestions} Soru`}</legend>
                 
-                <div className="form-group" data-color-mode="dark">
-                  <label className="form-label" htmlFor="questionText">Soru Metni (Markdown ve LaTeX destekler)</label>
-                  <MDEditor
-                    value={step2Data.text}
-                    onChange={(value) => handleEditorChange(value, 'text')}
-                    previewOptions={{
+                {multiQuestionMode && numberOfQuestions > 1 ? (
+                  // Çoklu soru modu
+                  <div>
+                    <div className="alert alert-info mb-3">
+                      <strong>📝 Çoklu Soru Modu Aktif</strong>
+                      <p>Her soru için bilgileri sırayla doldurun. Tüm sorular aynı özelliklere (ders, sınıf, konu, tip, zorluk) sahip olacaktır.</p>
+                    </div>
+                    
+                    {multiQuestions.map((qData, index) => (
+                      <div key={index} className="kids-card mb-3" style={{ border: '2px solid #667eea' }}>
+                        <h4 style={{ marginBottom: '1rem', color: '#667eea' }}>Soru {index + 1}</h4>
+                        
+                        <div className="form-group" data-color-mode="dark">
+                          <label className="form-label">Soru Metni</label>
+                          <MDEditor
+                            value={qData.text}
+                            onChange={(value) => {
+                              const newQuestions = [...multiQuestions];
+                              newQuestions[index] = { ...newQuestions[index], text: value };
+                              setMultiQuestions(newQuestions);
+                            }}
+                            previewOptions={{
+                              rehypePlugins: [[rehypeKatex, { output: 'mathml' }]],
+                              remarkPlugins: [remarkMath],
+                            }}
+                          />
+                        </div>
+                        
+                        {/* Basit cevap alanı - her soru tipi için detaylı alanlar eklenebilir */}
+                        {selectedSoruTipi === 'test' && (
+                          <>
+                            <div className="options-grid">
+                              {(qData.options || ['', '', '', '']).map((option, optIndex) => (
+                                <div className="form-group" key={optIndex}>
+                                  <label>Seçenek {String.fromCharCode(65 + optIndex)}</label>
+                                  <input 
+                                    type="text" 
+                                    value={option} 
+                                    onChange={(e) => {
+                                      const newQuestions = [...multiQuestions];
+                                      const newOptions = [...(newQuestions[index].options || ['', '', '', ''])];
+                                      newOptions[optIndex] = e.target.value;
+                                      newQuestions[index] = { ...newQuestions[index], options: newOptions };
+                                      setMultiQuestions(newQuestions);
+                                    }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                            <div className="form-group">
+                              <label>Doğru Cevap</label>
+                              <select 
+                                value={qData.correctAnswer || ''}
+                                onChange={(e) => {
+                                  const newQuestions = [...multiQuestions];
+                                  newQuestions[index] = { ...newQuestions[index], correctAnswer: e.target.value };
+                                  setMultiQuestions(newQuestions);
+                                }}
+                              >
+                                <option value="">Seçin...</option>
+                                {(qData.options || []).filter(opt => opt).map((opt, optIndex) => (
+                                  <option key={optIndex} value={opt}>
+                                    {String.fromCharCode(65 + optIndex)} - {opt}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </>
+                        )}
+                        
+                        {(selectedSoruTipi === 'dogru-yanlis' || selectedSoruTipi === 'bosluk-doldurma' || selectedSoruTipi === 'acik-uclu') && (
+                          <div className="form-group">
+                            <label>Doğru Cevap</label>
+                            <input 
+                              type="text" 
+                              value={qData.correctAnswer || ''}
+                              onChange={(e) => {
+                                const newQuestions = [...multiQuestions];
+                                newQuestions[index] = { ...newQuestions[index], correctAnswer: e.target.value };
+                                setMultiQuestions(newQuestions);
+                              }}
+                            />
+                          </div>
+                        )}
+                        
+                        <div className="form-group" data-color-mode="dark">
+                          <label className="form-label">Çözüm (Opsiyonel)</label>
+                          <MDEditor
+                            value={qData.solutionText}
+                            onChange={(value) => {
+                              const newQuestions = [...multiQuestions];
+                              newQuestions[index] = { ...newQuestions[index], solutionText: value };
+                              setMultiQuestions(newQuestions);
+                            }}
+                            previewOptions={{
+                              rehypePlugins: [[rehypeKatex, { output: 'mathml' }]],
+                              remarkPlugins: [remarkMath],
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  // Tekli soru modu (mevcut)
+                  <>
+                    <div className="form-group" data-color-mode="dark">
+                      <label className="form-label" htmlFor="questionText">Soru Metni (Markdown ve LaTeX destekler)</label>
+                      <MDEditor
+                        value={step2Data.text}
+                        onChange={(value) => handleEditorChange(value, 'text')}
+                        previewOptions={{
                       rehypePlugins: [[rehypeKatex, { output: 'mathml' }]],
                       remarkPlugins: [remarkMath],
                     }}
@@ -500,6 +1141,8 @@ function QuestionPool() {
                   </button>
                 </div>
                 <hr className="form-divider" />
+                  </>
+                )}
 
 
                 <div className="flex" style={{ gap:8, justifyContent:'flex-end' }}>
@@ -511,8 +1154,8 @@ function QuestionPool() {
                       İptal
                     </button>
                   )}
-                  <button type="submit" className="kids-btn primary" disabled={selectedSoruTipi === 'eslestirme'}>
-                    {editingId ? 'Güncelle' : 'Kaydet'}
+                  <button type="submit" className="kids-btn primary">
+                    {editingId ? 'Güncelle' : multiQuestionMode && numberOfQuestions > 1 ? `${numberOfQuestions} Soruyu Kaydet` : 'Kaydet'}
                   </button>
                 </div>
               </fieldset>
@@ -524,25 +1167,136 @@ function QuestionPool() {
       {/* --- MEVCUT SORULAR LİSTESİ --- */}
       {activeTab === 'list' && (
         <div className="kids-card"> 
-          <h2 className="m-0 mb-1">Mevcut Sorular ({totalQuestions})</h2>
-          
-          <div className="d-flex gap-3 flex-wrap mb-3">
-            <div className="form-group" style={{ minWidth: 220 }}>
-              <label className="form-label" htmlFor="filterSinif">Sınıfa Göre Filtrele</label>
-              <select className="kids-select" id="filterSinif" value={filterSinif} onChange={(e) => handleFilterChange(setFilterSinif, e.target.value)}>
-                <option value="">Tüm Sınıflar</option>
-                {classLevels.map(level => (<option key={level} value={level}>{level}</option>))}
-              </select>
-            </div>
-            <div className="form-group" style={{ minWidth: 220 }}>
-              <label className="form-label" htmlFor="filterZorluk">Zorluğa Göre Filtrele</label>
-              <select className="kids-select" id="filterZorluk" value={filterZorluk} onChange={(e) => handleFilterChange(setFilterZorluk, e.target.value)}>
-                <option value="">Tüm Zorluklar</option>
-                {difficultyLevels.map(level => (<option key={level} value={level}>{level}</option>))}
-              </select>
+          <div className="flex justify-between items-center mb-3" style={{ flexWrap: 'wrap', gap: '1rem' }}>
+            <h2 className="m-0">Mevcut Sorular ({totalQuestions})</h2>
+            <div className="flex gap-2">
+              <button 
+                className={`kids-btn ${viewMode === 'cards' ? 'primary' : 'secondary'} sm`}
+                onClick={() => setViewMode('cards')}
+                title="Kart Görünümü"
+              >
+                🃏
+              </button>
+              <button 
+                className={`kids-btn ${viewMode === 'compact' ? 'primary' : 'secondary'} sm`}
+                onClick={() => setViewMode('compact')}
+                title="Kompakt Görünüm"
+              >
+                ☰
+              </button>
+              <button 
+                className={`kids-btn ${bulkMode ? 'warning' : 'secondary'} sm`}
+                onClick={() => { setBulkMode(!bulkMode); setSelectedQuestions([]); }}
+              >
+                {bulkMode ? '✕ İptal' : '☑ Toplu İşlem'}
+              </button>
             </div>
           </div>
 
+          {/* Toplu İşlem Araç Çubuğu */}
+          {bulkMode && (
+            <div className="kids-card mb-3" style={{ background: '#fff3cd', borderLeft: '4px solid #ffc107' }}>
+              <div className="flex justify-between items-center" style={{ flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <strong>{selectedQuestions.length} soru seçildi</strong>
+                  {selectedQuestions.length > 0 && (
+                    <button 
+                      className="kids-btn secondary sm ms-2"
+                      onClick={() => setSelectedQuestions([])}
+                    >
+                      Seçimi Temizle
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    className="kids-btn primary sm"
+                    onClick={toggleSelectAll}
+                  >
+                    {selectedQuestions.length === currentQuestions.length ? '☐ Hiçbirini Seçme' : '☑ Tümünü Seç'}
+                  </button>
+                  <button 
+                    className="kids-btn info sm"
+                    onClick={handleBulkExport}
+                    disabled={selectedQuestions.length === 0}
+                  >
+                    📥 Dışa Aktar
+                  </button>
+                  <button 
+                    className="kids-btn danger sm"
+                    onClick={handleBulkDelete}
+                    disabled={selectedQuestions.length === 0}
+                  >
+                    🗑️ Sil
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* GELİŞMİŞ FİLTRELEME */}
+          <div className="kids-card mb-3" style={{ background: '#f8f9fa' }}>
+            <h4 style={{ fontSize: '1rem', marginBottom: '1rem' }}>🔍 Gelişmiş Filtreleme & Arama</h4>
+            <div className="d-flex gap-3 flex-wrap">
+              <div className="form-group" style={{ minWidth: 200, flex: 1 }}>
+                <label className="form-label" htmlFor="searchText">Arama (Soru metni veya konu)</label>
+                <input
+                  type="text"
+                  className="kids-input"
+                  id="searchText"
+                  placeholder="Anahtar kelime girin..."
+                  value={searchText}
+                  onChange={(e) => handleFilterChange(setSearchText, e.target.value)}
+                />
+              </div>
+              <div className="form-group" style={{ minWidth: 180 }}>
+                <label className="form-label" htmlFor="filterSinif">Sınıf</label>
+                <select className="kids-select" id="filterSinif" value={filterSinif} onChange={(e) => handleFilterChange(setFilterSinif, e.target.value)}>
+                  <option value="">Tüm Sınıflar</option>
+                  {classLevels.map(level => (<option key={level} value={level}>{level}</option>))}
+                </select>
+              </div>
+              <div className="form-group" style={{ minWidth: 180 }}>
+                <label className="form-label" htmlFor="filterKonu">Konu</label>
+                <select className="kids-select" id="filterKonu" value={filterKonu} onChange={(e) => handleFilterChange(setFilterKonu, e.target.value)}>
+                  <option value="">Tüm Konular</option>
+                  {curriculumData.konular.map(konu => (<option key={konu} value={konu}>{konu}</option>))}
+                </select>
+              </div>
+              <div className="form-group" style={{ minWidth: 160 }}>
+                <label className="form-label" htmlFor="filterZorluk">Zorluk</label>
+                <select className="kids-select" id="filterZorluk" value={filterZorluk} onChange={(e) => handleFilterChange(setFilterZorluk, e.target.value)}>
+                  <option value="">Tüm Zorluklar</option>
+                  {difficultyLevels.map(level => (<option key={level} value={level}>{level}</option>))}
+                </select>
+              </div>
+              <div className="form-group" style={{ minWidth: 160 }}>
+                <label className="form-label" htmlFor="filterTip">Soru Tipi</label>
+                <select className="kids-select" id="filterTip" value={filterTip} onChange={(e) => handleFilterChange(setFilterTip, e.target.value)}>
+                  <option value="">Tüm Tipler</option>
+                  <option value="test">Test</option>
+                  <option value="dogru-yanlis">Doğru/Yanlış</option>
+                  <option value="bosluk-doldurma">Boşluk Doldurma</option>
+                </select>
+              </div>
+            </div>
+            {(searchText || filterSinif || filterKonu || filterZorluk || filterTip) && (
+              <button 
+                className="kids-btn secondary sm mt-2"
+                onClick={() => {
+                  setSearchText('');
+                  setFilterSinif('');
+                  setFilterKonu('');
+                  setFilterZorluk('');
+                  setFilterTip('');
+                  setCurrentPage(1);
+                }}
+              >
+                🔄 Filtreleri Temizle
+              </button>
+            )}
+          </div>
+          
           {loading && (
             <div className="d-flex flex-column gap-2">
               {[1,2,3].map(i => (
@@ -558,52 +1312,184 @@ function QuestionPool() {
           {!loading && error && <div className="kids-error mb-2">{error}</div>}
           
           {!loading && !error && (
-            <div className="d-flex flex-column gap-3">
+            <>
               {totalQuestions === 0 ? (
-                <p>Bu filtrelere uygun soru bulunamadı.</p>
+                <div className="text-center py-5">
+                  <div style={{ fontSize: '4rem', opacity: 0.3 }}>📭</div>
+                  <p className="muted">Bu filtrelere uygun soru bulunamadı.</p>
+                </div>
               ) : (
-                currentQuestions.map((q) => (
-                  <div key={q._id} className="kids-card">
-                    <div className="flex justify-between items-center mb-2" style={{ gap:8, flexWrap:'wrap' }}>
-                      <span className="kids-badge turquoise">{q.subject} - {q.classLevel}</span>
-                      <span className={`kids-badge ${q.difficulty === 'Zor' ? 'danger' : q.difficulty === 'Orta' ? 'warning' : 'success'}`}>{q.difficulty || '—'}</span>
+                <>
+                  {viewMode === 'cards' ? (
+                    <div className="d-flex flex-column gap-3">
+                      {currentQuestions.map((q) => (
+                        <div key={q._id} className="kids-card" style={{ 
+                          position: 'relative',
+                          border: selectedQuestions.includes(q._id) ? '2px solid #667eea' : '1px solid #e2e8f0',
+                          transition: 'all 0.2s ease'
+                        }}>
+                          {bulkMode && (
+                            <div style={{ position: 'absolute', top: 12, right: 12 }}>
+                              <input 
+                                type="checkbox" 
+                                checked={selectedQuestions.includes(q._id)}
+                                onChange={() => toggleQuestionSelect(q._id)}
+                                style={{ width: 20, height: 20, cursor: 'pointer' }}
+                              />
+                            </div>
+                          )}
+                          <div className="flex justify-between items-start mb-2" style={{ gap:8, flexWrap:'wrap', marginRight: bulkMode ? 40 : 0 }}>
+                            <div className="flex gap-2 flex-wrap">
+                              <span className="kids-badge turquoise">{q.subject} - {q.classLevel}</span>
+                              <span className="kids-badge secondary" style={{ fontSize: '.8rem' }}>{q.topic}</span>
+                            </div>
+                            <span className={`kids-badge ${q.difficulty === 'Zor' ? 'danger' : q.difficulty === 'Orta' ? 'warning' : 'success'}`}>
+                              {q.difficulty || '—'}
+                            </span>
+                          </div>
+                          <div className="flex gap-2 mb-2">
+                            <span className="kids-badge info" style={{ fontSize: '.75rem' }}>
+                              {q.questionType === 'test' ? '📝 Test' : 
+                               q.questionType === 'dogru-yanlis' ? '✓ Doğru/Yanlış' : 
+                               q.questionType === 'bosluk-doldurma' ? '🔤 Boşluk Doldurma' : q.questionType}
+                            </span>
+                          </div>
+                          <div data-color-mode="light" className="mb-3" style={{ 
+                            padding: '1rem', 
+                            background: '#f8fafc', 
+                            borderRadius: 8,
+                            border: '1px solid #e2e8f0'
+                          }}>
+                            <MDEditor.Markdown 
+                              source={q.text} 
+                              rehypePlugins={[[rehypeKatex, { output: 'mathml' }]]}
+                              remarkPlugins={[remarkMath]}
+                            />
+                          </div>
+                          {q.questionType === 'test' && Array.isArray(q.options) && (
+                            <div style={{ display:'grid', gap:6, marginBottom: '1rem' }}>
+                              {q.options.map((opt, index) => (
+                                <div key={index} style={{ 
+                                  padding:'10px 14px', 
+                                  borderRadius:10, 
+                                  background: opt === q.correctAnswer ? 'linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)' : '#f9fafb',
+                                  border: opt === q.correctAnswer ? '2px solid #48bb78' : '1px solid #e2e8f0',
+                                  fontWeight: opt === q.correctAnswer ? 600 : 400,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8
+                                }}>
+                                  {opt === q.correctAnswer && <span style={{ color: '#48bb78', fontSize: '1.2rem' }}>✓</span>}
+                                  <span><strong>{String.fromCharCode(65 + index)}.</strong> {opt}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {(q.questionType === 'dogru-yanlis' || q.questionType === 'bosluk-doldurma') && (
+                            <div style={{ 
+                              padding: '10px 14px', 
+                              background: 'linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)',
+                              borderRadius: 10,
+                              border: '2px solid #48bb78',
+                              marginBottom: '1rem'
+                            }}>
+                              <strong>✓ Doğru Cevap:</strong> {q.correctAnswer}
+                            </div>
+                          )}
+                          <div className="flex justify-end" style={{ gap:8 }}>
+                            {(q.solutionText || q.text) && (
+                              <button className="kids-btn primary sm" onClick={() => handleShowSolution(q)}>
+                                💡 Çözüm
+                              </button>
+                            )}
+                            <button className="kids-btn secondary sm" onClick={() => handleEdit(q)}>
+                              ✏️ Düzenle
+                            </button>
+                            <button className="kids-btn danger sm" onClick={() => handleDelete(q._id)}>
+                              🗑️ Sil
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div data-color-mode="dark" className="mb-2">
-                       <MDEditor.Markdown 
-                          source={q.text} 
-                          rehypePlugins={[[rehypeKatex, { output: 'mathml' }]]}
-                          remarkPlugins={[remarkMath]}
-                       />
+                  ) : (
+                    // COMPACT VIEW
+                    <div className="table-responsive">
+                      <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
+                            {bulkMode && <th style={{ padding: '12px', width: 40 }}>
+                              <input 
+                                type="checkbox" 
+                                checked={selectedQuestions.length === currentQuestions.length && currentQuestions.length > 0}
+                                onChange={toggleSelectAll}
+                                style={{ width: 18, height: 18, cursor: 'pointer' }}
+                              />
+                            </th>}
+                            <th style={{ padding: '12px', textAlign: 'left' }}>Soru</th>
+                            <th style={{ padding: '12px', textAlign: 'left', width: 120 }}>Sınıf</th>
+                            <th style={{ padding: '12px', textAlign: 'left', width: 100 }}>Zorluk</th>
+                            <th style={{ padding: '12px', textAlign: 'left', width: 100 }}>Tip</th>
+                            <th style={{ padding: '12px', textAlign: 'right', width: 200 }}>İşlemler</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {currentQuestions.map((q) => (
+                            <tr key={q._id} style={{ 
+                              borderBottom: '1px solid #e2e8f0',
+                              background: selectedQuestions.includes(q._id) ? '#f0f4ff' : 'white'
+                            }}>
+                              {bulkMode && <td style={{ padding: '12px' }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={selectedQuestions.includes(q._id)}
+                                  onChange={() => toggleQuestionSelect(q._id)}
+                                  style={{ width: 18, height: 18, cursor: 'pointer' }}
+                                />
+                              </td>}
+                              <td style={{ padding: '12px' }}>
+                                <div style={{ fontSize: '.9rem', fontWeight: 500, marginBottom: 4 }}>
+                                  {q.text?.substring(0, 80)}...
+                                </div>
+                                <span className="kids-badge secondary" style={{ fontSize: '.75rem' }}>{q.topic}</span>
+                              </td>
+                              <td style={{ padding: '12px' }}>
+                                <span className="kids-badge turquoise" style={{ fontSize: '.8rem' }}>{q.classLevel}</span>
+                              </td>
+                              <td style={{ padding: '12px' }}>
+                                <span className={`kids-badge ${q.difficulty === 'Zor' ? 'danger' : q.difficulty === 'Orta' ? 'warning' : 'success'}`} style={{ fontSize: '.8rem' }}>
+                                  {q.difficulty || '—'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '12px' }}>
+                                <span style={{ fontSize: '.8rem' }}>
+                                  {q.questionType === 'test' ? '📝' : q.questionType === 'dogru-yanlis' ? '✓' : '🔤'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'right' }}>
+                                <div className="flex justify-end gap-1">
+                                  {(q.solutionText || q.text) && (
+                                    <button className="kids-btn primary sm" onClick={() => handleShowSolution(q)} style={{ fontSize: '.75rem', padding: '4px 8px' }}>
+                                      💡
+                                    </button>
+                                  )}
+                                  <button className="kids-btn secondary sm" onClick={() => handleEdit(q)} style={{ fontSize: '.75rem', padding: '4px 8px' }}>
+                                    ✏️
+                                  </button>
+                                  <button className="kids-btn danger sm" onClick={() => handleDelete(q._id)} style={{ fontSize: '.75rem', padding: '4px 8px' }}>
+                                    🗑️
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                    {q.questionType === 'test' && Array.isArray(q.options) && (
-                      <ul style={{ listStyle:'none', padding:0, margin:0, display:'grid', gap:6 }}>
-                        {q.options.map((opt, index) => (
-                          <li key={index} style={{ padding:'8px 10px', borderRadius:10, background: opt === q.correctAnswer ? 'rgba(107,207,127,.15)' : '#f9fafb' }}>
-                            <strong>{String.fromCharCode(65 + index)}.</strong> {opt}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {(q.questionType === 'dogru-yanlis' || q.questionType === 'bosluk-doldurma') && (
-                      <p className="muted"><strong>Doğru Cevap:</strong> {q.correctAnswer}</p>
-                    )}
-                    <div className="flex justify-end" style={{ gap:8, marginTop:8 }}>
-                      {(q.solutionText || q.text) && (
-                        <button className="kids-btn primary sm" onClick={() => handleShowSolution(q)}>
-                          Çözüm
-                        </button>
-                      )}
-                      <button className="kids-btn secondary sm" onClick={() => handleEdit(q)}>
-                        Düzenle
-                      </button>
-                      <button className="kids-btn danger sm" onClick={() => handleDelete(q._id)}>
-                        Sil
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  )}
+                </>
               )}
-            </div>
+            </>
           )}
           
           {/* Sayfalama Kontrolleri */}

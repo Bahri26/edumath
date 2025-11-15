@@ -15,10 +15,38 @@ function shuffleArray(arr = []) {
 // GET /api/exams
 exports.getExams = async (req, res) => {
   try {
-    const exams = await Exam.find()
-      .select('title description duration category creator associatedClass createdAt')
+    const { subject, classLevel, search } = req.query;
+    const filter = {};
+    
+    if (subject) filter.category = subject;
+    if (classLevel) filter.associatedClass = classLevel;
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const exams = await Exam.find(filter)
+      .select('title description duration category creator associatedClass createdAt questions passMark')
+      .populate('creator', 'firstName lastName')
+      .populate('questions', '_id')
       .sort({ createdAt: -1 });
-    res.status(200).json(exams);
+    
+    const formatted = exams.map(exam => ({
+      _id: exam._id,
+      title: exam.title,
+      description: exam.description,
+      duration: exam.duration,
+      subject: exam.category,
+      classLevel: exam.associatedClass,
+      passMark: exam.passMark,
+      questionCount: exam.questions?.length || 0,
+      createdBy: exam.creator ? `${exam.creator.firstName} ${exam.creator.lastName}` : 'Bilinmiyor',
+      createdAt: exam.createdAt
+    }));
+    
+    res.status(200).json(formatted);
   } catch (error) {
     console.error('Sınav listeleme hatası:', error);
     res.status(500).json({ message: 'Sınavlar listelenirken sunucu hatası oluştu.' });
@@ -41,8 +69,12 @@ exports.getExamById = async (req, res) => {
 // POST /api/exams
 exports.createExam = async (req, res) => {
   try {
-    const { title, description, duration, category, passMark, associatedClass, questions = [] } = req.body;
-    if (!title || !duration || !category) {
+    const { title, description, duration, subject, category, passMark, classLevel, associatedClass, questions = [] } = req.body;
+    
+    const finalSubject = subject || category;
+    const finalClass = classLevel || associatedClass;
+    
+    if (!title || !duration || !finalSubject) {
       return res.status(400).json({ message: 'Başlık, süre ve kategori zorunludur.' });
     }
 
@@ -50,15 +82,28 @@ exports.createExam = async (req, res) => {
       title,
       description: description || '',
       duration,
-      category,
-      passMark: passMark ?? null,
-      associatedClass: associatedClass || null,
+      category: finalSubject,
+      passMark: passMark ?? 50,
+      associatedClass: finalClass || null,
       creator: req.user?.id || req.user?._id || null,
       questions,
     });
 
     await exam.save();
-    res.status(201).json({ message: 'Sınav başarıyla oluşturuldu.', exam });
+    
+    const formatted = {
+      _id: exam._id,
+      title: exam.title,
+      description: exam.description,
+      duration: exam.duration,
+      subject: exam.category,
+      classLevel: exam.associatedClass,
+      passMark: exam.passMark,
+      questionCount: exam.questions?.length || 0,
+      createdAt: exam.createdAt
+    };
+    
+    res.status(201).json(formatted);
   } catch (error) {
     console.error('Sınav oluşturma hatası:', error);
     res.status(500).json({ message: 'Sınav oluşturulurken sunucu hatası oluştu.' });
@@ -113,7 +158,7 @@ exports.startExam = async (req, res) => {
 // PUT /api/exams/:examId/questions
 exports.updateQuestionsForExam = async (req, res) => {
   const { examId } = req.params;
-  const { questionIds } = req.body;
+  const { questionIds, questions } = req.body;
   const userId = req.user?.id || req.user?._id;
 
   try {
@@ -124,7 +169,7 @@ exports.updateQuestionsForExam = async (req, res) => {
       return res.status(403).json({ message: 'Bu sınava soru ekleme yetkiniz yok.' });
     }
 
-    exam.questions = questionIds || [];
+    exam.questions = questionIds || questions || [];
     await exam.save();
 
     res.status(200).json({
@@ -135,6 +180,67 @@ exports.updateQuestionsForExam = async (req, res) => {
   } catch (error) {
     console.error('Soru seçme/güncelleme hatası:', error);
     res.status(500).json({ message: 'Sınav soruları güncellenirken sunucu hatası oluştu.' });
+  }
+};
+
+// DELETE /api/exams/:id
+exports.deleteExam = async (req, res) => {
+  try {
+    const exam = await Exam.findById(req.params.id);
+    if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı.' });
+    
+    const userId = req.user?.id || req.user?._id;
+    if (userId && exam.creator && exam.creator.toString() !== String(userId)) {
+      return res.status(403).json({ message: 'Bu sınavı silme yetkiniz yok.' });
+    }
+    
+    await Exam.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: 'Sınav başarıyla silindi.' });
+  } catch (error) {
+    console.error('Sınav silme hatası:', error);
+    res.status(500).json({ message: 'Sınav silinirken hata oluştu.' });
+  }
+};
+
+// PUT /api/exams/:id
+exports.updateExam = async (req, res) => {
+  try {
+    const { title, description, duration, subject, category, passMark, classLevel, associatedClass } = req.body;
+    const exam = await Exam.findById(req.params.id);
+    if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı.' });
+    
+    const userId = req.user?.id || req.user?._id;
+    if (userId && exam.creator && exam.creator.toString() !== String(userId)) {
+      return res.status(403).json({ message: 'Bu sınavı düzenleme yetkiniz yok.' });
+    }
+    
+    if (title) exam.title = title;
+    if (description !== undefined) exam.description = description;
+    if (duration) exam.duration = duration;
+    if (subject || category) exam.category = subject || category;
+    if (passMark !== undefined) exam.passMark = passMark;
+    if (classLevel !== undefined || associatedClass !== undefined) {
+      exam.associatedClass = classLevel || associatedClass;
+    }
+    
+    await exam.save();
+    
+    const formatted = {
+      _id: exam._id,
+      title: exam.title,
+      description: exam.description,
+      duration: exam.duration,
+      subject: exam.category,
+      classLevel: exam.associatedClass,
+      passMark: exam.passMark,
+      questionCount: exam.questions?.length || 0,
+      createdAt: exam.createdAt
+    };
+    
+    res.status(200).json(formatted);
+  } catch (error) {
+    console.error('Sınav güncelleme hatası:', error);
+    res.status(500).json({ message: 'Sınav güncellenirken hata oluştu.' });
   }
 };
 

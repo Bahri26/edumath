@@ -31,7 +31,18 @@ const questionSchema = new mongoose.Schema({
   questionType: {
     type: String,
     required: [true, 'Soru tipi zorunludur.'],
-    enum: ['test', 'dogru-yanlis', 'bosluk-doldurma', 'eslestirme'],
+    enum: [
+      // Klasik Sorular
+      'test', 'dogru-yanlis', 'bosluk-doldurma', 'acik-uclu',
+      // İnteraktif Sorular - Eşleştirme Tabanlı
+      'eslestirme', 'surukle-birak', 'hafiza-karti', 'eslesmeyi-bul',
+      // İnteraktif Sorular - Sıralama Tabanlı
+      'siralama', 'kelime-corbasi', 'grup-siralama', 'anagram',
+      // İnteraktif Sorular - Görsel/Çizim
+      'cizim', 'grafik-ciz', 'sayi-dogrusu', 'kesir-gorsel', 'geometri-cizim',
+      // İnteraktif Sorular - Özel
+      'denklem-kur', 'carkifelek', 'kutu-ac', 'eslesme-oyunu', 'cumle-tamamla'
+    ],
     default: 'test'
   },
   difficulty: {
@@ -54,6 +65,38 @@ const questionSchema = new mongoose.Schema({
   correctAnswer: {
     type: String,
     required: [true, 'Doğru cevap zorunludur.']
+  },
+
+  // İnteraktif soru tipleri için ekstra konfigürasyon
+  interactiveConfig: {
+    // Eşleştirme, Sürükle-Bırak, Hafıza Kartı için
+    leftItems: [String],
+    rightItems: [String],
+    matchingPairs: mongoose.Schema.Types.Mixed, // JSON object
+    
+    // Sıralama, Anagram için
+    items: [String],
+    correctOrder: [String],
+    
+    // Çizim, Grafik, Geometri için
+    drawingType: String,
+    expectedResult: mongoose.Schema.Types.Mixed,
+    
+    // Sayı Doğrusu için
+    numberLineMin: Number,
+    numberLineMax: Number,
+    
+    // Kesir Görseli için
+    fractionType: String,
+    totalParts: Number,
+    
+    // Denklem Kurma için
+    operators: String,
+    variables: String,
+    
+    // Genel amaçlı
+    options: [String],
+    hints: [String]
   },
 
   solutionText: {

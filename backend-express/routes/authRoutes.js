@@ -2,26 +2,30 @@
 
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User'); // GÜNCELLENMİŞ User modelini import et
-const generateToken = require('../utils/generateToken');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const { loginValidation, registerValidation } = require('../middleware/validation');
+const { sanitizeInput } = require('../utils/sanitize');
+const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken');
 
 // --- KAYIT (REGISTER) ENDPOINT ---
 // POST /api/auth/register
-router.post('/register', async (req, res) => {
+router.post('/register', registerValidation, async (req, res) => {
   
   // ÖNEMLİ: server.js'de express.json() ayarlı olduğu için req.body dolu gelmeli.
   console.log("Alınan Kayıt Verisi (req.body):", req.body); 
 
   // Frontend'den gelen tüm alanları al
+  const sanitized = sanitizeInput(req.body);
   const { 
     email, 
     password, 
     firstName, 
     lastName, 
     role, 
-    birthDate,  // YENİ
-    gradeLevel  // YENİ
-  } = req.body;
+    birthDate,
+    gradeLevel
+  } = sanitized;
 
   try {
     // 1. E-posta adresi zaten var mı diye kontrol et
@@ -69,8 +73,8 @@ router.post('/register', async (req, res) => {
 
 // --- LOGIN (GİRİŞ) ENDPOINT ---
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+router.post('/login', loginValidation, async (req, res) => {
+  const { email, password } = sanitizeInput(req.body);
 
     if (!email || !password) {
         return res.status(400).json({ message: 'E-posta ve şifre alanları zorunludur.' });
@@ -89,10 +93,14 @@ router.post('/login', async (req, res) => {
           isAdmin: user.isAdmin 
       };
       
-      const token = generateToken(user._id);
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
 
-      res.status(200).json({
-          token,
+        res.status(200).json({
+          // Geriye uyumluluk için eski alan
+          token: accessToken,
+          accessToken,
+          refreshToken,
           user: {
               id: user._id,
               email: user.email,
@@ -112,3 +120,23 @@ router.post('/login', async (req, res) => {
 
 
 module.exports = router;
+
+// Refresh token endpoint'i
+router.post('/refresh', async (req, res) => {
+  const { refreshToken } = req.body || {};
+
+  if (!refreshToken) {
+    return res.status(401).json({ success: false, message: 'Refresh token gerekli' });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
+    );
+    const newAccessToken = generateAccessToken(decoded.id);
+    return res.json({ success: true, accessToken: newAccessToken });
+  } catch (error) {
+    return res.status(401).json({ success: false, message: 'Geçersiz refresh token' });
+  }
+});

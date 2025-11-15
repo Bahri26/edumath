@@ -9,6 +9,7 @@ function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const isAuthPage = ['/login', '/register', '/'].includes(location.pathname);
+  const isTeacherDashboard = location.pathname.startsWith('/teacher');
 
   return (
     <div className="app-container">
@@ -39,7 +40,7 @@ function Layout() {
           <Outlet />
         </main>
 
-        <Footer />
+        {!isTeacherDashboard && <Footer />}
       </div>
     </div>
   );
