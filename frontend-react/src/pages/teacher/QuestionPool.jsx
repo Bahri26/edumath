@@ -371,30 +371,41 @@ function QuestionPool() {
   // Helper fonksiyon - interactiveConfig oluşturur
   const buildInteractiveConfig = (qData) => {
     const interactiveConfig = {};
-    
-    if (['eslestirme', 'surukle-birak', 'hafiza-karti', 'eslesmeyi-bul'].includes(selectedSoruTipi)) {
-      interactiveConfig.leftItems = qData.leftItems ? JSON.parse(qData.leftItems) : [];
-      interactiveConfig.rightItems = qData.rightItems ? JSON.parse(qData.rightItems) : [];
-      interactiveConfig.matchingPairs = qData.correctAnswer ? JSON.parse(qData.correctAnswer) : {};
-    } else if (['siralama', 'kelime-corbasi', 'grup-siralama', 'anagram'].includes(selectedSoruTipi)) {
-      interactiveConfig.items = qData.items ? JSON.parse(qData.items) : [];
-      interactiveConfig.correctOrder = qData.correctAnswer ? JSON.parse(qData.correctAnswer) : [];
-    } else if (['cizim', 'grafik-ciz', 'geometri-cizim'].includes(selectedSoruTipi)) {
-      interactiveConfig.drawingType = qData.drawingType || 'graph';
-      interactiveConfig.expectedResult = qData.correctAnswer ? JSON.parse(qData.correctAnswer) : {};
-    } else if (selectedSoruTipi === 'sayi-dogrusu') {
-      interactiveConfig.numberLineMin = parseInt(qData.numberLineMin) || -10;
-      interactiveConfig.numberLineMax = parseInt(qData.numberLineMax) || 10;
-    } else if (selectedSoruTipi === 'kesir-gorsel') {
-      interactiveConfig.fractionType = qData.fractionType || 'circle';
-      interactiveConfig.totalParts = parseInt(qData.totalParts) || 8;
-    } else if (selectedSoruTipi === 'denklem-kur') {
-      interactiveConfig.operators = qData.operators || '+,-,*,/,(,)';
-      interactiveConfig.variables = qData.variables || 'x,y';
-    } else if (['carkifelek', 'kutu-ac', 'eslesme-oyunu', 'cumle-tamamla'].includes(selectedSoruTipi)) {
-      interactiveConfig.options = qData.items ? JSON.parse(qData.items) : [];
+    const safeParse = (val, fallback) => {
+      if (!val) return fallback;
+      try { return JSON.parse(val); } catch (e) {
+        console.warn('Invalid JSON provided for interactive field:', val, e);
+        setError(prev => prev ? prev + '\nGeçersiz JSON alanı.' : 'Geçersiz JSON alanı.');
+        return fallback;
+      }
+    };
+    try {
+      if (['eslestirme', 'surukle-birak', 'hafiza-karti', 'eslesmeyi-bul'].includes(selectedSoruTipi)) {
+        interactiveConfig.leftItems = safeParse(qData.leftItems, []);
+        interactiveConfig.rightItems = safeParse(qData.rightItems, []);
+        interactiveConfig.matchingPairs = safeParse(qData.correctAnswer, {});
+      } else if (['siralama', 'kelime-corbasi', 'grup-siralama', 'anagram'].includes(selectedSoruTipi)) {
+        interactiveConfig.items = safeParse(qData.items, []);
+        interactiveConfig.correctOrder = safeParse(qData.correctAnswer, []);
+      } else if (['cizim', 'grafik-ciz', 'geometri-cizim'].includes(selectedSoruTipi)) {
+        interactiveConfig.drawingType = qData.drawingType || 'graph';
+        interactiveConfig.expectedResult = safeParse(qData.correctAnswer, {});
+      } else if (selectedSoruTipi === 'sayi-dogrusu') {
+        interactiveConfig.numberLineMin = parseInt(qData.numberLineMin) || -10;
+        interactiveConfig.numberLineMax = parseInt(qData.numberLineMax) || 10;
+      } else if (selectedSoruTipi === 'kesir-gorsel') {
+        interactiveConfig.fractionType = qData.fractionType || 'circle';
+        interactiveConfig.totalParts = parseInt(qData.totalParts) || 8;
+      } else if (selectedSoruTipi === 'denklem-kur') {
+        interactiveConfig.operators = qData.operators || '+,-,*,/,(,)';
+        interactiveConfig.variables = qData.variables || 'x,y';
+      } else if (['carkifelek', 'kutu-ac', 'eslesme-oyunu', 'cumle-tamamla'].includes(selectedSoruTipi)) {
+        interactiveConfig.options = safeParse(qData.items, []);
+      }
+    } catch (e) {
+      console.error('Interactive config inşa hatası:', e);
+      setError(prev => prev ? prev + '\nİnteraktif yapı oluşturulamadı.' : 'İnteraktif yapı oluşturulamadı.');
     }
-    
     return interactiveConfig;
   };
   
@@ -1270,13 +1281,21 @@ function QuestionPool() {
                   {difficultyLevels.map(level => (<option key={level} value={level}>{level}</option>))}
                 </select>
               </div>
-              <div className="form-group" style={{ minWidth: 160 }}>
+              <div className="form-group" style={{ minWidth: 200 }}>
                 <label className="form-label" htmlFor="filterTip">Soru Tipi</label>
                 <select className="kids-select" id="filterTip" value={filterTip} onChange={(e) => handleFilterChange(setFilterTip, e.target.value)}>
                   <option value="">Tüm Tipler</option>
-                  <option value="test">Test</option>
-                  <option value="dogru-yanlis">Doğru/Yanlış</option>
-                  <option value="bosluk-doldurma">Boşluk Doldurma</option>
+                  {['Klasik','İnteraktif','Görsel','Özel'].map(kat => {
+                    const groupItems = (curriculumData.soruTipleri||[]).filter(t => t.category === kat);
+                    if (!groupItems.length) return null;
+                    return (
+                      <optgroup key={kat} label={`🎯 ${kat}`}>
+                        {groupItems.map(item => (
+                          <option key={item.value} value={item.value}>{item.icon} {item.label}</option>
+                        ))}
+                      </optgroup>
+                    );
+                  })}
                 </select>
               </div>
             </div>

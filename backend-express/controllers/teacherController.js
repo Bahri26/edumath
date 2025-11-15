@@ -12,13 +12,16 @@ exports.getDashboardStats = async (req, res) => {
   const teacherId = req.user._id || req.user.id;
   
   try {
-    // Paralel olarak tüm verileri çek
-    const [classes, questions, exams, results] = await Promise.all([
+    // Önce öğretmene ait sınıflar, sorular ve sınavları çek
+    const [classes, questions, exams] = await Promise.all([
       Class.find({ createdBy: teacherId }),
       Question.find({ createdBy: teacherId }),
-      Exam.find({ createdBy: teacherId }),
-      Result.find({ exam: { $exists: true } }).populate('exam')
+      Exam.find({ createdBy: teacherId })
     ]);
+
+    // Öğretmenin sınav id'leri ile sonuçları filtrele (scope güvenliği)
+    const examIds = exams.map(e => e._id);
+    const results = await Result.find({ exam: { $in: examIds } }).populate('exam');
 
     // Öğrenci sayısını hesapla
     const studentSet = new Set();
@@ -32,8 +35,8 @@ exports.getDashboardStats = async (req, res) => {
     const activeExams = exams.filter(e => e.isPublished && new Date(e.endDate) > new Date());
     const completedExams = exams.filter(e => !e.isPublished || new Date(e.endDate) <= new Date());
 
-    // Ortalama puanı hesapla
-    const validResults = results.filter(r => r.score !== undefined && r.score !== null);
+    // Ortalama puanı hesapla (öğretmene ait sınav sonuçları)
+    const validResults = results.filter(r => r.score !== undefined && r.score !== null && r.exam && examIds.includes(r.exam._id));
     const avgScore = validResults.length > 0
       ? Math.round(validResults.reduce((sum, r) => sum + r.score, 0) / validResults.length)
       : 0;
@@ -148,6 +151,13 @@ exports.getMyStudents = async (req, res) => {
 exports.seedDemoData = async (req, res) => {
   const teacherId = req.user._id || req.user.id;
   try {
+    // Production veya yetkisiz ortam koruması
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ message: 'Production ortamında demo veri oluşturma devre dışı.' });
+    }
+    if (req.user && !req.user.isAdmin && !req.user.isTeacher) {
+      return res.status(403).json({ message: 'Demo veri oluşturma izni yok.' });
+    }
     // Create demo students
     const demoStudents = [];
     const studentData = [
