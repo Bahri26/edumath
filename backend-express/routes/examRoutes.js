@@ -15,8 +15,9 @@ const { protect, studentCheck } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
+// List exams (public filter) BUT when authenticated and is teacher, scope to creator unless query.all=true
 router.route('/')
-    .get(getExams)
+    .get(protect, getExams)
     .post(protect, createExam); 
 
 router.route('/:id')

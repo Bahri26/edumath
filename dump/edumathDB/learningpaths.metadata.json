@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"e7e5cb98b9264595a157f3dcfa20427e","collectionName":"learningpaths","type":"collection"}

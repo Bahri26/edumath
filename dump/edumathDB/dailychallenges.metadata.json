@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"28cf840113da44009c4e8f3d2d70fef6","collectionName":"dailychallenges","type":"collection"}

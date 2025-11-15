@@ -26,6 +26,7 @@ const teacherRoutes = require('./routes/teacherRoutes');
 const streakRoutes = require('./routes/streakRoutes');
 const heartsRoutes = require('./routes/heartsRoutes');
 const interactiveExerciseRoutes = require('./routes/interactiveExerciseRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -65,6 +66,9 @@ app.use(cors(corsOptions));
 // Gelen JSON verisini işleyen middleware
 // Bu, 'req.body'nin 'undefined' gelmesini engeller
 app.use(express.json());
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'));
 
 // NoSQL injection koruması
 app.use(mongoSanitize());
@@ -130,6 +134,7 @@ app.use('/api/student-analytics', require('./routes/studentAnalyticsRoutes'));
 app.use('/api/social', require('./routes/socialRoutes'));
 app.use('/api/adaptive-difficulty', require('./routes/adaptiveDifficultyRoutes'));
 app.use('/api/videos', require('./routes/videoRoutes'));
+app.use('/api/upload', uploadRoutes);
 
 // API Versioning - v1 (geriye uyumluluk için mevcut /api yolları korunuyor)
 app.use('/api/v1/auth', authRoutes);
@@ -155,6 +160,7 @@ app.use('/api/v1/student-analytics', require('./routes/studentAnalyticsRoutes'))
 app.use('/api/v1/social', require('./routes/socialRoutes'));
 app.use('/api/v1/adaptive-difficulty', require('./routes/adaptiveDifficultyRoutes'));
 app.use('/api/v1/videos', require('./routes/videoRoutes'));
+app.use('/api/v1/upload', uploadRoutes);
 
 // Production ortamında HTTPS'i zorunlu tut (proxy arkasında çalışıyorsa)
 if (process.env.NODE_ENV === 'production') {
@@ -175,11 +181,19 @@ app.get('/api/debug/echo', (req,res)=>{
   res.json({ method:req.method, headers:req.headers, query:req.query, path:req.path });
 });
 
-// --- 4. MongoDB Bağlantısı ---
+// --- 4. MongoDB Bağlantısı (Atlas Optimized) ---
 const { logger } = require('./utils/logger');
 const MONGO_URI = process.env.MONGO_URI;
-mongoose.connect(MONGO_URI)
-  .then(() => logger.info('MongoDB bağlantısı başarılı.'))
+
+const mongooseOpts = {
+  autoIndex: true,
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+};
+
+mongoose.connect(MONGO_URI, mongooseOpts)
+  .then(() => logger.info('MongoDB (Atlas) bağlantısı başarılı.'))
   .catch(err => logger.error('MongoDB bağlantı hatası', { error: err.message, stack: err.stack }));
 
 // --- 5. Sunucuyu Başlatma ---

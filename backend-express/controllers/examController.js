@@ -13,11 +13,12 @@ function shuffleArray(arr = []) {
 }
 
 // GET /api/exams
+// If authenticated as teacher and no ?all=true, scope to exams created by that teacher
 exports.getExams = async (req, res) => {
   try {
-    const { subject, classLevel, search } = req.query;
+    const { subject, classLevel, search, all } = req.query;
     const filter = {};
-    
+
     if (subject) filter.category = subject;
     if (classLevel) filter.associatedClass = classLevel;
     if (search) {
@@ -26,26 +27,54 @@ exports.getExams = async (req, res) => {
         { description: { $regex: search, $options: 'i' } }
       ];
     }
-    
+
+    // Teacher scoping (unless explicitly requesting all)
+    const user = req.user;
+    const isTeacher = user?.isTeacher || user?.roles?.isTeacher;
+    if (isTeacher && !all) {
+      filter.creator = user._id || user.id;
+    }
+
     const exams = await Exam.find(filter)
-      .select('title description duration category creator associatedClass createdAt questions passMark')
+      .select('title description duration category creator associatedClass createdAt questions passMark isPublished startDate endDate')
       .populate('creator', 'firstName lastName')
       .populate('questions', '_id')
       .sort({ createdAt: -1 });
-    
-    const formatted = exams.map(exam => ({
-      _id: exam._id,
-      title: exam.title,
-      description: exam.description,
-      duration: exam.duration,
-      subject: exam.category,
-      classLevel: exam.associatedClass,
-      passMark: exam.passMark,
-      questionCount: exam.questions?.length || 0,
-      createdBy: exam.creator ? `${exam.creator.firstName} ${exam.creator.lastName}` : 'Bilinmiyor',
-      createdAt: exam.createdAt
-    }));
-    
+
+    // Aggregate results for metrics
+    const examIds = exams.map(e => e._id);
+    const results = await Result.find({ exam: { $in: examIds } }).select('exam score');
+    const metricsMap = new Map();
+    results.forEach(r => {
+      const key = r.exam.toString();
+      const current = metricsMap.get(key) || { attempts: 0, totalScore: 0 };
+      current.attempts += 1;
+      if (typeof r.score === 'number') current.totalScore += r.score;
+      metricsMap.set(key, current);
+    });
+
+    const now = new Date();
+    const formatted = exams.map(exam => {
+      const m = metricsMap.get(exam._id.toString()) || { attempts: 0, totalScore: 0 };
+      const avgScore = m.attempts > 0 ? Math.round(m.totalScore / m.attempts) : 0;
+      const isActive = exam.isPublished && exam.startDate && exam.endDate && new Date(exam.startDate) <= now && new Date(exam.endDate) >= now;
+      return {
+        _id: exam._id,
+        title: exam.title,
+        description: exam.description,
+        duration: exam.duration,
+        subject: exam.category,
+        classLevel: exam.associatedClass,
+        passMark: exam.passMark,
+        questionCount: exam.questions?.length || 0,
+        attempts: m.attempts,
+        avgScore,
+        status: isActive ? 'aktif' : (exam.isPublished ? 'planlı' : 'taslak'),
+        createdBy: exam.creator ? `${exam.creator.firstName} ${exam.creator.lastName}` : 'Bilinmiyor',
+        createdAt: exam.createdAt
+      };
+    });
+
     res.status(200).json(formatted);
   } catch (error) {
     console.error('Sınav listeleme hatası:', error);
