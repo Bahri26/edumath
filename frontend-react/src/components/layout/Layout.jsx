@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import Sidebar from './Sidebar';
@@ -8,12 +9,18 @@ import './Sidebar.css';
 function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
   const isAuthPage = ['/login', '/register', '/'].includes(location.pathname);
   const isTeacherDashboard = location.pathname.startsWith('/teacher');
+  const isStudentDashboard = location.pathname.startsWith('/student');
+  const isProfilePage = location.pathname === '/profile';
+  const isDashboard = isTeacherDashboard || isStudentDashboard || isProfilePage;
+  // Sidebar sadece oturum açıkken gösterilsin
+  const showSidebar = user && !isAuthPage;
 
   return (
     <div className="app-container">
-      {!isAuthPage && (
+      {showSidebar && (
         <>
           <Sidebar className={isSidebarOpen ? 'open' : ''} />
           {/* Overlay for mobile when sidebar is open */}
@@ -33,14 +40,14 @@ function Layout() {
         </>
       )}
       
-      <div className={`main-wrapper ${!isAuthPage ? 'with-sidebar' : ''}`}>
+      <div className={`main-wrapper ${showSidebar ? 'with-sidebar' : ''}`}>
         <Navbar />
         
         <main className="main-content">
           <Outlet />
         </main>
 
-        {!isTeacherDashboard && <Footer />}
+        {!isDashboard && <Footer />}
       </div>
     </div>
   );

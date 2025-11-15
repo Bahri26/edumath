@@ -1,21 +1,28 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faListOl, faClock, faPenToSquare, faUserPlus } from '@fortawesome/free-solid-svg-icons';
+import { faListOl, faClock, faPenToSquare, faUserPlus, faChartLine } from '@fortawesome/free-solid-svg-icons';
 
 const ExamCard = ({ exam, onEditQuestions, onAssign }) => {
     return (
         <div className="page-card exam-card">
-            <h3>{exam.title}</h3>
+                        <h3>{exam.title}</h3>
+                        {exam.status && (
+                            <span className={`exam-status badge-${exam.status}`}>{exam.status}</span>
+                        )}
 
             <div className="exam-details">
                 <div className="detail-item">
                     <FontAwesomeIcon icon={faListOl} className="me-2" />
-                    {exam.questionCount || exam.questions?.length || 0} Soru
+                    {(exam.questionCount ?? exam.questions?.length ?? 0)} Soru
                 </div>
                 <div className="detail-item">
                     <FontAwesomeIcon icon={faClock} className="me-2" />
-                    {exam.duration} Dakika
+                    {exam.duration} dk
+                </div>
+                <div className="detail-item">
+                    <FontAwesomeIcon icon={faChartLine} className="me-2" />
+                    {exam.attempts} Deneme • % {exam.avgScore}
                 </div>
             </div>
 

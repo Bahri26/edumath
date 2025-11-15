@@ -1,5 +1,10 @@
 ﻿/* Kids Theme - Shared Components & Utilities */
 
+/* CSS Cleanup 2025-11-15:
+  - Added --gradient-exam-interface variable for exam page backgrounds
+  - Encourages components to reference theme variables instead of hard-coded values
+*/
+
 /* Variables merged from variables.css to standardize single theme file */
 :root {
   /* Kids Theme Colors */
@@ -16,6 +21,8 @@
   --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --gradient-success: linear-gradient(135deg, #6BCF7F 0%, #44A08D 100%);
   --gradient-warning: linear-gradient(135deg, #FFD93D 0%, #FFA07A 100%);
+  /* New: Dedicated exam background gradient to avoid hard-coded values */
+  --gradient-exam-interface: var(--gradient-primary);
 
   /* Typography */
   --font-family-base: 'Inter', system-ui, -apple-system, sans-serif;

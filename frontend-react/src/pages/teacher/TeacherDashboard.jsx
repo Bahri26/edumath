@@ -302,8 +302,8 @@ function TeacherDashboard() {
 							Son Aktiviteler
 						</h3>
 						<div className="activity-list">
-							{dashboardData.recentActivity.map(activity => (
-								<div key={activity.id} className="activity-item">
+								{dashboardData.recentActivity.map((activity, idx) => (
+								<div key={`${activity.type || 'act'}-${idx}`} className="activity-item">
 									<div className="activity-icon" style={{ background: activity.color }}>
 										<FontAwesomeIcon icon={activity.icon} />
 									</div>

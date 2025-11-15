@@ -1,12 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import Skeleton from '../ui/common/Skeleton';
+import useAuthReady from '../../hooks/useAuthReady';
+import { AuthContext } from '../../contexts/AuthContext.jsx';
 
 function TeacherAnalyticsMini() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const authReady = useAuthReady();
+  const { user } = React.useContext(AuthContext);
 
   useEffect(() => {
+    if (!authReady) return; // wait for auth
+    if (!user || !(user.roles?.isTeacher || user.isTeacher)) {
+      // Not a teacher; hide widget
+      setLoading(false);
+      return;
+    }
     let mounted = true;
     async function load() {
       try {
@@ -23,7 +33,7 @@ function TeacherAnalyticsMini() {
     }
     load();
     return () => { mounted = false; };
-  }, []);
+  }, [authReady, user]);
 
   if (loading) {
     return (
@@ -34,7 +44,7 @@ function TeacherAnalyticsMini() {
     );
   }
 
-  if (!stats) return null; // Hide if no data
+  if (!stats) return null; // Hide if no data or not teacher
 
   return (
     <div className="kids-card mb-4">

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { getExams, createExam } from '../../services/examService';
+import useAuthReady from '../../hooks/useAuthReady';
+import { AuthContext } from '../../contexts/AuthContext.jsx';
 import PageHeader from '../../components/ui/common/PageHeader';
 import { curriculumData } from '../../data/curriculumData';
 import SelectQuestionsModal from './SelectQuestionsModal';
@@ -23,10 +25,14 @@ function TeacherExams() {
     const [newExamPassMark, setNewExamPassMark] = useState(50);
     const [newExamClass, setNewExamClass] = useState('');
 
+    const authReady = useAuthReady();
+    const { user } = React.useContext(AuthContext);
+
     const fetchExams = async () => {
         setLoading(true);
         setError(null);
         try {
+            // If teacher: get scoped exams (backend auto scopes). If not teacher, request all.
             const data = await getExams();
             setExams(data);
         } catch (err) {
@@ -36,7 +42,7 @@ function TeacherExams() {
             setLoading(false);
         }
     };
-    useEffect(() => { fetchExams(); }, []);
+    useEffect(() => { if (authReady && user) fetchExams(); }, [authReady, user]);
 
     const handleAta = (examId) => {
         alert(`Sınav ID ${examId} öğrencilere atanacak. (Atama modalı açılacak)`);

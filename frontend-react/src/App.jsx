@@ -4,7 +4,8 @@ import { Toaster } from 'react-hot-toast';
 
 // Kids temalı yeni layout'a yönlendirme
 import Layout from './components/layout/Layout.jsx'; 
-import RoleProtectedRoute from "./components/features/auth/RoleProtectedRoute";
+import RoleProtectedRoute from "./components/auth/RoleProtectedRoute.jsx";
+import ProtectedRoute from "./components/auth/ProtectedRoute.jsx";
 
 import HomePage from './pages/HomePage';
 import Login from './pages/Login';
@@ -73,7 +74,8 @@ function App() {
         <Route path="register" element={<Register />} />
         <Route path="profile" element={<ProfilePage />} />
 
-        <Route element={<RoleProtectedRoute allowedRoles={['teacher']} />}>
+        {/* Öğretmen korumalı alanlar */}
+        <Route element={<RoleProtectedRoute roles={['teacher']} />}>
           <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
           <Route path="/teacher/questions" element={<QuestionPool />} />
           <Route path="/teacher/question-pool" element={<QuestionPool />} />
@@ -90,17 +92,20 @@ function App() {
           <Route path="/teacher/surveys/:id/results" element={<TeacherSurveyResults />} />
         </Route>
 
-        <Route path="/student/dashboard" element={<StudentDashboard />} /> 
-        <Route path="/student/exams" element={<StudentExams />} />
-        <Route path="/student/results" element={<StudentResults />} />
-        <Route path="/student/surveys" element={<StudentSurveys />} />
-        <Route path="/student/surveys/:id" element={<StudentSurveyFill />} />
-        <Route path="/student/exam/:examId" element={<StudentExamInterface />} />
-        <Route path="/student/interactive" element={<InteractiveLearning />} />
-        <Route path="/student/exercises" element={<ExercisesPage />} />
-        <Route path="/student/exercise/:id" element={<ExercisePlayer />} />
-        <Route path="/student/analytics" element={<AnalyticsPage />} />
-        <Route path="/student/streak" element={<StreakPage />} />
+        {/* Öğrenci korumalı alanlar */}
+        <Route element={<ProtectedRoute />}> 
+          <Route path="/student/dashboard" element={<StudentDashboard />} /> 
+          <Route path="/student/exams" element={<StudentExams />} />
+          <Route path="/student/results" element={<StudentResults />} />
+          <Route path="/student/surveys" element={<StudentSurveys />} />
+          <Route path="/student/surveys/:id" element={<StudentSurveyFill />} />
+          <Route path="/student/exam/:examId" element={<StudentExamInterface />} />
+          <Route path="/student/interactive" element={<InteractiveLearning />} />
+          <Route path="/student/exercises" element={<ExercisesPage />} />
+          <Route path="/student/exercise/:id" element={<ExercisePlayer />} />
+          <Route path="/student/analytics" element={<AnalyticsPage />} />
+          <Route path="/student/streak" element={<StreakPage />} />
+        </Route>
         
         <Route path="*" element={<NotFound />} />
       </Route>

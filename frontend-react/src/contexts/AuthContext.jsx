@@ -33,20 +33,38 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, [token]); // Token değiştiğinde de çalışabilir, ama asıl amaç ilk yüklemedir.
 
+  // --- GLOBAL 401 / UNAUTHORIZED EVENT DİNLEYİCİSİ ---
+  useEffect(() => {
+    const handleUnauthorized = (e) => {
+      const detail = e.detail || {};
+      // Token süresi dolmuş veya geçersiz ise otomatik logout
+      if (detail.expired || /geçersiz token|süresi doldu|expired/i.test(detail.message || '')) {
+        logout();
+      }
+    };
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
+  }, []);
+
   // --- LOGIN ---
   const login = async (email, password) => {
     try {
       const response = await axios.post(`${API_URL}/login`, { email, password });
       
-      const { token, user: userData } = response.data;
+      const { token, accessToken, refreshToken, user: userData } = response.data;
 
       // Token ve user'ı ayarla
-      localStorage.setItem('token', token);
+      // Backende hem token hem accessToken dönüyor olabilir; öncelik accessToken
+      const effectiveAccess = accessToken || token;
+      localStorage.setItem('token', effectiveAccess);
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
       localStorage.setItem('user', JSON.stringify(userData)); // <-- KULLANICIYI DA SAKLA
-      setToken(token);
+      setToken(effectiveAccess);
       setUser(userData);
       
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${effectiveAccess}`;
     } catch (error) {
       console.error('AuthContext login hatası:', error.response?.data?.message || error.message);
       throw new Error(error.response?.data?.message || 'Giriş sırasında bir hata oluştu.');
@@ -56,6 +74,7 @@ export const AuthProvider = ({ children }) => {
   // --- LOGOUT ---
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user'); // <-- KULLANICIYI DA SİL
     setToken(null);
     setUser(null);

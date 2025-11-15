@@ -23,7 +23,6 @@
     "mathquill": "^0.10.1-a",
     "prop-types": "^15.8.1",
     "react": "^19.1.1",
-    "react-beautiful-dnd": "^13.1.1",
     "react-confetti": "^6.4.0",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.6.0",

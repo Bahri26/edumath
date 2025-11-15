@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { Navigate } from 'react-router-dom';
 // PageHeader kullanımı bu sayfadan kaldırıldı; yerine basit bir başlık eklenecek
 
 // --- GÜNCELLEME 1: Font Awesome İMPORT VE KÜTÜPHANE AYARI ---
@@ -25,7 +26,8 @@ function ProfilePage() {
   const { user } = useAuth();
 
   if (!user) {
-    return <div className="kids-loading">Yükleniyor</div>;
+    // Kullanıcı yoksa profil sayfası erişilemez -> login'e yönlendir
+    return <Navigate to="/login" replace />;
   }
 
   // Kullanıcı rolünü belirle (kids theme renkleri)

@@ -1,9 +1,14 @@
-/* StudentExamInterface.css */
+/* StudentExamInterface.css
+  Cleanup 2025-11-15:
+  - Uses var(--gradient-exam-interface) instead of hard-coded gradient
+  - Container class already namespaced to avoid global bleed
+*/
 
 /* Main Container */
-.teacher-page-container {
+.exam-interface-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Uses theme variable instead of hard-coded gradient for easier future changes */
+  background: var(--gradient-exam-interface);
   padding: 20px;
   position: relative;
 }
@@ -436,7 +441,7 @@
 }
 
 /* Loading State */
-.teacher-page-container > p {
+.exam-interface-container > p {
   color: white;
   font-size: 1.5rem;
   text-align: center;
@@ -447,7 +452,7 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .teacher-page-container {
+  .exam-interface-container {
     padding: 15px;
   }
 
@@ -540,7 +545,7 @@
 
 /* Print Styles */
 @media print {
-  .teacher-page-container {
+  .exam-interface-container {
     background: white;
   }
 

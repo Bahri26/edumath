@@ -135,11 +135,11 @@ function StudentExamInterface() {
     const currentAnswer = currentQuestion ? (answers.find(ans => ans.questionId === currentQuestion._id)?.submittedAnswer || '') : '';
     const totalQuestions = exam?.questions?.length || 0;
 
-    if (loading) return <p className="teacher-page-container">Sınav verileri yükleniyor...</p>;
+    if (loading) return <p className="exam-interface-container">Sınav verileri yükleniyor...</p>;
     
     if (!exam || !exam.questions || exam.questions.length === 0) {
         return (
-            <div className="teacher-page-container">
+            <div className="exam-interface-container">
                 <div className="alert alert-danger">Sınav bulunamadı veya sınav soruları yüklenemedi.</div>
             </div>
         );
@@ -147,7 +147,7 @@ function StudentExamInterface() {
     
     if (isSubmitted && submissionResult) {
         return (
-            <div className="teacher-page-container">
+            <div className="exam-interface-container">
                 <div className="page-card exam-finished">
                     <h2>Sınav Tamamlandı! 🎉</h2>
                     <p>Puanınız: <strong>{submissionResult.score}%</strong></p>
@@ -165,7 +165,7 @@ function StudentExamInterface() {
 
     // --- SINAV ARAYÜZÜ RENDER ---
     return (
-        <div className="teacher-page-container">
+        <div className="exam-interface-container">
             {error && <div className="alert alert-danger">{error}</div>}
             
             <div className="exam-header-bar">
