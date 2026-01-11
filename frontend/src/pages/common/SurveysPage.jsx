@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, FileText, Send, CheckCircle, X, Circle, Dot } from 'lucide-react';
 import apiClient from '../../services/api';
+import { useToast } from '../../context/ToastContext';
+import SkeletonCard from '../../components/ui/SkeletonCard';
+import { useSearchParams } from 'react-router-dom';
 
 const SurveysPage = ({ role }) => {
+  const { showToast } = useToast();
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
+    // Öğretmen filtreleri
+    const [statusFilter, setStatusFilter] = useState('Tümü');
+    const [page, setPage] = useState(1);
+    const [pages, setPages] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [searchParams, setSearchParams] = useSearchParams();
   
   // --- ÖĞRETMEN STATE'LERİ ---
   const [showForm, setShowForm] = useState(false);
@@ -26,15 +36,50 @@ const SurveysPage = ({ role }) => {
       const res = await apiClient.get('/surveys');
       setSurveys(res.data);
     } catch (error) {
-      console.error("Hata:", error);
+      showToast('Anketler yüklenemedi', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSurveys();
+    if (role === 'teacher') {
+      setLoading(true);
+      const params = {};
+      if (statusFilter !== 'Tümü') params.status = statusFilter;
+      params.page = page;
+      params.limit = 9;
+      apiClient.get('/teacher/surveys', { params })
+        .then(res => {
+          const payload = res.data?.data ? res.data : { data: res.data, total: res.data.length, pages: 1, currentPage: 1 };
+          setSurveys(payload.data || []);
+          setTotal(payload.total || 0);
+          setPages(payload.pages || 1);
+        })
+        .catch(() => showToast('Anketler yüklenemedi', 'error'))
+        .finally(() => setLoading(false));
+    } else {
+      fetchSurveys();
+    }
+  }, [role, statusFilter, page]);
+
+  // URL senkronizasyonu (öğretmen)
+  useEffect(() => {
+    if (role !== 'teacher') return;
+    const s = searchParams.get('status') || 'Tümü';
+    const p = parseInt(searchParams.get('page') || '1');
+    setStatusFilter(s);
+    setPage(Number.isNaN(p) ? 1 : p);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (role !== 'teacher') return;
+    const params = {};
+    if (statusFilter !== 'Tümü') params.status = statusFilter;
+    if (page !== 1) params.page = String(page);
+    setSearchParams(params, { replace: true });
+  }, [role, statusFilter, page, setSearchParams]);
 
   // --- ÖĞRETMEN: SORU YÖNETİMİ ---
   const updateQuestion = (id, field, value) => {
@@ -87,11 +132,15 @@ const SurveysPage = ({ role }) => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!newTitle.trim()) return alert("Başlık zorunludur!");
+    if (!newTitle.trim()) {
+      showToast('Başlık zorunludur', 'error');
+      return;
+    }
     
     // Tüm soruların dolu olduğunu kontrol et
     if (questions.some(q => !q.text.trim())) {
-      return alert("Tüm soru metinlerini doldurunuz!");
+      showToast('Tüm soru metinlerini doldurunuz', 'error');
+      return;
     }
 
     // Çoktan seçmeli sorular için şıkları kontrol et
@@ -99,7 +148,8 @@ const SurveysPage = ({ role }) => {
       if (q.type === 'multiple-choice') {
         const validOptions = q.options.filter(opt => opt.trim() !== '');
         if (validOptions.length < 2) {
-          return alert(`"${q.text}" sorusu için en az 2 geçerli şık girmelisiniz!`);
+          showToast(`"${q.text}" sorusu için en az 2 geçerli şık girmelisiniz`, 'error');
+          return;
         }
       }
     }
@@ -114,23 +164,33 @@ const SurveysPage = ({ role }) => {
         }))
       };
 
-      await apiClient.post('/surveys', payload);
-      
+      const { data: created } = await apiClient.post('/surveys', payload);
+      // Optimistic insert
+      setSurveys(prev => [created, ...prev]);
       // Formu Sıfırla
       setShowForm(false);
       setNewTitle('');
       setQuestions([{ id: 1, text: '', type: 'text', options: ['', ''] }]);
       setNextQuestionId(2);
-      fetchSurveys();
+      showToast('Anket yayınlandı', 'success');
     } catch (err) {
-      alert("Hata oluştu: " + err.message);
+      showToast('Anket oluşturulamadı', 'error');
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Silmek istediğine emin misin?")) {
-      await apiClient.delete(`/surveys/${id}`);
-      fetchSurveys();
+    if (window.confirm('Bu anketi silmek istediğinize emin misiniz?')) {
+      const prev = surveys;
+      // Optimistic removal
+      setSurveys(prev.filter(s => s._id !== id));
+      try {
+        await apiClient.delete(`/surveys/${id}`);
+        showToast('Anket silindi', 'success');
+      } catch (err) {
+        // Rollback on failure
+        setSurveys(prev);
+        showToast('Anket silinemedi', 'error');
+      }
     }
   };
 
@@ -145,17 +205,22 @@ const SurveysPage = ({ role }) => {
       await apiClient.post(`/surveys/${surveyId}/respond`, {
         answers: formattedAnswers
       });
-      
-      alert("Cevabınız başarıyla gönderildi!");
+      showToast('Cevabınız başarıyla gönderildi', 'success');
       setActiveSurvey(null);
       setAnswers({});
       fetchSurveys();
     } catch (err) {
-      alert("Gönderim hatası oluştu.");
+      showToast('Gönderim hatası oluştu', 'error');
     }
   };
 
-  if (loading) return <div className="p-10 text-center">Yükleniyor...</div>;
+  if (loading) return (
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <SkeletonCard key={i} />
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
@@ -372,6 +437,21 @@ const SurveysPage = ({ role }) => {
 
       {/* --- LİSTELEME --- */}
       <div className="grid gap-4">
+        {role === 'teacher' && (
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Durum:</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                className="p-2 rounded-lg border text-sm dark:bg-slate-800 dark:text-white"
+              >
+                {['Tümü', 'active', 'closed'].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="text-xs text-slate-500">Toplam: {total}</div>
+          </div>
+        )}
         {surveys.length === 0 ? (
            <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400">
              <FileText size={48} className="mb-4 opacity-50" />
@@ -396,6 +476,11 @@ const SurveysPage = ({ role }) => {
                      <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                        {survey.questions[0]?.type === 'multiple-choice' ? 'Seçmeli' : 'Klasik'}
                      </span>
+                     {role === 'teacher' && (
+                       <span className={`px-2 py-0.5 rounded text-white ${survey.status === 'active' ? 'bg-green-600' : 'bg-slate-500'}`}>
+                         {survey.status || 'active'}
+                       </span>
+                     )}
                   </div>
                 </div>
               </div>
@@ -416,9 +501,40 @@ const SurveysPage = ({ role }) => {
                     Katıl
                   </button>
                 )}
+                {role === 'teacher' && (
+                  <button
+                    onClick={async () => {
+                      const next = survey.status === 'active' ? 'closed' : 'active';
+                      const prev = surveys;
+                      // iyimser güncelleme
+                      setSurveys(prev.map(s => s._id === survey._id ? { ...s, status: next } : s));
+                      try {
+                        await apiClient.put(`/surveys/${survey._id}`, { status: next });
+                        showToast(`Anket ${next === 'active' ? 'aktif' : 'kapalı'} yapıldı`, 'success');
+                      } catch (err) {
+                        setSurveys(prev);
+                        showToast('Durum güncellenemedi', 'error');
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm"
+                  >{survey.status === 'active' ? 'Kapat' : 'Aktif Et'}</button>
+                )}
               </div>
             </div>
           ))
+        )}
+        {role === 'teacher' && pages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-4">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              className="px-3 py-2 rounded-lg border bg-white dark:bg-slate-800"
+            >Önceki</button>
+            <span className="text-xs font-bold text-slate-500">Sayfa {page} / {pages}</span>
+            <button
+              onClick={() => setPage(p => Math.min(pages, p + 1))}
+              className="px-3 py-2 rounded-lg border bg-white dark:bg-slate-800"
+            >Sonraki</button>
+          </div>
         )}
       </div>
     </div>

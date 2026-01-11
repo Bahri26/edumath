@@ -1,5 +1,6 @@
 const { GoogleGenerativeAI, SchemaType } = require("@google/generative-ai");
 const fs = require("fs");
+const pathLib = require('path');
 
 // API Anahtarınızı .env dosyasından çekiyoruz
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -59,6 +60,7 @@ exports.smartParse = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "Lütfen bir resim yükleyin." });
 
+    const imageUrl = `/uploads/temp/${pathLib.basename(req.file.path)}`;
     const imagePart = fileToGenerativePart(req.file.path, req.file.mimetype);
 
     const schema = {
@@ -97,28 +99,41 @@ exports.smartParse = async (req, res) => {
       JSON dışında metin ekleme.
     `;
 
-    const result = await model.generateContent([instruction, imagePart]);
-    const raw = result.response.text();
-    let parsed;
-    try { parsed = JSON.parse(raw); } catch (e) { parsed = {}; }
+    let data;
+    try {
+      const result = await model.generateContent([instruction, imagePart]);
+      const raw = result.response.text();
+      let parsed;
+      try { parsed = JSON.parse(raw); } catch (e) { parsed = {}; }
+      data = {
+        text: parsed.text || "",
+        options: Array.isArray(parsed.options) && parsed.options.length > 0
+          ? parsed.options.slice(0, 4).concat(Array(4).fill("")).slice(0, 4)
+          : ["", "", "", ""],
+        correctAnswer: parsed.correctAnswer || "",
+        solution: parsed.solution || "",
+        subject: parsed.subject || "Matematik",
+        classLevel: parsed.classLevel || "9. Sınıf",
+        difficulty: parsed.difficulty || "Orta",
+        imagePath: imageUrl,
+      };
+    } catch (aiErr) {
+      // AI KEY eksik/invalid ise kullanıcıya manuel düzenleme için fallback ver
+      console.warn('smartParse AI error, fallback to manual:', aiErr?.message);
+      data = {
+        text: "",
+        options: ["", "", "", ""],
+        correctAnswer: "",
+        solution: "",
+        subject: "Matematik",
+        classLevel: "9. Sınıf",
+        difficulty: "Orta",
+        imagePath: imageUrl,
+      };
+    }
 
-    // Güvenli varsayılanlar
-    const data = {
-      text: parsed.text || "",
-      options: Array.isArray(parsed.options) && parsed.options.length > 0
-        ? parsed.options.slice(0, 4).concat(Array(4).fill("")).slice(0, 4)
-        : ["", "", "", ""],
-      correctAnswer: parsed.correctAnswer || "",
-      solution: parsed.solution || "",
-      subject: parsed.subject || "Matematik",
-      classLevel: parsed.classLevel || "9. Sınıf",
-      difficulty: parsed.difficulty || "Orta",
-    };
-
-    // Geçici dosyayı temizle
-    try { fs.unlinkSync(req.file.path); } catch(e) {}
-
-    res.json({ success: true, data });
+    // Dosyayı sakla (temp klasörde erişilebilir), temizleme yok
+    return res.json({ success: true, data });
   } catch (error) {
     console.error("smartParse Hatası:", error);
     try { fs.unlinkSync(req.file?.path); } catch(e) {}
@@ -285,5 +300,133 @@ exports.createStudyPlan = async (req, res) => {
   } catch (error) {
     console.error("Plan Oluşturma Hatası:", error);
     res.status(500).json({ message: "Plan oluşturulamadı." });
+  }
+};
+
+// ------------------------------------------------------------------
+// 1.c 🧠 AKILLI METİN PARSE (Copy-Paste -> Structured JSON)
+// UI: SmartPasteModal /ai/smart-parse-text
+// Beklenen body: { content: string }
+// Dönen veri: { text, options[4], correctAnswer, solution, subject, classLevel, difficulty }
+// ------------------------------------------------------------------
+exports.smartParseText = async (req, res) => {
+  try {
+    const content = (req.body?.content || '').toString();
+    if (!content.trim()) {
+      return res.status(400).json({ message: 'İçerik boş. Lütfen soruyu yapıştırın.' });
+    }
+
+    // Basit yerel ayrıştırıcı (AI anahtarı yoksa güvenli fallback)
+    const lines = content.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const optionRegexes = [
+      /^\*?\s*A[\).\:]\s*(.+)$/i,
+      /^\*?\s*B[\).\:]\s*(.+)$/i,
+      /^\*?\s*C[\).\:]\s*(.+)$/i,
+      /^\*?\s*D[\).\:]\s*(.+)$/i,
+    ];
+
+    let questionTextLines = [];
+    let options = ['', '', '', ''];
+    let correctAnswer = '';
+    let inOptions = false;
+
+    for (const line of lines) {
+      // Answer hints
+      const ansMatch = line.match(/^(?:Doğru\s*Cevap|Cevap|Answer)\s*[:=]\s*([A-D])/i);
+      if (ansMatch) {
+        const idx = 'ABCD'.indexOf(ansMatch[1].toUpperCase());
+        if (idx >= 0 && options[idx]) correctAnswer = options[idx];
+        continue;
+      }
+      // Marked with * at option line
+      const starOpt = line.match(/^\*\s*([A-D])[\).\:]\s*(.+)$/i);
+      if (starOpt) {
+        const idx = 'ABCD'.indexOf(starOpt[1].toUpperCase());
+        options[idx] = starOpt[2].trim();
+        correctAnswer = options[idx];
+        inOptions = true;
+        continue;
+      }
+      // Options A-D
+      let matched = false;
+      for (let i = 0; i < 4; i++) {
+        const m = line.match(optionRegexes[i]);
+        if (m) {
+          options[i] = m[1].trim();
+          inOptions = true;
+          matched = true;
+          break;
+        }
+      }
+      if (matched) continue;
+      // Non-option lines
+      if (!inOptions) questionTextLines.push(line);
+    }
+
+    const text = questionTextLines.join(' ').trim();
+    // If correctAnswer still empty, try to match by trailing marker like (C)
+    if (!correctAnswer) {
+      const tail = content.match(/\(([A-D])\)\s*$/m);
+      if (tail) {
+        const idx = 'ABCD'.indexOf(tail[1].toUpperCase());
+        if (idx >= 0 && options[idx]) correctAnswer = options[idx];
+      }
+    }
+
+    const data = {
+      text,
+      options: options.map(o => o || ''),
+      correctAnswer: correctAnswer || options[0] || '',
+      solution: '',
+      subject: 'Matematik',
+      classLevel: '9. Sınıf',
+      difficulty: 'Orta',
+    };
+
+    // Eğer GEMINI_API_KEY varsa, daha iyi ayrıştırma için LLM kullanmayı dene
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const schema = {
+          description: 'Tek bir soru şeması',
+          type: SchemaType.OBJECT,
+          properties: {
+            text: { type: SchemaType.STRING },
+            options: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+            correctAnswer: { type: SchemaType.STRING },
+            solution: { type: SchemaType.STRING },
+            subject: { type: SchemaType.STRING },
+            classLevel: { type: SchemaType.STRING },
+            difficulty: { type: SchemaType.STRING },
+          },
+          required: ['text', 'options', 'correctAnswer'],
+        };
+        const model = genAI.getGenerativeModel({
+          model: MODEL_NAME,
+          generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.2 },
+        });
+        const prompt = `Aşağıdaki metinden tek soruyu ayrıştır ve JSON döndür (LaTeX ifadelerini $...$ olarak yaz):\n\n${content}`;
+        const result = await model.generateContent(prompt);
+        const raw = result.response.text();
+        const llm = JSON.parse(raw);
+        // Güvenli birleştirme
+        data.text = llm.text || data.text;
+        if (Array.isArray(llm.options) && llm.options.length) {
+          data.options = llm.options.slice(0, 4).concat(Array(4).fill('')).slice(0, 4);
+        }
+        data.correctAnswer = llm.correctAnswer || data.correctAnswer;
+        data.solution = llm.solution || data.solution;
+        data.subject = llm.subject || data.subject;
+        data.classLevel = llm.classLevel || data.classLevel;
+        data.difficulty = llm.difficulty || data.difficulty;
+      } catch (e) {
+        // LLM başarısız ise yerel parse ile devam
+        console.warn('LLM parse başarısız, yerel ayrıştırma kullanıldı:', e.message);
+      }
+    }
+
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error('smartParseText Hatası:', error);
+    res.status(500).json({ message: 'Metin akıllı parse edilemedi.', error: error.message });
   }
 };

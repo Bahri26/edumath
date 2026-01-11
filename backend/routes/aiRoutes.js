@@ -20,6 +20,9 @@ router.post('/solve-image', upload.single('image'), aiController.solveFromImage)
 // 1.b Akıllı Görsel Parse (Structured JSON)
 router.post('/smart-parse', upload.single('image'), aiController.smartParse);
 
+// 1.c Akıllı Metin Parse (Copy-Paste)
+router.post('/smart-parse-text', aiController.smartParseText);
+
 // 2. Soru Üretici (Öğretmen)
 router.post('/generate-quiz', aiController.generateQuiz);
 

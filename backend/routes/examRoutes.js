@@ -2,11 +2,39 @@ const express = require('express');
 const router = express.Router();
 const Exam = require('../models/Exam');
 const Question = require('../models/Question');
+const authMiddleware = require('../middlewares/authMiddleware');
+const roleMiddleware = require('../middlewares/roleMiddleware');
+const User = require('../models/User');
+const Student = require('../models/Student');
 
 // 1. TÜM SINAVLARI GETİR
 router.get('/', async (req, res) => {
   try {
     const exams = await Exam.find().sort({ createdAt: -1 });
+    res.json(exams);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// 1.a. ÖĞRENCİ: Sınıfa göre aktif sınavları getir
+router.get('/by-class', authMiddleware, roleMiddleware(['student']), async (req, res) => {
+  try {
+    // Önce kullanıcı profilinden sınıfı al, yoksa Student tablosundan dene
+    let grade = null;
+    const user = await User.findById(req.user.id).select('grade role');
+    if (user && user.grade) {
+      grade = user.grade;
+    } else {
+      const student = await Student.findOne({ userId: req.user.id }).select('grade');
+      grade = student?.grade || null;
+    }
+
+    if (!grade) {
+      return res.status(400).json({ message: 'Öğrenci sınıf bilgisi bulunamadı.' });
+    }
+
+    const exams = await Exam.find({ status: 'active', classLevel: grade }).sort({ createdAt: -1 });
     res.json(exams);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -25,7 +53,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // 3. MANUEL SINAV OLUŞTUR (TEACHER) - SÜRÜKLE BIRAK
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, roleMiddleware(['teacher']), async (req, res) => {
   try {
     const { name, description, classLevel, duration, questions } = req.body;
     
@@ -47,7 +75,7 @@ router.post('/', async (req, res) => {
       classLevel,
       duration,
       questions: questionIds,
-      createdBy: req.body.teacherId || 'system',
+      createdBy: req.user.id,
       status: 'active'
     });
 
@@ -58,7 +86,7 @@ router.post('/', async (req, res) => {
 });
 
 // 4. OTOMATİK SINAV OLUŞTUR (TEACHER) - KONU FİLTRESİ EKLENDİ 🚨
-router.post('/auto-generate', async (req, res) => {
+router.post('/auto-generate', authMiddleware, roleMiddleware(['teacher']), async (req, res) => {
   try {
     // Frontend'den gelen 'subject' (konu) parametresini alıyoruz
     const { title, duration, classLevel, subject } = req.body;
@@ -111,7 +139,10 @@ router.post('/auto-generate', async (req, res) => {
     const newExam = new Exam({
       title,
       duration: duration || 25,
-      questions: questionIds
+      classLevel: classLevel || '9. Sınıf',
+      questions: questionIds,
+      status: 'active',
+      createdBy: req.user.id
     });
 
     await newExam.save();
@@ -123,10 +154,36 @@ router.post('/auto-generate', async (req, res) => {
 });
 
 // 4. SINAVI SİL
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, roleMiddleware(['teacher']), async (req, res) => {
   try {
-    await Exam.findByIdAndDelete(req.params.id);
+    const exam = await Exam.findById(req.params.id);
+    if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı' });
+    if (String(exam.createdBy) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'Bu sınavı silme yetkiniz yok' });
+    }
+    await exam.deleteOne();
     res.json({ message: 'Sınav silindi' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// 4.5. SINAV GÜNCELLE (Süre, başlık, açıklama, durum)
+router.put('/:id', authMiddleware, roleMiddleware(['teacher']), async (req, res) => {
+  try {
+    const allowed = ['title', 'description', 'duration', 'status'];
+    const update = {};
+    for (const k of allowed) {
+      if (req.body[k] !== undefined) update[k] = req.body[k];
+    }
+    let exam = await Exam.findById(req.params.id);
+    if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı' });
+    if (String(exam.createdBy) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'Bu sınavı güncelleme yetkiniz yok' });
+    }
+    exam = await Exam.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı' });
+    res.json(exam);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

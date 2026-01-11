@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from "react";
+import Button from './Button.jsx';
 
 const ConfirmModal = ({ open, title, description, onConfirm, onCancel }) => {
   const cancelBtnRef = useRef(null);
@@ -20,21 +21,23 @@ const ConfirmModal = ({ open, title, description, onConfirm, onCancel }) => {
         <h3 id="confirm-modal-title" className="text-lg font-bold mb-2 dark:text-white">{title}</h3>
         <p id="confirm-modal-desc" className="mb-6 text-slate-600 dark:text-slate-300">{description}</p>
         <div className="flex justify-end gap-3">
-          <button
+          <Button
             ref={cancelBtnRef}
-            className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-600"
+            variant="outline"
+            size="md"
             onClick={onCancel}
-            aria-label="İptal"
+            ariaLabel="İptal"
           >
             İptal
-          </button>
-          <button
-            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+          </Button>
+          <Button
+            variant="danger"
+            size="md"
             onClick={onConfirm}
-            aria-label="Onayla"
+            ariaLabel="Onayla"
           >
             Evet, Sil
-          </button>
+          </Button>
         </div>
       </div>
     </div>

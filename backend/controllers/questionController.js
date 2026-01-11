@@ -100,7 +100,16 @@ exports.createQuestion = async (req, res, next) => {
 
     // 1. Ana Resmi Bul
     const mainImgFile = req.files ? req.files.find(f => f.fieldname === 'image') : null;
-    const mainImagePath = mainImgFile ? `/uploads/${mainImgFile.filename}` : '';
+    // Allow using previously uploaded image path (from smart-parse)
+    let mainImagePath = '';
+    if (mainImgFile) {
+      mainImagePath = `/uploads/${mainImgFile.filename}`;
+    } else if (req.body.imagePath) {
+      // Accept an absolute /uploads path or relative; normalize prefix
+      mainImagePath = req.body.imagePath.startsWith('/uploads')
+        ? req.body.imagePath
+        : `/uploads/${req.body.imagePath.replace(/^\/?uploads\/?/, '')}`;
+    }
 
     // 2. Şıkları İşle
     let optionsData = [];
@@ -171,7 +180,13 @@ exports.updateQuestion = async (req, res, next) => {
 
     // Ana Resim Güncellemesi
     const mainImgFile = req.files ? req.files.find(f => f.fieldname === 'image') : null;
-    if (mainImgFile) question.image = `/uploads/${mainImgFile.filename}`;
+    if (mainImgFile) {
+      question.image = `/uploads/${mainImgFile.filename}`;
+    } else if (req.body.imagePath) {
+      question.image = req.body.imagePath.startsWith('/uploads')
+        ? req.body.imagePath
+        : `/uploads/${req.body.imagePath.replace(/^\/?uploads\/?/, '')}`;
+    }
 
     // Şık Güncellemesi
     if (req.body.options && Array.isArray(req.body.options)) {
