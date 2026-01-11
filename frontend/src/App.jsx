@@ -3,6 +3,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // --- 1. LAYOUTS (ÇERÇEVELER) ---
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -46,6 +47,7 @@ function App() {
     <ThemeProvider>
       <LanguageProvider>
         <Suspense fallback={<div className="p-10 text-center">Yükleniyor...</div>}>
+          <ErrorBoundary>
           <Routes>
           {/* =========================================================
               ANA SAYFA (LANDING PAGE)
@@ -122,6 +124,7 @@ function App() {
              ========================================================= */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+          </ErrorBoundary>
         </Suspense>
       </LanguageProvider>
     </ThemeProvider>

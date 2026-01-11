@@ -1,9 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Clock, FileText, Plus, Trash2, Play, CheckCircle, AlertTriangle, X, Brain, Sparkles, ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
+import { Clock, FileText, Plus, Trash2, Play, CheckCircle, AlertTriangle, X, Brain, Sparkles, GripVertical } from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { createExam } from '../../services/examService';
 import SkeletonCard from '../../components/ui/SkeletonCard';
+import { renderWithLatex } from '../../utils/latex.jsx';
+import Button from '../../components/ui/Button.jsx';
+import Badge from '../../components/ui/Badge.jsx';
+import Card from '../../components/ui/Card.jsx';
 
 const ExamsPage = ({ role }) => {
   const [exams, setExams] = useState([]);
@@ -38,7 +42,8 @@ const ExamsPage = ({ role }) => {
 
   const fetchExams = async () => {
     try {
-      const res = await apiClient.get('/exams');
+      const endpoint = role === 'student' ? '/exams/by-class' : '/exams';
+      const res = await apiClient.get(endpoint);
       setExams(res.data);
     } catch (err) {
       console.error(err);
@@ -200,14 +205,43 @@ const ExamsPage = ({ role }) => {
                 <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold px-3 py-1 rounded-lg">Soru {idx + 1}</span>
                 <span className={`px-2 py-1 rounded text-xs font-bold text-white ${q.difficulty === 'Zor' ? 'bg-red-500' : q.difficulty === 'Orta' ? 'bg-yellow-500' : 'bg-green-500'}`}>{q.difficulty}</span>
               </div>
-              <p className="text-lg font-medium text-slate-800 dark:text-white mb-4">{q.text}</p>
+              <div className="text-lg font-medium text-slate-800 dark:text-white mb-4">
+                {renderWithLatex(q.text)}
+              </div>
+              {q.image && (
+                <div className="mb-4">
+                  <img src={q.image} alt="Soru görseli" className="max-h-56 rounded-xl border border-slate-200 dark:border-slate-700" />
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {q.options.map((opt, i) => (
-                  <label key={i} className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${userAnswers[q._id] === opt ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500' : 'hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'}`}>
-                    <input type="radio" name={`q-${q._id}`} value={opt} onChange={() => setUserAnswers({...userAnswers, [q._id]: opt})} className="w-5 h-5 text-indigo-600"/>
-                    <span className="text-slate-700 dark:text-slate-200">{opt}</span>
-                  </label>
-                ))}
+                {(Array.isArray(q.options) ? q.options : []).map((opt, i) => {
+                  const optionText = opt?.text || '';
+                  const isSelected = userAnswers[q._id] === optionText;
+                  const letter = String.fromCharCode(65 + i);
+                  return (
+                    <label
+                      key={i}
+                      className={`flex items-start gap-3 p-4 border rounded-xl cursor-pointer transition-all ${isSelected ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500' : 'hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'}`}
+                    >
+                      <input
+                        type="radio"
+                        name={`q-${q._id}`}
+                        value={optionText}
+                        onChange={() => setUserAnswers({ ...userAnswers, [q._id]: optionText })}
+                        className="mt-1 w-5 h-5 text-indigo-600"
+                      />
+                      <div className="flex-1">
+                        <div className="text-slate-700 dark:text-slate-200">
+                          <span className="font-bold mr-2">{letter})</span>
+                          {renderWithLatex(optionText)}
+                        </div>
+                        {opt?.image && (
+                          <img src={opt.image} alt={`Seçenek ${letter} görseli`} className="mt-2 max-h-40 rounded-lg border border-slate-200 dark:border-slate-700" />
+                        )}
+                      </div>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -356,27 +390,41 @@ const ExamsPage = ({ role }) => {
       <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Sınavlar</h2>
         {role === 'teacher' && (
-          <button 
-            onClick={() => setShowCreateModal(true)} 
-            className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl hover:bg-indigo-700 flex items-center gap-2"
-            aria-label="Sınav Oluştur"
-          >
-            <Plus size={20} /> Sınav Oluştur
-          </button>
+          <Button variant="primary" size="md" ariaLabel="Sınav Oluştur" onClick={() => setShowCreateModal(true)} icon={Plus}>
+            Sınav Oluştur
+          </Button>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {exams.length === 0 ? <div className="col-span-full text-center py-10 text-slate-500">Henüz sınav oluşturulmamış.</div> : exams.map(exam => (
-            <div key={exam._id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all group">
+            <Card key={exam._id}>
               <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-xl"><FileText size={24} /></div>
-                {role === 'teacher' && <button onClick={() => handleDelete(exam._id)} className="text-slate-400 hover:text-red-500 p-1"><Trash2 size={18} /></button>}
+                <div className="flex items-center gap-2">
+                  {exam.classLevel && <Badge color="indigo" className="font-semibold">{exam.classLevel}</Badge>}
+                  {role === 'teacher' && (
+                    <Button aria-label="Sınavı Sil" variant="outline" size="sm" onClick={() => handleDelete(exam._id)}>
+                      <Trash2 size={16} />
+                    </Button>
+                  )}
+                </div>
               </div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">{exam.title}</h3>
-              <div className="flex items-center gap-4 text-sm text-slate-500 mb-6"><span className="flex items-center gap-1"><Clock size={14}/> {exam.duration} Dk</span><span className="flex items-center gap-1"><AlertTriangle size={14}/> {exam.questions.length} Soru</span></div>
-              {role === 'student' ? <button onClick={() => startExam(exam._id)} className="w-full bg-indigo-600 text-white py-2.5 rounded-xl font-medium hover:bg-indigo-700 flex items-center justify-center gap-2"><Play size={18} /> Başla</button> : <div className="w-full bg-slate-100 dark:bg-slate-700 text-slate-500 py-2.5 rounded-xl text-center text-sm font-medium">{exam.results.length} Katılım</div>}
-            </div>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">{exam.title}</h3>
+              {exam.description && <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">{exam.description}</p>}
+              <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300 mb-6">
+                <span className="flex items-center gap-1"><Clock size={14}/> {exam.duration} Dk</span>
+                <span className="flex items-center gap-1"><AlertTriangle size={14}/> {exam.questions.length} Soru</span>
+                {exam.status && <Badge color={exam.status === 'active' ? 'green' : exam.status === 'draft' ? 'yellow' : 'blue'}>{exam.status}</Badge>}
+              </div>
+              {role === 'student' ? (
+                <Button fullWidth variant="primary" size="md" onClick={() => startExam(exam._id)} icon={Play}>Başla</Button>
+              ) : (
+                <div className="w-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 py-2.5 rounded-xl text-center text-sm font-medium">
+                  {exam.results.length} Katılım
+                </div>
+              )}
+            </Card>
         ))}
       </div>
 
@@ -541,19 +589,23 @@ const ExamsPage = ({ role }) => {
 
             {/* Footer */}
             <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30 flex gap-3">
-              <button 
+              <Button 
+                variant="outline" 
+                size="md"
+                className="flex-1"
                 onClick={() => {setShowCreateModal(false); setActiveTab('create'); setSelectedQuestions([]);}}
-                className="flex-1 px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
               >
                 İptal
-              </button>
-              <button 
-                onClick={handleCreateExam} 
+              </Button>
+              <Button 
+                variant="primary" 
+                size="md"
+                className="flex-1"
+                onClick={handleCreateExam}
                 disabled={creatingExam || selectedQuestions.length === 0}
-                className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2.5 rounded-lg font-bold hover:shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 transition-all flex justify-center items-center gap-2"
               >
                 {creatingExam ? '⏳ Oluşturuluyor...' : `✓ Oluştur (${selectedQuestions.length}/21)`}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -5,57 +5,75 @@ const Survey = require('../models/Survey');
 const Exam = require('../models/Exam');
 const mongoose = require('mongoose');
 
+// İç mantık: Öğretmen istatistiklerini hesapla
+async function buildTeacherStats(teacherId) {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const totalStudents = await Student.countDocuments({ teacherId });
+
+  const totalQuestions = await Question.countDocuments({ createdBy: teacherId });
+  const todayQuestions = await Question.countDocuments({
+    createdBy: teacherId,
+    createdAt: { $gte: todayStart, $lte: todayEnd }
+  });
+
+  const totalSurveys = await Survey.countDocuments({ createdBy: teacherId });
+  const todaySurveys = await Survey.countDocuments({
+    createdBy: teacherId,
+    createdAt: { $gte: todayStart, $lte: todayEnd }
+  });
+
+  const exams = await Exam.find({ createdBy: teacherId });
+  let classAverage = 0;
+  if (exams.length > 0) {
+    const totalScore = exams.reduce((sum, exam) => {
+      const avgScore = exam.submissions && exam.submissions.length > 0
+        ? exam.submissions.reduce((s, sub) => s + (sub.score || 0), 0) / exam.submissions.length
+        : 0;
+      return sum + avgScore;
+    }, 0);
+    classAverage = (totalScore / exams.length).toFixed(1);
+  }
+
+  const topTopics = await Question.aggregate([
+    { $match: { createdBy: new mongoose.Types.ObjectId(teacherId) } },
+    { $group: { _id: '$subject', count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+    { $limit: 1 }
+  ]);
+  const topTopic = topTopics.length > 0 ? topTopics[0]._id : 'Belirtilmedi';
+
+  const activeExams = await Exam.countDocuments({ createdBy: teacherId, status: 'active' });
+  const totalExams = await Exam.countDocuments({ createdBy: teacherId });
+  const todayExams = await Exam.countDocuments({
+    createdBy: teacherId,
+    createdAt: { $gte: todayStart, $lte: todayEnd }
+  });
+
+  return {
+    totalStudents,
+    totalQuestions,
+    todayQuestions,
+    totalSurveys,
+    todaySurveys,
+    totalExams,
+    todayExams,
+    classAverage,
+    topTopic,
+    activeExams,
+    timestamp: new Date()
+  };
+}
+
 // ✅ 1. ÖĞRETMENİN İSTATİSTİKLERİNİ GETIR
 exports.getTeacherStats = async (req, res) => {
   try {
     const teacherId = req.user.id;
-    
-    // Toplam öğrenci sayısı
-    const totalStudents = await Student.countDocuments({ teacherId });
-    
-    // Toplam sorular
-    const totalQuestions = await Question.countDocuments({ createdBy: teacherId });
-    
-    // Toplam anketler
-    const totalSurveys = await Survey.countDocuments({ createdBy: teacherId });
-    
-    // Sınıf ortalaması (Exam sonuçlarından hesapla)
-    const exams = await Exam.find({ createdBy: teacherId });
-    let classAverage = 0;
-    if (exams.length > 0) {
-      const totalScore = exams.reduce((sum, exam) => {
-        const avgScore = exam.submissions && exam.submissions.length > 0
-          ? exam.submissions.reduce((s, sub) => s + (sub.score || 0), 0) / exam.submissions.length
-          : 0;
-        return sum + avgScore;
-      }, 0);
-      classAverage = (totalScore / exams.length).toFixed(1);
-    }
-
-    // En aktif konu (En çok soru oluşturulan)
-    const topTopics = await Question.aggregate([
-      { $match: { createdBy: new mongoose.Types.ObjectId(teacherId) } },
-      { $group: { _id: '$subject', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 1 }
-    ]);
-    const topTopic = topTopics.length > 0 ? topTopics[0]._id : 'Belirtilmedi';
-
-    // Aktif sınavlar
-    const activeExams = await Exam.countDocuments({ 
-      createdBy: teacherId, 
-      status: 'active' 
-    });
-
-    res.json({
-      totalStudents,
-      totalQuestions,
-      totalSurveys,
-      classAverage,
-      topTopic,
-      activeExams,
-      timestamp: new Date()
-    });
+    const stats = await buildTeacherStats(teacherId);
+    res.json(stats);
   } catch (err) {
     res.status(500).json({ message: 'İstatistikler alınamadı', error: err.message });
   }
@@ -255,13 +273,44 @@ exports.getMyQuestions = async (req, res) => {
 exports.getDashboardSummary = async (req, res) => {
   try {
     const teacherId = req.user.id;
-    
-    const stats = await exports.getTeacherStats({ user: { id: teacherId } });
-    const reports = await exports.getClassReports({ user: { id: teacherId } });
+    const stats = await buildTeacherStats(teacherId);
+    // Raporlar için mevcut handler mantığını yeniden kullanmak yerine içeriği burada toplayalım
+    const topicPerformance = await Question.aggregate([
+      { $match: { createdBy: new mongoose.Types.ObjectId(teacherId) } },
+      { $group: { 
+        _id: '$subject', 
+        total: { $sum: 1 },
+        avgDifficulty: { $avg: { 
+          $cond: [
+            { $eq: ['$difficulty', 'Kolay'] }, 1,
+            { $cond: [{ $eq: ['$difficulty', 'Orta'] }, 2, 3] }
+          ]
+        }}
+      }},
+      { $sort: { total: -1 } }
+    ]);
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const dailyTrend = await Exam.aggregate([
+      { $match: { 
+        createdBy: new mongoose.Types.ObjectId(teacherId),
+        createdAt: { $gte: sevenDaysAgo }
+      }},
+      { $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+        avgScore: { $avg: 72 }, // Mock veri
+        count: { $sum: 1 }
+      }},
+      { $sort: { _id: 1 } }
+    ]);
 
     res.json({
-      stats: await stats.json?.() || stats,
-      reports: await reports.json?.() || reports
+      stats,
+      reports: {
+        topicPerformance,
+        dailyTrend,
+        generatedAt: new Date()
+      }
     });
   } catch (err) {
     res.status(500).json({ message: 'Özet alınamadı', error: err.message });

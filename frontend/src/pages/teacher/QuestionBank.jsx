@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import QuestionFormModal from '../../components/exams/QuestionFormModal';
 import SmartPasteModal from '../../components/modals/SmartPasteModal'; // AI Yapıştır Modalı
 import { 
@@ -10,23 +11,11 @@ import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
+import Button from '../../components/ui/Button.jsx';
+import Card from '../../components/ui/Card.jsx';
+import SkeletonCard from '../../components/ui/SkeletonCard';
+import { renderWithLatex } from '../../utils/latex.jsx';
 
-// --- Tasarım Odaklı Yardımcı Fonksiyonlar ---
-const renderWithLatex = (text) => {
-  if (!text) return null;
-  const parts = String(text).split(/(\$[^$]+\$)/g);
-  return (
-    <span className="leading-relaxed">
-      {parts.map((part, index) => (
-        part.startsWith('$') && part.endsWith('$') 
-          ? <span key={index} className="mx-1 text-indigo-600 font-serif bg-indigo-50/50 dark:bg-indigo-900/20 px-1 rounded">
-              <InlineMath math={part.slice(1, -1)} />
-            </span>
-          : <span key={index}>{part}</span>
-      ))}
-    </span>
-  );
-};
 
 const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
   const difficultyStyles = {
@@ -58,6 +47,11 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
             <div className="text-slate-800 dark:text-slate-200 font-medium text-base md:text-lg">
               {renderWithLatex(question.text)}
             </div>
+            {question.image && (
+              <div className="mt-2">
+                <img src={question.image} alt="Soru Görseli" className="max-h-56 w-full object-contain rounded-xl border border-slate-200 dark:border-slate-700" />
+              </div>
+            )}
           </div>
           <div className="flex md:flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300" onClick={e => e.stopPropagation()}>
             <button onClick={() => onEdit(question)} className="p-2.5 bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-indigo-600 transition-all">
@@ -84,7 +78,12 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
                 }`}>
                   {String.fromCharCode(65 + idx)}
                 </span>
-                <span className="text-sm font-semibold">{renderWithLatex(opt.text || opt)}</span>
+                <div className="flex items-center gap-3 flex-1">
+                  <span className="text-sm font-semibold flex-1">{renderWithLatex(opt.text || opt)}</span>
+                  {opt.image && (
+                    <img src={opt.image} alt={`Şık ${String.fromCharCode(65 + idx)} Görseli`} className="w-16 h-16 object-contain rounded-lg border border-slate-200 dark:border-slate-700" />
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -104,17 +103,54 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
 
 export default function QuestionBank() {
   const { showToast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSmartPasteOpen, setIsSmartPasteOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const [manualForm, setManualForm] = useState(null);
+  const [mainImage, setMainImage] = useState({ file: null, preview: '' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filters, setFilters] = useState({ subject: 'Tümü', difficulty: 'Tümü', classLevel: 'Tümü' });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalQuestions, setTotalQuestions] = useState(0);
+
+  // Debounce search input to reduce fetch frequency
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Reset pagination on filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
+
+  // URL'den ilk değerleri al
+  useEffect(() => {
+    const s = searchParams.get('search') || '';
+    const subject = searchParams.get('subject') || 'Tümü';
+    const classLevel = searchParams.get('classLevel') || 'Tümü';
+    const difficulty = searchParams.get('difficulty') || 'Tümü';
+    const p = parseInt(searchParams.get('page') || '1');
+    setSearchQuery(s);
+    setFilters({ subject, classLevel, difficulty });
+    setPage(Number.isNaN(p) ? 1 : p);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Durumu URL'e yaz
+  useEffect(() => {
+    const params = {};
+    if (debouncedSearch) params.search = debouncedSearch;
+    Object.entries(filters).forEach(([k, v]) => { if (v !== 'Tümü') params[k] = v; });
+    if (page !== 1) params.page = String(page);
+    setSearchParams(params, { replace: true });
+  }, [debouncedSearch, filters, page, setSearchParams]);
 
   const fetchQuestions = useCallback(async () => {
     setLoading(true);
@@ -122,7 +158,7 @@ export default function QuestionBank() {
       const params = {
         page,
         limit: 8,
-        search: searchQuery,
+        search: debouncedSearch,
         ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== 'Tümü'))
       };
       const res = await apiClient.get('/teacher/questions', { params });
@@ -136,17 +172,23 @@ export default function QuestionBank() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchQuery, filters, showToast]);
+  }, [page, debouncedSearch, filters, showToast]);
 
   useEffect(() => { fetchQuestions(); }, [fetchQuestions]);
 
   const handleDelete = async (id) => {
     if (window.confirm("Bu soruyu silmek istediğinizden emin misiniz?")) {
+      const prev = questions;
+      // Optimistic removal
+      setQuestions(prev.filter(q => q._id !== id));
+      setTotalQuestions(t => (t > 0 ? t - 1 : 0));
       try {
         await apiClient.delete(`/questions/${id}`);
         showToast("Soru başarıyla silindi", "success");
-        fetchQuestions();
       } catch (err) {
+        // Rollback on failure
+        setQuestions(prev);
+        setTotalQuestions(t => t + 1);
         showToast("Soru silinemedi", "error");
       }
     }
@@ -167,19 +209,13 @@ export default function QuestionBank() {
         </div>
 
         <div className="flex gap-4">
-          <button 
-            onClick={() => setIsSmartPasteOpen(true)}
-            className="px-6 py-4 bg-white dark:bg-slate-900 border-2 border-indigo-600 text-indigo-600 rounded-2xl font-black flex items-center gap-2 hover:bg-indigo-50 transition-all shadow-xl shadow-indigo-100 dark:shadow-none"
-          >
+          <Button variant="outline" size="md" onClick={() => setIsSmartPasteOpen(true)} className="px-6 py-4 rounded-2xl border-2 border-indigo-600 text-indigo-600">
             <Sparkles size={20} /> Akıllı Yapıştır
-          </button>
+          </Button>
 
-          <button 
-            onClick={() => { setEditingQuestion(null); setIsModalOpen(true); }}
-            className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200"
-          >
+          <Button variant="primary" size="md" onClick={() => { setEditingQuestion(null); setManualForm(null); setMainImage({file:null, preview:''}); setIsModalOpen(true); }} className="px-8 py-4 rounded-2xl">
             <Plus size={24} /> Yeni Soru Ekle
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -205,9 +241,10 @@ export default function QuestionBank() {
       {/* Soru Listesi */}
       <div className="space-y-4">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="animate-spin text-indigo-600" size={48} />
-            <span className="text-slate-400 font-bold animate-pulse uppercase tracking-widest">Veriler Çekiliyor...</span>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
           </div>
         ) : questions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white/30 rounded-[3rem] border border-dashed border-slate-200">
@@ -243,9 +280,13 @@ export default function QuestionBank() {
       {isModalOpen && (
         <QuestionFormModal 
           isOpen={isModalOpen}
-          initial={editingQuestion}
-          onClose={() => { setIsModalOpen(false); setEditingQuestion(null); }}
-          onSaved={() => { fetchQuestions(); setIsModalOpen(false); setEditingQuestion(null); }}
+          editingId={editingQuestion?._id || null}
+          manualForm={manualForm}
+          setManualForm={setManualForm}
+          mainImage={mainImage}
+          setMainImage={setMainImage}
+          onClose={() => { setIsModalOpen(false); setEditingQuestion(null); setManualForm(null); setMainImage({file:null, preview:''}); }}
+          onSave={() => { fetchQuestions(); setIsModalOpen(false); setEditingQuestion(null); setManualForm(null); setMainImage({file:null, preview:''}); }}
         />
       )}
 
@@ -253,7 +294,26 @@ export default function QuestionBank() {
         <SmartPasteModal 
           isOpen={isSmartPasteOpen}
           onClose={() => setIsSmartPasteOpen(false)}
-          onParsed={() => { fetchQuestions(); setIsSmartPasteOpen(false); }}
+          onParsed={(parsed, imageFile) => {
+            // Soru oluşturma modalını parsed verilerle aç
+            setManualForm({
+              text: parsed.text || '',
+              subject: parsed.subject || 'Matematik',
+              classLevel: parsed.classLevel || '9. Sınıf',
+              difficulty: parsed.difficulty || 'Orta',
+              correctAnswer: parsed.correctAnswer || '',
+              solution: parsed.solution || '',
+              options: Array.isArray(parsed.options) ? parsed.options.concat(Array(5).fill('')).slice(0,5) : ['', '', '', '', '']
+            });
+            if (imageFile) {
+              const preview = URL.createObjectURL(imageFile);
+              setMainImage({ file: imageFile, preview });
+            } else {
+              setMainImage({ file: null, preview: '' });
+            }
+            setIsSmartPasteOpen(false);
+            setIsModalOpen(true);
+          }}
         />
       )}
     </div>

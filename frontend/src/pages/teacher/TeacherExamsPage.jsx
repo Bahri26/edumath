@@ -10,21 +10,13 @@ import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 import { CLASS_LEVELS } from '../../data/classLevelsAndDifficulties';
 import SkeletonCard from '../../components/ui/SkeletonCard';
+import { useMemo } from 'react';
+import { renderWithLatex } from '../../utils/latex.jsx';
+import Button from '../../components/ui/Button.jsx';
+import Card from '../../components/ui/Card.jsx';
+import ExamPreviewModal from '../../components/exams/ExamPreviewModal.jsx';
 
 // --- Alt Bileşenler (Stüdyo için) ---
-const renderWithLatex = (text) => {
-  if (!text) return null;
-  const parts = String(text).split(/(\$[^$]+\$)/g);
-  return (
-    <span>
-      {parts.map((part, index) => (
-        part.startsWith('$') && part.endsWith('$') 
-          ? <span key={index} className="text-indigo-600 font-bold mx-1"><InlineMath math={part.slice(1, -1)} /></span>
-          : <span key={index}>{part}</span>
-      ))}
-    </span>
-  );
-};
 
 const DraggableQuestionCard = ({ question, onDragStart }) => (
   <div
@@ -32,27 +24,35 @@ const DraggableQuestionCard = ({ question, onDragStart }) => (
     onDragStart={(e) => onDragStart(e, question)}
     className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 cursor-grab active:cursor-grabbing hover:shadow-xl transition-all"
   >
-    <div className="flex gap-2 mb-2">
+    <div className="flex items-center gap-2 mb-2">
       <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase ${
         question.difficulty === 'Zor' ? 'bg-rose-50 text-rose-600' : question.difficulty === 'Orta' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
       }`}>
         {question.difficulty}
       </span>
+      {question.image && (
+        <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Görsel</span>
+      )}
     </div>
-    <p className="text-xs font-medium text-slate-700 dark:text-slate-200 line-clamp-2">
-      {renderWithLatex(question.text)}
-    </p>
+    <div className="flex items-start gap-3">
+      {question.image && (
+        <img src={question.image} alt="Soru" className="w-12 h-12 object-contain rounded-md border border-slate-200 dark:border-slate-700" />
+      )}
+      <p className="flex-1 text-xs font-medium text-slate-700 dark:text-slate-200 line-clamp-2">
+        {renderWithLatex(question.text)}
+      </p>
+    </div>
   </div>
 );
 
-const DropZone = ({ difficulty, questions, onDrop, onRemove, label, colorClass, icon: Icon }) => (
+const DropZone = ({ difficulty, questions, onDrop, onRemove, label, colorClass, icon: Icon, availableCount }) => (
   <div className="space-y-4">
     <div className={`p-4 rounded-[1.5rem] text-white flex items-center justify-between shadow-lg ${colorClass}`}>
       <div className="flex items-center gap-3">
         <Icon size={18} />
         <span className="font-black text-xs uppercase tracking-wider">{label}</span>
       </div>
-      <span className="text-xs font-bold">{questions.length}/7</span>
+      <span className="text-xs font-bold">{questions.length}/7 • Uygun: {availableCount}</span>
     </div>
     <div
       onDragOver={(e) => e.preventDefault()}
@@ -61,6 +61,9 @@ const DropZone = ({ difficulty, questions, onDrop, onRemove, label, colorClass, 
     >
       {questions.map((q, idx) => (
         <div key={q._id} className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 flex items-center gap-2 group">
+          {q.image && (
+            <img src={q.image} alt="Soru" className="w-8 h-8 object-contain rounded border border-slate-200 dark:border-slate-700" />
+          )}
           <p className="flex-1 text-[10px] font-bold truncate">{renderWithLatex(q.text)}</p>
           <button onClick={() => onRemove(idx)} className="text-slate-300 hover:text-rose-500 transition-all"><Trash2 size={12} /></button>
         </div>
@@ -76,6 +79,7 @@ export default function TeacherExamsPage() {
   const [exams, setExams] = useState([]);
   const [allQuestions, setAllQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [previewId, setPreviewId] = useState(null);
 
   // Stüdyo State'leri
   const [examName, setExamName] = useState('');
@@ -83,6 +87,9 @@ export default function TeacherExamsPage() {
   const [easyQ, setEasyQ] = useState([]);
   const [mediumQ, setMediumQ] = useState([]);
   const [hardQ, setHardQ] = useState([]);
+  const [poolSubject, setPoolSubject] = useState('Tümü');
+  const [poolSearch, setPoolSearch] = useState('');
+  const SUBJECTS = ['Tümü', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
 
   useEffect(() => {
     fetchExams();
@@ -92,7 +99,8 @@ export default function TeacherExamsPage() {
   const fetchExams = async () => {
     try {
       const res = await apiClient.get('/teacher/my-exams'); // Backend route
-      setExams(res.data);
+      const data = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      setExams(data);
     } catch (err) { showToast('Sınavlar yüklenemedi', 'error'); }
     finally { setLoading(false); }
   };
@@ -102,6 +110,28 @@ export default function TeacherExamsPage() {
       const res = await apiClient.get('/teacher/questions', { params: { limit: 200 } });
       setAllQuestions(res.data.data || []);
     } catch (err) { console.error('Sorular çekilemedi'); }
+  };
+
+  // Filtrelenmiş havuz soruları
+  const poolQuestions = useMemo(() => (
+    allQuestions
+      .filter(q => q.classLevel === classLevel)
+      .filter(q => poolSubject === 'Tümü' || q.subject === poolSubject)
+      .filter(q => poolSearch ? (q.text || '').toLowerCase().includes(poolSearch.toLowerCase()) : true)
+  ), [allQuestions, classLevel, poolSubject, poolSearch]);
+
+  const availableCounts = useMemo(() => ({
+    Kolay: poolQuestions.filter(q => q.difficulty === 'Kolay').length,
+    Orta: poolQuestions.filter(q => q.difficulty === 'Orta').length,
+    Zor: poolQuestions.filter(q => q.difficulty === 'Zor').length,
+  }), [poolQuestions]);
+
+  const existsInAny = (id) => ([...easyQ, ...mediumQ, ...hardQ].some(q => q._id === id));
+  const tryAdd = (zoneSetter, zone, q, expectedDiff) => {
+    if (q.difficulty !== expectedDiff) return;
+    if (existsInAny(q._id)) { showToast('Bu soru zaten eklendi', 'error'); return; }
+    if (zone.length >= 7) { showToast('Bu bölüm dolu', 'error'); return; }
+    zoneSetter([...zone, q]);
   };
 
   const handleCreate = async () => {
@@ -121,27 +151,57 @@ export default function TeacherExamsPage() {
     return (
       <div className="p-6 space-y-8 animate-in slide-in-from-right duration-500">
         <div className="flex justify-between items-center">
-          <button onClick={() => setView('list')} className="flex items-center gap-2 text-slate-500 font-bold hover:text-indigo-600 transition-all">
+          <button onClick={() => {
+            const hasUnsaved = easyQ.length + mediumQ.length + hardQ.length > 0;
+            if (hasUnsaved && !window.confirm('Stüdyodan çıkmak üzeresin. Eklenmiş sorular kaybolacak, emin misin?')) return;
+            setView('list');
+          }} className="flex items-center gap-2 text-slate-500 font-bold hover:text-indigo-600 transition-all">
             <ArrowLeft size={20} /> Listeye Dön
           </button>
           <button onClick={handleCreate} className="px-10 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black shadow-xl shadow-indigo-100 flex items-center gap-2 hover:scale-105 transition-all">
             <Save size={20} /> Sınavı Yayınla
           </button>
         </div>
-
+        {/* Üst Ayarlar: Sınıf ve Havuz filtreleri */}
         <div className="grid lg:grid-cols-4 gap-8">
           <div className="lg:col-span-1 space-y-4">
             <h2 className="text-xl font-black px-2">Soru Havuzu</h2>
+            <div className="flex items-center gap-2 px-2">
+              <input
+                type="text"
+                value={poolSearch}
+                onChange={(e) => setPoolSearch(e.target.value)}
+                placeholder="Havuzda ara..."
+                className="flex-1 p-2 rounded-lg border dark:bg-slate-800 dark:text-white"
+              />
+              <select
+                value={poolSubject}
+                onChange={(e) => setPoolSubject(e.target.value)}
+                className="p-2 rounded-lg border text-sm dark:bg-slate-800 dark:text-white"
+              >
+                {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="px-2">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Sınıf Düzeyi</label>
+              <select
+                value={classLevel}
+                onChange={(e) => setClassLevel(e.target.value)}
+                className="w-full p-2 rounded-lg border text-sm dark:bg-slate-800 dark:text-white"
+              >
+                {CLASS_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
             <div className="space-y-3 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
-              {allQuestions.filter(q => q.classLevel === classLevel).map(q => (
+              {poolQuestions.map(q => (
                 <DraggableQuestionCard key={q._id} question={q} onDragStart={(e) => e.dataTransfer.setData('question', JSON.stringify(q))} />
               ))}
             </div>
           </div>
           <div className="lg:col-span-3 grid md:grid-cols-3 gap-6">
-            <DropZone difficulty="Kolay" label="7 Kolay" questions={easyQ} onDrop={(q) => q.difficulty === 'Kolay' && easyQ.length < 7 && setEasyQ([...easyQ, q])} onRemove={(i) => setEasyQ(easyQ.filter((_, idx) => idx !== i))} colorClass="bg-emerald-500" icon={Award} />
-            <DropZone difficulty="Orta" label="7 Orta" questions={mediumQ} onDrop={(q) => q.difficulty === 'Orta' && mediumQ.length < 7 && setMediumQ([...mediumQ, q])} onRemove={(i) => setMediumQ(mediumQ.filter((_, idx) => idx !== i))} colorClass="bg-amber-500" icon={Award} />
-            <DropZone difficulty="Zor" label="7 Zor" questions={hardQ} onDrop={(q) => q.difficulty === 'Zor' && hardQ.length < 7 && setHardQ([...hardQ, q])} onRemove={(i) => setHardQ(hardQ.filter((_, idx) => idx !== i))} colorClass="bg-rose-500" icon={Award} />
+            <DropZone difficulty="Kolay" label="7 Kolay" questions={easyQ} availableCount={availableCounts.Kolay} onDrop={(q) => tryAdd(setEasyQ, easyQ, q, 'Kolay')} onRemove={(i) => setEasyQ(easyQ.filter((_, idx) => idx !== i))} colorClass="bg-emerald-500" icon={Award} />
+            <DropZone difficulty="Orta" label="7 Orta" questions={mediumQ} availableCount={availableCounts.Orta} onDrop={(q) => tryAdd(setMediumQ, mediumQ, q, 'Orta')} onRemove={(i) => setMediumQ(mediumQ.filter((_, idx) => idx !== i))} colorClass="bg-amber-500" icon={Award} />
+            <DropZone difficulty="Zor" label="7 Zor" questions={hardQ} availableCount={availableCounts.Zor} onDrop={(q) => tryAdd(setHardQ, hardQ, q, 'Zor')} onRemove={(i) => setHardQ(hardQ.filter((_, idx) => idx !== i))} colorClass="bg-rose-500" icon={Award} />
           </div>
         </div>
       </div>
@@ -157,9 +217,9 @@ export default function TeacherExamsPage() {
           </h1>
           <p className="text-slate-500 font-medium mt-1">Toplam {exams.length} sınavın bulunuyor.</p>
         </div>
-        <button onClick={() => setView('studio')} className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-xl shadow-indigo-100 hover:scale-105 transition-all flex items-center gap-2">
+        <Button variant="primary" size="md" onClick={() => setView('studio')}>
           <Plus size={20} /> Yeni Sınav Oluştur
-        </button>
+        </Button>
       </div>
 
       {loading ? (
@@ -171,22 +231,65 @@ export default function TeacherExamsPage() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {exams.map((exam) => (
-            <div key={exam._id} className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all group">
+            <Card key={exam._id} className="p-6 rounded-[2rem]">
               <div className="flex justify-between mb-4">
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl"><Layers size={24} /></div>
                 <div className="flex gap-2">
-                   <button className="p-2 text-slate-300 hover:text-indigo-600 transition-colors"><Eye size={20}/></button>
-                   <button className="p-2 text-slate-300 hover:text-rose-500 transition-colors"><Trash2 size={20}/></button>
+                   <Button variant="outline" size="sm" onClick={() => setPreviewId(exam._id)}>
+                     <Eye size={16} />
+                   </Button>
+                   <button
+                     onClick={async () => {
+                       if (!window.confirm('Bu sınavı silmek istiyor musun?')) return;
+                       const prev = exams;
+                       // İyimser silme
+                       setExams(prev.filter(e => e._id !== exam._id));
+                       try {
+                         await apiClient.delete(`/exams/${exam._id}`);
+                         showToast('Sınav silindi', 'success');
+                       } catch (err) {
+                         setExams(prev);
+                         showToast('Sınav silinemedi', 'error');
+                       }
+                     }}
+                     className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
+                   ><Trash2 size={20}/></button>
                 </div>
               </div>
-              <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2">{exam.name}</h3>
+              <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2">{exam.title || exam.name}</h3>
               <div className="flex items-center gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                 <span className="flex items-center gap-1"><Calendar size={12} /> {new Date(exam.createdAt).toLocaleDateString()}</span>
-                <span className="flex items-center gap-1"><Clock size={12} /> {exam.duration} DK</span>
+                <span className="flex items-center gap-1"><Clock size={12} />
+                  <input
+                    type="number"
+                    min={10}
+                    max={180}
+                    defaultValue={exam.duration || 60}
+                    onBlur={async (e) => {
+                      const val = parseInt(e.target.value || '60');
+                      if (val === exam.duration) return;
+                      const prev = exams;
+                      // iyimser güncelleme
+                      setExams(prev.map(x => x._id === exam._id ? { ...x, duration: val } : x));
+                      try {
+                        await apiClient.put(`/exams/${exam._id}`, { duration: val });
+                        showToast('Süre güncellendi', 'success');
+                      } catch (err) {
+                        setExams(prev);
+                        showToast('Süre güncellenemedi', 'error');
+                      }
+                    }}
+                    className="ml-1 w-16 p-1 rounded bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-200"
+                  /> DK
+                </span>
+                <span className={`px-2 py-0.5 rounded ${exam.status === 'active' ? 'bg-green-600 text-white' : exam.status === 'draft' ? 'bg-amber-500 text-white' : 'bg-slate-500 text-white'}`}>{exam.status}</span>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
+      )}
+      {previewId && (
+        <ExamPreviewModal examId={previewId} onClose={() => setPreviewId(null)} />
       )}
     </div>
   );

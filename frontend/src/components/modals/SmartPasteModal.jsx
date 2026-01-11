@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { X, Sparkles, Loader2, Image as ImageIcon, Check, ArrowRight } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import apiClient from '../../services/api';
+import Button from '../ui/Button.jsx';
+import Card from '../ui/Card.jsx';
 
 export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   const { showToast } = useToast();
+  const [mode, setMode] = useState('image'); // 'image' | 'text'
   const [step, setStep] = useState('upload'); // 'upload' | 'editing'
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [pastedContent, setPastedContent] = useState('');
   
   // Düzenleme State'i
   const [parsedData, setParsedData] = useState({
@@ -27,6 +32,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     const file = e.target.files[0];
     if (!file) return;
     setImage(URL.createObjectURL(file));
+    setUploadedFile(file);
     setLoading(true);
 
     const formData = new FormData();
@@ -34,12 +40,56 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
 
     try {
       // Backend'deki multimodal Gemini Flash endpoint'ini çağırıyoruz
-      const res = await apiClient.post('/ai/smart-parse', formData);
-      setParsedData(res.data.data);
+      const res = await apiClient.post('/ai/smart-parse', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const data = res.data?.data || {};
+      setParsedData({
+        text: data.text || '',
+        options: Array.isArray(data.options) ? data.options : ['', '', '', ''],
+        correctAnswer: data.correctAnswer || '',
+        solution: data.solution || '',
+        subject: data.subject || 'Matematik',
+        classLevel: data.classLevel || '9. Sınıf',
+        difficulty: data.difficulty || 'Orta'
+      });
+      // If server returned an imagePath, prefer it for preview
+      if (data.imagePath) {
+        setImage(data.imagePath);
+      }
       setStep('editing'); // Düzenleme aşamasına geç
-      showToast("Görsel başarıyla analiz edildi!", "success");
+      showToast("Görsel analiz edildi veya manuel düzenleme için hazır.", "success");
     } catch (err) {
-      showToast("Analiz başarısız oldu. Lütfen tekrar deneyin.", "error");
+      // Fallback to manual: keep local preview and open editing with blanks
+      setParsedData(prev => ({
+        text: prev.text || '',
+        options: prev.options?.length ? prev.options : ['', '', '', ''],
+        correctAnswer: prev.correctAnswer || '',
+        solution: prev.solution || '',
+        subject: prev.subject || 'Matematik',
+        classLevel: prev.classLevel || '9. Sınıf',
+        difficulty: prev.difficulty || 'Orta'
+      }));
+      setStep('editing');
+      showToast("AI anahtarı geçersiz. Lütfen metni elle düzenleyin veya Kopyala‑Yapıştır modunu kullanın.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 1.b Metinden Ayrıştırma (Copy-Paste)
+  const handleTextParse = async () => {
+    if (!pastedContent.trim()) {
+      return showToast('Lütfen metni yapıştırın', 'error');
+    }
+    setLoading(true);
+    try {
+      const res = await apiClient.post('/ai/smart-parse-text', { content: pastedContent });
+      setParsedData(res.data.data);
+      setStep('editing');
+      showToast('Metin başarıyla ayrıştırıldı', 'success');
+    } catch (err) {
+      showToast('Metin ayrıştırılamadı', 'error');
     } finally {
       setLoading(false);
     }
@@ -49,7 +99,12 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   const handleFinalSave = async () => {
     setLoading(true);
     try {
-      await apiClient.post('/questions', { ...parsedData, source: 'AI' });
+      const payload = { ...parsedData, source: 'AI' };
+      // If backend provided a temp image path and user didn't reupload a file, pass it through
+      if (typeof image === 'string' && image.startsWith('/uploads/')) {
+        payload.imagePath = image;
+      }
+      await apiClient.post('/questions', payload);
       showToast("Soru başarıyla kaydedildi!", "success");
       onParsed(); // Listeyi yenile
       onClose(); // Modalı kapat
@@ -58,6 +113,12 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTransferToCreate = () => {
+    // Soru oluşturma formuna aktar ve modalı kapat
+    onParsed(parsedData, uploadedFile);
+    onClose();
   };
 
   return (
@@ -73,13 +134,22 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
               <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest">Adım: {step === 'upload' ? 'Görsel Seçimi' : 'Veri Doğrulama'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors"><X size={22} /></button>
+          <Button variant="secondary" size="sm" onClick={onClose} ariaLabel="Kapat">
+            <X size={16} />
+          </Button>
         </div>
 
         <div className="p-8 flex-1 overflow-y-auto max-h-[70vh] custom-scrollbar">
           {step === 'upload' ? (
             /* ADIM 1: YÜKLEME ALANI */
             <div className="space-y-6">
+              {/* Mode Toggle */}
+              <div className="flex gap-2 mb-4">
+                <Button variant={mode==='image'?'primary':'outline'} size="sm" onClick={()=>setMode('image')}>Görselden Analiz</Button>
+                <Button variant={mode==='text'?'primary':'outline'} size="sm" onClick={()=>setMode('text')}>Kopyala-Yapıştır</Button>
+              </div>
+
+              {mode === 'image' ? (
               <label className="flex flex-col items-center justify-center w-full h-80 border-4 border-dashed border-slate-100 dark:border-slate-700 rounded-[3rem] cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all group">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <div className="p-5 bg-indigo-50 dark:bg-indigo-900/30 rounded-full mb-4 group-hover:scale-110 transition-transform">
@@ -90,6 +160,22 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                 </div>
                 <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
               </label>
+              ) : (
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Soruyu Buraya Yapıştırın</label>
+                  <textarea 
+                    value={pastedContent}
+                    onChange={e=>setPastedContent(e.target.value)}
+                    className="w-full h-64 p-4 bg-slate-50 dark:bg-slate-900 border-none rounded-[1.5rem] font-medium outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder={"Örn. soru metni ve A) B) C) D) şeklinde şıklar..."}
+                  />
+                  <div className="flex justify-end">
+                    <Button variant="primary" size="md" onClick={handleTextParse} disabled={loading}>
+                      {loading ? <Loader2 className="animate-spin" size={18} /> : <ArrowRight size={18} />} Ayrıştır
+                    </Button>
+                  </div>
+                </div>
+              )}
               {loading && (
                 <div className="flex items-center justify-center gap-3 text-indigo-600 font-bold animate-pulse">
                   <Loader2 className="animate-spin" /> Görsel analiz ediliyor ve LaTeX'e dönüştürülüyor...
@@ -154,15 +240,26 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
 
         {/* Footer */}
         <div className="p-8 pt-0 flex gap-4 justify-end">
-          <button onClick={onClose} className="px-8 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-100 transition-all">İptal</button>
+          <Button variant="outline" size="md" onClick={onClose}>İptal</Button>
           {step === 'editing' && (
-            <button 
-              onClick={handleFinalSave}
-              disabled={loading}
-              className="px-10 py-3 rounded-2xl font-black bg-indigo-600 text-white shadow-xl shadow-indigo-100 hover:bg-indigo-700 flex items-center gap-2 hover:scale-105 transition-all"
-            >
-              {loading ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />} Havuza Kaydet
-            </button>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                size="md"
+                onClick={handleTransferToCreate}
+                disabled={loading}
+              >
+                <ArrowRight size={18} /> Soru Oluşturmaya Aktar
+              </Button>
+              <Button 
+                variant="primary" 
+                size="md"
+                onClick={handleFinalSave}
+                disabled={loading}
+              >
+                {loading ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />} Havuza Kaydet
+              </Button>
+            </div>
           )}
         </div>
       </div>

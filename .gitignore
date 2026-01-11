@@ -1,4 +1,29 @@
-# Root Gitignore for edumath
+# Node
+frontend/node_modules/
+backend/node_modules/
+frontend/dist/
+backend/dist/
+
+# Env & secrets
+.env
+*.env
+backend/.env
+frontend/.env
+
+# Uploads & generated assets
+backend/uploads/
+backend/uploads/temp/
+
+# Logs & caches
+*.log
+logs/
+coverage/
+.cache/
+
+# OS/Editor cruft
+.DS_Store
+Thumbs.db
+.vscode/# Root Gitignore for edumath
 
 # Node dependencies
 node_modules/
