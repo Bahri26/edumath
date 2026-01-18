@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const Joi = require('joi');
 const auth = require('../middlewares/authMiddleware');
 const hasRole = require('../middlewares/roleMiddleware');
 const PasswordResetRequest = require('../models/PasswordResetRequest');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const AdminAudit = require('../models/AdminAudit');
+const RefreshToken = require('../models/RefreshToken');
 
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
@@ -310,4 +312,199 @@ router.get('/stats', auth, hasRole(['admin']), async (req, res) => {
   }
 });
 
+// Export after all route registrations to avoid ordering issues
+
+// --- BRANŞ ONAY AKIŞI ---
+// Liste: onay bekleyen öğretmen branş talepleri
+router.get('/branch-requests', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const { q = '', page = 1, limit = 10 } = req.query;
+    const filter = { role: 'teacher', branchApproval: 'pending' };
+    if (q) {
+      filter.$or = [
+        { name: { $regex: q, $options: 'i' } },
+        { email: { $regex: q, $options: 'i' } },
+        { branch: { $regex: q, $options: 'i' } }
+      ];
+    }
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const [items, total] = await Promise.all([
+      User.find(filter).select('name email branch branchApproval createdAt').sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)),
+      User.countDocuments(filter)
+    ]);
+    res.json({ items, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
+  } catch (error) {
+    console.error('List Branch Requests Hatası:', error);
+    res.status(500).json({ message: 'Listeleme hatası: ' + error.message });
+  }
+});
+
+// Onayla: öğretmen branşını aktif et
+router.post('/branch-requests/:id/approve', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+    if (user.role !== 'teacher') return res.status(400).json({ message: 'Sadece öğretmen talepleri onaylanabilir.' });
+    if (!user.branch) return res.status(400).json({ message: 'Branş belirtilmemiş.' });
+    user.branchApproval = 'approved';
+    await user.save();
+    try {
+      await AdminAudit.create({ actorId: req.user.id, action: 'approve_branch', targetUserId: user._id, targetEmail: user.email, metadata: { branch: user.branch } });
+    } catch {}
+    try {
+      await Notification.create({ recipientId: user._id, senderId: req.user.id, title: 'Branş Onayı', message: `Branşınız (${user.branch}) admin tarafından onaylandı.`, type: 'system' });
+    } catch {}
+    res.json({ message: 'Branş onaylandı.' });
+  } catch (error) {
+    console.error('Approve Branch Hatası:', error);
+    res.status(500).json({ message: 'Onay hatası: ' + error.message });
+  }
+});
+
+// Reddet: öğretmen branş talebini iptal et
+router.post('/branch-requests/:id/deny', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+    if (user.role !== 'teacher') return res.status(400).json({ message: 'Sadece öğretmen talepleri reddedilebilir.' });
+    user.branchApproval = 'none';
+    await user.save();
+    try { await AdminAudit.create({ actorId: req.user.id, action: 'deny_branch', targetUserId: user._id, targetEmail: user.email, metadata: { branch: user.branch } }); } catch {}
+    try { await Notification.create({ recipientId: user._id, senderId: req.user.id, title: 'Branş Talebi Reddedildi', message: 'Branş talebiniz reddedildi. Lütfen tekrar deneyin.', type: 'system' }); } catch {}
+    res.json({ message: 'Branş talebi reddedildi.' });
+  } catch (error) {
+    console.error('Deny Branch Hatası:', error);
+    res.status(500).json({ message: 'Reddetme hatası: ' + error.message });
+  }
+});
+
 module.exports = router;
+ 
+// --- USERS: Admin CRUD (create, update, delete, enable/disable) ---
+// Validation schemas
+const userCreateSchema = Joi.object({
+  name: Joi.string().min(2).max(100).required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).max(128).required(),
+  role: Joi.string().valid('student', 'teacher', 'admin').required(),
+  grade: Joi.string().optional(),
+  branch: Joi.string().optional(),
+  status: Joi.string().valid('active', 'pending', 'disabled').optional(),
+});
+
+const userUpdateSchema = Joi.object({
+  name: Joi.string().min(2).max(100).optional(),
+  email: Joi.string().email().optional(),
+  role: Joi.string().valid('student', 'teacher', 'admin').optional(),
+  grade: Joi.string().optional(),
+  branch: Joi.string().optional(),
+  branchApproval: Joi.string().valid('none', 'pending', 'approved').optional(),
+  status: Joi.string().valid('active', 'pending', 'disabled').optional(),
+  theme: Joi.string().valid('light', 'dark').optional(),
+  language: Joi.string().valid('TR', 'EN').optional(),
+  notifications: Joi.boolean().optional(),
+  bio: Joi.string().max(500).optional(),
+  phone: Joi.string().max(50).optional(),
+}).min(1);
+
+// Create user (admin)
+router.post('/users', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const { error, value } = userCreateSchema.validate(req.body, { abortEarly: false, stripUnknown: true });
+    if (error) {
+      return res.status(400).json({ message: 'Geçersiz kullanıcı verisi', details: error.details });
+    }
+    const existing = await User.findOne({ email: value.email });
+    if (existing) {
+      return res.status(400).json({ message: 'Bu e-posta zaten kayıtlı.' });
+    }
+    const user = new User({
+      name: value.name,
+      email: value.email,
+      password: value.password,
+      role: value.role,
+      grade: value.grade,
+      branch: value.branch,
+      status: value.status || 'active',
+      mustChangePassword: true,
+    });
+    await user.save();
+    try { await AdminAudit.create({ actorId: req.user.id, action: 'create_user', targetUserId: user._id, targetEmail: user.email, metadata: { role: user.role } }); } catch {}
+    res.status(201).json({ message: 'Kullanıcı oluşturuldu.', user: { id: user._id, name: user.name, email: user.email, role: user.role, status: user.status } });
+  } catch (err) {
+    console.error('Create User Hatası:', err);
+    res.status(500).json({ message: 'Kullanıcı oluşturma hatası: ' + err.message });
+  }
+});
+
+// Update user (admin)
+router.patch('/users/:id', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const { error, value } = userUpdateSchema.validate(req.body, { abortEarly: false, stripUnknown: true });
+    if (error) {
+      return res.status(400).json({ message: 'Geçersiz güncelleme verisi', details: error.details });
+    }
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+
+    if (value.email && value.email !== user.email) {
+      const exists = await User.findOne({ email: value.email });
+      if (exists) return res.status(400).json({ message: 'E-posta başka bir kullanıcı tarafından kullanılıyor.' });
+    }
+
+    Object.assign(user, value);
+    await user.save();
+    try { await AdminAudit.create({ actorId: req.user.id, action: 'update_user', targetUserId: user._id, targetEmail: user.email, metadata: value }); } catch {}
+    res.json({ message: 'Kullanıcı güncellendi.', user: { id: user._id, name: user.name, email: user.email, role: user.role, status: user.status } });
+  } catch (err) {
+    console.error('Update User Hatası:', err);
+    res.status(500).json({ message: 'Kullanıcı güncelleme hatası: ' + err.message });
+  }
+});
+
+// Delete user (admin)
+router.delete('/users/:id', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+    await RefreshToken.deleteMany({ user: user._id });
+    await User.deleteOne({ _id: user._id });
+    try { await AdminAudit.create({ actorId: req.user.id, action: 'delete_user', targetUserId: user._id, targetEmail: user.email }); } catch {}
+    res.json({ message: 'Kullanıcı silindi.' });
+  } catch (err) {
+    console.error('Delete User Hatası:', err);
+    res.status(500).json({ message: 'Kullanıcı silme hatası: ' + err.message });
+  }
+});
+
+// Disable user (set status=disabled)
+router.post('/users/:id/disable', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+    user.status = 'disabled';
+    await user.save();
+    try { await AdminAudit.create({ actorId: req.user.id, action: 'disable_user', targetUserId: user._id, targetEmail: user.email }); } catch {}
+    res.json({ message: 'Kullanıcı devre dışı bırakıldı.' });
+  } catch (err) {
+    console.error('Disable User Hatası:', err);
+    res.status(500).json({ message: 'Kullanıcı devre dışı bırakma hatası: ' + err.message });
+  }
+});
+
+// Enable user (set status=active)
+router.post('/users/:id/enable', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+    user.status = 'active';
+    await user.save();
+    try { await AdminAudit.create({ actorId: req.user.id, action: 'enable_user', targetUserId: user._id, targetEmail: user.email }); } catch {}
+    res.json({ message: 'Kullanıcı aktif hale getirildi.' });
+  } catch (err) {
+    console.error('Enable User Hatası:', err);
+    res.status(500).json({ message: 'Kullanıcı aktif etme hatası: ' + err.message });
+  }
+});

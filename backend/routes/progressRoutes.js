@@ -13,4 +13,13 @@ router.post('/add', protect, role(['student']), progressController.addXP);
 // Leaderboard
 router.get('/leaderboard', protect, progressController.getLeaderboard);
 
+// Skills overview for current user
+router.get('/skills', protect, progressController.getSkills);
+
+// XP trends for last N days
+router.get('/trends', protect, progressController.getTrends);
+
+// Log general learning events (hint, error, session etc.)
+router.post('/event', protect, role(['student']), progressController.logEvent);
+
 module.exports = router;

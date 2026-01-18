@@ -1,9 +1,19 @@
+
 const express = require('express');
 const router = express.Router();
 const aiController = require('../controllers/aiController');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+
+// 9. Teacher Report (Detaylı öğretmen raporu)
+router.post('/teacher-report', aiController.teacherReport);
+// 7. Sınav Sonucu Değerlendirme & Analiz
+router.post('/exam-result-analysis', aiController.examResultAnalysis);
+// 8. Soru Çözerken İpucu
+router.post('/get-hint', aiController.getHint);
+// 6. Öğrenci Cevabı Analiz & Soru Önerisi
+router.post('/analyze-and-suggest', aiController.analyzeAndSuggest);
 
 // Klasör yoksa oluştur (Otomatik kontrol - Güvenlik önlemi)
 const uploadDir = 'uploads/temp/';

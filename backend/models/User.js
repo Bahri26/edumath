@@ -13,7 +13,10 @@ const UserSchema = new mongoose.Schema({
   avatar: { type: String },
   // Öğretmen için branş, öğrenci için sınıf seviyesi
   branch: { type: String }, // Öğretmenler için
+  // Branş onay süreci: öğretmen seçer, admin onaylar
+  branchApproval: { type: String, enum: ['none', 'pending', 'approved'], default: 'none' },
   grade: { type: String },  // Öğrenciler için
+  schoolType: { type: String, enum: ['ilkokul', 'ortaokul', 'lise'], default: 'ilkokul' },
   // Tema ve bildirim ayarları
   theme: { type: String, enum: ['light', 'dark'], default: 'light' },
   language: { type: String, enum: ['TR', 'EN'], default: 'TR' },
@@ -39,10 +42,26 @@ UserSchema.pre('save', async function() {
   if (!this.isModified('password')) {
     return;
   }
-  
+
+  // Eğer şifre zaten bcrypt formatında ise (ör. $2b$10$...), tekrar hashleme
+  // Yapma. Bu, mevcut kullanıcıları veya dışarıdan hash'lenmiş verileri içe
+  // aktarırken çift hash'i önler.
+  const pwd = String(this.password || '');
+  const looksHashed = pwd.startsWith('$2a$') || pwd.startsWith('$2b$') || pwd.startsWith('$2y$');
+  if (looksHashed && pwd.length >= 50) {
+    try {
+      // getRounds hash üzerinde çalışıyorsa bu gerçek bir bcrypt hash'tir.
+      const rounds = bcrypt.getRounds(pwd);
+      if (typeof rounds === 'number' && rounds > 0) {
+        return; // Mevcut hash'i koru
+      }
+    } catch {}
+  }
+
   try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS || '10');
+    const salt = await bcrypt.genSalt(saltRounds);
+    this.password = await bcrypt.hash(pwd, salt);
   } catch (err) {
     throw err;
   }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, FileText, Send, CheckCircle, X, Circle, Dot } from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -19,12 +19,13 @@ const SurveysPage = ({ role }) => {
   // --- ÖĞRETMEN STATE'LERİ ---
   const [showForm, setShowForm] = useState(false);
   const [newTitle, setNewTitle] = useState('');
-  
   // Birden fazla soru için
   const [questions, setQuestions] = useState([
     { id: 1, text: '', type: 'text', options: ['', ''] }
   ]);
   const [nextQuestionId, setNextQuestionId] = useState(2);
+  // Ref for form submit
+  const formRef = useRef(null);
 
   // --- ÖĞRENCİ STATE'LERİ ---
   const [activeSurvey, setActiveSurvey] = useState(null);
@@ -131,18 +132,16 @@ const SurveysPage = ({ role }) => {
   };
 
   const handleCreate = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!newTitle.trim()) {
       showToast('Başlık zorunludur', 'error');
       return;
     }
-    
     // Tüm soruların dolu olduğunu kontrol et
     if (questions.some(q => !q.text.trim())) {
       showToast('Tüm soru metinlerini doldurunuz', 'error');
       return;
     }
-
     // Çoktan seçmeli sorular için şıkları kontrol et
     for (let q of questions) {
       if (q.type === 'multiple-choice') {
@@ -153,7 +152,6 @@ const SurveysPage = ({ role }) => {
         }
       }
     }
-
     try {
       const payload = {
         title: newTitle,
@@ -163,19 +161,34 @@ const SurveysPage = ({ role }) => {
           options: q.type === 'multiple-choice' ? q.options.filter(o => o.trim() !== '') : []
         }))
       };
-
       const { data: created } = await apiClient.post('/surveys', payload);
-      // Optimistic insert
       setSurveys(prev => [created, ...prev]);
-      // Formu Sıfırla
       setShowForm(false);
       setNewTitle('');
       setQuestions([{ id: 1, text: '', type: 'text', options: ['', ''] }]);
       setNextQuestionId(2);
       showToast('Anket yayınlandı', 'success');
     } catch (err) {
-      showToast('Anket oluşturulamadı', 'error');
+      if (err?.response?.status === 401) {
+        showToast('Oturum süreniz doldu, lütfen tekrar giriş yapın.', 'error');
+      } else {
+        showToast('Anket oluşturulamadı: ' + (err?.response?.data?.message || 'Bilinmeyen hata'), 'error');
+      }
     }
+  };
+
+  // Otomatik demo anket oluşturucu (örnek)
+  const autoPublishDemoSurvey = () => {
+    setShowForm(true);
+    setNewTitle('Otomatik Test Anketi');
+    setQuestions([
+      { id: 1, text: 'En sevdiğiniz renk?', type: 'multiple-choice', options: ['Kırmızı', 'Mavi', 'Yeşil'] },
+      { id: 2, text: 'Günde kaç saat ders çalışıyorsunuz?', type: 'text', options: [''] }
+    ]);
+    setNextQuestionId(3);
+    setTimeout(() => {
+      if (formRef.current) formRef.current.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    }, 500);
   };
 
   const handleDelete = async (id) => {
@@ -247,7 +260,16 @@ const SurveysPage = ({ role }) => {
         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-indigo-100 dark:border-slate-700 shadow-sm animate-fade-in">
           <h3 className="font-bold mb-4 dark:text-white text-lg">Hızlı Anket Oluştur</h3>
           
-          <form onSubmit={handleCreate} className="space-y-6">
+          <form ref={formRef} onSubmit={handleCreate} className="space-y-6">
+                  {/* Otomatik demo anket yayınla butonu (geliştirici/test için) */}
+                  {role === 'teacher' && !showForm && (
+                    <button
+                      onClick={autoPublishDemoSurvey}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg ml-4 hover:bg-green-700 transition-colors"
+                    >
+                      Otomatik Demo Anket Yayınla
+                    </button>
+                  )}
             {/* Başlık */}
             <div>
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">Anket Başlığı</label>
@@ -374,7 +396,9 @@ const SurveysPage = ({ role }) => {
             <div>
               <h3 className="font-bold text-xl dark:text-white">{activeSurvey.title}</h3>
               <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded mt-1 inline-block">
-                 {activeSurvey.questions[0].type === 'multiple-choice' ? 'Seçmeli Anket' : 'Açık Uçlu Soru'}
+                {activeSurvey.questions && activeSurvey.questions[0] && activeSurvey.questions[0].type === 'multiple-choice'
+                  ? 'Seçmeli Anket'
+                  : 'Açık Uçlu Soru'}
               </span>
             </div>
             <button onClick={() => setActiveSurvey(null)} className="text-slate-400 hover:text-slate-600">

@@ -12,19 +12,26 @@ const TeacherHome = () => {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
   const [students, setStudents] = useState([]);
+  // Dashboard summary extra (topic, trend, etc.)
+  const [dashboardReports, setDashboardReports] = useState(null);
 
   useEffect(() => {
-    const loadStats = async () => {
+    // Use dashboard-summary for all stats
+    const loadDashboard = async () => {
       setLoading(true);
       try {
-        const res = await apiClient.get('/teacher/stats');
-        setStats(res.data || {});
+        const res = await apiClient.get('/teacher/dashboard-summary');
+        // API returns { stats, reports }
+        setStats(res.data?.stats || {});
+        setDashboardReports(res.data?.reports || {});
       } catch (err) {
         setStats({});
+        setDashboardReports(null);
       } finally {
         setLoading(false);
       }
     };
+    // Students list (unchanged)
     const loadStudents = async () => {
       try {
         const res = await apiClient.get('/teacher/students');
@@ -33,7 +40,7 @@ const TeacherHome = () => {
         setStudents([]);
       }
     };
-    loadStats();
+    loadDashboard();
     loadStudents();
   }, []);
 
@@ -53,14 +60,7 @@ const TeacherHome = () => {
             {stats ? `${(stats.totalStudents ?? 0)} öğrenciniz var, Sınıf ortalaması: ${(stats.classAverage ?? 0)}` : 'Verileri yükleniyor...'}
           </p>
         </div>
-        <Button 
-          variant="primary" 
-          size="md" 
-          icon={Plus}
-          onClick={() => showToast('Yeni sınav oluşturma özelliği yakında!', 'info')}
-        >
-          Yeni Sınav Oluştur
-        </Button>
+
       </div>
 
       {/* İstatistik Kartları */}

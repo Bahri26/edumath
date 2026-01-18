@@ -7,7 +7,8 @@ const SurveySchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   questions: [{
     questionText: { type: String, required: true },
-    type: { type: String, default: 'text' },
+    type: { type: String, default: 'text' }, // 'text' or 'multiple-choice'
+    options: [{ type: String }], // Only for multiple-choice
   }],
   responses: [{
     studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

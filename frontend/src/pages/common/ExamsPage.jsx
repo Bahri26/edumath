@@ -37,6 +37,7 @@ const ExamsPage = ({ role }) => {
   const [loadingAI, setLoadingAI] = useState(false);
   const [practiceQuestions, setPracticeQuestions] = useState(null);
   const [practiceState, setPracticeState] = useState({});
+  const [myResult, setMyResult] = useState(null);
 
   const timerRef = useRef(null);
 
@@ -122,17 +123,26 @@ const ExamsPage = ({ role }) => {
     if (!activeExam) return;
     clearInterval(timerRef.current);
     try {
-      const res = await apiClient.post(`/exams/${activeExam._id}/submit`, {
-        studentName: 'Öğrenci', // Normalde AuthContext'ten gelir
-        answers: userAnswers
-      });
+      const res = await apiClient.post(`/exams/${activeExam._id}/submit`, { answers: userAnswers });
       
       // Backend artık { score, weakTopics } dönüyor
       setExamResult(res.data);
       setActiveExam(null);
       fetchExams();
     } catch (err) {
-      alert("Sınav gönderilirken hata oluştu.");
+      const msg = err?.response?.data?.message || 'Sınav gönderilirken hata oluştu.';
+      alert(msg);
+    }
+  };
+
+  // --- STUDENT: KENDİ SONUCUMU GÖR ---
+  const viewMyResult = async (examId) => {
+    try {
+      const res = await apiClient.get(`/exams/${examId}/my-result`);
+      setMyResult(res.data);
+    } catch (err) {
+      const msg = err?.response?.data?.message || 'Sonuç bulunamadı.';
+      alert(msg);
     }
   };
 
@@ -418,7 +428,10 @@ const ExamsPage = ({ role }) => {
                 {exam.status && <Badge color={exam.status === 'active' ? 'green' : exam.status === 'draft' ? 'yellow' : 'blue'}>{exam.status}</Badge>}
               </div>
               {role === 'student' ? (
-                <Button fullWidth variant="primary" size="md" onClick={() => startExam(exam._id)} icon={Play}>Başla</Button>
+                <div className="flex gap-2">
+                  <Button variant="primary" size="md" onClick={() => startExam(exam._id)} icon={Play}>Başla</Button>
+                  <Button variant="outline" size="md" onClick={() => viewMyResult(exam._id)}>Sonucum</Button>
+                </div>
               ) : (
                 <div className="w-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 py-2.5 rounded-xl text-center text-sm font-medium">
                   {exam.results.length} Katılım
@@ -427,6 +440,34 @@ const ExamsPage = ({ role }) => {
             </Card>
         ))}
       </div>
+
+      {/* --- MODAL: KENDİ SONUCUM --- */}
+      {myResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white">Sonucum</h3>
+              <button onClick={() => setMyResult(null)} className="text-slate-500 hover:text-slate-800">Kapat</button>
+            </div>
+            <div className="p-6 space-y-3 text-slate-700 dark:text-slate-200">
+              <div><span className="font-semibold">Puan:</span> {myResult.score}</div>
+              <div>
+                <span className="font-semibold">Doğru:</span> {myResult.correctCount} • <span className="font-semibold">Yanlış:</span> {myResult.wrongCount}
+              </div>
+              {Array.isArray(myResult.weakTopics) && myResult.weakTopics.length > 0 && (
+                <div>
+                  <div className="font-semibold mb-1">Zayıf Konular</div>
+                  <ul className="list-disc list-inside text-sm">
+                    {myResult.weakTopics.map((t, i) => (
+                      <li key={i}>{t}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- MODAL: SINAV OLUŞTUR --- */}
       {showCreateModal && (

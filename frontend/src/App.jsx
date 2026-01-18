@@ -1,4 +1,8 @@
 import React, { Suspense, lazy } from 'react';
+import {
+  BookOpen, FileText, CheckCircle, Trophy, LayoutGrid, Users, BarChart2, Settings, User, Calendar
+} from 'lucide-react';
+import DashboardLayout from './pages/DashboardLayout';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -7,8 +11,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 // --- 1. LAYOUTS (ÇERÇEVELER) ---
 const LandingPage = lazy(() => import('./pages/LandingPage'));
-const TeacherDashboardLayout = lazy(() => import('./pages/TeacherDashboardLayout'));
-const StudentDashboardLayout = lazy(() => import('./pages/StudentDashboardLayout'));
+// DashboardLayout artık ortak kullanılacak
 
 // --- 2. ORTAK SAYFALAR (COMMON) ---
 const NotFound = lazy(() => import('./pages/common/NotFound'));
@@ -23,6 +26,8 @@ const TeacherHome = lazy(() => import('./pages/teacher/TeacherHome'));
 const QuestionBank = lazy(() => import('./pages/teacher/QuestionBank'));
 const TeacherExamsPage = lazy(() => import('./pages/teacher/TeacherExamsPage'));
 const TeacherExerciseCreator = lazy(() => import('./pages/teacher/TeacherExerciseCreator'));
+const SkillTreeBuilder = lazy(() => import('./pages/teacher/SkillTreeBuilder'));
+const StudentProgressDashboard = lazy(() => import('./pages/teacher/StudentProgressDashboard'));
 const TeacherReports = lazy(() => import('./pages/teacher/TeacherReports'));
 // import TeacherSurveys... -> ARTIK GEREK YOK (Ortak sayfayı kullanacağız)
 
@@ -30,10 +35,13 @@ const TeacherReports = lazy(() => import('./pages/teacher/TeacherReports'));
 const StudentHome = lazy(() => import('./pages/student/StudentHome'));
 const StudentCourses = lazy(() => import('./pages/student/StudentCourses'));
 const StudentAssignments = lazy(() => import('./pages/student/StudentAssignments'));
-const StudentPracticeExercises = lazy(() => import('./pages/student/StudentPracticeExercises'));
+const StudentStudyHub = lazy(() => import('./pages/student/StudentStudyHub'));
+const SkillTree = lazy(() => import('./pages/student/SkillTree'));
+const LessonQuiz = lazy(() => import('./pages/student/LessonQuiz'));
 const StudentCalendar = lazy(() => import('./pages/student/StudentCalendar'));
 const StudentLeaderboard = lazy(() => import('./pages/student/StudentLeaderboard'));
-const StudentSettings = lazy(() => import('./pages/student/StudentSettings'));
+
+// --- 5. YÖNETİCİ SAYFALARI ---
 const AdminResetRequests = lazy(() => import('./pages/admin/AdminResetRequests'));
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -60,7 +68,21 @@ function App() {
              ========================================================= */}
           <Route path="/teacher" element={
             <ProtectedRoute requiredRole="teacher">
-              <TeacherDashboardLayout />
+              <DashboardLayout
+                role="teacher"
+                navMenuItems={[
+                  { id: 'overview', label: 'Ana Sayfa', icon: BookOpen, path: '/teacher/overview' },
+                  { id: 'questions', label: 'Soru Bankası', icon: FileText, path: '/teacher/questions' },
+                  { id: 'exams', label: 'Sınavlar', icon: CheckCircle, path: '/teacher/exams' },
+                  { id: 'exercises', label: 'Egzersizler', icon: Trophy, path: '/teacher/exercises' },
+                  { id: 'skill-tree', label: 'Kazanım Ağacı', icon: LayoutGrid, path: '/teacher/skill-tree' },
+                  { id: 'student-progress', label: 'Öğrenci İlerleme', icon: Users, path: '/teacher/student-progress' },
+                  { id: 'reports', label: 'Raporlar', icon: BarChart2, path: '/teacher/reports' },
+                  { id: 'surveys', label: 'Anketler', icon: FileText, path: '/teacher/surveys' },
+                  // { id: 'settings', label: 'Ayarlar', icon: Settings, path: '/teacher/settings' },
+                  // { id: 'profile', label: 'Profil', icon: User, path: '/teacher/profile' },
+                ]}
+              />
             </ProtectedRoute>
           }>
             {/* Varsayılan: /teacher -> /teacher/overview */}
@@ -71,6 +93,8 @@ function App() {
             <Route path="questions" element={<QuestionBank />} />
             <Route path="exams" element={<TeacherExamsPage />} />
             <Route path="exercises" element={<TeacherExerciseCreator />} />
+            <Route path="skill-tree" element={<SkillTreeBuilder />} />
+            <Route path="student-progress" element={<StudentProgressDashboard />} />
             <Route path="reports" element={<TeacherReports />} />
             <Route path="surveys" element={<SurveysPage role="teacher" />} />
             <Route path="settings" element={<SettingsPage role="teacher" />} />
@@ -82,7 +106,20 @@ function App() {
              ========================================================= */}
           <Route path="/student" element={
             <ProtectedRoute requiredRole="student">
-              <StudentDashboardLayout />
+              <DashboardLayout
+                role="student"
+                navMenuItems={[
+                  { id: 'home', label: 'Ana Sayfa', icon: BookOpen, path: '/student/home' },
+                  { id: 'courses', label: 'Derslerim', icon: BookOpen, path: '/student/courses' },
+                  { id: 'assignments', label: 'Ödevler', icon: CheckCircle, path: '/student/assignments' },
+                  { id: 'quizzes', label: 'Sınavlar', icon: FileText, path: '/student/quizzes' },
+                  { id: 'surveys', label: 'Anketler', icon: FileText, path: '/student/surveys' },
+                  { id: 'leaderboard', label: 'Sıralama', icon: Trophy, path: '/student/leaderboard' },
+                  { id: 'calendar', label: 'Takvim', icon: Calendar, path: '/student/calendar' },
+                  // { id: 'settings', label: 'Ayarlar', icon: Settings, path: '/student/settings' },
+                  // { id: 'profile', label: 'Profil', icon: User, path: '/student/profile' },
+                ]}
+              />
             </ProtectedRoute>
           }>
             {/* Varsayılan: /student -> /student/home */}
@@ -91,7 +128,9 @@ function App() {
             <Route path="home" element={<StudentHome />} />
             <Route path="courses" element={<StudentCourses />} />
             <Route path="assignments" element={<StudentAssignments />} />
-            <Route path="exercises" element={<StudentPracticeExercises />} />
+            <Route path="exercises" element={<StudentStudyHub />} />
+            <Route path="skill-tree" element={<SkillTree />} />
+            <Route path="lesson/:lessonId" element={<LessonQuiz />} />
             <Route path="leaderboard" element={<StudentLeaderboard />} />
             <Route path="calendar" element={<StudentCalendar />} />
 
@@ -100,7 +139,7 @@ function App() {
             
             {/* Diğer Ortak Sayfalar */}
             <Route path="quizzes" element={<ExamsPage role="student" />} />
-            <Route path="settings" element={<StudentSettings />} />
+            <Route path="settings" element={<SettingsPage role="student" />} />
             <Route path="profile" element={<ProfilePage role="student" />} />
           </Route>
 

@@ -7,63 +7,72 @@ const mongoose = require('mongoose');
 
 // İç mantık: Öğretmen istatistiklerini hesapla
 async function buildTeacherStats(teacherId) {
+  // Öğretmen bilgisi
+  const teacher = await User.findById(teacherId);
+  if (!teacher || teacher.role !== 'teacher') {
+    return {
+      totalStudents: 0,
+      totalTeachers: 0,
+      totalQuestions: 0,
+      todayQuestions: 0,
+      totalSurveys: 0,
+      todaySurveys: 0,
+      totalExams: 0,
+      todayExams: 0,
+      classAverage: 0,
+      topTopic: '',
+      activeExams: 0,
+      timestamp: new Date()
+    };
+  }
+
+
+  // Matematik ile ilgili tüm verileri getir
+  const branch = 'Matematik';
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  const totalStudents = await Student.countDocuments({ teacherId });
-
-  const totalQuestions = await Question.countDocuments({ createdBy: teacherId });
+  // Tüm Matematik soruları
+  const totalQuestions = await Question.countDocuments({ subject: branch });
   const todayQuestions = await Question.countDocuments({
-    createdBy: teacherId,
+    subject: branch,
     createdAt: { $gte: todayStart, $lte: todayEnd }
   });
 
-  const totalSurveys = await Survey.countDocuments({ createdBy: teacherId });
-  const todaySurveys = await Survey.countDocuments({
-    createdBy: teacherId,
-    createdAt: { $gte: todayStart, $lte: todayEnd }
-  });
-
-  const exams = await Exam.find({ createdBy: teacherId });
-  let classAverage = 0;
-  if (exams.length > 0) {
-    const totalScore = exams.reduce((sum, exam) => {
-      const avgScore = exam.submissions && exam.submissions.length > 0
-        ? exam.submissions.reduce((s, sub) => s + (sub.score || 0), 0) / exam.submissions.length
-        : 0;
-      return sum + avgScore;
-    }, 0);
-    classAverage = (totalScore / exams.length).toFixed(1);
-  }
-
-  const topTopics = await Question.aggregate([
-    { $match: { createdBy: new mongoose.Types.ObjectId(teacherId) } },
-    { $group: { _id: '$subject', count: { $sum: 1 } } },
-    { $sort: { count: -1 } },
-    { $limit: 1 }
-  ]);
-  const topTopic = topTopics.length > 0 ? topTopics[0]._id : 'Belirtilmedi';
-
-  const activeExams = await Exam.countDocuments({ createdBy: teacherId, status: 'active' });
-  const totalExams = await Exam.countDocuments({ createdBy: teacherId });
+  // Tüm Matematik sınavları
+  const totalExams = await Exam.countDocuments({ subject: branch });
   const todayExams = await Exam.countDocuments({
-    createdBy: teacherId,
+    subject: branch,
     createdAt: { $gte: todayStart, $lte: todayEnd }
   });
+
+  // Tüm öğrenciler (sınıf filtresi olmadan)
+  const totalStudents = await User.countDocuments({ role: 'student' });
+  const totalTeachers = await User.countDocuments({ role: 'teacher' });
+
+  // Sınıf ortalaması (örnek: öğrencilerin not ortalaması, yoksa 0)
+  // Notlar User tablosunda yoksa 0 döndürülür
+  let classAverage = 0;
+  // Eğer User tablosunda averageScore varsa:
+  // const students = await User.find({ role: 'student', grade: classLevel });
+  // if (students.length > 0) {
+  //   classAverage = (students.reduce((sum, s) => sum + (s.averageScore || 0), 0) / students.length).toFixed(1);
+  // }
 
   return {
     totalStudents,
+    totalTeachers,
     totalQuestions,
     todayQuestions,
-    totalSurveys,
-    todaySurveys,
+    totalSurveys: 0,
+    todaySurveys: 0,
     totalExams,
     todayExams,
     classAverage,
-    topTopic,
-    activeExams,
+    topTopic: branch || '',
+    activeExams: 0,
     timestamp: new Date()
   };
 }
@@ -346,5 +355,132 @@ exports.getMyExams = async (req, res) => {
     return res.json(exams);
   } catch (err) {
     res.status(500).json({ message: 'Sınavlar alınamadı', error: err.message });
+  }
+};
+
+// ✅ 10. BRANŞ TALEBİ (Öğretmen branş seçer ve onaya gönderir)
+exports.requestBranchApproval = async (req, res) => {
+  try {
+    console.log('[branch-request] headers:', req.headers.authorization ? 'auth present' : 'no auth');
+    console.log('[branch-request] body:', req.body);
+    const teacherId = req.user.id;
+    const { branch } = req.body;
+    if (!branch || typeof branch !== 'string') {
+      return res.status(400).json({ message: 'Geçerli bir branş giriniz.' });
+    }
+    // Basit doğrulama: bilinen branş seti
+    const allowed = ['Matematik', 'Fizik', 'Kimya', 'Biyoloji', 'Türkçe'];
+    if (!allowed.includes(branch)) {
+      return res.status(400).json({ message: 'Desteklenmeyen branş. Lütfen listeden birini seçiniz.' });
+    }
+    const User = require('../models/User');
+    const Notification = require('../models/Notification');
+    const AdminAudit = require('../models/AdminAudit');
+
+    const user = await User.findById(teacherId);
+    if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+    if (user.role !== 'teacher') return res.status(403).json({ message: 'Sadece öğretmenler branş talebi oluşturabilir.' });
+
+    const changed = user.branch !== branch;
+    user.branch = branch;
+    user.branchApproval = 'pending';
+    await user.save();
+
+    // Basit bildirim: adminlere sistem mesajı (opsiyonel, burada sadece kendine not bırakıyoruz)
+    try {
+      await AdminAudit.create({ actorId: teacherId, action: 'request_branch', targetUserId: teacherId, targetEmail: user.email, metadata: { branch, changed } });
+    } catch {}
+
+    try {
+      await Notification.create({ recipientId: teacherId, senderId: teacherId, title: 'Branş Onay Talebi', message: `Branş talebiniz (${branch}) admin onayına gönderildi.`, type: 'system' });
+    } catch {}
+
+    res.json({ message: 'Branş talebi admin onayına gönderildi.', branch });
+  } catch (err) {
+    console.error('requestBranchApproval error:', err);
+    res.status(500).json({ message: 'Branş talebi hatası', details: err?.message || String(err) });
+  }
+};
+
+// ✅ 11. Branşa göre soru bankası (tüm öğretmenler tarafından oluşturulmuş, branşa uygun)
+exports.getSubjectQuestions = async (req, res) => {
+  try {
+    const subject = req.userBranch; // branchApprovalMiddleware set eder
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const { search, classLevel, difficulty, topic } = req.query;
+
+    // Önce branş (subject) eşleşmesini zorunlu tut
+    const query = { subject: { $regex: `^${subject}$`, $options: 'i' } };
+    if (search) query.text = { $regex: search, $options: 'i' };
+    // İsteğe bağlı konu filtresi
+    if (topic && topic !== 'Tümü') {
+      query.topic = { $regex: `^${topic}$`, $options: 'i' };
+    }
+    if (classLevel && classLevel !== 'Tümü') query.classLevel = classLevel;
+    if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
+
+    const total = await Question.countDocuments(query);
+    let questions = await Question.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    // Hiç sonuç yoksa daha esnek bir eşleşme ile tekrar dene (boşluk/çeşitlemeler)
+    if (total === 0) {
+      const looseQuery = { ...query };
+      if (looseQuery.subject?.$regex) {
+        looseQuery.subject = { $regex: subject, $options: 'i' }; // contains, case-insensitive
+      }
+      if (looseQuery.topic?.$regex) {
+        looseQuery.topic = { $regex: topic || '', $options: 'i' };
+      }
+      const looseTotal = await Question.countDocuments(looseQuery);
+      if (looseTotal > 0) {
+        questions = await Question.find(looseQuery)
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit);
+      }
+    }
+
+    res.json({ success: true, data: questions, total, page, totalPages: Math.ceil(total / limit) });
+  } catch (err) {
+    res.status(500).json({ message: 'Branşa göre sorular alınamadı', error: err.message });
+  }
+};
+
+// ✅ 13. Branşa göre konu listesi (distinct)
+exports.getSubjectTopics = async (req, res) => {
+  try {
+    const subject = req.userBranch;
+    // Mevcut sorular üzerinden eşsiz topic değerlerini topla
+    const topics = await Question.distinct('topic', { subject });
+    // Bazı veri setlerinde topic alanı olmayabilir; bu durumda boş dizi döner
+    res.json({ success: true, topics: topics.filter(Boolean).sort() });
+  } catch (err) {
+    res.status(500).json({ message: 'Konu listesi alınamadı', error: err.message });
+  }
+};
+
+// ✅ 12. Branşa göre sınavlar
+exports.getSubjectExams = async (req, res) => {
+  try {
+    const subject = req.userBranch;
+    const { page, limit } = req.query;
+    const query = { subject };
+    const sort = { createdAt: -1 };
+
+    if (page && limit) {
+      const p = parseInt(page) || 1;
+      const l = parseInt(limit) || 10;
+      const total = await Exam.countDocuments(query);
+      const exams = await Exam.find(query).sort(sort).skip((p - 1) * l).limit(l);
+      return res.json({ data: exams, total, pages: Math.ceil(total / l), currentPage: p });
+    }
+    const exams = await Exam.find(query).sort(sort);
+    res.json(exams);
+  } catch (err) {
+    res.status(500).json({ message: 'Branşa göre sınavlar alınamadı', error: err.message });
   }
 };

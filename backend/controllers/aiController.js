@@ -1,3 +1,140 @@
+
+// 7. GELİŞMİŞ SINAV SONUCU DEĞERLENDİRME & ANALİZ
+exports.examResultAnalysis = async (req, res) => {
+  try {
+    const { answers, examId, studentId } = req.body;
+    if (!answers || !Array.isArray(answers) || !studentId) {
+      return res.status(400).json({ message: "Eksik parametre." });
+    }
+    let total = 0, correct = 0, totalTime = 0;
+    let feedbacks = [], topicStats = {}, slowQuestions = [];
+    for (const ans of answers) {
+      const isCorrect = ans.answer === ans.correctAnswer;
+      if (isCorrect) correct++;
+      total++;
+      // Süre (ms cinsinden bekleniyor)
+      if (ans.timeMs) totalTime += ans.timeMs;
+      // Konu istatistiği
+      const topic = ans.topic || "Bilinmeyen";
+      if (!topicStats[topic]) topicStats[topic] = { total: 0, correct: 0 };
+      topicStats[topic].total++;
+      if (isCorrect) topicStats[topic].correct++;
+      // Yavaş çözülen sorular
+      if (ans.timeMs && ans.timeMs > 60000) slowQuestions.push(ans.questionId);
+      feedbacks.push({
+        questionId: ans.questionId,
+        isCorrect,
+        feedback: isCorrect ? "Doğru cevap!" : `Yanlış. Doğru cevap: ${ans.correctAnswer}`,
+        timeMs: ans.timeMs || null,
+        topic
+      });
+    }
+    const score = Math.round((correct / total) * 100);
+    // Konu bazlı başarı
+    const topicReport = Object.entries(topicStats).map(([topic, stat]) => ({
+      topic,
+      correct: stat.correct,
+      total: stat.total,
+      percent: Math.round((stat.correct / stat.total) * 100)
+    }));
+    // Genel analiz için LLM ile özet
+    let analysis = "";
+    try {
+      const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+      const prompt = `Bir öğrencinin matematik sınavı sonuçları:\nToplam: ${correct}/${total} doğru.\nKonu bazlı: ${JSON.stringify(topicReport)}\nYavaş çözülen sorular: ${slowQuestions.join(", ")}\nKısa bir analiz ve 2 öneri ver.`;
+      const result = await model.generateContent(prompt);
+      analysis = result.response.text();
+    } catch (e) { analysis = "AI analiz başarısız."; }
+    res.json({ score, correct, total, totalTimeMs: totalTime, feedbacks, topicReport, slowQuestions, analysis });
+  } catch (error) {
+    res.status(500).json({ message: "Sınav sonucu analiz edilemedi.", error: error.message });
+  }
+};
+
+// 9. TEACHER REPORT: Öğretmen için detaylı rapor
+exports.teacherReport = async (req, res) => {
+  try {
+    const { examResults } = req.body; // [{studentId, answers: [{questionId, answer, correctAnswer, topic, timeMs}]}]
+    if (!examResults || !Array.isArray(examResults)) {
+      return res.status(400).json({ message: "Eksik parametre." });
+    }
+    let allStats = {}, allSlow = {}, allScores = [];
+    for (const result of examResults) {
+      let correct = 0, total = 0, totalTime = 0, topicStats = {};
+      for (const ans of result.answers) {
+        const isCorrect = ans.answer === ans.correctAnswer;
+        if (isCorrect) correct++;
+        total++;
+        if (ans.timeMs) totalTime += ans.timeMs;
+        const topic = ans.topic || "Bilinmeyen";
+        if (!topicStats[topic]) topicStats[topic] = { total: 0, correct: 0 };
+        topicStats[topic].total++;
+        if (isCorrect) topicStats[topic].correct++;
+        if (ans.timeMs && ans.timeMs > 60000) {
+          if (!allSlow[result.studentId]) allSlow[result.studentId] = [];
+          allSlow[result.studentId].push(ans.questionId);
+        }
+      }
+      const score = Math.round((correct / total) * 100);
+      allScores.push({ studentId: result.studentId, score, totalTimeMs: totalTime });
+      for (const [topic, stat] of Object.entries(topicStats)) {
+        if (!allStats[topic]) allStats[topic] = { total: 0, correct: 0 };
+        allStats[topic].total += stat.total;
+        allStats[topic].correct += stat.correct;
+      }
+    }
+    // Konu bazlı genel başarı
+    const topicReport = Object.entries(allStats).map(([topic, stat]) => ({
+      topic,
+      correct: stat.correct,
+      total: stat.total,
+      percent: Math.round((stat.correct / stat.total) * 100)
+    }));
+    // LLM ile özet
+    let summary = "";
+    try {
+      const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+      const prompt = `Bir matematik sınavında tüm öğrencilerin sonuçları:\nKonu bazlı başarı: ${JSON.stringify(topicReport)}\nÖğrenci skorları: ${JSON.stringify(allScores)}\nYavaş çözülen sorular: ${JSON.stringify(allSlow)}\nÖğretmen için kısa bir özet ve öneriler ver.`;
+      const result = await model.generateContent(prompt);
+      summary = result.response.text();
+    } catch (e) { summary = "AI özet başarısız."; }
+    res.json({ topicReport, allScores, allSlow, summary });
+  } catch (error) {
+    res.status(500).json({ message: "Teacher report oluşturulamadı.", error: error.message });
+  }
+};
+
+// 8. SORU ÇÖZERKEN İPUCU VEREN AI
+exports.getHint = async (req, res) => {
+  try {
+    const { questionText, studentAnswer } = req.body;
+    if (!questionText) return res.status(400).json({ message: "Soru metni gerekli." });
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    const prompt = `Bir öğrenci şu soruyu çözüyor: ${questionText}\nÖğrencinin cevabı: ${studentAnswer || "Henüz cevap yok"}\nKısa, yol gösterici bir ipucu ver. Cevabı açıkça söyleme.`;
+    const result = await model.generateContent(prompt);
+    res.json({ hint: result.response.text() });
+  } catch (error) {
+    res.status(500).json({ message: "İpucu üretilemedi.", error: error.message });
+  }
+};
+// 6. 🧑‍🎓 ÖĞRENCİ CEVABI ANALİZ & KİŞİSELLEŞTİRİLMİŞ SORU ÖNERİSİ
+const { analyzeAndSuggest } = require("../services/studentAIService");
+
+// POST /api/ai/analyze-and-suggest
+exports.analyzeAndSuggest = async (req, res) => {
+  try {
+    const { answer, studentId } = req.body;
+    const topic = "Örüntüler";
+    if (!answer || !studentId) {
+      return res.status(400).json({ message: "Eksik parametre." });
+    }
+    const result = await analyzeAndSuggest(answer, topic, studentId);
+    res.json(result);
+  } catch (error) {
+    console.error("analyzeAndSuggest Hatası:", error);
+    res.status(500).json({ message: "Cevap analiz edilemedi.", error: error.message });
+  }
+};
 const { GoogleGenerativeAI, SchemaType } = require("@google/generative-ai");
 const fs = require("fs");
 const pathLib = require('path');

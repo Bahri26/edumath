@@ -82,7 +82,8 @@ export const submitSurveyResponse = async (surveyId, answers) => {
 // ✅ ÖĞRENCİNİN TAMAMLADIĞI ANKETLERİ GETİR
 export const getMyCompletedSurveys = async () => {
   try {
-    const response = await apiClient.get('/surveys/student/my-surveys');
+    // Use the main /surveys endpoint; backend will filter by role
+    const response = await apiClient.get('/surveys');
     return response.data;
   } catch (error) {
     console.error('Get my completed surveys error:', error);

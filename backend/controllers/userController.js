@@ -1,3 +1,14 @@
+// Kullanıcı hesabı silme
+exports.deleteAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+    await user.deleteOne();
+    res.json({ message: "Hesabınız silindi" });
+  } catch (err) {
+    res.status(500).json({ message: "Hesap silme hatası: " + err.message });
+  }
+};
 const User = require('../models/User');
 
 // 1. ÖĞRENCİ ARA (İsim veya E-posta ile)
@@ -58,10 +69,29 @@ exports.updateProfile = async (req, res) => {
 
     // ROL BAZLI GÜNCELLEME
     if (user.role === 'teacher') {
-        user.branch = branch || user.branch;
+        // Öğretmen branş güncellediğinde onay sürecini başlat (liste kontrolü)
+        if (typeof branch !== 'undefined') {
+          const allowed = ['Matematik', 'Fizik', 'Kimya', 'Biyoloji', 'Türkçe'];
+          if (branch && !allowed.includes(branch)) {
+            return res.status(400).json({ message: 'Desteklenmeyen branş. Lütfen listeden seçiniz.' });
+          }
+          const changed = branch && branch !== user.branch;
+          user.branch = branch || user.branch;
+          // Eğer branş değiştiyse -> pending
+          if (changed) {
+            user.branchApproval = 'pending';
+          } else if (branch && user.branchApproval !== 'approved') {
+            // Branş aynı olsa bile, öğretmen "Onaya Gönder" dediğinde tekrar pending'e çek
+            // Böylece admin listesinde görüntülenir
+            user.branchApproval = 'pending';
+          }
+        }
     } 
     else if (user.role === 'student') {
-        user.grade = grade || user.grade;
+      user.grade = grade || user.grade;
+      if (typeof req.body.schoolType !== 'undefined') {
+        user.schoolType = req.body.schoolType;
+      }
     }
 
     const savedUser = await user.save().catch(err => {

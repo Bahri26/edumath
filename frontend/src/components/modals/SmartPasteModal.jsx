@@ -20,6 +20,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     options: ['', '', '', ''],
     correctAnswer: '',
     solution: '',
+    topic: '',
     subject: 'Matematik',
     classLevel: '9. Sınıf',
     difficulty: 'Orta'
@@ -48,7 +49,8 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         text: data.text || '',
         options: Array.isArray(data.options) ? data.options : ['', '', '', ''],
         correctAnswer: data.correctAnswer || '',
-        solution: data.solution || '',
+        solution: data.solution || data.solutionText || '',
+        topic: data.topic || '',
         subject: data.subject || 'Matematik',
         classLevel: data.classLevel || '9. Sınıf',
         difficulty: data.difficulty || 'Orta'
@@ -78,34 +80,101 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   };
 
   // 1.b Metinden Ayrıştırma (Copy-Paste)
-  const handleTextParse = async () => {
-    if (!pastedContent.trim()) {
-      return showToast('Lütfen metni yapıştırın', 'error');
+  const handleTextParse = async (contentToParse) => {
+    const content = (contentToParse ?? pastedContent).replace(/\r/g, '').trim();
+    if (!content) {
+      showToast('Lütfen metni yapıştırın', 'error');
+      return false;
     }
     setLoading(true);
     try {
-      const res = await apiClient.post('/ai/smart-parse-text', { content: pastedContent });
-      setParsedData(res.data.data);
+      // 1) Soru metnini, 2) Şıkları ve 3) Cevabı ayrıştır
+      const firstOptionIndex = content.search(/[A-Ha-h]\)/);
+      const questionText = firstOptionIndex > -1 ? content.slice(0, firstOptionIndex).trim() : content.trim();
+
+      // Şıklar: "A) ... B) ... C) ... D) ..." tek satır veya çok satır
+      // Önce cevap satırını ayıkla ki şık olarak yakalanmasın
+      const contentNoAnswer = content.replace(/(^|\n)\s*C(e|ı|i)vap\s*:.*/i, '').trim();
+      const optionPattern = /([A-Ha-h])\)\s*([\s\S]*?)(?=\s+[A-Ha-h]\)|\s*$)/g;
+      const optionMatches = [...contentNoAnswer.matchAll(optionPattern)];
+      let options = optionMatches.map(m => m[2].replace(/\s+/g, ' ').trim());
+
+      // Çok satırlı format için ek deneme
+      if (options.length === 0) {
+        const linePattern = /^\s*([A-Ha-h])\)\s*(.+)$/gm;
+        options = [...content.matchAll(linePattern)].map(m => m[2].trim());
+      }
+
+      // Cevap satırı: "Cevap: C) 28" veya "Cevap: C" veya "Cevap: 28"
+      const answerLine = content.match(/Cevap\s*:?\s*(.+)$/im);
+      let correctAnswer = '';
+      if (answerLine) {
+        const ansStr = (answerLine[1] || '').trim();
+        const letterMatch = ansStr.match(/^([A-Ha-h])\)/);
+        const bareLetter = ansStr.match(/^([A-Ha-h])$/);
+        const valueMatch = ansStr.replace(/^([A-Ha-h])\)\s*/, '').trim();
+        if (letterMatch || bareLetter) {
+          const letter = (letterMatch ? letterMatch[1] : bareLetter[1]).toUpperCase();
+          const idx = letter.charCodeAt(0) - 65;
+          correctAnswer = options[idx] || valueMatch || '';
+        } else if (valueMatch) {
+          // Değer verilmişse, şıklar içinde eşleşeni işaretle
+          const found = options.find(o => String(o).trim().toLowerCase() === valueMatch.trim().toLowerCase());
+          correctAnswer = found || valueMatch;
+        }
+      }
+
+      // Min 2 şık olacak şekilde doldur, fazla şıklar olduğu kadar bırak (A-H destek)
+      if (options.length < 2) {
+        options = options.concat(Array(2 - options.length).fill(''));
+      }
+
+      const parsed = {
+        text: questionText,
+        options,
+        correctAnswer,
+        solution: parsedData.solution || '',
+        topic: parsedData.topic || '',
+        subject: parsedData.subject || 'Matematik',
+        classLevel: parsedData.classLevel || '9. Sınıf',
+        difficulty: parsedData.difficulty || 'Orta'
+      };
+
+      setParsedData(parsed);
       setStep('editing');
-      showToast('Metin başarıyla ayrıştırıldı', 'success');
+      showToast('Metin ayrıştırıldı. Şıklar ve doğru cevap işaretlendi.', 'success');
+      // Otomatik havuza kaydet
+      await handleFinalSave(parsed);
+      return true;
     } catch (err) {
-      showToast('Metin ayrıştırılamadı', 'error');
+      // Backend'e fallback (opsiyonel)
+      try {
+        const res = await apiClient.post('/ai/smart-parse-text', { content });
+        setParsedData(res.data.data);
+        setStep('editing');
+        showToast('Metin ayrıştırıldı (AI).', 'success');
+        await handleFinalSave(res.data.data);
+        return true;
+      } catch {
+        showToast('Metin ayrıştırılamadı', 'error');
+        return false;
+      }
     } finally {
       setLoading(false);
     }
   };
 
   // 2. Havuza Kaydetme
-  const handleFinalSave = async () => {
+  const handleFinalSave = async (dataToSave) => {
     setLoading(true);
     try {
-      const payload = { ...parsedData, source: 'AI' };
+      const payload = { ...(dataToSave || parsedData), source: 'AI' };
       // If backend provided a temp image path and user didn't reupload a file, pass it through
       if (typeof image === 'string' && image.startsWith('/uploads/')) {
         payload.imagePath = image;
       }
       await apiClient.post('/questions', payload);
-      showToast("Soru başarıyla kaydedildi!", "success");
+      showToast("Soru başarıyla havuza kaydedildi!", "success");
       onParsed(); // Listeyi yenile
       onClose(); // Modalı kapat
     } catch (err) {
@@ -166,11 +235,19 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                   <textarea 
                     value={pastedContent}
                     onChange={e=>setPastedContent(e.target.value)}
+                    onPaste={async (e) => {
+                      // Klasik yapıştırma işlemini bekle, sonra ayrıştır
+                      setTimeout(async () => {
+                        const pasted = e.clipboardData.getData('text');
+                        setPastedContent(pasted);
+                        await handleTextParse(pasted);
+                      }, 0);
+                    }}
                     className="w-full h-64 p-4 bg-slate-50 dark:bg-slate-900 border-none rounded-[1.5rem] font-medium outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder={"Örn. soru metni ve A) B) C) D) şeklinde şıklar..."}
                   />
                   <div className="flex justify-end">
-                    <Button variant="primary" size="md" onClick={handleTextParse} disabled={loading}>
+                    <Button variant="primary" size="md" onClick={()=>handleTextParse()} disabled={loading}>
                       {loading ? <Loader2 className="animate-spin" size={18} /> : <ArrowRight size={18} />} Ayrıştır
                     </Button>
                   </div>
@@ -227,6 +304,38 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                         />
                       </div>
                     ))}
+                  </div>
+                </div>
+                {/* Ek Alanlar: Konu, Zorluk, Sınıf */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">Konu</label>
+                    <input 
+                      value={parsedData.topic}
+                      onChange={e => setParsedData({ ...parsedData, topic: e.target.value })}
+                      className="w-full p-3 bg-slate-50 dark:bg-slate-900 border-none rounded-xl text-sm font-medium outline-none"
+                      placeholder="Örn. Örüntüler"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">Zorluk</label>
+                    <select 
+                      value={parsedData.difficulty}
+                      onChange={e => setParsedData({ ...parsedData, difficulty: e.target.value })}
+                      className="w-full p-3 bg-white dark:bg-slate-800 rounded-xl border-none text-xs font-bold shadow-sm outline-none"
+                    >
+                      {['Kolay','Orta','Zor'].map(lv => <option key={lv}>{lv}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">Sınıf</label>
+                    <select 
+                      value={parsedData.classLevel}
+                      onChange={e => setParsedData({ ...parsedData, classLevel: e.target.value })}
+                      className="w-full p-3 bg-white dark:bg-slate-800 rounded-xl border-none text-xs font-bold shadow-sm outline-none"
+                    >
+                      {['1. Sınıf','2. Sınıf','3. Sınıf','4. Sınıf','5. Sınıf','6. Sınıf','7. Sınıf','8. Sınıf','9. Sınıf','10. Sınıf','11. Sınıf','12. Sınıf'].map(cl => <option key={cl}>{cl}</option>)}
+                    </select>
                   </div>
                 </div>
                 <div className="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-[2rem] border border-indigo-100">

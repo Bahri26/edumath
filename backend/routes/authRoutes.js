@@ -25,7 +25,8 @@ const registerSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).max(128).required(),
   role: Joi.string().valid('student', 'teacher', 'admin').default('student'),
-  grade: Joi.string().optional()
+  grade: Joi.string().optional(),
+  schoolType: Joi.string().valid('ilkokul', 'ortaokul', 'lise').default('ilkokul')
 });
 
 const loginSchema = Joi.object({
@@ -61,7 +62,9 @@ const PasswordResetRequest = require('../models/PasswordResetRequest');
 // --- KAYIT OL ---
 router.post('/register', validate(registerSchema), async (req, res) => {
   try {
-    const { name, email, password, role, grade } = req.body;
+    const { name, email, password, role, grade, schoolType } = req.body;
+
+    const autoApprove = String(process.env.AUTO_APPROVE_USERS || '').toLowerCase() === 'true';
 
     // Email kontrolü
     const existingUser = await User.findOne({ email });
@@ -69,19 +72,26 @@ router.post('/register', validate(registerSchema), async (req, res) => {
       return res.status(400).json({ message: "Bu e-posta zaten kayıtlı." });
     }
 
-    // Şifreleme
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Kayıt
-    const newUser = new User({
-      name, email, password: hashedPassword, role, grade,
-      status: 'pending', // Admin onayı gerekli
-      mustChangePassword: false
-    });
+    // Kayıt (hashleme User pre-save hook'unda yapılır)
+    const newUser = new User({ name, email, password, role, grade, schoolType, status: autoApprove ? 'active' : 'pending', mustChangePassword: false });
     await newUser.save();
 
-    res.status(201).json({ message: "Kayıt oluşturuldu, admin onayı bekleniyor." });
+    if (autoApprove) {
+      // auto-approve modunda anında giriş token'ı üret
+      const accessToken = generateAccessToken(newUser);
+      const refreshToken = generateRefreshToken(newUser);
+      const hashed = hashToken(refreshToken);
+      const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000);
+      await RefreshToken.create({ user: newUser._id, hashedToken: hashed, expiresAt });
+      return res.status(201).json({
+        message: "Kayıt oluşturuldu ve aktif edildi.",
+        token: accessToken,
+        refreshToken,
+        user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role, status: newUser.status, mustChangePassword: newUser.mustChangePassword }
+      });
+    }
+
+    return res.status(201).json({ message: "Kayıt oluşturuldu, admin onayı bekleniyor." });
   } catch (error) {
     console.error("Register Hatası:", error); // Terminalde hatayı gösterir
     res.status(500).json({ message: "Sunucu hatası: " + error.message });
@@ -92,7 +102,6 @@ router.post('/register', validate(registerSchema), async (req, res) => {
 router.post('/login', validate(loginSchema), async (req, res) => {
   try {
     const { email, password } = req.body;
-    
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Kullanıcı bulunamadı." });
 

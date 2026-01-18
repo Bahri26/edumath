@@ -10,4 +10,7 @@ router.get('/search', userController.searchStudents);
 router.get('/profile', authMiddleware, userController.getProfile);
 router.put('/profile', authMiddleware, userController.updateProfile);
 router.post('/change-password', authMiddleware, userController.changePassword);
+
+// Hesap silme
+router.delete('/delete', authMiddleware, userController.deleteAccount);
 module.exports = router;

@@ -10,6 +10,8 @@ const QuestionSchema = new mongoose.Schema({
   text: { type: String, required: true },
   image: { type: String },
   subject: { type: String, default: 'Matematik', index: true },
+  // Konu başlığı (ör. "Örüntüler")
+  topic: { type: String, default: '', index: true },
 
   // 🚨 GÜNCELLENDİ: 1. Sınıftan 12. Sınıfa Kadar + Mezun
   classLevel: { 
