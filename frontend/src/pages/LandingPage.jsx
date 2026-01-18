@@ -1,5 +1,4 @@
-// src/pages/LandingPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Bileşenleri İçe Aktar
@@ -7,13 +6,14 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import LoginModal from '../components/modals/LoginModal';
 
-// Bölümleri İçe Aktar
-import Hero from '../sections/Hero';
+// Bölümleri İçe Aktar (Örüntü Temalı İçerikler)
+import Hero from '../sections/Hero'; 
 import About from '../sections/About';
-import Curriculum from '../sections/Curriculum';
-import Courses from '../sections/Courses';
+import Curriculum from '../sections/Curriculum'; // Kademeli Örüntü Müfredatı
+import Courses from '../sections/Courses';       // İnteraktif Örüntü Modülleri
 import Contact from '../sections/Contact';
 import Chatbox from '../components/ui/Chatbox';
+
 // Veriyi İçe Aktar
 import { translations } from '../data/translations';
 
@@ -23,64 +23,83 @@ const LandingPage = () => {
   const [theme, setTheme] = useState('light');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
+  // Çeviri dosyanda 'patterns' anahtarı altında özelleştirilmiş metinler olduğunu varsayıyoruz
   const t = translations[lang] || translations['tr'];
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  // 🚨 DÜZELTME BURADA YAPILDI
+  // Tema değişikliğini body'ye uygula (Karanlık mod desteği için)
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  // Login Başarılı Olduğunda Yönlendirme
   const handleLoginSuccess = (userRole) => {
     setIsLoginModalOpen(false); 
 
+    // Örüntü projesine özel dashboard yönlendirmeleri
     if (userRole === 'teacher' || userRole === 'admin') {
-      // App.jsx'te tanımladığımız doğru rota:
       navigate('/teacher/overview'); 
     } else if (userRole === 'student') {
-      // App.jsx'te tanımladığımız doğru rota:
-      navigate('/student/home');
+      navigate('/student/home'); // Öğrenci burada kendi seviyesindeki örüntüleri görür
     } else {
       navigate('/'); 
     }
   };
 
   return (
-    <div className={theme === 'dark' ? 'dark' : ''}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 font-sans flex flex-col transition-colors duration-300 relative">
-        
-        <Navbar 
-          lang={lang} 
-          setLang={setLang} 
-          theme={theme} 
-          toggleTheme={toggleTheme} 
-          t={t} 
-          onLoginClick={() => setIsLoginModalOpen(true)} 
-        />
-        
-        <LoginModal 
-          isOpen={isLoginModalOpen} 
-          onClose={() => setIsLoginModalOpen(false)} 
-          t={t} // Çeviri prop'u
-          onLoginSuccess={handleLoginSuccess} 
-        />
+    <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
+      
+      {/* Gezinme Çubuğu */}
+      <Navbar 
+        lang={lang} 
+        setLang={setLang} 
+        theme={theme} 
+        toggleTheme={toggleTheme} 
+        t={t} 
+        onLoginClick={() => setIsLoginModalOpen(true)} 
+      />
+      
+      {/* Giriş ve Kayıt Modalı */}
+      <LoginModal 
+        isOpen={isLoginModalOpen} 
+        onClose={() => setIsLoginModalOpen(false)} 
+        t={t} 
+        onLoginSuccess={handleLoginSuccess} 
+      />
 
-        {/* Ana Bölümler */}
-        <Hero t={t} />
+      {/* ANA İÇERİK ALANI */}
+      <main className="flex-grow">
+        
+        {/* Hero: "Örüntüleri Keşfet" temalı giriş alanı */}
+        <Hero t={t} theme={theme} />
+
+        {/* About: Matematiksel düşünme ve örüntülerin önemi */}
         <About t={t} />
-        <Curriculum lang={lang} t={t} />
+
+        {/* Curriculum: İlkokul (Şekil), Ortaokul (Sayı), Lise (Diziler) ayrımı */}
+        <Curriculum lang={lang} t={t} focus="patterns" />
+
+        {/* Courses: İnteraktif örüntü çözme modülleri */}
         <Courses lang={lang} t={t} />
+
+        {/* Contact: Geri bildirim ve destek */}
         <Contact t={t} />
-        <div className="text-center py-6">
-          <button onClick={() => navigate('/reset-password')} className="text-indigo-600 hover:underline font-medium">
-            Şifre Sıfırlama
-          </button>
-        </div>
         
-        <Footer t={t} />
+      </main>
 
-        <Chatbox />
+      {/* Alt Bilgi */}
+      <Footer t={t} />
 
-      </div>
+      {/* Yapay Zeka Destekli Örüntü Asistanı */}
+      <Chatbox assistantType="math_expert" />
+
     </div>
   );
 };

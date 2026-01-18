@@ -3,6 +3,7 @@ const router = express.Router();
 const teacherController = require('../controllers/teacherController');
 const protect = require('../middlewares/authMiddleware');
 const role = require('../middlewares/roleMiddleware');
+const branchApproved = require('../middlewares/branchApprovalMiddleware');
 
 // TÜM ROUTE'LER KORUMANLI VE SADECE ÖĞRETMEN İÇİN
 
@@ -14,6 +15,10 @@ router.get('/reports', protect, role(['teacher']), teacherController.getClassRep
 
 // ❓ SORULAR (ÖĞRETMENIN KENDİ SORULARI)
 router.get('/questions', protect, role(['teacher']), teacherController.getMyQuestions);
+// Branşa göre tüm soru bankası (onaylı branş gerekli)
+router.get('/subject/questions', protect, role(['teacher']), branchApproved, teacherController.getSubjectQuestions);
+// Branşa göre konu listesi
+router.get('/subject/topics', protect, role(['teacher']), branchApproved, teacherController.getSubjectTopics);
 
 // 📝 ANKETLER
 router.get('/surveys', protect, role(['teacher']), teacherController.getMySurveys);
@@ -29,5 +34,10 @@ router.get('/dashboard-summary', protect, role(['teacher']), teacherController.g
 
 // 🧪 ÖĞRETMENİN KENDİ SINAVLARI
 router.get('/my-exams', protect, role(['teacher']), teacherController.getMyExams);
+// Branşa göre sınavlar (onaylı branş gerekli)
+router.get('/subject/exams', protect, role(['teacher']), branchApproved, teacherController.getSubjectExams);
+
+// Branş talebi oluştur
+router.post('/branch-request', protect, role(['teacher']), teacherController.requestBranchApproval);
 
 module.exports = router;

@@ -75,6 +75,7 @@ const DropZone = ({ difficulty, questions, onDrop, onRemove, label, colorClass, 
 // --- Ana Sayfa Bileşeni ---
 export default function TeacherExamsPage() {
   const { showToast } = useToast();
+  const [profile, setProfile] = useState({ branch: '', branchApproval: 'none' });
   const [view, setView] = useState('list'); // 'list' veya 'studio'
   const [exams, setExams] = useState([]);
   const [allQuestions, setAllQuestions] = useState([]);
@@ -90,15 +91,58 @@ export default function TeacherExamsPage() {
   const [poolSubject, setPoolSubject] = useState('Tümü');
   const [poolSearch, setPoolSearch] = useState('');
   const SUBJECTS = ['Tümü', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
+  // Zamanlama & Süre
+  const [schedStart, setSchedStart] = useState('');
+  const [schedEnd, setSchedEnd] = useState('');
+  const [durationMin, setDurationMin] = useState(60);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiClient.get('/users/profile');
+        const branch = res.data?.branch || '';
+        const branchApproval = res.data?.branchApproval || 'none';
+        setProfile({ branch, branchApproval });
+      } catch {}
+    })();
+  }, []);
+
+  // Auto-refresh profile while pending approval
+  useEffect(() => {
+    let timer;
+    if (profile.branch && profile.branchApproval === 'pending') {
+      timer = setInterval(async () => {
+        try {
+          const res = await apiClient.get('/users/profile');
+          const branch = res.data?.branch || '';
+          const branchApproval = res.data?.branchApproval || 'none';
+          if (branchApproval === 'approved') {
+            setProfile({ branch, branchApproval });
+            showToast('Branş onaylandı! Havuz ve sınavlar yenilendi.', 'success');
+            // Immediately refresh data with branch scope
+            fetchExams();
+            fetchQuestions();
+            clearInterval(timer);
+          }
+        } catch {}
+      }, 5000);
+    }
+    return () => { if (timer) clearInterval(timer); };
+  }, [profile.branch, profile.branchApproval]);
 
   useEffect(() => {
     fetchExams();
     fetchQuestions();
-  }, []);
+  }, [profile.branch, profile.branchApproval]);
 
   const fetchExams = async () => {
     try {
-      const res = await apiClient.get('/teacher/my-exams'); // Backend route
+      let res;
+      if (profile.branch && profile.branchApproval === 'approved') {
+        res = await apiClient.get('/teacher/subject/exams');
+      } else {
+        res = await apiClient.get('/teacher/my-exams'); // only own exams
+      }
       const data = Array.isArray(res.data) ? res.data : (res.data?.data || []);
       setExams(data);
     } catch (err) { showToast('Sınavlar yüklenemedi', 'error'); }
@@ -107,7 +151,12 @@ export default function TeacherExamsPage() {
 
   const fetchQuestions = async () => {
     try {
-      const res = await apiClient.get('/teacher/questions', { params: { limit: 200 } });
+      let res;
+      if (profile.branch && profile.branchApproval === 'approved') {
+        res = await apiClient.get('/teacher/subject/questions', { params: { limit: 500, classLevel } });
+      } else {
+        res = await apiClient.get('/teacher/questions', { params: { limit: 200 } });
+      }
       setAllQuestions(res.data.data || []);
     } catch (err) { console.error('Sorular çekilemedi'); }
   };
@@ -139,7 +188,14 @@ export default function TeacherExamsPage() {
       return showToast('7-7-7 kuralını tamamlamalısın!', 'error');
     }
     try {
-      const payload = { name: examName, classLevel, questions: [...easyQ, ...mediumQ, ...hardQ].map(q => q._id) };
+      const payload = {
+        name: examName,
+        classLevel,
+        duration: durationMin || 60,
+        questions: [...easyQ, ...mediumQ, ...hardQ].map(q => q._id),
+        ...(schedStart ? { startAt: schedStart } : {}),
+        ...(schedEnd ? { endAt: schedEnd } : {}),
+      };
       await apiClient.post('/exams', payload);
       showToast('Sınav yayınlandı!', 'success');
       setView('list');
@@ -175,11 +231,14 @@ export default function TeacherExamsPage() {
                 className="flex-1 p-2 rounded-lg border dark:bg-slate-800 dark:text-white"
               />
               <select
-                value={poolSubject}
+                value={profile.branchApproval === 'approved' ? (profile.branch || 'Tümü') : poolSubject}
                 onChange={(e) => setPoolSubject(e.target.value)}
+                disabled={profile.branchApproval === 'approved'}
                 className="p-2 rounded-lg border text-sm dark:bg-slate-800 dark:text-white"
               >
-                {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                {profile.branchApproval === 'approved' 
+                  ? [profile.branch || 'Tümü'].map(s => <option key={s} value={s}>{s}</option>)
+                  : SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div className="px-2">
@@ -191,6 +250,20 @@ export default function TeacherExamsPage() {
               >
                 {CLASS_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
               </select>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Süre (dk)</label>
+                  <input type="number" min={10} max={180} value={durationMin} onChange={(e)=>setDurationMin(parseInt(e.target.value||'60'))} className="w-full p-2 rounded-lg border text-sm dark:bg-slate-800 dark:text-white" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Başlangıç</label>
+                  <input type="datetime-local" value={schedStart} onChange={(e)=>setSchedStart(e.target.value)} className="w-full p-2 rounded-lg border text-sm dark:bg-slate-800 dark:text-white" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Bitiş</label>
+                  <input type="datetime-local" value={schedEnd} onChange={(e)=>setSchedEnd(e.target.value)} className="w-full p-2 rounded-lg border text-sm dark:bg-slate-800 dark:text-white" />
+                </div>
+              </div>
             </div>
             <div className="space-y-3 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
               {poolQuestions.map(q => (
@@ -210,6 +283,11 @@ export default function TeacherExamsPage() {
 
   return (
     <div className="p-6 space-y-10 animate-in fade-in duration-500">
+      {profile.branchApproval !== 'approved' && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700">
+          Branş onayı bekleniyor. Onaylanınca branşınızdaki tüm sınav ve soru havuzuna erişebileceksiniz.
+        </div>
+      )}
       <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
         <div>
           <h1 className="text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
@@ -217,9 +295,43 @@ export default function TeacherExamsPage() {
           </h1>
           <p className="text-slate-500 font-medium mt-1">Toplam {exams.length} sınavın bulunuyor.</p>
         </div>
-        <Button variant="primary" size="md" onClick={() => setView('studio')}>
-          <Plus size={20} /> Yeni Sınav Oluştur
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2 mr-4 text-xs">
+            <label className="font-bold text-slate-500">Başlangıç</label>
+            <input type="datetime-local" value={schedStart} onChange={(e)=>setSchedStart(e.target.value)} className="border rounded px-2 py-1" />
+            <label className="font-bold text-slate-500 ml-2">Bitiş</label>
+            <input type="datetime-local" value={schedEnd} onChange={(e)=>setSchedEnd(e.target.value)} className="border rounded px-2 py-1" />
+            <label className="font-bold text-slate-500 ml-2">Süre</label>
+            <input type="number" min={10} max={180} value={durationMin} onChange={(e)=>setDurationMin(parseInt(e.target.value||'60'))} className="w-20 border rounded px-2 py-1" />
+          </div>
+          <Button variant="outline" size="md" onClick={async()=>{
+            try{
+              if (profile.branchApproval !== 'approved') {
+                showToast('Branş onayı sonrası hızlı sınav kullanılabilir.', 'warning');
+                return;
+              }
+              const title = `Hızlı Sınav • ${profile.branch || 'Konu'} • ${classLevel}`;
+              await apiClient.post('/exams/auto-generate', {
+                title,
+                duration: durationMin || 25,
+                classLevel,
+                subject: profile.branch || 'Matematik',
+                ...(schedStart ? { startAt: schedStart } : {}),
+                ...(schedEnd ? { endAt: schedEnd } : {})
+              });
+              showToast('Hızlı sınav oluşturuldu!', 'success');
+              fetchExams();
+            }catch(e){
+              const msg = e?.response?.data?.message || 'Hızlı sınav oluşturulamadı';
+              showToast(msg, 'error');
+            }
+          }}>
+            <Sparkles size={18}/> Hızlı Sınav
+          </Button>
+          <Button variant="primary" size="md" onClick={() => setView('studio')}>
+            <Plus size={20} /> Yeni Sınav Oluştur
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -230,6 +342,11 @@ export default function TeacherExamsPage() {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {exams.length === 0 && (
+            <div className="md:col-span-2 lg:col-span-3 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-300">
+              Henüz sınav yok. Hızlı Sınav ile otomatik oluşturabilir veya Yeni Sınav Oluştur ile 7-7-7 stüdyosunu kullanabilirsin.
+            </div>
+          )}
           {exams.map((exam) => (
             <Card key={exam._id} className="p-6 rounded-[2rem]">
               <div className="flex justify-between mb-4">

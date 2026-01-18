@@ -18,6 +18,21 @@ exports.getQuestions = async (req, res, next) => {
     if (classLevel && classLevel !== 'Tümü') query.classLevel = classLevel;
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
 
+    // Eğer istek öğretmenden geliyorsa ve branşı onaylıysa, varsayılan olarak kendi branşındaki (subject) soruları göster
+    // (subject filtrelenmemişse veya 'Tümü' ise)
+    try {
+      if (req.user && req.user.role === 'teacher') {
+        const User = require('../models/User');
+        const u = await User.findById(req.user.id).select('branch branchApproval');
+        if (u && u.branch && u.branchApproval === 'approved') {
+          const noSubjectFilter = !('subject' in req.query) || req.query.subject === 'Tümü' || !query.subject;
+          if (noSubjectFilter) {
+            query.subject = { $regex: `^${u.branch}$`, $options: 'i' };
+          }
+        }
+      }
+    } catch {}
+
     const total = await Question.countDocuments(query);
 
     // Sadece özet alanlar + correctAnswer ve solution
@@ -34,10 +49,22 @@ exports.getQuestions = async (req, res, next) => {
       correctAnswer: 1,
       solution: 1
     };
-    const questions = await Question.find(query, projection)
+    let questions = await Question.find(query, projection)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
+
+    // Hiç sonuç yoksa, subject için daha gevşek bir eşleşme dene
+    if (total === 0 && query.subject?.$regex) {
+      const looseQuery = { ...query, subject: { $regex: req.user?.role === 'teacher' ? req.userBranch || '' : '', $options: 'i' } };
+      const looseTotal = await Question.countDocuments(looseQuery);
+      if (looseTotal > 0) {
+        questions = await Question.find(looseQuery, projection)
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit);
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -95,8 +122,20 @@ exports.getTeacherQuestions = async (req, res, next) => {
 };
 exports.createQuestion = async (req, res, next) => {
   try {
-    const { text, subject, classLevel, difficulty, type, correctAnswer, solution, source } = req.body;
+    const { text, subject, classLevel, difficulty, type, correctAnswer, solution, source, topic } = req.body;
     const createdBy = req.user?.id || req.body.createdBy;
+
+    // Teacher branch enforcement: if teacher has approved branch, lock subject to branch
+    let finalSubject = subject;
+    try {
+      if (req.user?.id) {
+        const User = require('../models/User');
+        const u = await User.findById(req.user.id).select('role branch branchApproval');
+        if (u && u.role === 'teacher' && u.branch && u.branchApproval === 'approved') {
+          finalSubject = u.branch;
+        }
+      }
+    } catch {}
 
     // 1. Ana Resmi Bul
     const mainImgFile = req.files ? req.files.find(f => f.fieldname === 'image') : null;
@@ -130,7 +169,7 @@ exports.createQuestion = async (req, res, next) => {
     }
 
     const newQuestion = await Question.create({
-      text, subject, classLevel, difficulty, type, correctAnswer, solution,
+      text, subject: finalSubject, classLevel, difficulty, type, correctAnswer, solution, topic,
       image: mainImagePath,
       options: optionsData,
       source: source || 'Manuel',
@@ -153,9 +192,26 @@ exports.batchCreateQuestions = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Soru listesi geçersiz." });
     }
 
-    // AI soruları frontend'den "source: 'AI'" etiketiyle geliyor.
-    // Direkt kaydediyoruz.
-    const savedQuestions = await Question.insertMany(questions);
+    // If teacher has approved branch, lock subject of all inserted questions to branch
+    let enforcedSubject = null;
+    try {
+      if (req.user?.id) {
+        const User = require('../models/User');
+        const u = await User.findById(req.user.id).select('role branch branchApproval');
+        if (u && u.role === 'teacher' && u.branch && u.branchApproval === 'approved') {
+          enforcedSubject = u.branch;
+        }
+      }
+    } catch {}
+
+    const payload = questions.map(q => ({
+      ...q,
+      subject: enforcedSubject ? enforcedSubject : (q.subject || 'Matematik'),
+      source: q.source || 'AI',
+      createdBy: req.user?.id || q.createdBy
+    }));
+
+    const savedQuestions = await Question.insertMany(payload);
 
     res.status(201).json({
       success: true,
@@ -175,7 +231,7 @@ exports.updateQuestion = async (req, res, next) => {
     if (!question) return res.status(404).json({ message: "Soru bulunamadı" });
 
     // Temel alanları güncelle
-    const fields = ['text', 'subject', 'classLevel', 'difficulty', 'type', 'correctAnswer', 'solution', 'source'];
+    const fields = ['text', 'subject', 'classLevel', 'difficulty', 'type', 'correctAnswer', 'solution', 'source', 'topic'];
     fields.forEach(f => { if(req.body[f]) question[f] = req.body[f]; });
 
     // Ana Resim Güncellemesi

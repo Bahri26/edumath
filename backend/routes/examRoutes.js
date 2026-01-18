@@ -34,7 +34,14 @@ router.get('/by-class', authMiddleware, roleMiddleware(['student']), async (req,
       return res.status(400).json({ message: 'Öğrenci sınıf bilgisi bulunamadı.' });
     }
 
-    const exams = await Exam.find({ status: 'active', classLevel: grade }).sort({ createdAt: -1 });
+    const now = new Date();
+    const windowFilter = {
+      $and: [
+        { $or: [{ startAt: { $exists: false } }, { startAt: null }, { startAt: { $lte: now } }] },
+        { $or: [{ endAt: { $exists: false } }, { endAt: null }, { endAt: { $gte: now } }] }
+      ]
+    };
+    const exams = await Exam.find({ status: 'active', classLevel: grade, ...windowFilter }).sort({ createdAt: -1 });
     res.json(exams);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -55,7 +62,7 @@ router.get('/:id', async (req, res) => {
 // 3. MANUEL SINAV OLUŞTUR (TEACHER) - SÜRÜKLE BIRAK
 router.post('/', authMiddleware, roleMiddleware(['teacher']), async (req, res) => {
   try {
-    const { name, description, classLevel, duration, questions } = req.body;
+    const { name, description, classLevel, duration, questions, startAt, endAt } = req.body;
     
     if (!name || !questions || questions.length !== 21) {
       return res.status(400).json({ message: 'Sınav adı ve 21 soru gerekli' });
@@ -69,6 +76,15 @@ router.post('/', authMiddleware, roleMiddleware(['teacher']), async (req, res) =
       return res.status(400).json({ message: 'Tüm sorular bulunamadı' });
     }
 
+    // Determine subject based on teacher's approved branch
+    let subject = undefined;
+    try {
+      const teacher = await User.findById(req.user.id).select('branch branchApproval role');
+      if (teacher && teacher.role === 'teacher' && teacher.branch && teacher.branchApproval === 'approved') {
+        subject = teacher.branch;
+      }
+    } catch {}
+
     const newExam = await Exam.create({
       title: name,
       description: description || '',
@@ -76,7 +92,10 @@ router.post('/', authMiddleware, roleMiddleware(['teacher']), async (req, res) =
       duration,
       questions: questionIds,
       createdBy: req.user.id,
-      status: 'active'
+      ...(subject ? { subject } : {}),
+      status: 'active',
+      ...(startAt ? { startAt: new Date(startAt) } : {}),
+      ...(endAt ? { endAt: new Date(endAt) } : {})
     });
 
     res.status(201).json({ success: true, message: 'Sınav oluşturuldu', data: newExam });
@@ -88,52 +107,31 @@ router.post('/', authMiddleware, roleMiddleware(['teacher']), async (req, res) =
 // 4. OTOMATİK SINAV OLUŞTUR (TEACHER) - KONU FİLTRESİ EKLENDİ 🚨
 router.post('/auto-generate', authMiddleware, roleMiddleware(['teacher']), async (req, res) => {
   try {
-    // Frontend'den gelen 'subject' (konu) parametresini alıyoruz
-    const { title, duration, classLevel, subject } = req.body;
+    const { title, duration, classLevel, subject, startAt, endAt } = req.body;
+    // Sadece ilgili sınıf ve branş için 7 kolay, 7 orta, 7 zor soru seç
+    const matchStage = { classLevel };
+    if (subject) matchStage.subject = { $regex: subject, $options: 'i' };
 
-    // Filtre objesi oluştur
-    const matchStage = {};
-    
-    // 1. Sınıf Filtresi
-    if (classLevel && classLevel !== 'Tümü') {
-        matchStage.classLevel = classLevel;
-    }
-
-    // 2. 🚨 KONU FİLTRESİ (Regex ile esnek arama: "Örüntü" yazsa bile "Örüntüler"i bulur)
-    if (subject) {
-        // 'text' içinde veya 'subject' alanında arama yapabiliriz. 
-        // Veri modelinde konu 'subject' alanında tutuluyorsa:
-        matchStage.subject = { $regex: subject, $options: 'i' }; 
-    }
-
-    // 1. Kolay Sorular (7 Adet)
     const easyQuestions = await Question.aggregate([
       { $match: { ...matchStage, difficulty: 'Kolay' } },
       { $sample: { size: 7 } }
     ]);
-
-    // 2. Orta Sorular (7 Adet)
     const mediumQuestions = await Question.aggregate([
       { $match: { ...matchStage, difficulty: 'Orta' } },
       { $sample: { size: 7 } }
     ]);
-
-    // 3. Zor Sorular (7 Adet)
     const hardQuestions = await Question.aggregate([
       { $match: { ...matchStage, difficulty: 'Zor' } },
       { $sample: { size: 7 } }
     ]);
 
-    // Hepsini birleştir
-    const allQuestions = [...easyQuestions, ...mediumQuestions, ...hardQuestions];
-    
-    // Yeterli soru var mı kontrolü
-    if (allQuestions.length === 0) {
-      return res.status(400).json({ 
-        message: `Kriterlere uygun soru bulunamadı! "${classLevel}" seviyesinde ve "${subject}" konusunda Havuza soru eklemelisiniz.` 
+    if (easyQuestions.length < 7 || mediumQuestions.length < 7 || hardQuestions.length < 7) {
+      return res.status(400).json({
+        message: `Her zorluk seviyesinden 7'şer soru bulunamadı! (Kolay: ${easyQuestions.length}, Orta: ${mediumQuestions.length}, Zor: ${hardQuestions.length})`
       });
     }
 
+    const allQuestions = [...easyQuestions, ...mediumQuestions, ...hardQuestions];
     const questionIds = allQuestions.map(q => q._id);
 
     const newExam = new Exam({
@@ -142,12 +140,13 @@ router.post('/auto-generate', authMiddleware, roleMiddleware(['teacher']), async
       classLevel: classLevel || '9. Sınıf',
       questions: questionIds,
       status: 'active',
-      createdBy: req.user.id
+      createdBy: req.user.id,
+      ...(subject ? { subject } : {}),
+      ...(startAt ? { startAt: new Date(startAt) } : {}),
+      ...(endAt ? { endAt: new Date(endAt) } : {})
     });
-
     await newExam.save();
     res.status(201).json(newExam);
-
   } catch (err) {
     res.status(500).json({ message: "Sınav oluşturulurken hata: " + err.message });
   }
@@ -190,20 +189,27 @@ router.put('/:id', authMiddleware, roleMiddleware(['teacher']), async (req, res)
 });
 
 // 5. SINAV SONUCUNU KAYDET VE ANALİZ ET
-router.post('/:id/submit', async (req, res) => {
+router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (req, res) => {
   try {
-    const { studentId, studentName, answers } = req.body;
+    const { answers } = req.body;
     // Soruları 'subject' (konu) verisiyle birlikte çekiyoruz
     const exam = await Exam.findById(req.params.id).populate('questions');
+    if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı' });
+
+    // Tekrar sınav kontrolü (öğrencinin daha önce gönderimi var mı?)
+    const exists = (exam.results || []).some(r => String(r.studentId) === String(req.user.id));
+    if (exists) return res.status(400).json({ message: 'Bu sınavı zaten tamamladınız.' });
 
     let correctCount = 0;
-    let weakTopicsSet = new Set(); // Tekrar eden konuları engellemek için Set kullanıyoruz
+    let weakTopicsSet = new Set();
+    const topicCounts = new Map();
 
     exam.questions.forEach(q => {
       // Eğer cevap yanlışsa veya boşsa, o sorunun konusunu 'zayıf konu' olarak ekle
       if (answers[q._id] !== q.correctAnswer) {
         if (q.subject) { 
-           weakTopicsSet.add(q.subject); // Örn: "Sayı Örüntüleri"
+           weakTopicsSet.add(q.subject);
+           topicCounts.set(q.subject, (topicCounts.get(q.subject) || 0) + 1);
         }
       } else {
         correctCount++;
@@ -215,22 +221,39 @@ router.post('/:id/submit', async (req, res) => {
     const wrongCount = totalQuestions - correctCount;
 
     // Sonuç objesine weakTopics'i de ekliyoruz
+    const studentName = (await User.findById(req.user.id).select('name'))?.name || 'Öğrenci';
+    const topicStats = Array.from(topicCounts.entries()).map(([topic, wrong]) => ({ topic, wrong }));
     exam.results.push({ 
-      studentId, 
+      studentId: req.user.id, 
       studentName, 
       score, 
       correctCount, 
       wrongCount,
-      weakTopics: Array.from(weakTopicsSet) // Set'i Array'e çevir
+      topicStats,
+      weakTopics: Array.from(weakTopicsSet)
     });
     
     await exam.save();
 
     res.json({ 
       message: "Sınav tamamlandı", 
-      score, 
+      score,
+      topicStats,
       weakTopics: Array.from(weakTopicsSet) 
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Öğrencinin bir sınava ait sonucu
+router.get('/:id/my-result', authMiddleware, roleMiddleware(['student']), async (req, res) => {
+  try {
+    const exam = await Exam.findById(req.params.id);
+    if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı' });
+    const my = (exam.results || []).find(r => String(r.studentId) === String(req.user.id));
+    if (!my) return res.status(404).json({ message: 'Sonuç bulunamadı' });
+    res.json(my);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

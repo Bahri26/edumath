@@ -58,13 +58,29 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // --- VERİTABANI BAĞLANTISI ---
 let dbConnected = false;
 const dbName = 'edumathDB';
-const mongoURI = process.env.MONGO_URI || `mongodb://127.0.0.1:27017/${dbName}`;
+// Allow building Atlas URI from components to avoid URL-encoding issues
+const mongoURI = (() => {
+    const envURI = process.env.MONGO_URI;
+    if (envURI && envURI.trim()) return envURI.trim();
+    const host = process.env.MONGO_HOST;
+    const user = process.env.MONGO_USER;
+    const pass = process.env.MONGO_PASS;
+    const db = process.env.MONGO_DB || dbName;
+    if (host && user && typeof pass === 'string') {
+        const encUser = encodeURIComponent(user);
+        const encPass = encodeURIComponent(pass);
+        const protocol = process.env.MONGO_PROTOCOL || 'mongodb+srv';
+        return `${protocol}://${encUser}:${encPass}@${host}/${db}?retryWrites=true&w=majority`;
+    }
+    return `mongodb://127.0.0.1:27017/${dbName}`;
+})();
 
 const connectDB = async () => {
     try {
         const conn = await mongoose.connect(mongoURI, { serverSelectionTimeoutMS: 5000 });
         dbConnected = true;
-        console.log(`✅ MongoDB Bağlandı: ${conn.connection.host}`);
+        const hostInfo = conn?.connection?.host || 'unknown';
+        console.log(`✅ MongoDB Bağlandı: ${hostInfo}`);
     } catch (error) {
         dbConnected = false;
         console.error(`❌ Bağlantı Hatası: ${error.message}`);
@@ -108,6 +124,7 @@ const messageRoutes = require('./routes/messageRoutes');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const adminRoutes = require('./routes/adminRoutes');
+const progressRoutes = require('./routes/progressRoutes');
 
 // --- ROTALARI AKTİF ET ---
 app.use('/api/auth', authRoutes);
@@ -124,6 +141,9 @@ app.use('/api/exercises', exerciseRoutes); // Egzersizler
 app.use('/api/assignments', assignmentRoutes); // Ödevler
 app.use('/api/messages', messageRoutes); // Mesajlar (Chat)
 app.use('/api/admin', adminRoutes); // Admin işlemleri
+app.use('/api/progress', progressRoutes); // İlerleme ve trendler
+    app.use('/api/topics', require('./routes/topicRoutes'));
+    app.use('/api/lessons', require('./routes/lessonRoutes'));
 
 // --- API Dokümantasyonu ---
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

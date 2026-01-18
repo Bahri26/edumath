@@ -40,5 +40,38 @@ export default {
   setUserPassword: async (id, newPassword) => {
     const resp = await apiClient.post(`/admin/users/${id}/set-password`, { newPassword });
     return resp.data;
+  },
+  createUser: async (payload) => {
+    const resp = await apiClient.post('/admin/users', payload);
+    return resp.data;
+  },
+  updateUser: async (id, payload) => {
+    const resp = await apiClient.patch(`/admin/users/${id}`, payload);
+    return resp.data;
+  },
+  deleteUser: async (id) => {
+    const resp = await apiClient.delete(`/admin/users/${id}`);
+    return resp.data;
+  },
+  disableUser: async (id) => {
+    const resp = await apiClient.post(`/admin/users/${id}/disable`);
+    return resp.data;
+  },
+  enableUser: async (id) => {
+    const resp = await apiClient.post(`/admin/users/${id}/enable`);
+    return resp.data;
+  }
+  ,
+  listBranchRequests: async (q = '', page = 1, limit = 10) => {
+    const resp = await apiClient.get(`/admin/branch-requests?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`);
+    return resp.data; // { items, pagination }
+  },
+  approveBranch: async (id) => {
+    const resp = await apiClient.post(`/admin/branch-requests/${id}/approve`);
+    return resp.data; // { message }
+  },
+  denyBranch: async (id) => {
+    const resp = await apiClient.post(`/admin/branch-requests/${id}/deny`);
+    return resp.data; // { message }
   }
 };

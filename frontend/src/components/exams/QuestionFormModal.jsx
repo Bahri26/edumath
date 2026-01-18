@@ -9,7 +9,7 @@ import { useToast } from '../../context/ToastContext';
 
 const QuestionFormModal = ({ 
   isOpen, onClose, editingId, manualForm, setManualForm, 
-  mainImage, setMainImage, onSave 
+  mainImage, setMainImage, onSave, lockedSubject 
 }) => {
   const firstInputRef = useRef(null);
   const { showToast } = useToast();
@@ -19,6 +19,7 @@ const QuestionFormModal = ({
   const [fallbackForm, setFallbackForm] = useState({
     text: '',
     subject: 'Matematik',
+    topic: '',
     classLevel: '9. Sınıf',
     difficulty: 'Orta',
     correctAnswer: '',
@@ -35,7 +36,8 @@ const QuestionFormModal = ({
   // Veri Senkronizasyonu
   const form = {
     text: effectiveForm?.text || '',
-    subject: effectiveForm?.subject || 'Matematik',
+    subject: lockedSubject ? lockedSubject : (effectiveForm?.subject || 'Matematik'),
+    topic: effectiveForm?.topic || '',
     classLevel: effectiveForm?.classLevel || '9. Sınıf',
     difficulty: effectiveForm?.difficulty || 'Orta',
     correctAnswer: effectiveForm?.correctAnswer || '',
@@ -48,6 +50,13 @@ const QuestionFormModal = ({
   }, [isOpen]);
 
   const setField = (k, v) => effectiveSetForm(prev => ({ ...(prev || {}), [k]: v }));
+  // Ensure subject stays locked if provided
+  useEffect(() => {
+    if (lockedSubject) {
+      setField('subject', lockedSubject);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedSubject]);
   
   const handleFormSubmit = async (e) => {
     e.preventDefault();

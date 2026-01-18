@@ -15,7 +15,8 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
     email: '',
     password: '',
     role: 'student', 
-    grade: '9. Sınıf' // Varsayılan sınıf
+    grade: '9. Sınıf', // Varsayılan sınıf
+    schoolType: 'lise' // Varsayılan kademe
   });
 
   const { login } = useContext(AuthContext); 
@@ -55,7 +56,8 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
           email: formData.email,
           password: formData.password,
           role: formData.role,
-          grade: formData.role === 'student' ? formData.grade : undefined
+          grade: formData.role === 'student' ? formData.grade : undefined,
+          schoolType: formData.role === 'student' ? formData.schoolType : undefined
         });
         setSuccess("Kayıt başarıyla oluşturuldu! Lütfen giriş yapın.");
         setIsLoginView(true); 
@@ -126,8 +128,25 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
                   </button>
                 </div>
 
-                {/* 🚨 YENİ: SINIF SEVİYESİ SEÇİMİ (Sadece Öğrenci İçin) */}
+                {/* 🚨 YENİ: KADEME VE SINIF SEVİYESİ SEÇİMİ (Sadece Öğrenci İçin) */}
                 {formData.role === 'student' && (
+                  <>
+                  <div className="space-y-1 animate-fade-in">
+                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Kademe</label>
+                    <div className="relative">
+                      <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <select
+                        name="schoolType"
+                        value={formData.schoolType}
+                        onChange={handleChange}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors appearance-none cursor-pointer"
+                      >
+                        <option value="ilkokul">İlkokul</option>
+                        <option value="ortaokul">Ortaokul</option>
+                        <option value="lise">Lise</option>
+                      </select>
+                    </div>
+                  </div>
                   <div className="space-y-1 animate-fade-in">
                     <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Sınıf Seviyesi</label>
                     <div className="relative">
@@ -144,6 +163,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
                       </select>
                     </div>
                   </div>
+                  </>
                 )}
 
                 {/* AD SOYAD */}

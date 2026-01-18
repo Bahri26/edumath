@@ -41,6 +41,17 @@ export const getMyQuestions = async () => {
   }
 };
 
+// ✅ ÖĞRETMENİN BRANŞINA GÖRE SORU BANKASI (onaylı branş gerekli)
+export const getSubjectQuestions = async (params = {}) => {
+  try {
+    const response = await apiClient.get('/teacher/subject/questions', { params });
+    return response.data; // { success, data, total, page, totalPages }
+  } catch (error) {
+    console.error('Subject questions error:', error);
+    throw error;
+  }
+};
+
 // ✅ ÖĞRETMENİN ANKETLERİNİ GETİR
 export const getMySurveys = async () => {
   try {

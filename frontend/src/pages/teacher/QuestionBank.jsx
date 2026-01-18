@@ -103,6 +103,7 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
 
 export default function QuestionBank() {
   const { showToast } = useToast();
+  const [profile, setProfile] = useState({ branch: '', branchApproval: 'none' });
   const [searchParams, setSearchParams] = useSearchParams();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -114,7 +115,44 @@ export default function QuestionBank() {
   const [mainImage, setMainImage] = useState({ file: null, preview: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [filters, setFilters] = useState({ subject: 'Tümü', difficulty: 'Tümü', classLevel: 'Tümü' });
+  const [filters, setFilters] = useState({ subject: 'Tümü', difficulty: 'Tümü', classLevel: 'Tümü', topic: 'Tümü' });
+  const [topics, setTopics] = useState([]);
+    // Load teacher profile for branch/approval
+    useEffect(() => {
+      (async () => {
+        try {
+          const res = await apiClient.get('/users/profile');
+          const branch = res.data?.branch || '';
+          const branchApproval = res.data?.branchApproval || 'none';
+          setProfile({ branch, branchApproval });
+          if (branch && branchApproval === 'approved') {
+            setFilters(f => ({ ...f, subject: branch }));
+          }
+        } catch {}
+      })();
+    }, []);
+    // Auto-refresh profile while pending approval (without referencing fetchQuestions before init)
+    useEffect(() => {
+      let timer;
+      if (profile.branch && profile.branchApproval === 'pending') {
+        timer = setInterval(async () => {
+          try {
+            const res = await apiClient.get('/users/profile');
+            const branch = res.data?.branch || '';
+            const branchApproval = res.data?.branchApproval || 'none';
+            if (branchApproval === 'approved') {
+              setProfile({ branch, branchApproval });
+              setFilters(f => ({ ...f, subject: branch }));
+              showToast('Branş onaylandı! İçerikleriniz yükleniyor…', 'success');
+              // Trigger list refresh via state change
+              setPage(1);
+              clearInterval(timer);
+            }
+          } catch {}
+        }, 5000);
+      }
+      return () => { if (timer) clearInterval(timer); };
+    }, [profile.branch, profile.branchApproval, showToast]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalQuestions, setTotalQuestions] = useState(0);
@@ -136,9 +174,10 @@ export default function QuestionBank() {
     const subject = searchParams.get('subject') || 'Tümü';
     const classLevel = searchParams.get('classLevel') || 'Tümü';
     const difficulty = searchParams.get('difficulty') || 'Tümü';
+    const topic = searchParams.get('topic') || 'Tümü';
     const p = parseInt(searchParams.get('page') || '1');
     setSearchQuery(s);
-    setFilters({ subject, classLevel, difficulty });
+    setFilters({ subject, classLevel, difficulty, topic });
     setPage(Number.isNaN(p) ? 1 : p);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -161,7 +200,30 @@ export default function QuestionBank() {
         search: debouncedSearch,
         ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== 'Tümü'))
       };
-      const res = await apiClient.get('/teacher/questions', { params });
+      // If branch approved, use subject-wide endpoint (ignores external subject filter and uses teacher branch)
+      let res;
+      const shouldUseSubjectEndpoint = (profile.branch && profile.branchApproval === 'approved') || (filters.subject && filters.subject !== 'Tümü');
+      if (shouldUseSubjectEndpoint) {
+        const { subject, ...rest } = params; // subject'i backend tarafı branştan belirliyor; topic kalır
+        const subjectParam = profile.branch && profile.branchApproval === 'approved' ? profile.branch : filters.subject;
+        try {
+          // Öncelik: öğretmen branşına özel endpoint (onay gerekli)
+          res = await apiClient.get('/teacher/subject/questions', { params: rest });
+          // Boş sonuç ise genel listeye düş
+          if (!(res.data?.data?.length > 0)) {
+            res = await apiClient.get('/questions', { params: { ...rest, subject: subjectParam } });
+          }
+        } catch (err) {
+          // Yetki/Onay nedeniyle hata (401/403/404) durumunda genel endpoint'e düş
+          try {
+            res = await apiClient.get('/questions', { params: { ...rest, subject: subjectParam } });
+          } catch (innerErr) {
+            throw innerErr;
+          }
+        }
+      } else {
+        res = await apiClient.get('/teacher/questions', { params });
+      }
       if (res.data.data) {
         setQuestions(res.data.data);
         setTotalPages(res.data.totalPages || 1);
@@ -172,9 +234,27 @@ export default function QuestionBank() {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, filters, showToast]);
+  }, [page, debouncedSearch, filters, profile, showToast]);
 
   useEffect(() => { fetchQuestions(); }, [fetchQuestions]);
+
+  // Branş onaylıysa konu listesini yükle
+  useEffect(() => {
+    (async () => {
+      if (profile.branch && profile.branchApproval === 'approved') {
+        try {
+          const res = await apiClient.get('/teacher/subject/topics');
+          const list = res.data?.topics || [];
+          setTopics(list);
+          // Eğer mevcut topic filtresi listede yoksa sıfırla
+          if (filters.topic !== 'Tümü' && !list.includes(filters.topic)) {
+            setFilters(f => ({ ...f, topic: 'Tümü' }));
+          }
+        } catch {}
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.branch, profile.branchApproval]);
 
   const handleDelete = async (id) => {
     if (window.confirm("Bu soruyu silmek istediğinizden emin misiniz?")) {
@@ -231,12 +311,31 @@ export default function QuestionBank() {
             className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border-none rounded-2xl focus:ring-4 focus:ring-indigo-500/10 font-medium outline-none"
           />
         </div>
-        <div className="lg:col-span-7 grid grid-cols-3 gap-3">
-          <FilterSelect icon={<Layers size={14}/>} value={filters.subject} onChange={(v) => setFilters({...filters, subject: v})} options={['Tümü', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji']} />
+        <div className="lg:col-span-7 grid grid-cols-4 gap-3">
+          <FilterSelect 
+            icon={<Layers size={14}/>} 
+            value={profile.branch && profile.branchApproval === 'approved' ? profile.branch : filters.subject}
+            onChange={(v) => setFilters({...filters, subject: v})}
+            options={profile.branch && profile.branchApproval === 'approved' ? [profile.branch] : ['Tümü', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji']}
+            disabled={profile.branchApproval === 'approved'}
+          />
+          <FilterSelect 
+            icon={<Layers size={14}/>} 
+            value={filters.topic}
+            onChange={(v) => setFilters({...filters, topic: v})}
+            options={['Tümü', ...topics]}
+          />
           <FilterSelect icon={<Hash size={14}/>} value={filters.classLevel} onChange={(v) => setFilters({...filters, classLevel: v})} options={['Tümü', ...Array.from({length:12}, (_,i)=>`${i+1}. Sınıf`)]} />
           <FilterSelect icon={<Star size={14}/>} value={filters.difficulty} onChange={(v) => setFilters({...filters, difficulty: v})} options={['Tümü', 'Kolay', 'Orta', 'Zor']} />
         </div>
       </div>
+
+      {/* Approval gate */}
+      {profile.branchApproval !== 'approved' && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 mb-4">
+          Branş onayı bekleniyor. Onaylanınca branşınızdaki tüm sorulara erişebileceksiniz.
+        </div>
+      )}
 
       {/* Soru Listesi */}
       <div className="space-y-4">
@@ -285,6 +384,7 @@ export default function QuestionBank() {
           setManualForm={setManualForm}
           mainImage={mainImage}
           setMainImage={setMainImage}
+          lockedSubject={profile.branchApproval === 'approved' ? profile.branch : undefined}
           onClose={() => { setIsModalOpen(false); setEditingQuestion(null); setManualForm(null); setMainImage({file:null, preview:''}); }}
           onSave={() => { fetchQuestions(); setIsModalOpen(false); setEditingQuestion(null); setManualForm(null); setMainImage({file:null, preview:''}); }}
         />
@@ -298,7 +398,7 @@ export default function QuestionBank() {
             // Soru oluşturma modalını parsed verilerle aç
             setManualForm({
               text: parsed.text || '',
-              subject: parsed.subject || 'Matematik',
+              subject: profile.branchApproval === 'approved' ? (profile.branch || 'Matematik') : (parsed.subject || 'Matematik'),
               classLevel: parsed.classLevel || '9. Sınıf',
               difficulty: parsed.difficulty || 'Orta',
               correctAnswer: parsed.correctAnswer || '',
