@@ -1,11 +1,30 @@
 const knex = require('../db/knex');
 
+let optionMetaCache = null;
+
+async function getOptionMeta() {
+  if (optionMetaCache) return optionMetaCache;
+
+  const info = await knex('question_options').columnInfo();
+  const cols = new Set(Object.keys(info || {}));
+
+  optionMetaCache = {
+    pk: cols.has('option_id') ? 'option_id' : 'id',
+    order: cols.has('option_order') ? 'option_order' : 'sort_order',
+    createdAt: cols.has('created_at') ? 'created_at' : null,
+    hasExplanation: cols.has('explanation')
+  };
+
+  return optionMetaCache;
+}
+
 module.exports = {
   /**
    * Tüm şıkları listele
    */
   async findAll({ page = 1, limit = 10, questionId = null } = {}) {
     try {
+      const meta = await getOptionMeta();
       let query = knex('question_options').select('*');
 
       if (questionId) query.where('question_id', questionId);
@@ -14,7 +33,7 @@ module.exports = {
       const total = totalCount?.count || 0;
 
       const rows = await query
-        .orderBy('sort_order', 'asc')
+        .orderBy(meta.order, 'asc')
         .limit(limit)
         .offset((page - 1) * limit);
 
@@ -30,8 +49,9 @@ module.exports = {
    */
   async findById(optionId) {
     try {
+      const meta = await getOptionMeta();
       return await knex('question_options')
-        .where('id', optionId)
+        .where(meta.pk, optionId)
         .first();
     } catch (error) {
       console.error('Error in question_optionsRepo.findById:', error);
@@ -44,13 +64,14 @@ module.exports = {
    */
   async create(data) {
     try {
+      const meta = await getOptionMeta();
       const [optionId] = await knex('question_options').insert({
         question_id: data.questionId || data.question_id,
         option_text: data.optionText || data.option_text,
-        sort_order: data.sortOrder || data.sort_order,
+        [meta.order]: data.optionOrder || data.option_order || data.sortOrder || data.sort_order || 1,
         is_correct: data.isCorrect ? 1 : 0,
-        explanation: data.explanation,
-        created_at: new Date()
+        ...(meta.hasExplanation ? { explanation: data.explanation } : {}),
+        ...(meta.createdAt ? { [meta.createdAt]: new Date() } : {})
       });
 
       return this.findById(optionId);
@@ -65,14 +86,15 @@ module.exports = {
    */
   async update(optionId, data) {
     try {
+      const meta = await getOptionMeta();
       const updateData = {};
       if (data.option_text) updateData.option_text = data.option_text;
-      if (data.sort_order) updateData.sort_order = data.sort_order;
+      if (data.option_order || data.sort_order) updateData[meta.order] = data.option_order || data.sort_order;
       if (data.is_correct !== undefined) updateData.is_correct = data.is_correct ? 1 : 0;
-      if (data.explanation) updateData.explanation = data.explanation;
+      if (meta.hasExplanation && data.explanation !== undefined) updateData.explanation = data.explanation;
 
       await knex('question_options')
-        .where('id', optionId)
+        .where(meta.pk, optionId)
         .update(updateData);
 
       return this.findById(optionId);
@@ -87,8 +109,9 @@ module.exports = {
    */
   async remove(optionId) {
     try {
+      const meta = await getOptionMeta();
       return await knex('question_options')
-        .where('id', optionId)
+        .where(meta.pk, optionId)
         .delete();
     } catch (error) {
       console.error('Error in question_optionsRepo.remove:', error);
@@ -101,10 +124,11 @@ module.exports = {
    */
   async getQuestionOptions(questionId) {
     try {
+      const meta = await getOptionMeta();
       return await knex('question_options')
         .where('question_id', questionId)
         .select('*')
-        .orderBy('sort_order', 'asc');
+        .orderBy(meta.order, 'asc');
     } catch (error) {
       console.error('Error in question_optionsRepo.getQuestionOptions:', error);
       throw error;
@@ -130,10 +154,11 @@ module.exports = {
    */
   async reorderOptions(questionId, optionOrder) {
     try {
+      const meta = await getOptionMeta();
       for (const [index, optionId] of optionOrder.entries()) {
         await knex('question_options')
-          .where({ id: optionId, question_id: questionId })
-          .update({ sort_order: index + 1 });
+          .where({ [meta.pk]: optionId, question_id: questionId })
+          .update({ [meta.order]: index + 1 });
       }
 
       return await this.getQuestionOptions(questionId);
@@ -148,6 +173,7 @@ module.exports = {
    */
   async shuffleOptions(questionId) {
     try {
+      const meta = await getOptionMeta();
       const options = await this.getQuestionOptions(questionId);
       
       // Fisher-Yates shuffle
@@ -159,8 +185,8 @@ module.exports = {
       // Yeni order'ları kayıt et
       for (const [index, option] of options.entries()) {
         await knex('question_options')
-          .where('id', option.id)
-          .update({ sort_order: index + 1 });
+          .where(meta.pk, option[meta.pk])
+          .update({ [meta.order]: index + 1 });
       }
 
       return options;

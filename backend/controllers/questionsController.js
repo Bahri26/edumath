@@ -75,6 +75,12 @@ async function list(req, res) {
       console.log(`🔍 [LIST] Teacher subject: ${teacherSubject} → language hint: ${mappedLanguage || 'none'}`);
     }
     
+    const requireOptions = String(require_options || '').toLowerCase() === 'false' ? false : true;
+    const parsedMinOptions = Number(require_options || min_options);
+    const minOptionCount = requireOptions
+      ? (Number.isFinite(parsedMinOptions) && parsedMinOptions > 0 ? parsedMinOptions : 2)
+      : null;
+
     const result = await repo.findAll({ 
       page: Number(page), 
       limit: Number(limit), 
@@ -83,7 +89,8 @@ async function list(req, res) {
       difficulty,
       gradeLevel: gradeLevel || grade_level,
       language,
-      minOptionCount: Number(require_options || min_options) || null,
+      minOptionCount,
+      requireSingleCorrect: requireOptions,
       isActive: isActive === 'false' ? false : true
     });
     const filteredRows = filterQuestionsByTeacherSubject(result.rows, teacherSubject);
@@ -105,6 +112,8 @@ async function myQuestions(req, res) {
       limit: Number(limit), 
       q,
       language,
+      minOptionCount: 2,
+      requireSingleCorrect: true,
       isActive: true
     });
     const filteredRows = filterQuestionsByTeacherSubject(result.rows, teacherSubject);

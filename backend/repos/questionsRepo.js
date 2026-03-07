@@ -4,27 +4,42 @@ module.exports = {
   /**
    * Tüm soruları listele (filtreleme ve pagination ile)
    */
-  async findAll({ page = 1, limit = 10, q = null, type = null, difficulty = null, gradeLevel = null, language = null, minOptionCount = null } = {}) {
+  async findAll({ page = 1, limit = 10, q = null, type = null, difficulty = null, gradeLevel = null, language = null, minOptionCount = null, requireSingleCorrect = false } = {}) {
     try {
+      const optionInfo = await knex('question_options').columnInfo();
+      const optionCols = new Set(Object.keys(optionInfo || {}));
+      const optionPk = optionCols.has('option_id') ? 'option_id' : 'id';
+
       // Helper function to apply filters
       const applyFilters = (query) => {
         if (q) query.where('content_text', 'like', '%' + q + '%');
         if (type) query.where('topic', type);
         if (difficulty) query.where('difficulty_level', difficulty);
+        query.whereNotNull('content_text').andWhereRaw('TRIM(content_text) <> ""');
         if (gradeLevel) {
           // Legacy data may be stored under either grade_level or class_level.
           query.where(function () {
             this.where('grade_level', gradeLevel).orWhere('class_level', gradeLevel);
           });
         }
-        if (minOptionCount && Number(minOptionCount) > 0) {
-          query.whereIn(
-            'question_id',
-            knex('question_options')
-              .select('question_id')
-              .groupBy('question_id')
-              .havingRaw('COUNT(*) >= ?', [Number(minOptionCount)])
-          );
+        const minOptions = Number(minOptionCount || 0);
+        if (minOptions > 0 || requireSingleCorrect) {
+          const qualitySubQuery = knex('question_options')
+            .select('question_id')
+            .groupBy('question_id');
+
+          if (minOptions > 0) {
+            qualitySubQuery.havingRaw('COUNT(*) >= ?', [minOptions]);
+          }
+
+          if (requireSingleCorrect) {
+            qualitySubQuery.havingRaw('SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) = 1');
+          }
+
+          // Also ensure options are not blank.
+          qualitySubQuery.havingRaw(`COUNT(CASE WHEN option_text IS NOT NULL AND TRIM(option_text) <> '' THEN ${optionPk} END) >= ?`, [Math.max(minOptions, 1)]);
+
+          query.whereIn('question_id', qualitySubQuery);
         }
         if (language) query.where('language', language);
       };
