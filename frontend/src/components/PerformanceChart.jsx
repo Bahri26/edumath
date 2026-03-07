@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   LineChart, Line,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import api from '../services/api';
 
@@ -11,8 +10,8 @@ const PerformanceChart = ({ studentId }) => {
   const [examData, setExamData] = useState([]);
   const [topicData, setTopicData] = useState([]);
   const [timeAnalysis, setTimeAnalysis] = useState(null);
+  const [totalExams, setTotalExams] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!studentId) {
@@ -26,26 +25,63 @@ const PerformanceChart = ({ studentId }) => {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      setError(null);
+      const lpRes = await api.get('/learning-path');
+      const payload = lpRes?.data?.data || {};
 
-      // Tüm verileri paralel olarak çek
-      const [historyRes, topicRes, timeRes] = await Promise.all([
-        api.get(`/analytics/exam-history/${studentId}`).catch(e => ({ data: { chart_data: [] } })),
-        api.get(`/analytics/topic-analysis/${studentId}`).catch(e => ({ data: { data: [] } })),
-        api.get(`/analytics/time-management/${studentId}`).catch(e => ({ data: {} }))
-      ]);
+      const recent = Array.isArray(payload.recentActivity) ? payload.recentActivity : [];
+      const topics = Array.isArray(payload.topics) ? payload.topics : [];
+      const overall = payload.overallStats || {};
+      const lastExam = payload.lastExam || null;
 
-      const history = historyRes?.data?.chart_data || [];
-      const topics = topicRes?.data?.data || [];
-      const time = timeRes?.data || {};
+      let history = recent
+        .slice(0, 5)
+        .reverse()
+        .map((item, idx) => ({
+          name: item?.date
+            ? new Date(item.date).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })
+            : `S${idx + 1}`,
+          puan: Number(item?.avg_score ?? 0)
+        }));
 
-      setExamData(history.slice(0, 5)); // Son 5 sınav
-      setTopicData(topics.length > 0 ? topics : []);
-      setTimeAnalysis(time);
+      if (!history.length && Number(overall?.totalExams || 0) > 0) {
+        history = [{
+          name: lastExam?.created_at
+            ? new Date(lastExam.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })
+            : 'Son Sınav',
+          puan: Number(lastExam?.score ?? overall?.avgScore ?? 0)
+        }];
+      }
+
+      let mappedTopics = topics.map((t) => ({
+        subject: t.topic || 'Genel',
+        A: Number(t.score || 0)
+      }));
+
+      if (!mappedTopics.length && Number(overall?.totalExams || 0) > 0) {
+        mappedTopics = [{ subject: 'Genel Matematik', A: Number(overall?.successRate || overall?.avgScore || 0) }];
+      }
+
+      const derivedTime = Number(overall?.totalExams || 0) > 0
+        ? {
+          avg_time_seconds: null,
+          accuracy_percent: Number(overall?.successRate || 0),
+          assessment: Number(overall?.successRate || 0) >= 70
+            ? 'Performansın iyi, hızını korurken zor sorulara odaklan.'
+            : 'Temel konularda düzenli tekrar ve daha fazla soru çözümü önerilir.'
+        }
+        : null;
+
+      setExamData(history);
+      setTopicData(mappedTopics);
+      setTimeAnalysis(derivedTime);
+      setTotalExams(Number(overall?.totalExams || history.length || 0));
 
     } catch (err) {
       console.error('❌ Analytics yükleme hatası:', err);
-      setError('Analytics yüklenemedi');
+      setExamData([]);
+      setTopicData([]);
+      setTimeAnalysis(null);
+      setTotalExams(0);
     } finally {
       setLoading(false);
     }
@@ -238,7 +274,7 @@ const PerformanceChart = ({ studentId }) => {
       <div className="grid md:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-xl border border-indigo-200">
           <p className="text-indigo-600 font-semibold text-sm">Toplam Sınav</p>
-          <p className="text-4xl font-bold text-indigo-700 mt-2">{examData.length}</p>
+          <p className="text-4xl font-bold text-indigo-700 mt-2">{totalExams}</p>
         </div>
 
         <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-xl border border-emerald-200">

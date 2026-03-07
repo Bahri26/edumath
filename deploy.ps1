@@ -48,8 +48,7 @@ function Ensure-GcpSecret {
         Write-Host "Secret oluşturuluyor: $SecretName" -ForegroundColor Yellow
         $SecretValue | gcloud secrets create $SecretName --replication-policy="automatic" --data-file=- --project $ProjectId --quiet
     } else {
-        Write-Host "Secret güncelleniyor: $SecretName (new version)" -ForegroundColor Yellow
-        $SecretValue | gcloud secrets versions add $SecretName --data-file=- --project $ProjectId --quiet
+        Write-Host "Secret mevcut, güncelleme atlandı: $SecretName" -ForegroundColor DarkYellow
     }
 }
 
@@ -63,9 +62,20 @@ gcloud config set project $PROJECT_ID --quiet
 # 2. Secret'ları doğrula/oluştur
 Write-Host "`n--- 0/4: Secret Manager doğrulanıyor ---" -ForegroundColor Yellow
 $backendEnvPath = Join-Path $PSScriptRoot "backend/.env"
+$dbUser = Get-EnvValueFromFile -FilePath $backendEnvPath -Key "DB_USER"
+$dbName = Get-EnvValueFromFile -FilePath $backendEnvPath -Key "DB_NAME"
 $dbPassword = Get-EnvValueFromFile -FilePath $backendEnvPath -Key "DB_PASSWORD"
 $jwtSecret = Get-EnvValueFromFile -FilePath $backendEnvPath -Key "JWT_SECRET"
 $geminiApiKey = Get-EnvValueFromFile -FilePath $backendEnvPath -Key "GEMINI_API_KEY"
+
+if ([string]::IsNullOrWhiteSpace($dbUser)) {
+    Write-Error "DB_USER eksik: backend/.env dosyasinda tanimli olmali."
+    exit 1
+}
+if ([string]::IsNullOrWhiteSpace($dbName)) {
+    Write-Error "DB_NAME eksik: backend/.env dosyasinda tanimli olmali."
+    exit 1
+}
 
 Ensure-GcpSecret -SecretName $SECRET_DB_PASSWORD -SecretValue $dbPassword -ProjectId $PROJECT_ID
 Ensure-GcpSecret -SecretName $SECRET_JWT_SECRET -SecretValue $jwtSecret -ProjectId $PROJECT_ID
@@ -84,7 +94,7 @@ gcloud run deploy $BACKEND_API_NAME `
     --project $PROJECT_ID `
     --service-account $SERVICE_ACCOUNT `
     --add-cloudsql-instances $DB_INST `
-    --update-env-vars "NODE_ENV=production,DB_NAME=edumath,DB_USER=BahriAdmin,INSTANCE_CONNECTION_NAME=$DB_INST,DB_HOST=/cloudsql/$DB_INST,GEMINI_MODEL=gemini-2.5-flash" `
+    --update-env-vars "NODE_ENV=production,DB_NAME=$dbName,DB_USER=$dbUser,SQL_INSTANCE_CONNECTION_NAME=$DB_INST,DB_HOST=/cloudsql/$DB_INST,GEMINI_MODEL=gemini-2.5-flash" `
     --remove-env-vars "DB_PASSWORD,JWT_SECRET,GEMINI_API_KEY" `
     --set-secrets "DB_PASSWORD=${SECRET_DB_PASSWORD}:latest,JWT_SECRET=${SECRET_JWT_SECRET}:latest,GEMINI_API_KEY=${SECRET_GEMINI_API_KEY}:latest" `
     --allow-unauthenticated `
@@ -126,7 +136,7 @@ gcloud run deploy $SERVICE_NAME `
     --project $PROJECT_ID `
     --service-account $SERVICE_ACCOUNT `
     --add-cloudsql-instances $DB_INST `
-    --update-env-vars "NODE_ENV=production,DB_NAME=edumath,DB_USER=BahriAdmin,INSTANCE_CONNECTION_NAME=$DB_INST,DB_HOST=/cloudsql/$DB_INST,GEMINI_MODEL=gemini-2.5-flash" `
+    --update-env-vars "NODE_ENV=production,DB_NAME=$dbName,DB_USER=$dbUser,SQL_INSTANCE_CONNECTION_NAME=$DB_INST,DB_HOST=/cloudsql/$DB_INST,GEMINI_MODEL=gemini-2.5-flash" `
     --remove-env-vars "DB_PASSWORD,JWT_SECRET,GEMINI_API_KEY" `
     --set-secrets "DB_PASSWORD=${SECRET_DB_PASSWORD}:latest,JWT_SECRET=${SECRET_JWT_SECRET}:latest,GEMINI_API_KEY=${SECRET_GEMINI_API_KEY}:latest" `
     --allow-unauthenticated `

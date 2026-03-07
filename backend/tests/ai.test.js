@@ -9,15 +9,17 @@ jest.mock('../repos/question_optionsRepo', () => ({
   getQuestionOptions: jest.fn(async () => [])
 }));
 
-const aiRouter = require('../routes/ai');
-const aiContentRouter = require('../routes/ai_content');
-
 describe('AI API endpoints', () => {
   const originalKey = process.env.GEMINI_API_KEY;
   const app = express();
+  let aiRouter;
+  let aiContentRouter;
 
   beforeAll(() => {
+    jest.resetModules();
     process.env.GEMINI_API_KEY = '';
+    aiRouter = require('../routes/ai');
+    aiContentRouter = require('../routes/ai_content');
     app.use(express.json({ limit: '10mb' }));
     app.use('/api/ai', aiRouter);
     app.use('/api/ai-content', aiContentRouter);

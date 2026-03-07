@@ -32,9 +32,14 @@ module.exports = {
       // Google Cloud SQL Connector kullanarak bağlantı
       const Connector = require('@google-cloud/cloud-sql-connector').Connector;
       const connector = new Connector();
+      const instanceConnectionName = process.env.SQL_INSTANCE_CONNECTION_NAME || process.env.INSTANCE_CONNECTION_NAME;
+
+      if (!instanceConnectionName) {
+        throw new Error('Missing SQL instance connection name (SQL_INSTANCE_CONNECTION_NAME)');
+      }
 
       const clientOpts = await connector.getOptions({
-        instanceConnectionString: process.env.SQL_INSTANCE_CONNECTION_NAME,
+        instanceConnectionName,
         ipType: 'PUBLIC'
       });
 

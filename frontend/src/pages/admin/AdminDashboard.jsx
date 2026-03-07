@@ -12,6 +12,14 @@ const AdminDashboard = () => {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const handleTabChange = (tabId) => {
+        if (tabId === 'users') {
+            navigate('/admin/users');
+            return;
+        }
+        setActiveTab(tabId);
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -77,10 +85,10 @@ const AdminDashboard = () => {
 
             {/* --- SEKMELER --- */}
             <div className="flex gap-4 mb-8 border-b border-gray-200 dark:border-slate-700 pb-1 overflow-x-auto">
-                <TabButton id="overview" label="Genel Bakış" icon="📈" active={activeTab} onClick={setActiveTab} />
-                <TabButton id="users" label="Kullanıcılar" icon="👥" active={activeTab} onClick={setActiveTab} />
-                <TabButton id="logs" label="Sistem Logları" icon="💻" active={activeTab} onClick={setActiveTab} />
-                <TabButton id="aiops" label="AI Operations" icon="🤖" active={activeTab} onClick={setActiveTab} />
+                <TabButton id="overview" label="Genel Bakış" icon="📈" active={activeTab} onClick={handleTabChange} />
+                <TabButton id="users" label="Kullanıcılar" icon="👥" active={activeTab} onClick={handleTabChange} />
+                <TabButton id="logs" label="Sistem Logları" icon="💻" active={activeTab} onClick={handleTabChange} />
+                <TabButton id="aiops" label="AI Operations" icon="🤖" active={activeTab} onClick={handleTabChange} />
             </div>
 
             {/* --- İÇERİK ALANI --- */}

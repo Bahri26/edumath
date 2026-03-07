@@ -125,6 +125,21 @@ async function resolveTeacherStudentIds(teacherId) {
     fromEnrollments.forEach((row) => ids.add(Number(row.user_id)));
   }
 
+  const hasAssessments = await knex.schema.hasTable(ASSESSMENT_TABLE);
+  if (hasAssessments) {
+    const fromAssessments = await knex(ASSESSMENT_TABLE)
+      .where({ teacher_id: teacherId, is_active: 1 })
+      .distinct('user_id');
+    fromAssessments.forEach((row) => ids.add(Number(row.user_id)));
+  }
+
+  // Fallback: if teacher has no direct mapping yet, show students who solved at least one exam.
+  if (!ids.size && attempts.table && attempts.actor) {
+    const fallbackFromAttempts = await knex(`${attempts.table} as at`)
+      .distinct(knex.raw(`at.${attempts.actor} as user_id`));
+    fallbackFromAttempts.forEach((row) => ids.add(Number(row.user_id)));
+  }
+
   return [...ids].filter((x) => Number.isInteger(x) && x > 0);
 }
 

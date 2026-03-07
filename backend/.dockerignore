@@ -11,5 +11,4 @@ jest.config.js
 tests/
 *.test.js
 .next
-dist
 build

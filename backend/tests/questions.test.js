@@ -32,7 +32,7 @@ const mockQuestionController = {
     res.status(201).json({ id: 1, option_text: 'New Option', is_correct: false });
   },
   updateOption: (req, res) => {
-    res.json({ id: 1, option_text: 'Updated Option' });
+    res.json({ id: 1, option_text: req.body?.option_text || 'Updated option' });
   },
   removeOption: (req, res) => {
     res.json({ message: 'Option removed' });
