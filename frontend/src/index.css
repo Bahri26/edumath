@@ -27,4 +27,32 @@
     @apply w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white transition-all;
     @apply dark:bg-slate-800 dark:border-slate-600 dark:text-white dark:focus:ring-indigo-400;
   }
+
+  /* Home page: force full-surface dark mode for legacy light-only utility classes. */
+  .dark .home-page .bg-white {
+    @apply bg-slate-800;
+  }
+
+  .dark .home-page .bg-gray-50 {
+    @apply bg-slate-900;
+  }
+
+  .dark .home-page .bg-indigo-50 {
+    @apply bg-slate-800;
+  }
+
+  .dark .home-page .border-gray-100,
+  .dark .home-page .border-gray-200 {
+    @apply border-slate-700;
+  }
+
+  .dark .home-page .text-gray-800 {
+    @apply text-slate-100;
+  }
+
+  .dark .home-page .text-gray-700,
+  .dark .home-page .text-gray-600,
+  .dark .home-page .text-gray-500 {
+    @apply text-slate-300;
+  }
 }

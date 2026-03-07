@@ -129,7 +129,7 @@ const HomePage = () => {
     }
 
     return (
-        <div className="bg-gray-50 dark:bg-gray-900 min-h-screen font-sans overflow-x-hidden flex flex-col w-full dark:text-gray-100">
+        <div className="home-page bg-gray-50 dark:bg-gray-900 min-h-screen font-sans overflow-x-hidden flex flex-col w-full dark:text-gray-100">
             
             {/* --- HERO SECTION --- */}
             <div className="relative bg-gradient-to-br from-indigo-900 via-blue-900 to-indigo-800 text-white pb-16 sm:pb-20 md:pb-24 pt-16 sm:pt-24 md:pt-32 px-4 sm:px-6 md:px-8 rounded-b-[30px] sm:rounded-b-[40px] md:rounded-b-[50px] shadow-2xl overflow-hidden">

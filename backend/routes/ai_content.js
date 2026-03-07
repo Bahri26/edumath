@@ -14,6 +14,42 @@ const GEMINI_FALLBACK_MODELS = [
   'gemini-pro'
 ];
 
+const DAILY_CACHE = new Map();
+
+const MATH_IMAGE_POOL = [
+  'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=1400&q=80',
+  'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=1400&q=80',
+  'https://images.unsplash.com/photo-1596495578065-6e0763fa1178?auto=format&fit=crop&w=1400&q=80',
+  'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=1400&q=80',
+  'https://images.unsplash.com/photo-1518131678677-a32b58d4a5f9?auto=format&fit=crop&w=1400&q=80',
+  'https://images.unsplash.com/photo-1574607383476-f517f260d30b?auto=format&fit=crop&w=1400&q=80',
+  'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1400&q=80'
+];
+
+function getDailyKey(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function getDailyImageUrl(topic, date = new Date()) {
+  const day = Math.floor(date.getTime() / 86400000);
+  const seededIndex = Math.abs(day + String(topic || '').length) % MATH_IMAGE_POOL.length;
+  return MATH_IMAGE_POOL[seededIndex];
+}
+
+function defaultPayload(topic, date = new Date()) {
+  const dailyKey = getDailyKey(date);
+  return {
+    topic,
+    title: topic,
+    content: `${topic} hakkinda ilginc bilgiler...`,
+    explanation: `${topic} hakkinda ilginc bilgiler...`,
+    did_you_know: `${topic} hakkinda ilginc bilgiler...`,
+    image_url: getDailyImageUrl(topic, date),
+    daily_key: dailyKey,
+    timestamp: date
+  };
+}
+
 function uniqueModels(models) {
   return [...new Set(models.filter(Boolean))];
 }
@@ -40,26 +76,28 @@ async function generateWithFallback(ai, contents) {
 // /api/ai-content?topic=KONU
 router.get('/ai-content', async (req, res) => {
   const topic = req.query.topic || 'Matematik';
+  const now = new Date();
+  const dailyKey = getDailyKey(now);
+  const cacheKey = `${topic}:${dailyKey}`;
+
+  if (DAILY_CACHE.has(cacheKey)) {
+    return res.json(DAILY_CACHE.get(cacheKey));
+  }
 
   if (!GEMINI_API_KEY) {
     console.warn('GEMINI_API_KEY is not set');
-    return res.json({
-      topic,
-      title: topic,
-      content: `${topic} hakkında ilginç bilgiler...`,
-      explanation: `${topic} hakkında ilginç bilgiler...`,
-      did_you_know: `${topic} hakkında ilginç bilgiler...`,
-      image_url: '',
-      timestamp: new Date()
-    });
+    const fallback = defaultPayload(topic, now);
+    DAILY_CACHE.set(cacheKey, fallback);
+    return res.json(fallback);
   }
 
   try {
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
     const prompt = `Konu: ${topic}
-Türkçe, öğrenciler için anlaşılır, 2-3 cümlelik ilginç bir bilgi üret.
-Sadece JSON dön:
-{"title":"${topic}","explanation":"...","did_you_know":"...","image_url":""}`;
+  Tarih: ${dailyKey}
+  Turkce, ogrenciler icin anlasilir, 2-3 cumlelik gunluk ilginc bir matematik bilgisi uret.
+  Sadece JSON don:
+  {"title":"${topic}","explanation":"...","did_you_know":"...","image_query":"math"}`;
 
     const response = await generateWithFallback(ai, prompt);
     const raw = String(response?.text || '').replace(/```json/g, '').replace(/```/g, '').trim();
@@ -75,26 +113,24 @@ Sadece JSON dön:
       };
     }
 
-    res.json({
+    const payload = {
       topic,
       title: parsed.title || topic,
-      content: parsed.explanation || parsed.did_you_know || `${topic} hakkında ilginç bilgiler...`,
-      explanation: parsed.explanation || parsed.did_you_know || `${topic} hakkında ilginç bilgiler...`,
-      did_you_know: parsed.did_you_know || parsed.explanation || `${topic} hakkında ilginç bilgiler...`,
-      image_url: parsed.image_url || '',
-      timestamp: new Date()
-    });
+      content: parsed.explanation || parsed.did_you_know || `${topic} hakkinda ilginc bilgiler...`,
+      explanation: parsed.explanation || parsed.did_you_know || `${topic} hakkinda ilginc bilgiler...`,
+      did_you_know: parsed.did_you_know || parsed.explanation || `${topic} hakkinda ilginc bilgiler...`,
+      image_url: parsed.image_url || getDailyImageUrl(parsed.image_query || topic, now),
+      daily_key: dailyKey,
+      timestamp: now
+    };
+
+    DAILY_CACHE.set(cacheKey, payload);
+    res.json(payload);
   } catch (err) {
     console.error('Gemini API Error:', err.message);
-    res.json({
-      topic,
-      title: topic,
-      content: `${topic} hakkında ilginç bilgiler...`,
-      explanation: `${topic} hakkında ilginç bilgiler...`,
-      did_you_know: `${topic} hakkında ilginç bilgiler...`,
-      image_url: '',
-      timestamp: new Date()
-    });
+    const fallback = defaultPayload(topic, now);
+    DAILY_CACHE.set(cacheKey, fallback);
+    res.json(fallback);
   }
 });
 
