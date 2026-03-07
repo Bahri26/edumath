@@ -1,0 +1,9 @@
+:root{--bg:#f7f9fc;--card:#fff;--accent:#2563eb}
+body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0}
+.app-container{max-width:900px;margin:24px auto;padding:16px}
+header h1{margin:0 0 12px 0;font-size:20px}
+.start-box,.done-box{background:var(--card);padding:18px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.question-card{background:var(--card);padding:16px;border-radius:8px;margin:12px 0}
+.choices button{display:block;width:100%;margin:6px 0;padding:10px;border-radius:6px;border:1px solid #e5e7eb;background:#fff}
+.meta{font-size:13px;color:#6b7280;margin-bottom:8px}
+.timer{font-weight:600;color:var(--accent)}

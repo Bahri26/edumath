@@ -1,0 +1,14 @@
+{
+  "connections": [
+    {
+      "name": "Edumath-Cloud-SQL",
+      "driver": "MySQL",
+      "database": "edumath",
+      "username": "BahriAdmin",
+      "password": "^TvSfkrAkgZTpEj*",
+      "host": "127.0.0.1",
+      "port": 3306,
+      "previewLimit": 50
+    }
+  ]
+}

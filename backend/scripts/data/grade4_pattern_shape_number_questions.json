@@ -1,0 +1,317 @@
+[
+  {
+    "contentText": "2, 4, 6, 8, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "easy",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "9", "isCorrect": false },
+      { "optionText": "10", "isCorrect": true },
+      { "optionText": "11", "isCorrect": false },
+      { "optionText": "12", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "[KARE], [DAIRE], [KARE], [DAIRE], ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "easy",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "[UCGEN]", "isCorrect": false },
+      { "optionText": "[DAIRE]", "isCorrect": false },
+      { "optionText": "[KARE]", "isCorrect": true },
+      { "optionText": "[YILDIZ]", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "5, 10, 15, 20, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "easy",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "22", "isCorrect": false },
+      { "optionText": "24", "isCorrect": false },
+      { "optionText": "25", "isCorrect": true },
+      { "optionText": "30", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "[UCGEN], [UCGEN], [KARE], [UCGEN], [UCGEN], [KARE], ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "easy",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "[KARE]", "isCorrect": false },
+      { "optionText": "[UCGEN]", "isCorrect": true },
+      { "optionText": "[DAIRE]", "isCorrect": false },
+      { "optionText": "[YILDIZ]", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "10, 9, 8, 7, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "easy",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "5", "isCorrect": false },
+      { "optionText": "6", "isCorrect": true },
+      { "optionText": "7", "isCorrect": false },
+      { "optionText": "8", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "[YILDIZ], [DAIRE], [YILDIZ], [DAIRE], [YILDIZ], ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "easy",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "[DAIRE]", "isCorrect": true },
+      { "optionText": "[KARE]", "isCorrect": false },
+      { "optionText": "[UCGEN]", "isCorrect": false },
+      { "optionText": "[YILDIZ]", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "3, 6, 9, 12, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "easy",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "14", "isCorrect": false },
+      { "optionText": "15", "isCorrect": true },
+      { "optionText": "16", "isCorrect": false },
+      { "optionText": "18", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "2, 5, 8, 11, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "medium",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "13", "isCorrect": false },
+      { "optionText": "14", "isCorrect": true },
+      { "optionText": "15", "isCorrect": false },
+      { "optionText": "16", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "1, 4, 9, 16, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "medium",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "20", "isCorrect": false },
+      { "optionText": "24", "isCorrect": false },
+      { "optionText": "25", "isCorrect": true },
+      { "optionText": "30", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "[KARE], [DAIRE], [UCGEN], [KARE], [DAIRE], ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "medium",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "[DAIRE]", "isCorrect": false },
+      { "optionText": "[UCGEN]", "isCorrect": true },
+      { "optionText": "[KARE]", "isCorrect": false },
+      { "optionText": "[YILDIZ]", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "30, 27, 24, 21, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "medium",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "18", "isCorrect": true },
+      { "optionText": "19", "isCorrect": false },
+      { "optionText": "20", "isCorrect": false },
+      { "optionText": "17", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "4, 8, 12, 16, 20, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "medium",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "22", "isCorrect": false },
+      { "optionText": "24", "isCorrect": true },
+      { "optionText": "25", "isCorrect": false },
+      { "optionText": "26", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "[DAIRE], [DAIRE], [KARE], [DAIRE], [DAIRE], [KARE], ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "medium",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "[KARE]", "isCorrect": false },
+      { "optionText": "[YILDIZ]", "isCorrect": false },
+      { "optionText": "[DAIRE]", "isCorrect": true },
+      { "optionText": "[UCGEN]", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "7, 14, 21, 28, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "medium",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "32", "isCorrect": false },
+      { "optionText": "35", "isCorrect": true },
+      { "optionText": "36", "isCorrect": false },
+      { "optionText": "40", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "2, 6, 12, 20, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "hard",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "26", "isCorrect": false },
+      { "optionText": "30", "isCorrect": true },
+      { "optionText": "32", "isCorrect": false },
+      { "optionText": "36", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "1, 2, 4, 7, 11, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "hard",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "14", "isCorrect": false },
+      { "optionText": "15", "isCorrect": false },
+      { "optionText": "16", "isCorrect": true },
+      { "optionText": "17", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "[KARE], [DAIRE], [DAIRE], [KARE], [DAIRE], [DAIRE], [KARE], ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "hard",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "[UCGEN]", "isCorrect": false },
+      { "optionText": "[DAIRE]", "isCorrect": true },
+      { "optionText": "[KARE]", "isCorrect": false },
+      { "optionText": "[YILDIZ]", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "81, 27, 9, 3, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "hard",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "0", "isCorrect": false },
+      { "optionText": "1", "isCorrect": true },
+      { "optionText": "2", "isCorrect": false },
+      { "optionText": "6", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "3, 8, 15, 24, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "hard",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "31", "isCorrect": false },
+      { "optionText": "35", "isCorrect": true },
+      { "optionText": "36", "isCorrect": false },
+      { "optionText": "40", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "[UCGEN], [KARE], [PENTAGON], [UCGEN], [KARE], [PENTAGON], ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "hard",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "[PENTAGON]", "isCorrect": false },
+      { "optionText": "[KARE]", "isCorrect": false },
+      { "optionText": "[UCGEN]", "isCorrect": true },
+      { "optionText": "[DAIRE]", "isCorrect": false }
+    ]
+  },
+  {
+    "contentText": "2, 3, 5, 8, 12, ?",
+    "topic": "Oruntuler",
+    "difficultyLevel": "hard",
+    "classLevel": 4,
+    "gradeLevel": 4,
+    "language": "math",
+    "points": 10,
+    "options": [
+      { "optionText": "16", "isCorrect": false },
+      { "optionText": "17", "isCorrect": true },
+      { "optionText": "18", "isCorrect": false },
+      { "optionText": "19", "isCorrect": false }
+    ]
+  }
+]

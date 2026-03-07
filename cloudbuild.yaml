@@ -1,0 +1,95 @@
+# Cloud Build configuration for Edumath project
+# Builds backend and frontend, pushes to Container Registry, deploys to Cloud Run
+
+steps:
+  # Build Backend Image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-backend'
+    args: 
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/edumath-backend:$SHORT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/edumath-backend:latest'
+      - '-f'
+      - 'backend/Dockerfile'
+      - 'backend/'
+    waitFor: ['-']
+
+  # Push Backend Image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-backend'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/edumath-backend:$SHORT_SHA'
+    waitFor: ['build-backend']
+
+  # Build Frontend Image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-frontend'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/edumath-frontend:$SHORT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/edumath-frontend:latest'
+      - '-f'
+      - 'frontend/Dockerfile'
+      - 'frontend/'
+    waitFor: ['-']
+
+  # Push Frontend Image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-frontend'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/edumath-frontend:$SHORT_SHA'
+    waitFor: ['build-frontend']
+
+  # Deploy Backend to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    id: 'deploy-backend'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'edumath-backend'
+      - '--image=gcr.io/$PROJECT_ID/edumath-backend:$SHORT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--set-env-vars=NODE_ENV=production,GEMINI_MODEL=gemini-2.5-flash'
+    waitFor: ['push-backend']
+
+  # Deploy Frontend to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    id: 'deploy-frontend'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'edumath-frontend'
+      - '--image=gcr.io/$PROJECT_ID/edumath-frontend:$SHORT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+    waitFor: ['push-frontend']
+
+# Images to be pushed to registry
+images:
+  - 'gcr.io/$PROJECT_ID/edumath-backend:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/edumath-backend:latest'
+  - 'gcr.io/$PROJECT_ID/edumath-frontend:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/edumath-frontend:latest'
+
+# Build configuration
+options:
+  machineType: 'N1_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+
+# Timeout
+timeout: '1800s'
+
+# Substitutions
+substitutions:
+  _REGION: 'us-central1'

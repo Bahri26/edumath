@@ -1,0 +1,114 @@
+{
+  "info": {
+    "name": "EduMath AI API",
+    "_postman_id": "3c99368f-6f6d-4c2f-bd5f-3e3af71c7b57",
+    "description": "EduMath AI endpoint collection for Gemini-backed workflows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "AI - Analyze Mistake",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/ai/analyze-mistake",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"questionText\": \"2 + 2 kaçtır?\",\n  \"studentAnswer\": \"5\",\n  \"correctAnswer\": \"4\",\n  \"topic\": \"Temel Aritmetik\"\n}"
+        }
+      }
+    },
+    {
+      "name": "AI - Hint",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/ai/hint",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"questionText\": \"x + 3 = 10\",\n  \"topic\": \"Cebir\"\n}"
+        }
+      }
+    },
+    {
+      "name": "AI - Companion",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/ai/companion"
+      }
+    },
+    {
+      "name": "AI - Student Analysis",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/ai/student-analysis",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"studentName\": \"Ali\",\n  \"examAverage\": 62,\n  \"weakTopics\": [\"Oran-Orantı\", \"Eşitsizlik\"],\n  \"hintUsage\": 5,\n  \"streakDays\": 3,\n  \"recentResults\": [55, 60, 71]\n}"
+        }
+      }
+    },
+    {
+      "name": "AI - Generate Variants",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/ai/generate-variants",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"baseQuestionText\": \"Bir dikdörtgenin kısa kenarı 4, uzun kenarı 7 ise alanı nedir?\",\n  \"topic\": \"Geometri\",\n  \"variantCount\": 3,\n  \"difficulty\": 2\n}"
+        }
+      }
+    },
+    {
+      "name": "AI - Analyze Vision",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/ai/analyze-vision",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"imageBase64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB\",\n  \"mimeType\": \"image/png\"\n}"
+        }
+      }
+    },
+    {
+      "name": "AI Content - Daily Discovery",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/ai-content/ai-content?topic=Matematik"
+      }
+    }
+  ]
+}

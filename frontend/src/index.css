@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    @apply bg-gray-50 text-gray-900 transition-colors duration-300;
+    @apply dark:bg-slate-900 dark:text-slate-100;
+  }
+  /* Make images fluid by default so they adapt to container sizes */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+  }
+}
+
+@layer components {
+  .card-base {
+    @apply bg-white border border-gray-100 shadow-lg rounded-2xl p-6 transition-all duration-300;
+    @apply dark:bg-slate-800 dark:border-slate-700 dark:shadow-slate-900/50;
+  }
+  
+  .input-base {
+    @apply w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white transition-all;
+    @apply dark:bg-slate-800 dark:border-slate-600 dark:text-white dark:focus:ring-indigo-400;
+  }
+}

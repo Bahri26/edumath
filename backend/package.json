@@ -1,0 +1,37 @@
+{
+  "name": "edumath-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest --detectOpenHandles --forceExit",
+    "test:watch": "jest --watch",
+    "migrate": "knex migrate:latest",
+    "migrate:rollback": "knex migrate:rollback",
+    "seed": "knex seed:run",
+    "import:cloudsql:questions": "node scripts/import_questions_to_cloud_sql.js",
+    "import:cloudsql:questions:dry": "node scripts/import_questions_to_cloud_sql.js --dryRun",
+    "normalize:shapes": "node scripts/normalize_shape_placeholders_in_db.js",
+    "normalize:shapes:dry": "node scripts/normalize_shape_placeholders_in_db.js --dryRun"
+  },
+  "dependencies": {
+    "@google-cloud/cloud-sql-connector": "^1.4.5",
+    "@google-cloud/storage": "^7.19.0",
+    "@google/genai": "^1.43.0",
+    "axios": "^1.6.7",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "express-rate-limit": "^6.11.2",
+    "joi": "^17.9.2",
+    "jsonwebtoken": "^9.0.3",
+    "knex": "^2.5.1",
+    "mammoth": "^1.11.0",
+    "multer": "^2.1.1",
+    "mysql2": "^3.18.2"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "supertest": "^7.2.2"
+  }
+}
