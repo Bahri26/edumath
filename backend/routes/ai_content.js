@@ -134,4 +134,41 @@ router.get('/ai-content', async (req, res) => {
   }
 });
 
+// learning-specific helpers and endpoint
+function makeLearningPrompt(topic, mode) {
+  switch (mode) {
+    case 'explanation':
+      return `Konu: ${topic}\nTurkce, 3-4 cumlelik aciklayici konu anlatimi hazirla. JSON olarak don:{"explanation":"..."}`;
+    case 'flashcards':
+      return `Konu: ${topic}\nOgrenci icin 5 adet kisa flash-card sorusu ve cevabi JSON array seklinde olustur. Format: [{"q":"...","a":"..."},...]`;
+    case 'fillblank':
+      return `Konu: ${topic}\nKisa bir aciklama veya soru cikar ve icinden 3 anahtar kelimeyi boslukla (____) degistir. JSON:{"text":"...","answers":["...","...","..."]}`;
+    default:
+      return `Konu: ${topic}\nTurkce, 3-4 cumlelik aciklayici konu anlatimi hazirla. JSON olarak don:{"explanation":"..."}`;
+  }
+}
+
+router.get('/learning', async (req, res) => {
+  const topic = req.query.topic || 'Matematik';
+  const mode = req.query.mode || 'explanation';
+  if (!GEMINI_API_KEY) {
+    return res.json({ error: 'gemini not configured' });
+  }
+  try {
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    const prompt = makeLearningPrompt(topic, mode);
+    const response = await generateWithFallback(ai, prompt);
+    let text = String(response?.text || '').replace(/```json/g, '').replace(/```/g, '').trim();
+    try {
+      const parsed = JSON.parse(text);
+      return res.json({ topic, mode, result: parsed });
+    } catch (e) {
+      return res.json({ topic, mode, result: text });
+    }
+  } catch (err) {
+    console.error('learning ai error', err.message);
+    res.status(500).json({ error: 'AI failure' });
+  }
+});
+
 module.exports = router;

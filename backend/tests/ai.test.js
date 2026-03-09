@@ -119,6 +119,43 @@ describe('AI API endpoints', () => {
     expect(res.body).toHaveProperty('data.options');
   });
 
+  // new learning endpoints
+  test('GET /api/ai-content/learning for explanation should return helper object or error', async () => {
+    const res = await request(app)
+      .get('/api/ai-content/learning?topic=Test&mode=explanation')
+      .expect(200);
+    if (res.body.error) {
+      expect(res.body.error).toMatch(/gemini/i);
+    } else {
+      expect(res.body).toHaveProperty('topic', 'Test');
+      expect(res.body).toHaveProperty('mode', 'explanation');
+    }
+  });
+
+  test('GET /api/ai-content/learning for flashcards should respond with JSON result', async () => {
+    const res = await request(app)
+      .get('/api/ai-content/learning?topic=Test&mode=flashcards')
+      .expect(200);
+    if (res.body.error) {
+      expect(res.body.error).toMatch(/gemini/i);
+    } else {
+      expect(res.body).toHaveProperty('topic', 'Test');
+      expect(res.body).toHaveProperty('mode', 'flashcards');
+    }
+  });
+
+  test('GET /api/ai-content/learning for fillblank should respond appropriately', async () => {
+    const res = await request(app)
+      .get('/api/ai-content/learning?topic=Test&mode=fillblank')
+      .expect(200);
+    if (res.body.error) {
+      expect(res.body.error).toMatch(/gemini/i);
+    } else {
+      expect(res.body).toHaveProperty('topic', 'Test');
+      expect(res.body).toHaveProperty('mode', 'fillblank');
+    }
+  });
+
   test('GET /api/ai-content/ai-content should return frontend-compatible fields', async () => {
     const res = await request(app)
       .get('/api/ai-content/ai-content?topic=Matematik')

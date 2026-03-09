@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import useFetch from '../../hooks/useFetch';
 import MathText from '../../components/common/MathText';
 import DailyQuest from '../../components/student/DailyQuest';
@@ -133,7 +133,9 @@ const LearningPathPage = () => {
                                     {topics.map((t, index) => (
                                         <div key={index} className="group">
                                             <div className="flex justify-between items-center mb-2">
-                                                <span className="font-semibold text-gray-700 text-sm">{t.topic}</span>
+                                                <Link to={`/learning/${encodeURIComponent(t.topic)}`} className="font-semibold text-gray-700 text-sm hover:underline">
+                                                    {t.topic}
+                                                </Link>
                                                 <div className="flex items-center gap-2">
                                                     <span className={`font-bold text-lg ${t.status === 'strong' ? 'text-green-600' : 'text-red-500'}`}>
                                                         %{t.score}
