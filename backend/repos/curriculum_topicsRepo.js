@@ -4,7 +4,12 @@ const TABLE = 'curriculum_topics';
 async function findAll({ page = 1, limit = 20, q, filters = {}, sort } = {}) {
   const offset = (page - 1) * limit;
   const qb = knex(TABLE).select('*');
-  if (q) qb.where('id', 'like', '%' + q + '%');
+  if (q) {
+    // support searching by id or topic name
+    qb.where(function() {
+      this.where('id', 'like', '%' + q + '%').orWhere('topic', 'like', '%' + q + '%');
+    });
+  }
   Object.entries(filters).forEach(([k, v]) => qb.andWhere(k, v));
   if (sort) {
     const [col, dir] = sort.split('.');
