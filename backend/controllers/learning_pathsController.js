@@ -1,6 +1,7 @@
 const repo = require('../repos/learning_pathsRepo');
 const knex = require('../db/knex');
 const { GoogleGenAI } = require('@google/genai');
+const adaptiveLearningService = require('../services/adaptiveLearningService');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
@@ -122,16 +123,21 @@ Son Sonuclar: ${JSON.stringify(recentResults)}`;
 }
 
 async function buildLearningPathPayload(userId) {
+  const adaptiveOverview = await adaptiveLearningService.getLearningOverview(userId);
   const attemptsMeta = await getAttemptsMeta();
   if (!attemptsMeta.table || !attemptsMeta.actor) {
     return {
       topics: [],
-      recommendedQuestions: [],
+      recommendedQuestions: adaptiveOverview.recommendedQuestions || [],
       lastAiAdvice: null,
       lastExam: null,
       overallStats: { totalExams: 0, totalCorrect: 0, successRate: 0, avgScore: 0 },
       recentActivity: [],
-      dailyQuests: []
+      dailyQuests: [],
+      xpHeader: adaptiveOverview.xpHeader,
+      continueLesson: adaptiveOverview.continueLesson,
+      dueReviews: adaptiveOverview.dueReviews,
+      weakSkills: adaptiveOverview.weakSkills
     };
   }
 
@@ -159,12 +165,16 @@ async function buildLearningPathPayload(userId) {
   if (!attempts.length) {
     return {
       topics: [],
-      recommendedQuestions: [],
+      recommendedQuestions: adaptiveOverview.recommendedQuestions || [],
       lastAiAdvice: null,
       lastExam: null,
       overallStats: { totalExams: 0, totalCorrect: 0, successRate: 0, avgScore: 0 },
       recentActivity: [],
-      dailyQuests: []
+      dailyQuests: [],
+      xpHeader: adaptiveOverview.xpHeader,
+      continueLesson: adaptiveOverview.continueLesson,
+      dueReviews: adaptiveOverview.dueReviews,
+      weakSkills: adaptiveOverview.weakSkills
     };
   }
 
@@ -335,7 +345,7 @@ async function buildLearningPathPayload(userId) {
 
   return {
     topics,
-    recommendedQuestions,
+    recommendedQuestions: adaptiveOverview.recommendedQuestions?.length ? adaptiveOverview.recommendedQuestions : recommendedQuestions,
     lastAiAdvice,
     lastExam: lastAttempt
       ? {
@@ -347,7 +357,11 @@ async function buildLearningPathPayload(userId) {
       : null,
     overallStats,
     recentActivity,
-    dailyQuests
+    dailyQuests,
+    xpHeader: adaptiveOverview.xpHeader,
+    continueLesson: adaptiveOverview.continueLesson,
+    dueReviews: adaptiveOverview.dueReviews,
+    weakSkills: adaptiveOverview.weakSkills
   };
 }
 

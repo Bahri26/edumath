@@ -12,6 +12,10 @@ const DailyQuest = () => {
     const [answered, setAnswered] = useState(false);
     const [explanation, setExplanation] = useState(null);
     const [analyzing, setAnalyzing] = useState(false);
+    const [todayProgress, setTodayProgress] = useState({ completedCount: 0, correctCount: 0, targetCount: 10 });
+    const [streak, setStreak] = useState({ daily_streak: 0, xp_total: 0, current_level: 1 });
+    const [hintUsed, setHintUsed] = useState(false);
+    const [startedAt, setStartedAt] = useState(Date.now());
 
     useEffect(() => {
         fetchDailyQuests();
@@ -19,8 +23,15 @@ const DailyQuest = () => {
 
     const fetchDailyQuests = async () => {
         try {
-            const res = await api.get('/learning-path/daily');
-            setQuests(res.data.data || []);
+            const res = await api.get('/learning/next');
+            const item = res.data?.data?.item;
+            const progress = res.data?.data?.progress;
+            const streakData = res.data?.data?.streak;
+            setQuests(item ? [item] : []);
+            if (progress) setTodayProgress(progress);
+            if (streakData) setStreak(streakData);
+            setCurrentIndex(0);
+            setStartedAt(Date.now());
         } catch (error) {
             console.error("Günlük görevler yüklenemedi:", error);
             setQuests([]);
@@ -36,22 +47,35 @@ const DailyQuest = () => {
         setAnswered(true);
 
         try {
-            if (option.is_correct) {
-                // Soruyu tamamla olarak işaretle
-                await api.post(`/learning-path/daily/complete/${currentIndex}`, { isCorrect: true });
+            const res = await api.post('/learning/answer', {
+                questionId: currentQuestion.question_id,
+                selectedOptionId: option.option_id,
+                hintUsed,
+                timeSpentMs: Date.now() - startedAt,
+                source: 'daily_quest'
+            });
+            const result = res.data?.data;
+            if (result?.progress) setTodayProgress(result.progress);
+            if (result?.streak) setStreak(result.streak);
+
+            if (result?.isCorrect) {
                 setTimeout(() => {
-                    if (currentIndex < quests.length - 1) {
-                        setCurrentIndex(currentIndex + 1);
+                    if (result?.progress?.completedCount >= result?.progress?.targetCount) {
+                        setCompleted(true);
+                    } else if (result?.next_item) {
+                        setQuests([result.next_item]);
+                        setCurrentIndex(0);
                         setSelectedAnswer(null);
                         setAnswered(false);
                         setShowHint(false);
                         setExplanation(null);
+                        setHintUsed(false);
+                        setStartedAt(Date.now());
                     } else {
-                        setCompleted(true);
+                        fetchDailyQuests();
                     }
                 }, 1500);
             } else {
-                // Yanlış cevap - tekrar dene
                 setTimeout(() => {
                     setSelectedAnswer(null);
                     setAnswered(false);
@@ -130,7 +154,7 @@ const DailyQuest = () => {
                     </motion.div>
 
                     <h2 className="text-4xl font-bold mb-2">Görevi Tamamladın!</h2>
-                    <p className="text-lg opacity-95 mb-8">Bugünkü 10 soruyu başarıyla bitirdin. Harika performans!</p>
+                    <p className="text-lg opacity-95 mb-8">Bugünkü hedefini tamamladın. Harika performans!</p>
 
                     <motion.div 
                         initial={{ y: 20, opacity: 0 }}
@@ -138,7 +162,7 @@ const DailyQuest = () => {
                         transition={{ delay: 0.4 }}
                         className="inline-block bg-white/20 px-8 py-3 rounded-full font-bold text-lg backdrop-blur-sm border border-white/30"
                     >
-                        🔥 Günlük Seri: 5 Gün
+                        🔥 Günlük Seri: {streak.daily_streak || 0} Gün · ⭐ XP: {streak.xp_total || 0}
                     </motion.div>
 
                     <p className="mt-8 text-sm opacity-90">Yarın yeni görevlerle karşılaşacaksın!</p>
@@ -148,7 +172,7 @@ const DailyQuest = () => {
     }
 
     const currentQuestion = quests[currentIndex];
-    const progress = ((currentIndex) / quests.length) * 100;
+    const progress = Math.min(100, Math.round(((todayProgress.completedCount || 0) / Math.max(todayProgress.targetCount || 10, 1)) * 100));
 
     return (
         <div className="w-full">
@@ -158,10 +182,10 @@ const DailyQuest = () => {
                     <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
                         📅 Günün Görevi
                         <span className="text-base bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-600 px-3 py-1 rounded-lg font-semibold">
-                            {currentIndex + 1} / {quests.length}
+                            {(todayProgress.completedCount || 0) + 1} / {todayProgress.targetCount || 10}
                         </span>
                     </h2>
-                    <p className="text-gray-500 text-sm mt-1">Her gün 10 soru çöz, öğrenmen sürekli artacak.</p>
+                    <p className="text-gray-500 text-sm mt-1">Günlük hedefin, seri durumun ve XP ilerlemen artık sunucuda takip ediliyor.</p>
                 </div>
                 <div className="text-right">
                     <div className="w-40 h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -173,6 +197,7 @@ const DailyQuest = () => {
                         ></motion.div>
                     </div>
                     <p className="text-xs text-gray-400 mt-1">{Math.round(progress)}% Tamamlandı</p>
+                    <p className="text-xs text-indigo-500 mt-1">Seviye {streak.current_level || 1} · Seri {streak.daily_streak || 0}</p>
                 </div>
             </div>
 
@@ -201,7 +226,7 @@ const DailyQuest = () => {
                                 {currentQuestion.difficulty_level === 1 ? 'Kolay' : currentQuestion.difficulty_level === 2 ? 'Orta' : 'Zor'}
                             </span>
                         </div>
-                        <div className="text-right text-xs text-gray-400">Soru {currentIndex + 1}</div>
+                        <div className="text-right text-xs text-gray-400">Soru {(todayProgress.completedCount || 0) + 1}</div>
                     </div>
 
                     {/* Soru Metni */}
@@ -264,7 +289,7 @@ const DailyQuest = () => {
                                     <motion.button
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
-                                        onClick={() => setShowHint(true)}
+                                        onClick={() => { setShowHint(true); setHintUsed(true); }}
                                         className="flex items-center gap-2 text-yellow-600 font-bold hover:text-yellow-700 transition-colors"
                                     >
                                         💡 İpucu Al
@@ -336,7 +361,7 @@ const DailyQuest = () => {
                     {/* Alt Bar */}
                     <div className="bg-gray-50 px-8 py-4 border-t border-gray-100 flex justify-between items-center">
                         <div className="text-xs text-gray-500">
-                            💡 <span className="font-semibold">İpucu:</span> Bu soru sana özel algoritmamız tarafından seçildi!
+                            💡 <span className="font-semibold">İpucu:</span> Bu soru zayıf konu, tekrar zamanı ve yakın geçmiş performansına göre seçildi.
                         </div>
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
                             🤖

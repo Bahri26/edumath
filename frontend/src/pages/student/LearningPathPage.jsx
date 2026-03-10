@@ -41,7 +41,18 @@ const LearningPathPage = () => {
         );
     }
 
-    const { topics = [], recommendedQuestions = [], lastAiAdvice, lastExam, overallStats, recentActivity = [] } = data;
+    const {
+        topics = [],
+        recommendedQuestions = [],
+        lastAiAdvice,
+        lastExam,
+        overallStats,
+        recentActivity = [],
+        xpHeader,
+        continueLesson,
+        dueReviews = [],
+        weakSkills = []
+    } = data;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50 to-purple-50 p-4 md:p-8 font-sans">
@@ -93,6 +104,83 @@ const LearningPathPage = () => {
                     </div>
                 </div>
 
+                {xpHeader && (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-indigo-100">
+                            <div className="text-xs uppercase tracking-wide text-indigo-500 font-bold mb-2">Seviye</div>
+                            <div className="text-3xl font-black text-indigo-700">{xpHeader.currentLevel}</div>
+                        </div>
+                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-amber-100">
+                            <div className="text-xs uppercase tracking-wide text-amber-500 font-bold mb-2">Toplam XP</div>
+                            <div className="text-3xl font-black text-amber-600">{xpHeader.xpTotal}</div>
+                        </div>
+                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-rose-100">
+                            <div className="text-xs uppercase tracking-wide text-rose-500 font-bold mb-2">Günlük Seri</div>
+                            <div className="text-3xl font-black text-rose-600">{xpHeader.dailyStreak}</div>
+                        </div>
+                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-emerald-100">
+                            <div className="text-xs uppercase tracking-wide text-emerald-500 font-bold mb-2">Günlük Hedef</div>
+                            <div className="text-3xl font-black text-emerald-600">{xpHeader.dailyCompleted}/{xpHeader.dailyTarget}</div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <div className="text-xs uppercase tracking-wider text-indigo-500 font-bold mb-2">Continue Lesson</div>
+                                <h2 className="text-2xl font-black text-gray-900 mb-2">{continueLesson?.item?.skill_label || continueLesson?.item?.topic || 'Hazır olduğunda devam et'}</h2>
+                                <p className="text-gray-600 mb-4">
+                                    {continueLesson?.selection_reason === 'due_review' ? 'Tekrar zamanı gelen beceri önce geliyor.' :
+                                     continueLesson?.selection_reason === 'weak_skill' ? 'En zayıf becerine odaklanıyorsun.' :
+                                     continueLesson?.selection_reason === 'weak_topic_history' ? 'Geçmiş performansına göre seçildi.' : 'Yeni kazanım keşfi için seçildi.'}
+                                </p>
+                                {continueLesson?.item ? (
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-sm font-semibold">{continueLesson.item.skill_label || continueLesson.item.topic}</span>
+                                        <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-semibold">Beceri: {continueLesson.item.skill_key}</span>
+                                        <button
+                                            onClick={() => navigate(`/question/${continueLesson.item.question_id}`)}
+                                            className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700"
+                                        >
+                                            Devam Et →
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => navigate('/student-exams')}
+                                        className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700"
+                                    >
+                                        Sınavlarla Başla →
+                                    </button>
+                                )}
+                            </div>
+                            <div className="min-w-[120px] text-right">
+                                <div className="text-sm text-gray-400 mb-1">Günlük İlerleme</div>
+                                <div className="text-3xl font-black text-indigo-600">{xpHeader?.dailyCompleted || 0}/{xpHeader?.dailyTarget || 10}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+                        <div className="text-xs uppercase tracking-wider text-amber-500 font-bold mb-2">Due Reviews</div>
+                        <h3 className="text-xl font-black text-gray-900 mb-4">Tekrar Zamanı Gelenler</h3>
+                        {dueReviews.length > 0 ? (
+                            <div className="space-y-3">
+                                {dueReviews.map((review) => (
+                                    <div key={review.skill_key} className="rounded-2xl bg-amber-50 border border-amber-100 p-4">
+                                        <div className="font-bold text-gray-900">{review.skill_label}</div>
+                                        <div className="text-sm text-gray-600 mt-1">Mastery %{Math.round(review.mastery_score || 0)} · Güven %{Math.round(review.confidence_score || 0)}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-gray-500 text-sm">Şu anda bekleyen tekrar yok.</p>
+                        )}
+                    </div>
+                </div>
+
                 {/* İSTATİSTİK KARTLARI */}
                 {overallStats && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -123,6 +211,30 @@ const LearningPathPage = () => {
                     
                     {/* SOL PANEL: KONU ANALİZİ */}
                     <div className="lg:col-span-1 space-y-6">
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <h2 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-2">
+                                <span className="text-2xl">🧠</span> Weak Skills
+                            </h2>
+                            {weakSkills.length > 0 ? (
+                                <div className="space-y-4">
+                                    {weakSkills.map((skill) => (
+                                        <div key={skill.skill_key}>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="font-semibold text-gray-700 text-sm">{skill.skill_label}</span>
+                                                <span className="text-sm font-bold text-red-500">%{Math.round(skill.mastery_score || 0)}</span>
+                                            </div>
+                                            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                                <div className="h-2 rounded-full bg-gradient-to-r from-rose-400 to-red-600" style={{ width: `${Math.min(100, Math.round(skill.mastery_score || 0))}%` }}></div>
+                                            </div>
+                                            <div className="text-xs text-gray-400 mt-1">Bant {skill.current_difficulty_band} · {skill.correct_count} doğru / {skill.wrong_count} yanlış</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-gray-500 text-sm">Henüz skill seviyesi verisi oluşmadı. Sorular çözüldükçe burası dolacak.</p>
+                            )}
+                        </div>
+
                         {/* Konu Karnesi */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                             <h2 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-2">
@@ -166,6 +278,12 @@ const LearningPathPage = () => {
                                     <div className="text-5xl mb-3">📚</div>
                                     <p className="text-gray-400 text-sm">Henüz veri yok</p>
                                     <p className="text-gray-500 text-xs mt-1">Sınav çözerek başla!</p>
+                                    <button
+                                        className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                                        onClick={() => navigate('/student-exams')}
+                                    >
+                                        Sınav Listesine Git
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -214,8 +332,10 @@ const LearningPathPage = () => {
                         </div>
 
                         <div className="space-y-4">
-                            {recommendedQuestions.length > 0 ? recommendedQuestions.map((q, index) => (
-                                <div key={q.question_id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all">
+                            {recommendedQuestions.length > 0 ? recommendedQuestions.map((q, index) => {
+                                const topicScore = topics.find((t) => t.topic === q.topic)?.score;
+                                return (
+                                <div key={q.question_id} className="relative bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all">
                                     <div className="absolute top-4 right-4 flex gap-2">
                                         <span className={`text-xs font-bold px-3 py-1 rounded-full ${
                                             q.difficulty_level === 1 ? 'bg-green-100 text-green-700' :
@@ -226,10 +346,16 @@ const LearningPathPage = () => {
                                         </span>
                                     </div>
                                     
-                                    <div className="mb-3">
+                                    <div className="mb-3 flex items-center gap-2">
                                         <span className="text-xs font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-full">
-                                            {q.topic || 'Genel'}
+                                            {q.skill_label || q.topic || 'Genel'}
                                         </span>
+                                        {topicScore != null && (
+                                            <span className="text-xs text-gray-500">({topicScore}%)</span>
+                                        )}
+                                        {q.selection_reason && (
+                                            <span className="text-xs text-indigo-500 bg-indigo-50 px-2 py-1 rounded-full">{q.selection_reason}</span>
+                                        )}
                                     </div>
                                     
                                     <div className="text-gray-800 font-medium text-base mb-5">
@@ -237,13 +363,14 @@ const LearningPathPage = () => {
                                     </div>
 
                                     <button 
-                                        onClick={() => alert("🚧 Yakında!")} 
+                                        onClick={() => navigate(`/question/${q.question_id}`)} 
                                         className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700"
                                     >
                                         Hemen Çöz →
                                     </button>
                                 </div>
-                            )) : (
+                                );
+                            }) : (
                                 <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-gray-200">
                                     <div className="text-6xl mb-4">🎉</div>
                                     <h3 className="text-2xl font-bold text-gray-700 mb-2">Harikasın!</h3>

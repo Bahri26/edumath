@@ -26,6 +26,7 @@ import StudentExamPage from './pages/student/StudentExamPage';
 import StudentResultPage from './pages/student/StudentResultPage';
 import LearningPathPage from './pages/student/LearningPathPage';
 import TopicPage from './pages/student/TopicPage'; // topicName route
+import SolveQuestionPage from './pages/student/SolveQuestionPage';
 import ShopPage from './pages/student/ShopPage';
 
 // Teacher Sayfaları
@@ -75,6 +76,7 @@ function App() {
             <Route path="/student-exams" element={<StudentExamList />} />
             <Route path="/learning-path" element={<LearningPathPage />} />
             <Route path="/learning/:topicName" element={<TopicPage />} />
+            <Route path="/question/:id" element={<SolveQuestionPage />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/take-survey/:id" element={<TakeSurveyPage />} />
             <Route path="/exam-result/:examId" element={<StudentResultPage />} />
