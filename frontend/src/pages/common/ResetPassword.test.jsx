@@ -14,6 +14,6 @@ import ResetPassword from './ResetPassword';
 describe('ResetPassword', () => {
   it('renders main section', () => {
     render(<ResetPassword />);
-    expect(screen.getByText(/şifre|password/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /şifre|password/i })).toBeInTheDocument();
   });
 });

@@ -9,11 +9,16 @@ global.IntersectionObserver = class {
 import { describe, it, expect } from 'vitest';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { LanguageProvider } from '../../context/LanguageContext';
 import TeacherReports from './TeacherReports';
 
 describe('TeacherReports', () => {
   it('renders main section', () => {
-    render(<TeacherReports />);
+    render(
+      <LanguageProvider>
+        <TeacherReports />
+      </LanguageProvider>
+    );
     expect(screen.getByText(/rapor|report/i)).toBeInTheDocument();
   });
 });
