@@ -1,5 +1,5 @@
-import React from 'react';
-import { InlineMath, BlockMath } from 'react-katex';
+import React, { useEffect, useState } from 'react';
+import { loadKaTeX } from '../../utils/loadKaTeX';
 
 const SHAPE_PLACEHOLDER_MAP = {
     DAIRE: '🔵',
@@ -94,13 +94,31 @@ const MathText = ({ text, block = false }) => {
         return <span className="math-content text-gray-800">{displayText}</span>;
     }
 
+    const [katexReady, setKatexReady] = useState(false);
+
+    useEffect(() => {
+        let mounted = true;
+        loadKaTeX().then(() => { if (mounted) setKatexReady(true); }).catch(() => {});
+        return () => { mounted = false; };
+    }, []);
+
     return (
         <span className="math-content text-gray-800">
             {parts.map((part, index) => {
                 if (part.type === 'block') {
-                    return <BlockMath key={index} math={part.content} />;
+                    if (katexReady && window.katex) {
+                        return (
+                            <div key={index} dangerouslySetInnerHTML={{ __html: window.katex.renderToString(part.content, { displayMode: true }) }} />
+                        );
+                    }
+                    return <pre key={index} className="whitespace-pre-wrap">{`$$${part.content}$$`}</pre>;
                 } else if (part.type === 'inline') {
-                    return <InlineMath key={index} math={part.content} />;
+                    if (katexReady && window.katex) {
+                        return (
+                            <span key={index} dangerouslySetInnerHTML={{ __html: window.katex.renderToString(part.content, { displayMode: false }) }} />
+                        );
+                    }
+                    return <span key={index}>{`$${part.content}$`}</span>;
                 } else {
                     return <span key={index}>{part.content}</span>;
                 }

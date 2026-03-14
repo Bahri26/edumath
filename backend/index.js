@@ -32,13 +32,35 @@ app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 function mountApiV1Routes() {
   const routesDir = path.join(__dirname, 'routes');
   if (fs.existsSync(routesDir)) {
-    fs.readdirSync(routesDir).forEach((file) => {
-      if (!file.endsWith('.js')) return;
+    const files = fs.readdirSync(routesDir).filter(f => f.endsWith('.js'));
+    const basenames = new Set(files.map(f => path.basename(f, '.js')));
+    files.forEach((file) => {
       const routeName = path.basename(file, '.js');
+      const canonicalName = routeName.replace(/_/g, '-');
+
+      // If a canonical-named file exists, prefer it and skip mounting the legacy underscored file
+      if (canonicalName !== routeName && basenames.has(canonicalName)) {
+        console.log(`Skipping legacy route file ${file}, canonical ${canonicalName} exists`);
+        return;
+      }
+
       try {
         const router = require(path.join(__dirname, 'routes', file));
         app.use(`/api/${routeName}`, router);
         console.log(`Mounted route: /api/${routeName}`);
+
+        // Mount a canonical alias if names differ (learning_paths -> learning-path)
+        if (canonicalName !== routeName) {
+          app.use(`/api/${canonicalName}`, router);
+          console.log(`Mounted alias route: /api/${canonicalName} -> ${file}`);
+        }
+
+        // Also mount a legacy underscored alias if the canonical file was used but legacy file doesn't exist
+        const legacyName = routeName.replace(/-/g, '_');
+        if (legacyName !== routeName && !basenames.has(legacyName)) {
+          app.use(`/api/${legacyName}`, router);
+          console.log(`Mounted legacy alias route: /api/${legacyName} -> ${file}`);
+        }
       } catch (err) {
         console.error(`Failed to mount route ${file}:`, err.message);
       }

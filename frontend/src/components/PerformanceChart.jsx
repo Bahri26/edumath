@@ -1,10 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import {
-  LineChart, Line,
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from 'recharts';
 import api from '../services/api';
+
+const SimpleLineChart = ({ data = [], height = 220 }) => {
+  if (!data || data.length === 0) return null;
+  const width = 800;
+  const padding = 30;
+  const max = Math.max(...data.map(d => d.puan), 100);
+  const points = data.map((d, i) => {
+    const x = padding + (i * (width - padding * 2)) / (data.length - 1 || 1);
+    const y = padding + (1 - (d.puan / max)) * (height - padding * 2);
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+      <polyline points={points} fill="none" stroke="#6366f1" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
+      {data.map((d, i) => {
+        const x = padding + (i * (width - padding * 2)) / (data.length - 1 || 1);
+        const y = padding + (1 - (d.puan / max)) * (height - padding * 2);
+        return <circle key={i} cx={x} cy={y} r={5} fill="#6366f1" stroke="#fff" strokeWidth={2} />;
+      })}
+    </svg>
+  );
+};
+
+const SimpleRadarChart = ({ data = [], size = 240 }) => {
+  if (!data || data.length === 0) return null;
+  const center = size / 2;
+  const count = data.length;
+  const max = Math.max(...data.map(d => d.A), 100);
+  const points = data.map((d, i) => {
+    const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
+    const r = (d.A / max) * (center - 20);
+    const x = center + r * Math.cos(angle);
+    const y = center + r * Math.sin(angle);
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={center} cy={center} r={center - 10} fill="#fff" stroke="#e5e7eb" />
+      <polygon points={points} fill="#8b5cf6" fillOpacity={0.35} stroke="#8b5cf6" strokeWidth={2} />
+      {data.map((d, i) => {
+        const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
+        const r = (d.A / max) * (center - 20);
+        const x = center + r * Math.cos(angle);
+        const y = center + r * Math.sin(angle);
+        const labelX = center + (center - 5) * Math.cos(angle);
+        const labelY = center + (center - 5) * Math.sin(angle);
+        return (
+          <g key={i}>
+            <text x={labelX} y={labelY} textAnchor={labelX > center ? 'start' : 'end'} fontSize={10} fill="#374151">{d.subject}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+};
 
 const PerformanceChart = ({ studentId }) => {
   const [examData, setExamData] = useState([]);

@@ -29,6 +29,8 @@
     "mammoth": "^1.11.0",
     "multer": "^2.1.1",
     "mysql2": "^3.18.2"
+    ,
+    "puppeteer": "^21.3.0"
   },
   "devDependencies": {
     "jest": "^30.2.0",

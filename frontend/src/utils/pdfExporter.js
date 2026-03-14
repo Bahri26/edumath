@@ -1,5 +1,4 @@
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+// Lazy-load heavy PDF libraries only when export is invoked
 
 /**
  * 📄 EXAM TO PDF EXPORTER
@@ -12,8 +11,12 @@ import html2canvas from 'html2canvas';
  * @param {Array} questions - Soru listesi
  * @param {String} teacherName - Öğretmen adı
  */
+import { loadPdfLibs } from './loadPdfLibs';
+
 export const exportExamToPDF = async (exam, questions, teacherName = 'EduMath') => {
     try {
+        const libs = await loadPdfLibs();
+        const { jsPDF, html2canvas } = libs;
         // 1. Gizli print elementini oluştur
         const printElement = createPrintableExam(exam, questions, teacherName);
         document.body.appendChild(printElement);
