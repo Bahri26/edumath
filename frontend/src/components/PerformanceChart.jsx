@@ -30,6 +30,7 @@ const PerformanceChart = ({ studentId }) => {
 
       const recent = Array.isArray(payload.recentActivity) ? payload.recentActivity : [];
       const topics = Array.isArray(payload.topics) ? payload.topics : [];
+      const weakSkills = Array.isArray(payload.weakSkills) ? payload.weakSkills : [];
       const overall = payload.overallStats || {};
       const lastExam = payload.lastExam || null;
 
@@ -56,6 +57,13 @@ const PerformanceChart = ({ studentId }) => {
         subject: t.topic || 'Genel',
         A: Number(t.score || 0)
       }));
+
+      if (!mappedTopics.length && weakSkills.length > 0) {
+        mappedTopics = weakSkills.map((skill) => ({
+          subject: skill.skill_label || 'Genel Matematik',
+          A: Number(skill.mastery_score || 0)
+        }));
+      }
 
       if (!mappedTopics.length && Number(overall?.totalExams || 0) > 0) {
         mappedTopics = [{ subject: 'Genel Matematik', A: Number(overall?.successRate || overall?.avgScore || 0) }];
@@ -94,6 +102,18 @@ const PerformanceChart = ({ studentId }) => {
       </div>
     );
   }
+
+  const averageMetric = examData.length > 0
+    ? Math.round(examData.reduce((sum, d) => sum + d.puan, 0) / examData.length)
+    : topicData.length > 0
+      ? Math.round(topicData.reduce((sum, d) => sum + d.A, 0) / topicData.length)
+      : 0;
+
+  const bestMetric = examData.length > 0
+    ? Math.max(...examData.map(d => d.puan))
+    : topicData.length > 0
+      ? Math.max(...topicData.map(d => d.A))
+      : 0;
 
   return (
     <div className="space-y-8">
@@ -280,10 +300,7 @@ const PerformanceChart = ({ studentId }) => {
         <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-xl border border-emerald-200">
           <p className="text-emerald-600 font-semibold text-sm">Ortalama Başarı</p>
           <p className="text-4xl font-bold text-emerald-700 mt-2">
-            {examData.length > 0 
-              ? Math.round(examData.reduce((sum, d) => sum + d.puan, 0) / examData.length)
-              : '-'
-            }
+            {averageMetric}
             <span className="text-xl">%</span>
           </p>
         </div>
@@ -291,10 +308,7 @@ const PerformanceChart = ({ studentId }) => {
         <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border border-orange-200">
           <p className="text-orange-600 font-semibold text-sm">En Yüksek</p>
           <p className="text-4xl font-bold text-orange-700 mt-2">
-            {examData.length > 0 
-              ? Math.max(...examData.map(d => d.puan))
-              : '-'
-            }
+            {bestMetric}
             <span className="text-xl">%</span>
           </p>
         </div>

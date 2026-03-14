@@ -37,4 +37,15 @@ async function progress(req, res) {
   }
 }
 
-module.exports = { next, answer, progress };
+async function activity(req, res) {
+  const userId = getAuthUserId(req);
+  if (!userId) return res.status(401).json({ error: 'unauthenticated' });
+  try {
+    const payload = await adaptiveLearningService.submitLearningActivity(userId, req.body || {});
+    res.json({ data: payload });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+}
+
+module.exports = { next, answer, progress, activity };

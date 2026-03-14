@@ -133,11 +133,16 @@ async function buildLearningPathPayload(userId) {
       lastExam: null,
       overallStats: { totalExams: 0, totalCorrect: 0, successRate: 0, avgScore: 0 },
       recentActivity: [],
-      dailyQuests: [],
+      dailyQuests: adaptiveOverview.dailyQuestPreview || [],
       xpHeader: adaptiveOverview.xpHeader,
       continueLesson: adaptiveOverview.continueLesson,
       dueReviews: adaptiveOverview.dueReviews,
-      weakSkills: adaptiveOverview.weakSkills
+      weakSkills: adaptiveOverview.weakSkills,
+      levelState: adaptiveOverview.levelState,
+      completionState: adaptiveOverview.completionState,
+      studyModules: adaptiveOverview.studyModules,
+      questionGames: adaptiveOverview.questionGames,
+      dailyPlan: adaptiveOverview.dailyPlan
     };
   }
 
@@ -170,11 +175,16 @@ async function buildLearningPathPayload(userId) {
       lastExam: null,
       overallStats: { totalExams: 0, totalCorrect: 0, successRate: 0, avgScore: 0 },
       recentActivity: [],
-      dailyQuests: [],
+      dailyQuests: adaptiveOverview.dailyQuestPreview || [],
       xpHeader: adaptiveOverview.xpHeader,
       continueLesson: adaptiveOverview.continueLesson,
       dueReviews: adaptiveOverview.dueReviews,
-      weakSkills: adaptiveOverview.weakSkills
+      weakSkills: adaptiveOverview.weakSkills,
+      levelState: adaptiveOverview.levelState,
+      completionState: adaptiveOverview.completionState,
+      studyModules: adaptiveOverview.studyModules,
+      questionGames: adaptiveOverview.questionGames,
+      dailyPlan: adaptiveOverview.dailyPlan
     };
   }
 
@@ -361,7 +371,12 @@ async function buildLearningPathPayload(userId) {
     xpHeader: adaptiveOverview.xpHeader,
     continueLesson: adaptiveOverview.continueLesson,
     dueReviews: adaptiveOverview.dueReviews,
-    weakSkills: adaptiveOverview.weakSkills
+    weakSkills: adaptiveOverview.weakSkills,
+    levelState: adaptiveOverview.levelState,
+    completionState: adaptiveOverview.completionState,
+    studyModules: adaptiveOverview.studyModules,
+    questionGames: adaptiveOverview.questionGames,
+    dailyPlan: adaptiveOverview.dailyPlan
   };
 }
 

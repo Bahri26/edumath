@@ -156,6 +156,18 @@ describe('AI API endpoints', () => {
     }
   });
 
+  test('GET /api/ai-content/learning for miniquiz should respond appropriately', async () => {
+    const res = await request(app)
+      .get('/api/ai-content/learning?topic=Test&mode=miniquiz')
+      .expect(200);
+    if (res.body.error) {
+      expect(res.body.error).toMatch(/gemini/i);
+    } else {
+      expect(res.body).toHaveProperty('topic', 'Test');
+      expect(res.body).toHaveProperty('mode', 'miniquiz');
+    }
+  });
+
   test('GET /api/ai-content/ai-content should return frontend-compatible fields', async () => {
     const res = await request(app)
       .get('/api/ai-content/ai-content?topic=Matematik')
