@@ -1,59 +1,63 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
-// Auth Sayfaları
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
-import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
 
-// Common Sayfaları
-import HomePage from './pages/common/HomePage';
-import ProfilePage from './pages/common/ProfilePage';
-import SettingsPage from './pages/common/SettingsPage';
-import SurveysPage from './pages/common/SurveysPage';
-import TakeSurveyPage from './pages/common/TakeSurveyPage';
-import SurveyStatsPage from './pages/common/SurveyStatsPage';
-import StudentsPage from './pages/common/StudentsPage';
-import TeachersPage from './pages/common/TeachersPage';
-import CurriculumPage from './pages/common/CurriculumPage';
+const HomePage = lazy(() => import('./pages/common/HomePage'));
+const ProfilePage = lazy(() => import('./pages/common/ProfilePage'));
+const SettingsPage = lazy(() => import('./pages/common/SettingsPage'));
+const SurveysPage = lazy(() => import('./pages/common/SurveysPage'));
+const TakeSurveyPage = lazy(() => import('./pages/common/TakeSurveyPage'));
+const SurveyStatsPage = lazy(() => import('./pages/common/SurveyStatsPage'));
+const StudentsPage = lazy(() => import('./pages/common/StudentsPage'));
+const TeachersPage = lazy(() => import('./pages/common/TeachersPage'));
+const CurriculumPage = lazy(() => import('./pages/common/CurriculumPage'));
 
-// Student Sayfaları
-import StudentDashboard from './pages/student/StudentDashboard';
-import StudentExamList from './pages/student/StudentExamList';
-import StudentExamPage from './pages/student/StudentExamPage';
-import StudentResultPage from './pages/student/StudentResultPage';
-import LearningPathPage from './pages/student/LearningPathPage';
-import TopicPage from './pages/student/TopicPage'; // topicName route
-import SolveQuestionPage from './pages/student/SolveQuestionPage';
-import ShopPage from './pages/student/ShopPage';
+const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard'));
+const StudentExamList = lazy(() => import('./pages/student/StudentExamList'));
+const StudentExamPage = lazy(() => import('./pages/student/StudentExamPage'));
+const StudentResultPage = lazy(() => import('./pages/student/StudentResultPage'));
+const LearningPathPage = lazy(() => import('./pages/student/LearningPathPage'));
+const TopicPage = lazy(() => import('./pages/student/TopicPage'));
+const SolveQuestionPage = lazy(() => import('./pages/student/SolveQuestionPage'));
+const ShopPage = lazy(() => import('./pages/student/ShopPage'));
 
-// Teacher Sayfaları
-import TeacherDashboard from './pages/teacher/TeacherDashboard';
-import CreateExamPage from './pages/teacher/CreateExamPage';
-import ExamListPage from './pages/teacher/ExamListPage';
-import QuestionBankPage from './pages/teacher/QuestionBankPage';
-import CreateQuestionPage from './pages/teacher/CreateQuestionPage';
-import EditQuestionPage from './pages/teacher/EditQuestionPage';
-import AddQuestionPage from './pages/teacher/AddQuestionPage';
-import TeacherAnalysisPage from './pages/teacher/TeacherAnalysisPage';
-import CreateSurveyPage from './pages/teacher/CreateSurveyPage';
-import LevelThresholdsPage from './pages/teacher/LevelThresholdsPage';
+const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard'));
+const CreateExamPage = lazy(() => import('./pages/teacher/CreateExamPage'));
+const ExamListPage = lazy(() => import('./pages/teacher/ExamListPage'));
+const QuestionBankPage = lazy(() => import('./pages/teacher/QuestionBankPage'));
+const CreateQuestionPage = lazy(() => import('./pages/teacher/CreateQuestionPage'));
+const EditQuestionPage = lazy(() => import('./pages/teacher/EditQuestionPage'));
+const AddQuestionPage = lazy(() => import('./pages/teacher/AddQuestionPage'));
+const TeacherAnalysisPage = lazy(() => import('./pages/teacher/TeacherAnalysisPage'));
+const CreateSurveyPage = lazy(() => import('./pages/teacher/CreateSurveyPage'));
+const LevelThresholdsPage = lazy(() => import('./pages/teacher/LevelThresholdsPage'));
 
-// Admin Sayfaları
-import AdminDashboard from './pages/admin/AdminDashboard';
-import ApprovalsPage from './pages/admin/ApprovalsPage';
-import UserManagementPage from './pages/admin/UserManagementPage';
-import AnnouncementsPage from './pages/admin/AnnouncementsPage';
-import ReportsManagementPage from './pages/admin/ReportsManagementPage';
-import AlertsManagementPage from './pages/admin/AlertsManagementPage';
-import SystemSettingsPage from './pages/admin/SystemSettingsPage';
-import AuditLogsPage from './pages/admin/AuditLogsPage';
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const ApprovalsPage = lazy(() => import('./pages/admin/ApprovalsPage'));
+const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage'));
+const AnnouncementsPage = lazy(() => import('./pages/admin/AnnouncementsPage'));
+const ReportsManagementPage = lazy(() => import('./pages/admin/ReportsManagementPage'));
+const AlertsManagementPage = lazy(() => import('./pages/admin/AlertsManagementPage'));
+const SystemSettingsPage = lazy(() => import('./pages/admin/SystemSettingsPage'));
+const AuditLogsPage = lazy(() => import('./pages/admin/AuditLogsPage'));
+
+function RouteLoadingFallback() {
+  return (
+    <div className="min-h-[40vh] flex items-center justify-center text-center text-gray-500">
+      Sayfa yukleniyor...
+    </div>
+  );
+}
 
 function App() {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Suspense fallback={<RouteLoadingFallback />}>
       <Routes>
         
         {/* TÜM SİSTEM TEK LAYOUT İÇİNDE */}
@@ -121,6 +125,7 @@ function App() {
         </Route>
 
       </Routes>
+      </Suspense>
     </Router>
   );
 }
