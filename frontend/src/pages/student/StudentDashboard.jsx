@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AICompanion from '../../components/student/AICompanion';
-import PerformanceChart from '../../components/PerformanceChart';
 import api from '../../services/api';
+
+const PerformanceChart = lazy(() => import('../../components/PerformanceChart'));
 
 const StudentDashboard = () => {
     const navigate = useNavigate();
@@ -61,7 +62,9 @@ const StudentDashboard = () => {
                         📊 Karne &amp; Analizlerim
                         <span className="text-sm font-normal text-gray-500 ml-auto">Akıllı Performans Raporun</span>
                     </h2>
-                    <PerformanceChart studentId={user.id || user.user_id} />
+                    <Suspense fallback={<div className="rounded-2xl bg-white p-8 text-center text-gray-400 border border-gray-100">Analitik grafikler yükleniyor...</div>}>
+                        <PerformanceChart studentId={user.id || user.user_id} />
+                    </Suspense>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

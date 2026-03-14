@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from '../../services/api';
+
+const SurveyDistributionChart = lazy(() => import('../../components/charts/SurveyDistributionChart'));
 
 const SurveyStatsPage = () => {
     const { surveyId } = useParams();
@@ -53,30 +54,9 @@ const SurveyStatsPage = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* --- GRAFİK ALANI --- */}
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
-                        <h3 className="text-lg font-bold text-gray-700 mb-6">Memnuniyet Dağılımı</h3>
-                        <div className="h-64 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={chartData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={80}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                    >
-                                        {chartData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
+                    <Suspense fallback={<div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200 text-center text-gray-400">Grafik yükleniyor...</div>}>
+                        <SurveyDistributionChart chartData={chartData} colors={COLORS} />
+                    </Suspense>
 
                     {/* --- DETAYLI LİSTE --- */}
                     <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
