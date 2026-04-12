@@ -218,11 +218,6 @@ const ExamsPage = ({ role }) => {
               <div className="text-lg font-medium text-slate-800 dark:text-white mb-4">
                 {renderWithLatex(q.text)}
               </div>
-              {q.image && (
-                <div className="mb-5 overflow-hidden rounded-[1.5rem] border border-indigo-100 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 p-4 shadow-inner">
-                  <img src={q.image} alt="Soru görseli" className="h-72 w-full object-contain rounded-2xl" />
-                </div>
-              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {(Array.isArray(q.options) ? q.options : []).map((opt, i) => {
                   const optionText = opt?.text || '';
@@ -245,11 +240,6 @@ const ExamsPage = ({ role }) => {
                           <span className="font-bold mr-2">{letter})</span>
                           {renderWithLatex(optionText)}
                         </div>
-                        {opt?.image && (
-                          <div className="mt-3 inline-flex rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-sm">
-                            <img src={opt.image} alt={`Seçenek ${letter} görseli`} className="h-24 w-24 object-contain rounded-xl" />
-                          </div>
-                        )}
                       </div>
                     </label>
                   );
