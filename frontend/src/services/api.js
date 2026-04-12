@@ -7,6 +7,14 @@ const API_BASE = import.meta.env?.VITE_API_URL
 
 const trimTrailingSlash = (value = '') => value.replace(/\/+$/, '');
 
+const parseTimeout = (value, fallback) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const DEFAULT_TIMEOUT = parseTimeout(import.meta.env?.VITE_API_TIMEOUT_MS, 15000);
+const AI_TIMEOUT = parseTimeout(import.meta.env?.VITE_AI_TIMEOUT_MS, 45000);
+
 const getAssetBaseUrl = () => {
     const explicitAssetBase = trimTrailingSlash(import.meta.env?.VITE_ASSET_BASE_URL || '');
     if (explicitAssetBase) {
@@ -74,8 +82,15 @@ const apiClient = axios.create({
         'Content-Type': 'application/json',
         Accept: 'application/json',
     },
-    timeout: 15000,
+    timeout: DEFAULT_TIMEOUT,
 });
+
+export const withRequestConfig = (config = {}, timeout = DEFAULT_TIMEOUT) => ({
+    ...config,
+    timeout,
+});
+
+export const withAiRequestConfig = (config = {}) => withRequestConfig(config, AI_TIMEOUT);
 
 // 🚨 1. İSTEK INTERCEPTOR (Token Ekleme)
 apiClient.interceptors.request.use(
@@ -117,7 +132,9 @@ apiClient.interceptors.response.use(
             if (apiErrorNotifier && status !== 401) {
                 const path = error?.config?.url || '';
                 const msg = error?.response?.data?.message || error.message || 'Beklenmeyen hata';
-                if (!error.response) {
+                if (error?.code === 'ECONNABORTED') {
+                    apiErrorNotifier('İşlem zaman aşımına uğradı. Sunucu geç cevap veriyor; tekrar deneyin veya AI timeout süresini artırın.', 'error');
+                } else if (!error.response) {
                     apiErrorNotifier('Ağ bağlantı hatası. Lütfen kontrol edin.', 'error');
                 } else if (status >= 500) {
                     apiErrorNotifier('Sunucu hatası. Lütfen daha sonra tekrar deneyin.', 'error');
@@ -135,3 +152,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+export { AI_TIMEOUT, DEFAULT_TIMEOUT };

@@ -1,6 +1,6 @@
 const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 
-const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-1.5-pro';
+const MODEL_NAME = process.env.GEMINI_COMPLEX_MODEL || process.env.GEMINI_MODEL || 'gemini-1.5-pro';
 
 function getClient() {
   if (!process.env.GEMINI_API_KEY) {
