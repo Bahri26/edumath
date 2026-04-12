@@ -14,8 +14,22 @@ dotenv.config();
 const app = express();
 
 // Middleware
-const allowedOrigins = [process.env.FRONTEND_URL || 'http://localhost:5173'];
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    ...(process.env.ALLOWED_ORIGINS || '').split(',').map((value) => value.trim()),
+    'http://localhost:5173',
+].filter(Boolean);
+
+app.use(cors({
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+}));
 
 // Security headers (disable CORP to allow static files)
 app.use(helmet({ crossOriginResourcePolicy: false }));

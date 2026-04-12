@@ -67,7 +67,8 @@ This repository includes a Dockerfile in `backend/`.
    - Build directory: `backend`
    - Build uses Dockerfile automatically
 3. Configure service:
-   - Env vars: `MONGO_URI`, `FRONTEND_URL`
+   - Env vars: `MONGODB_URI`, `MONGODB_DB`, `FRONTEND_URL`
+   - Optional multi-origin CORS: `ALLOWED_ORIGINS=https://edumath-client.onrender.com,http://localhost:5173`
    - Secret env var: `GEMINI_API_KEY` → source: Secret Manager
    - Ingress: allow unauthenticated (testing)
 4. Deploy.
@@ -78,7 +79,7 @@ This repository includes a Dockerfile in `backend/`.
 
 ### Frontend Config
 - Set `frontend/.env` → `VITE_API_URL=https://<cloud-run-url>`.
-- Ensure `FRONTEND_URL` in Cloud Run matches the deployed frontend origin for CORS.
+- Ensure `FRONTEND_URL` matches the deployed frontend origin for CORS. If you need multiple origins, use `ALLOWED_ORIGINS` with comma-separated values.
 
 ## Notes
 - Cloud Run filesystem is ephemeral. For persistent uploads, use Google Cloud Storage (GCS).
