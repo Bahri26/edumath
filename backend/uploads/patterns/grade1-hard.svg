@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="240" viewBox="0 0 800 240">
+  <rect width="800" height="240" fill="#fefce8"/>
+  <text x="32" y="40" font-family="Arial" font-size="24" font-weight="700" fill="#334155">Sira Bulma Oruntusu</text>
+  <rect x="60" y="85" width="70" height="70" rx="12" fill="#10b981"/>
+  <circle cx="225" cy="120" r="35" fill="#0ea5e9"/>
+  <rect x="320" y="85" width="70" height="70" rx="12" fill="#10b981"/>
+  <circle cx="485" cy="120" r="35" fill="#0ea5e9"/>
+  <rect x="580" y="85" width="70" height="70" rx="12" fill="#10b981"/>
+  <text x="710" y="130" font-family="Arial" font-size="42" font-weight="700" fill="#64748b">8?</text>
+  <text x="32" y="205" font-family="Arial" font-size="20" fill="#475569">Tek siralar yesil kare, cift siralar mavi daire</text>
+</svg>

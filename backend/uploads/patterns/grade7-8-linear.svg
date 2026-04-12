@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="260" viewBox="0 0 800 260">
+  <rect width="800" height="260" fill="#eff6ff"/>
+  <text x="32" y="42" font-family="Arial" font-size="24" font-weight="700" fill="#1d4ed8">Lineer Oruntu Tablosu</text>
+  <rect x="60" y="70" width="680" height="130" rx="18" fill="#ffffff" stroke="#93c5fd" stroke-width="3"/>
+  <line x1="200" y1="70" x2="200" y2="200" stroke="#bfdbfe" stroke-width="3"/>
+  <line x1="360" y1="70" x2="360" y2="200" stroke="#bfdbfe" stroke-width="3"/>
+  <line x1="520" y1="70" x2="520" y2="200" stroke="#bfdbfe" stroke-width="3"/>
+  <text x="105" y="112" font-family="Arial" font-size="24" font-weight="700" fill="#1e3a8a">n</text>
+  <text x="260" y="112" font-family="Arial" font-size="24" font-weight="700" fill="#1e3a8a">1</text>
+  <text x="420" y="112" font-family="Arial" font-size="24" font-weight="700" fill="#1e3a8a">2</text>
+  <text x="580" y="112" font-family="Arial" font-size="24" font-weight="700" fill="#1e3a8a">3</text>
+  <text x="100" y="165" font-family="Arial" font-size="24" font-weight="700" fill="#1e3a8a">a_n</text>
+  <text x="250" y="165" font-family="Arial" font-size="24" font-weight="700" fill="#0f766e">7</text>
+  <text x="410" y="165" font-family="Arial" font-size="24" font-weight="700" fill="#0f766e">12</text>
+  <text x="570" y="165" font-family="Arial" font-size="24" font-weight="700" fill="#0f766e">17</text>
+  <text x="680" y="165" font-family="Arial" font-size="24" font-weight="700" fill="#475569">...</text>
+  <text x="32" y="232" font-family="Arial" font-size="20" fill="#334155">Tabloya bakarak artisi ve genel kurali bul.</text>
+</svg>

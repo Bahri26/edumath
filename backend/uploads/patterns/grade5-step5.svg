@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="title desc">
+  <title id="title">Besinci sinif sabit bes artisli oruntu</title>
+  <desc id="desc">Her adimda bes artan terimlerle kurulan sayi oruntusu gorseli.</desc>
+  <rect width="900" height="520" fill="#eff6ff"/>
+  <rect x="36" y="36" width="828" height="448" rx="34" fill="#dbeafe" stroke="#2563eb" stroke-width="6"/>
+  <text x="72" y="102" font-family="Verdana, sans-serif" font-size="34" font-weight="700" fill="#1d4ed8">Her adimda +5 ilerler</text>
+  <g font-family="Verdana, sans-serif" text-anchor="middle">
+    <g>
+      <polygon points="140,178 210,218 210,298 140,338 70,298 70,218" fill="#93c5fd"/>
+      <text x="140" y="266" font-size="40" font-weight="700" fill="#1e3a8a">4</text>
+    </g>
+    <g>
+      <polygon points="314,178 384,218 384,298 314,338 244,298 244,218" fill="#60a5fa"/>
+      <text x="314" y="266" font-size="40" font-weight="700" fill="#ffffff">9</text>
+    </g>
+    <g>
+      <polygon points="488,178 558,218 558,298 488,338 418,298 418,218" fill="#3b82f6"/>
+      <text x="488" y="266" font-size="40" font-weight="700" fill="#ffffff">14</text>
+    </g>
+    <g>
+      <polygon points="662,178 732,218 732,298 662,338 592,298 592,218" fill="#2563eb"/>
+      <text x="662" y="266" font-size="40" font-weight="700" fill="#ffffff">19</text>
+    </g>
+    <g>
+      <polygon points="816,194 856,218 856,294 816,318 776,294 776,218" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="4" stroke-dasharray="10 10"/>
+      <text x="816" y="266" font-size="34" font-weight="700" fill="#1e40af">?</text>
+    </g>
+  </g>
+  <g font-family="Verdana, sans-serif" font-size="24" font-weight="700" fill="#1d4ed8" text-anchor="middle">
+    <text x="227" y="216">+5</text>
+    <text x="401" y="216">+5</text>
+    <text x="575" y="216">+5</text>
+    <text x="749" y="216">+5</text>
+  </g>
+  <text x="72" y="376" font-family="Verdana, sans-serif" font-size="28" fill="#1e40af">Kural: her terimde 5 eklenir, istenen terim bu kuralla bulunur.</text>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="240" viewBox="0 0 800 240">
+  <rect width="800" height="240" fill="#f8fafc"/>
+  <text x="32" y="40" font-family="Arial" font-size="24" font-weight="700" fill="#334155">Uc Adimli Sekil Oruntusu</text>
+  <polygon points="80,160 120,90 160,160" fill="#f59e0b"/>
+  <rect x="210" y="95" width="70" height="70" rx="10" fill="#8b5cf6"/>
+  <rect x="330" y="95" width="70" height="70" rx="10" fill="#8b5cf6"/>
+  <polygon points="470,160 510,90 550,160" fill="#f59e0b"/>
+  <rect x="590" y="95" width="70" height="70" rx="10" fill="#8b5cf6"/>
+  <text x="705" y="140" font-family="Arial" font-size="42" font-weight="700" fill="#64748b">?</text>
+  <text x="32" y="205" font-family="Arial" font-size="20" fill="#475569">Kural: Ucgen - Kare - Kare</text>
+</svg>

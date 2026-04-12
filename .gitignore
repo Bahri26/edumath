@@ -1,0 +1,63 @@
+# Node
+frontend/node_modules/
+backend/node_modules/
+frontend/dist/
+backend/dist/
+
+# Env & secrets
+.env
+*.env
+backend/.env
+frontend/.env
+
+# Uploads & generated assets
+backend/uploads/
+backend/uploads/temp/
+!backend/uploads/
+backend/uploads/*
+!backend/uploads/patterns/
+!backend/uploads/patterns/*.svg
+
+# Logs & caches
+*.log
+logs/
+coverage/
+.cache/
+
+# OS/Editor cruft
+.DS_Store
+Thumbs.db
+.vscode/# Root Gitignore for edumath
+
+# Node dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build outputs
+frontend/dist/
+backend/coverage/
+backend/.nyc_output/
+
+# Environment & secrets
+.env
+.env.*
+backend/.env
+frontend/.env
+
+# Logs
+*.log
+backend/logs/
+
+# Uploads & temp files
+backend/uploads/
+backend/uploads/temp/
+!backend/uploads/
+backend/uploads/*
+!backend/uploads/patterns/
+!backend/uploads/patterns/*.svg
+
+# IDE/editor
+.vscode/
+.DS_Store
+Thumbs.db

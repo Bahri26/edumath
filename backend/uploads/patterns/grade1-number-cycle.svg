@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="title desc">
+  <title id="title">Birinci sinif uc adimli sayi oruntusu</title>
+  <desc id="desc">Iki ayni sayi ve bir farkli sayidan olusan tekrarli oruntu gorseli.</desc>
+  <rect width="900" height="520" fill="#fffaf0"/>
+  <rect x="40" y="40" width="820" height="440" rx="32" fill="#fffbeb" stroke="#f59e0b" stroke-width="6"/>
+  <text x="80" y="110" font-family="Verdana, sans-serif" font-size="34" font-weight="700" fill="#92400e">Uc adimli sayi oruntusu</text>
+  <g font-family="Verdana, sans-serif" text-anchor="middle">
+    <rect x="110" y="190" width="110" height="110" rx="22" fill="#fde68a"/>
+    <text x="165" y="258" font-size="44" font-weight="700" fill="#78350f">2</text>
+    <rect x="250" y="190" width="110" height="110" rx="22" fill="#fde68a"/>
+    <text x="305" y="258" font-size="44" font-weight="700" fill="#78350f">2</text>
+    <rect x="390" y="190" width="110" height="110" rx="22" fill="#f59e0b"/>
+    <text x="445" y="258" font-size="44" font-weight="700" fill="#ffffff">5</text>
+    <rect x="530" y="190" width="110" height="110" rx="22" fill="#fde68a"/>
+    <text x="585" y="258" font-size="44" font-weight="700" fill="#78350f">2</text>
+    <rect x="670" y="190" width="110" height="110" rx="22" fill="#fde68a" stroke="#92400e" stroke-width="4" stroke-dasharray="10 10"/>
+    <text x="725" y="258" font-size="44" font-weight="700" fill="#92400e">?</text>
+  </g>
+  <text x="80" y="384" font-family="Verdana, sans-serif" font-size="28" fill="#92400e">Kural: iki ayni sayidan sonra farkli sayi gelir, sonra dongu yeniden baslar.</text>
+</svg>
