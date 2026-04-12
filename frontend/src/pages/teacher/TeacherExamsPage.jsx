@@ -30,14 +30,8 @@ const DraggableQuestionCard = ({ question, onDragStart }) => (
       }`}>
         {question.difficulty}
       </span>
-      {question.image && (
-        <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Görsel</span>
-      )}
     </div>
     <div className="flex items-start gap-3">
-      {question.image && (
-        <img src={question.image} alt="Soru" className="w-12 h-12 object-contain rounded-md border border-slate-200 dark:border-slate-700" />
-      )}
       <p className="flex-1 text-xs font-medium text-slate-700 dark:text-slate-200 line-clamp-2">
         {renderWithLatex(question.text)}
       </p>
@@ -61,9 +55,6 @@ const DropZone = ({ difficulty, questions, onDrop, onRemove, label, colorClass, 
     >
       {questions.map((q, idx) => (
         <div key={q._id} className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 flex items-center gap-2 group">
-          {q.image && (
-            <img src={q.image} alt="Soru" className="w-8 h-8 object-contain rounded border border-slate-200 dark:border-slate-700" />
-          )}
           <p className="flex-1 text-[10px] font-bold truncate">{renderWithLatex(q.text)}</p>
           <button onClick={() => onRemove(idx)} className="text-slate-300 hover:text-rose-500 transition-all"><Trash2 size={12} /></button>
         </div>

@@ -5,7 +5,7 @@ import SmartPasteModal from '../../components/modals/SmartPasteModal'; // AI Yap
 import { 
   Plus, Edit2, Trash2, Search, FileText, Layers, Loader2, 
   ChevronLeft, ChevronRight, CheckCircle, Star, Copy, Download,
-  Clock, ImageIcon, Filter, Sparkles, Hash
+  Clock, Filter, Sparkles, Hash
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -47,11 +47,6 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
             <div className="text-slate-800 dark:text-slate-200 font-medium text-base md:text-lg">
               {renderWithLatex(question.text)}
             </div>
-            {question.image && (
-              <div className="mt-2 overflow-hidden rounded-[1.5rem] border border-indigo-100 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 p-4 shadow-inner">
-                <img src={question.image} alt="Soru Görseli" className="h-72 w-full object-contain rounded-2xl" />
-              </div>
-            )}
           </div>
           <div className="flex md:flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300" onClick={e => e.stopPropagation()}>
             <button onClick={() => onEdit(question)} className="p-2.5 bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-indigo-600 transition-all">
@@ -80,11 +75,6 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
                 </span>
                 <div className="flex items-center gap-3 flex-1">
                   <span className="text-sm font-semibold flex-1">{renderWithLatex(opt.text || opt)}</span>
-                  {opt.image && (
-                    <div className="shrink-0 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-sm">
-                      <img src={opt.image} alt={`Şık ${String.fromCharCode(65 + idx)} Görseli`} className="h-20 w-20 object-contain rounded-xl" />
-                    </div>
-                  )}
                 </div>
               </div>
             ))}

@@ -77,19 +77,11 @@ export default function ExamPreviewModal({ examId, onClose }) {
                         <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded ${q.difficulty === 'Zor' ? 'bg-rose-50 text-rose-700' : q.difficulty === 'Orta' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>{q.difficulty}</span>
                       </div>
                       <div className="text-sm text-slate-800 dark:text-slate-200 mb-4 leading-relaxed">{renderWithLatex(q.text)}</div>
-                      {q.image && (
-                        <div className="mb-3">
-                          <img src={q.image} alt="Soru Görseli" className="max-h-56 w-full object-contain rounded-xl border border-slate-200 dark:border-slate-700" />
-                        </div>
-                      )}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {opts.map((opt, i) => (
                           <div key={i} className={`flex items-start gap-2 p-3 rounded-xl border ${opt.text === q.correctAnswer ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 dark:border-slate-700'}`}>
                             <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-100 text-slate-700 font-bold">{String.fromCharCode(65 + i)}</span>
                             <span className="text-sm flex-1">{opt.text}</span>
-                            {opt.image && (
-                              <img src={opt.image} alt={`Şık ${String.fromCharCode(65 + i)} Görseli`} className="w-14 h-14 object-contain rounded-lg border border-slate-200 dark:border-slate-700" />
-                            )}
                           </div>
                         ))}
                       </div>
