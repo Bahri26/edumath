@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="title desc">
+  <title id="title">Dorduncu sinif sabit uc artisli oruntu</title>
+  <desc id="desc">Ucer artan renkli kutularla olusturulmus sayi oruntusu gorseli.</desc>
+  <rect width="900" height="520" fill="#fff9ef"/>
+  <rect x="36" y="36" width="828" height="448" rx="34" fill="#fff1cf" stroke="#f59e0b" stroke-width="6"/>
+  <text x="72" y="108" font-family="Verdana, sans-serif" font-size="34" font-weight="700" fill="#9a3412">Her adimda +3</text>
+  <g font-family="Verdana, sans-serif" text-anchor="middle">
+    <g>
+      <rect x="82" y="172" width="128" height="108" rx="24" fill="#fb923c"/>
+      <text x="146" y="238" font-size="46" font-weight="700" fill="#ffffff">12</text>
+    </g>
+    <g>
+      <rect x="248" y="172" width="128" height="108" rx="24" fill="#f97316"/>
+      <text x="312" y="238" font-size="46" font-weight="700" fill="#ffffff">15</text>
+    </g>
+    <g>
+      <rect x="414" y="172" width="128" height="108" rx="24" fill="#ea580c"/>
+      <text x="478" y="238" font-size="46" font-weight="700" fill="#ffffff">18</text>
+    </g>
+    <g>
+      <rect x="580" y="172" width="128" height="108" rx="24" fill="#c2410c"/>
+      <text x="644" y="238" font-size="46" font-weight="700" fill="#ffffff">21</text>
+    </g>
+    <g>
+      <rect x="746" y="172" width="92" height="108" rx="24" fill="#fdba74" stroke="#c2410c" stroke-width="4" stroke-dasharray="10 10"/>
+      <text x="792" y="238" font-size="42" font-weight="700" fill="#9a3412">?</text>
+    </g>
+  </g>
+  <g stroke="#9a3412" stroke-width="8" fill="none" stroke-linecap="round">
+    <path d="M210 226 H240"/>
+    <path d="M376 226 H406"/>
+    <path d="M542 226 H572"/>
+    <path d="M708 226 H738"/>
+  </g>
+  <g font-family="Verdana, sans-serif" font-size="24" font-weight="700" fill="#9a3412" text-anchor="middle">
+    <text x="225" y="206">+3</text>
+    <text x="391" y="206">+3</text>
+    <text x="557" y="206">+3</text>
+    <text x="723" y="206">+3</text>
+  </g>
+  <text x="72" y="352" font-family="Verdana, sans-serif" font-size="28" fill="#7c2d12">Kural: onceki sayiya 3 eklenir.</text>
+  <text x="72" y="400" font-family="Verdana, sans-serif" font-size="24" fill="#9a3412">Renkli kutular sabit artisli sayi oruntusunu gosterir.</text>
+</svg>

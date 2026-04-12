@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="260" viewBox="0 0 800 260">
+  <rect width="800" height="260" fill="#eef2ff"/>
+  <text x="32" y="42" font-family="Arial" font-size="24" font-weight="700" fill="#312e81">Geometrik Buyume Modeli</text>
+  <rect x="90" y="150" width="40" height="40" fill="#818cf8"/>
+  <rect x="220" y="130" width="60" height="60" fill="#6366f1"/>
+  <rect x="360" y="100" width="90" height="90" fill="#4f46e5"/>
+  <rect x="530" y="55" width="135" height="135" fill="#3730a3"/>
+  <text x="95" y="220" font-family="Arial" font-size="22" fill="#4338ca">2</text>
+  <text x="235" y="220" font-family="Arial" font-size="22" fill="#4338ca">6</text>
+  <text x="390" y="220" font-family="Arial" font-size="22" fill="#4338ca">18</text>
+  <text x="585" y="220" font-family="Arial" font-size="22" fill="#4338ca">54</text>
+  <text x="32" y="232" font-family="Arial" font-size="20" fill="#475569">Sekiller ve sayilar katlanarak artiyor.</text>
+</svg>

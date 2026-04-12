@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="title desc">
+  <title id="title">Dorduncu sinif kat oruntusu</title>
+  <desc id="desc">Bir sayinin katlariyla buyuyen carpmaya dayali oruntu gorseli.</desc>
+  <rect width="900" height="520" fill="#eefbf6"/>
+  <rect x="36" y="36" width="828" height="448" rx="34" fill="#dcfce7" stroke="#16a34a" stroke-width="6"/>
+  <text x="72" y="102" font-family="Verdana, sans-serif" font-size="34" font-weight="700" fill="#166534">Katlarla buyuyen oruntu</text>
+  <g font-family="Verdana, sans-serif" text-anchor="middle">
+    <g>
+      <circle cx="162" cy="228" r="58" fill="#34d399"/>
+      <text x="162" y="238" font-size="44" font-weight="700" fill="#064e3b">9</text>
+      <text x="162" y="314" font-size="24" font-weight="700" fill="#166534">1 kat</text>
+    </g>
+    <g>
+      <circle cx="332" cy="228" r="58" fill="#10b981"/>
+      <text x="332" y="238" font-size="44" font-weight="700" fill="#ffffff">18</text>
+      <text x="332" y="314" font-size="24" font-weight="700" fill="#166534">2 kat</text>
+    </g>
+    <g>
+      <circle cx="502" cy="228" r="58" fill="#059669"/>
+      <text x="502" y="238" font-size="44" font-weight="700" fill="#ffffff">27</text>
+      <text x="502" y="314" font-size="24" font-weight="700" fill="#166534">3 kat</text>
+    </g>
+    <g>
+      <circle cx="672" cy="228" r="58" fill="#047857"/>
+      <text x="672" y="238" font-size="44" font-weight="700" fill="#ffffff">36</text>
+      <text x="672" y="314" font-size="24" font-weight="700" fill="#166534">4 kat</text>
+    </g>
+    <g>
+      <circle cx="804" cy="228" r="44" fill="#a7f3d0" stroke="#047857" stroke-width="4" stroke-dasharray="10 10"/>
+      <text x="804" y="238" font-size="34" font-weight="700" fill="#065f46">?</text>
+    </g>
+  </g>
+  <g stroke="#166534" stroke-width="8" fill="none" stroke-linecap="round">
+    <path d="M220 228 H270"/>
+    <path d="M390 228 H440"/>
+    <path d="M560 228 H610"/>
+    <path d="M730 228 H760"/>
+  </g>
+  <text x="72" y="374" font-family="Verdana, sans-serif" font-size="28" fill="#166534">Kural: taban sayi her adimda 1 kat daha buyur.</text>
+  <text x="72" y="420" font-family="Verdana, sans-serif" font-size="24" fill="#14532d">Carpma ve kat kavramini gorsellestirmek icin dairesel adimlar kullanildi.</text>
+</svg>

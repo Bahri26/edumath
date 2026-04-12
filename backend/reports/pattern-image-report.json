@@ -1,0 +1,3463 @@
+{
+  "db": "Edumath",
+  "generatedAt": "2026-04-12T15:42:06.863Z",
+  "totalQuestions": 252,
+  "missingQuestionImageCount": 0,
+  "questionsWithoutOptionImagesCount": 232,
+  "imageUsage": [
+    {
+      "image": "/uploads/patterns/grade1-easy.svg",
+      "usageCount": 6,
+      "questions": [
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Kolay",
+          "text": "▲, ■, ▲, ■, ▲, ... örüntüsünde sıradaki şekil hangisidir?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Kolay",
+          "text": "●, ○, ●, ○, ●, ... örüntüsünde sıradaki şekil hangisidir?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Kolay",
+          "text": "1, 3, 1, 3, 1, ... örüntüsünde boş yere hangi sayı gelmelidir?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Kolay",
+          "text": "2, 4, 2, 4, 2, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Kolay",
+          "text": "5, 7, 5, 7, 5, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Kırmızı top, mavi top, kırmızı top, mavi top, ... örüntüsünde sıradaki topun rengi nedir?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade1-fruit-alt.svg",
+      "usageCount": 1,
+      "questions": [
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Elma, armut, elma, armut, elma, ... örüntüsünde sıradaki meyve hangisidir?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade1-hard.svg",
+      "usageCount": 5,
+      "questions": [
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Zor",
+          "text": "■, ●, ■, ●, ■, ●, ... örüntüsünde 7. sıradaki şekil hangisidir?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Zor",
+          "text": "2, 7, 2, 7, 2, 7, ... örüntüsünde 13. sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Zor",
+          "text": "3, 6, 3, 6, 3, 6, ... örüntüsünde 8. sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Zor",
+          "text": "4, 8, 4, 8, 4, 8, ... örüntüsünde 10. sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Zor",
+          "text": "5, 9, 5, 9, 5, 9, ... örüntüsünde 11. sıradaki sayı kaçtır?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade1-medium.svg",
+      "usageCount": 7,
+      "questions": [
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Orta",
+          "text": "■, ▲, ●, ■, ▲, ●, ... örüntüsünde sıradaki şekil hangisidir?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Orta",
+          "text": "▲, ■, ■, ▲, ■, ■, ... örüntüsünde sıradaki şekil hangisidir?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Orta",
+          "text": "●, ●, ○, ●, ●, ○, ... örüntüsünde sıradaki şekil hangisidir?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Orta",
+          "text": "2, 2, 5, 2, 2, 5, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Orta",
+          "text": "Elma, armut, armut, elma, armut, armut, ... örüntüsünde sıradaki meyve hangisidir?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Orta",
+          "text": "Güneş, bulut, bulut, güneş, bulut, bulut, ... örüntüsünde sıradaki şekil hangisidir?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Orta",
+          "text": "Kırmızı, mavi, mavi, kırmızı, mavi, mavi, ... örüntüsünde sıradaki renk nedir?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade1-triangle-circle.svg",
+      "usageCount": 2,
+      "questions": [
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Zor",
+          "text": "▲, ○, ▲, ○, ▲, ○, ... örüntüsünde 9. sıradaki şekil hangisidir?"
+        },
+        {
+          "classLevel": "1. Sınıf",
+          "difficulty": "Zor",
+          "text": "○, ▲, ○, ▲, ○, ▲, ... örüntüsünde 12. sıradaki şekil hangisidir?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "usageCount": 21,
+      "questions": [
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Zor",
+          "text": "Atölye çoğalma planında a_n = 11 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Orta",
+          "text": "Azalan parlaklık tablosunda 81, 27, 9, 3, ... geometrik dizisinin ortak oranı kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Bakteri koloni şemasında 4, 16, 64, 256, ... geometrik dizisinin 6. terimi kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Orta",
+          "text": "Desenli cam süslemesinde 162, 54, 18, 6, ... geometrik dizisinin ortak oranı kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Desenli çoğalan karo modelinde 3, 9, 27, 81, ... geometrik dizisinin 6. terimi kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Zor",
+          "text": "Desenli pul koleksiyonunda a_n = 6 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Zor",
+          "text": "Dijital gösterge modelinde a_n = 10 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Orta",
+          "text": "Dijital sinyal örüntüsünde 405, 135, 45, 15, ... geometrik dizisinin ortak oranı kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Geometrik tasarım çiziminde 8, 16, 32, 64, ... geometrik dizisinin 6. terimi kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Zor",
+          "text": "Geometrik tasarım toplamında a_n = 5 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Orta",
+          "text": "Kademeli bölmeli rafta 486, 162, 54, 18, ... geometrik dizisinin ortak oranı kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Katlanarak artan bilet sayısında 5, 10, 20, 40, ... geometrik dizisinin 6. terimi kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Zor",
+          "text": "Katlanarak büyüyen ışık modelinde a_n = 7 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Orta",
+          "text": "Katlanarak küçülen modelde 324, 108, 36, 12, ... geometrik dizisinin ortak oranı kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Kolay",
+          "text": "LED çoğalma deseninde 6, 18, 54, 162, ... geometrik dizisinin 6. terimi kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Mozaik büyüme modelinde 7, 28, 112, 448, ... geometrik dizisinin 6. terimi kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Zor",
+          "text": "Mozaik karo sayısında a_n = 9 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Orta",
+          "text": "Mozaik oran deseninde 567, 189, 63, 21, ... geometrik dizisinin ortak oranı kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Renkli ışık panellerinde 2, 4, 8, 16, ... geometrik dizisinin 6. terimi kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Orta",
+          "text": "Renkli kare panelinde 243, 81, 27, 9, ... geometrik dizisinin ortak oranı kaçtır?"
+        },
+        {
+          "classLevel": "10. Sınıf",
+          "difficulty": "Zor",
+          "text": "Renkli kare panelinin toplamında a_n = 8 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "usageCount": 42,
+      "questions": [
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Orta",
+          "text": "Artan ışık seviyelerinde 6, 11, 18, 27, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Atölye ölçüm çizelgesinde a_n = 6n² - 5 kuralına göre 4. terim kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Orta",
+          "text": "Atölye üretim planında 10, 15, 22, 31, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Zor",
+          "text": "Atölye üretim raporunda Bir dizinin genel terimi a_n = n² + 3n ise a_10 + a_11 toplamı kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Orta",
+          "text": "Desenli büyüme modelinde 7, 12, 19, 28, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Desenli parabol panosunda a_n = 2n² - 1 kuralına göre 4. terim kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Zor",
+          "text": "Desenli veri modelinde Bir dizinin genel terimi a_n = n² + 3n ise a_6 + a_7 toplamı kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Orta",
+          "text": "Dijital desen akışında 11, 16, 23, 32, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Dijital tasarım modelinde a_n = 4n² - 3 kuralına göre 4. terim kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Grafik afişindeki dizide a_n = 8n² - 7 kuralına göre 4. terim kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Zor",
+          "text": "Grafik modelinde Bir dizinin genel terimi a_n = n² + 3n ise a_11 + a_12 toplamı kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Zor",
+          "text": "Kodlu dizi tasarımında Bir dizinin genel terimi a_n = n² + 3n ise a_5 + a_6 toplamı kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Kolay",
+          "text": "LED güç tablosunda a_n = 7n² - 6 kuralına göre 4. terim kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Orta",
+          "text": "Mozaik fark tablosunda 9, 14, 21, 30, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Zor",
+          "text": "Mozaik hesap planında Bir dizinin genel terimi a_n = n² + 3n ise a_8 + a_9 toplamı kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Mozaik sütun düzeninde a_n = 5n² - 4 kuralına göre 4. terim kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Orta",
+          "text": "Renkli blok çizelgesinde 8, 13, 20, 29, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Renkli kare kodlarında a_n = 3n² - 2 kuralına göre 4. terim kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Zor",
+          "text": "Renkli ölçüm tablosunda Bir dizinin genel terimi a_n = n² + 3n ise a_7 + a_8 toplamı kaçtır?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Orta",
+          "text": "Sayısal model panosunda 12, 17, 24, 33, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?"
+        },
+        {
+          "classLevel": "11. Sınıf",
+          "difficulty": "Zor",
+          "text": "Sınav hazırlık çizelgesinde Bir dizinin genel terimi a_n = n² + 3n ise a_9 + a_10 toplamı kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Orta",
+          "text": "Atölye hesap çizelgesinde İlk terimi 8 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Atölye planlama tablosunda a_n = 7n - 6 kuralına göre 25. terim kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Zor",
+          "text": "Atölye üretim denkleminde a_n = n² + n + 7 dizisinde a_n = 117 olması için n kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Desenli fonksiyon panosunda a_n = 3n - 2 kuralına göre 25. terim kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Zor",
+          "text": "Desenli formül modelinde a_n = n² + n + 3 dizisinde a_n = 45 olması için n kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Orta",
+          "text": "Desenli üretim planında İlk terimi 3 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Zor",
+          "text": "Fonksiyonel desen çözümünde a_n = n² + n + 6 dizisinde a_n = 96 olması için n kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Orta",
+          "text": "Geometrik tasarım toplamında İlk terimi 2 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Grafik afiş düzeninde a_n = 8n - 7 kuralına göre 25. terim kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Zor",
+          "text": "Grafik modelleme sorusunda a_n = n² + n + 8 dizisinde a_n = 140 olması için n kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Zor",
+          "text": "Hedef terim tasarımında a_n = n² + n + 2 dizisinde a_n = 32 olması için n kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Orta",
+          "text": "Katlanarak artan paket sayısında İlk terimi 6 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Kolay",
+          "text": "LED kod dizisinde a_n = 5n - 4 kuralına göre 25. terim kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Orta",
+          "text": "LED panel toplamında İlk terimi 7 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Mozaik hesap modelinde a_n = 6n - 5 kuralına göre 25. terim kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Zor",
+          "text": "Mozaik hesap planında a_n = n² + n + 5 dizisinde a_n = 77 olması için n kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Orta",
+          "text": "Mozaik maliyet tablosunda İlk terimi 5 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Orta",
+          "text": "Renkli büyüme modelinde İlk terimi 4 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Zor",
+          "text": "Renkli dizi kodunda a_n = n² + n + 4 dizisinde a_n = 60 olması için n kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Renkli şerit tasarımında a_n = 4n - 3 kuralına göre 25. terim kaçtır?"
+        },
+        {
+          "classLevel": "12. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Sayı kodu şeridinde a_n = 9n - 8 kuralına göre 25. terim kaçtır?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "usageCount": 36,
+      "questions": [
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Bahçedeki sayı halkalarında 11, 16, 21, 26, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Zor",
+          "text": "Boncuk abaküsünde 4, 6, 9, 13, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Orta",
+          "text": "Boya kalemleri dizilirken Kırmızı, Sarı, Mavi, Kırmızı, Sarı, Mavi, ... örüntüsünde 12. adımda hangi öğe vardır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Zor",
+          "text": "Çıkartma albümündeki numaralarda 7, 9, 12, 16, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Zor",
+          "text": "Desenli kutuların üzerindeki sayılarda 2, 4, 7, 11, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Desenli sayı kartlarında 6, 11, 16, 21, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Orta",
+          "text": "Gökyüzü figürleri sıralanırken Ay, Yıldız, Bulut, Ay, Yıldız, Bulut, ... örüntüsünde 13. adımda hangi öğe vardır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Orta",
+          "text": "Hayvan kartları panosunda Kuş, Balık, Kedi, Kuş, Balık, Kedi, ... örüntüsünde 14. adımda hangi öğe vardır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Mavi-kırmızı blok dizisinde 7, 12, 17, 22, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Orta",
+          "text": "Oyuncak rafındaki düzenlemede Kalem, Defter, Silgi, Kalem, Defter, Silgi, ... örüntüsünde 11. adımda hangi öğe vardır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Zor",
+          "text": "Parkurdaki adım kartlarında 3, 5, 8, 12, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Puantiyeli adım taşlarında 9, 14, 19, 24, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Renkli boncuk şeridinde 5, 10, 15, 20, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Renkli küplerin üzerine yazılan sayılarda 10, 15, 20, 25, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Zor",
+          "text": "Renkli merdiven basamaklarında 1, 3, 6, 10, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Zor",
+          "text": "Sayı pulları dizilirken 6, 8, 11, 15, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Sınıf panosundaki ritmik sayı şeridinde 8, 13, 18, 23, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Zor",
+          "text": "Şerit halı deseninde 5, 7, 10, 14, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Orta",
+          "text": "Adım adım eksilen pul sayısında 42, 39, 36, 33, ... örüntüsünde 12. terim kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Zor",
+          "text": "Artan çizgi deseninde 10, 13, 17, 22, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Zor",
+          "text": "Boncuk kule sayılarında 7, 10, 14, 19, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Desenli bileklik boncuklarında 8, 10, 12, 14, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Zor",
+          "text": "Desenli halı bordüründe 5, 8, 12, 17, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Orta",
+          "text": "Desenli raf etiketlerinde 36, 33, 30, 27, ... örüntüsünde 9. terim kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Zor",
+          "text": "Küp blok modelinde 6, 9, 13, 18, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Mozaik şeridindeki sayılarda 10, 12, 14, 16, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Orta",
+          "text": "Mozaik taş sayılarında 40, 37, 34, 31, ... örüntüsünde 11. terim kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Park zeminindeki sayı dizisinde 13, 15, 17, 19, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Zor",
+          "text": "Renkli kare örüntüsünde 4, 7, 11, 16, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Renkli kare taşlarda 7, 9, 11, 13, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Sayı balonları sıralanırken 9, 11, 13, 15, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Sınıf oyun kartlarında 12, 14, 16, 18, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Orta",
+          "text": "Sıra numaraları inerken 38, 35, 32, 29, ... örüntüsünde 10. terim kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Zor",
+          "text": "Sıralı taş modelinde 9, 12, 16, 21, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Zor",
+          "text": "Süsleme dizisinde 8, 11, 15, 20, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Tahta blok kulesinde 11, 13, 15, 17, ... örüntüsünde sıradaki sayı kaçtır?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade2-fruit-cycle.svg",
+      "usageCount": 1,
+      "questions": [
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Orta",
+          "text": "Desenli çıkartma şeridinde Elma, Armut, Muz, Elma, Armut, Muz, ... örüntüsünde 10. adımda hangi öğe vardır?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade2-three-cycle.svg",
+      "usageCount": 2,
+      "questions": [
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Orta",
+          "text": "Renkli bayrak dizisinde Daire, Kare, Üçgen, Daire, Kare, Üçgen, ... örüntüsünde 9. adımda hangi öğe vardır?"
+        },
+        {
+          "classLevel": "2. Sınıf",
+          "difficulty": "Orta",
+          "text": "Şekil kartları sıralanırken Üçgen, Kare, Beşgen, Üçgen, Kare, Beşgen, ... örüntüsünde 8. adımda hangi öğe vardır?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade3-descending.svg",
+      "usageCount": 3,
+      "questions": [
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Orta",
+          "text": "Azalan koltuk numaralarında 30, 27, 24, 21, ... örüntüsünde 6. terim kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Orta",
+          "text": "Geriye doğru sayan sayaçta 34, 31, 28, 25, ... örüntüsünde 8. terim kaçtır?"
+        },
+        {
+          "classLevel": "3. Sınıf",
+          "difficulty": "Orta",
+          "text": "Renkli karton şeritlerde 32, 29, 26, 23, ... örüntüsünde 7. terim kaçtır?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade4-growing-odd.svg",
+      "usageCount": 7,
+      "questions": [
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Zor",
+          "text": "Boncuk çerçevesinde 4, 7, 12, 19, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Zor",
+          "text": "Desenli pencere süslemesinde 3, 6, 11, 18, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Zor",
+          "text": "Işık dizisindeki sayılarda 7, 10, 15, 22, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Zor",
+          "text": "Kare kart örüntüsünde 8, 11, 16, 23, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Zor",
+          "text": "Küp adımlarında 5, 8, 13, 20, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Zor",
+          "text": "Mozaik modelinde 6, 9, 14, 21, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Zor",
+          "text": "Renkli taş bordüründe 2, 5, 10, 17, ... örüntüsünde sıradaki sayı kaçtır?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade4-multiples.svg",
+      "usageCount": 7,
+      "questions": [
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Orta",
+          "text": "Blok kule tablosunda 15, 30, 45, 60 şeklinde giden örüntüde 13. terim kaç olur?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Orta",
+          "text": "Boncuk gruplarında 12, 24, 36, 48 şeklinde giden örüntüde 10. terim kaç olur?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Orta",
+          "text": "Desenli masa örtüsü sıralarında 9, 18, 27, 36 şeklinde giden örüntüde 7. terim kaç olur?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Orta",
+          "text": "Karton kutu dizisinde 13, 26, 39, 52 şeklinde giden örüntüde 11. terim kaç olur?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Orta",
+          "text": "Mozaik sütunlarında 11, 22, 33, 44 şeklinde giden örüntüde 9. terim kaç olur?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Orta",
+          "text": "Renkli kare tablosunda 10, 20, 30, 40 şeklinde giden örüntüde 8. terim kaç olur?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Orta",
+          "text": "Sınıf rafı düzeninde 14, 28, 42, 56 şeklinde giden örüntüde 12. terim kaç olur?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade4-step3.svg",
+      "usageCount": 7,
+      "questions": [
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Boncuk dizisinin sayı etiketlerinde 14, 17, 20, 23, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Desenli adım kartlarında 13, 16, 19, 22, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Küp blok etiketlerinde 17, 20, 23, 26, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Mozaik şeritte 15, 18, 21, 24, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Renkli bayrak sayılarında 12, 15, 18, 21, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Ritmik sayma panosunda 18, 21, 24, 27, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "4. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Sıra numarası kartlarında 16, 19, 22, 25, ... örüntüsünde sıradaki sayı kaçtır?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "usageCount": 21,
+      "questions": [
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Adım kartlarında 13, 17, 21, 25, ... örüntüsünde 9. terim kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Zor",
+          "text": "Atölye kare modelinde Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 18. adımda kaç kare kullanılır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Atölye sayı etiketlerinde 12, 16, 20, 24, ... örüntüsünde 9. terim kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Zor",
+          "text": "Boncuk halkalarında Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 15. adımda kaç kare kullanılır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Boncuk panosunda 11, 15, 19, 23, ... örüntüsünde 9. terim kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Zor",
+          "text": "Desenli çerçeve tasarımında Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 14. adımda kaç kare kullanılır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Orta",
+          "text": "Desenli çubuk modelinde 3, 7, 13, 21, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Desenli kart dizisinde 9, 13, 17, 21, ... örüntüsünde 9. terim kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Orta",
+          "text": "Kare tahta oyununda 7, 11, 17, 25, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Karo taş modelinde 10, 14, 18, 22, ... örüntüsünde 9. terim kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Orta",
+          "text": "Kart şeridindeki artışlarda 5, 9, 15, 23, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Zor",
+          "text": "Kibrit çöpü şekil modelinde Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 12. adımda kaç kare kullanılır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Orta",
+          "text": "Kule modelinde 6, 10, 16, 24, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Küp blok rafında 14, 18, 22, 26, ... örüntüsünde 9. terim kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Orta",
+          "text": "Mozaik deseninde 2, 6, 12, 20, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Zor",
+          "text": "Mozaik kenar sayısında Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 16. adımda kaç kare kullanılır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Zor",
+          "text": "Parke taş dizisinde Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 17. adımda kaç kare kullanılır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Zor",
+          "text": "Renkli kare sıralarında Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 13. adımda kaç kare kullanılır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Renkli LED şeritte 8, 12, 16, 20, ... örüntüsünde 9. terim kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Orta",
+          "text": "Renkli taş örüntüsünde 4, 8, 14, 22, ... örüntüsünde sıradaki sayı kaçtır?"
+        },
+        {
+          "classLevel": "6. Sınıf",
+          "difficulty": "Orta",
+          "text": "Süsleme şablonunda 8, 12, 18, 26, ... örüntüsünde sıradaki sayı kaçtır?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade5-descending-step.svg",
+      "usageCount": 7,
+      "questions": [
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Orta",
+          "text": "Atölye paket sayılarında 75, 70, 65, 60, ... örüntüsünde 10. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Orta",
+          "text": "Azalan depo kutularında 60, 55, 50, 45, ... örüntüsünde 10. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Orta",
+          "text": "Basamak basamak eksilen pul dizisinde 66, 61, 56, 51, ... örüntüsünde 10. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Orta",
+          "text": "Desenli pano etiketlerinde 69, 64, 59, 54, ... örüntüsünde 10. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Orta",
+          "text": "Koltuk sıralamasında 72, 67, 62, 57, ... örüntüsünde 10. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Orta",
+          "text": "Renkli dolap numaralarında 63, 58, 53, 48, ... örüntüsünde 10. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Orta",
+          "text": "Sayaç ekranında 78, 73, 68, 63, ... örüntüsünde 10. terim kaçtır?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade5-square-numbers.svg",
+      "usageCount": 7,
+      "questions": [
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Zor",
+          "text": "Bahçe düzenindeki kare adımlarda 1, 4, 9, 16, ... kare sayı örüntüsünde 8. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Zor",
+          "text": "Desenli yer karolarında 1, 4, 9, 16, ... kare sayı örüntüsünde 6. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Zor",
+          "text": "Kare taş avlusunda 1, 4, 9, 16, ... kare sayı örüntüsünde 5. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Zor",
+          "text": "Küp yüzey deseninde 1, 4, 9, 16, ... kare sayı örüntüsünde 9. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Zor",
+          "text": "Matematik atölyesi tahtasında 1, 4, 9, 16, ... kare sayı örüntüsünde 11. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Zor",
+          "text": "Mozaik kare modelinde 1, 4, 9, 16, ... kare sayı örüntüsünde 7. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Zor",
+          "text": "Renkli pano karesinde 1, 4, 9, 16, ... kare sayı örüntüsünde 10. terim kaçtır?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade5-step5.svg",
+      "usageCount": 7,
+      "questions": [
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Atölye parça dizisinde 10, 15, 20, 25, ... örüntüsünde 12. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Basamak numaralarında 7, 12, 17, 22, ... örüntüsünde 9. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Desenli bileklik tasarımında 4, 9, 14, 19, ... örüntüsünde 6. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Kütüphane sıra etiketlerinde 6, 11, 16, 21, ... örüntüsünde 8. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Mozaik şerit modelinde 8, 13, 18, 23, ... örüntüsünde 10. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Renkli karo yolunda 5, 10, 15, 20, ... örüntüsünde 7. terim kaçtır?"
+        },
+        {
+          "classLevel": "5. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Sayı kartı panosunda 9, 14, 19, 24, ... örüntüsünde 11. terim kaçtır?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "usageCount": 42,
+      "questions": [
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Afiş tasarımındaki sayı dizisinde 11, 21, 31, 41, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Akıllı tahta deseninde 10, 19, 28, 37, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Orta",
+          "text": "Atölye ölçü çizelgesinde 24, 21, 18, 15, ... örüntüsünün 11. terimi kaçtır?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Orta",
+          "text": "Azalan sıcaklık tablosunda 19, 16, 13, 10, ... örüntüsünün 11. terimi kaçtır?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Orta",
+          "text": "Basamaklı ışık panelinde 18, 15, 12, 9, ... örüntüsünün 11. terimi kaçtır?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Orta",
+          "text": "Depo kutu numaralarında 20, 17, 14, 11, ... örüntüsünün 11. terimi kaçtır?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Desenli bileklik modelinde 5, 9, 13, 17, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Zor",
+          "text": "Desenli zemin kaplamasında 3, 6, 11, 18, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Orta",
+          "text": "Kademeli fiyat kartlarında 22, 19, 16, 13, ... örüntüsünün 11. terimi kaçtır?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Zor",
+          "text": "Kare motifli tasarımda 2, 5, 10, 17, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Zor",
+          "text": "Kodlanan görsel şeritte 5, 8, 13, 20, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Kodlu kart sıralamasında 8, 15, 22, 29, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Koltuk etiketlerinde 9, 17, 25, 33, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Zor",
+          "text": "Matematik afişinde 7, 10, 15, 22, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Zor",
+          "text": "Mozaik büyüme modelinde 4, 7, 12, 19, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Orta",
+          "text": "Mozaik dizilimde 23, 20, 17, 14, ... örüntüsünün 11. terimi kaçtır?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Mozaik karo şeridinde 7, 13, 19, 25, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Zor",
+          "text": "Renkli dizi panosunda 6, 9, 14, 21, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Renkli LED lambalarda 6, 11, 16, 21, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Orta",
+          "text": "Renkli pano etiketlerinde 21, 18, 15, 12, ... örüntüsünün 11. terimi kaçtır?"
+        },
+        {
+          "classLevel": "7. Sınıf",
+          "difficulty": "Zor",
+          "text": "Süsleme modelinde 8, 11, 16, 23, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Orta",
+          "text": "Atölye hesap tablosunda a_n = 8n + 9 kuralına göre 15. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Desenli karo yolunda 8, 14, 20, 26, ... örüntüsünün genel terimi hangisidir?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Orta",
+          "text": "Desenli kart düzeninde a_n = 4n + 5 kuralına göre 11. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Zor",
+          "text": "Desenli pencere düzeninde 9, 16, 25, 36 şeklinde giden örüntüde 20. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Orta",
+          "text": "Dijital desen şeridinde a_n = 7n + 8 kuralına göre 14. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Dijital sayaç tasarımında 10, 18, 26, 34, ... örüntüsünün genel terimi hangisidir?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Orta",
+          "text": "Grafik kartlarında a_n = 9n + 10 kuralına göre 16. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Zor",
+          "text": "Kareli zemin tasarımında 4, 9, 16, 25 şeklinde giden örüntüde 20. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Orta",
+          "text": "Kodlanmış sayı panelinde a_n = 5n + 6 kuralına göre 12. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Kodlu ışık dizisinde 11, 20, 29, 38, ... örüntüsünün genel terimi hangisidir?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Zor",
+          "text": "Kodlu sayısal desenlerde 36, 49, 64, 81 şeklinde giden örüntüde 20. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Zor",
+          "text": "LED kare panelinde 25, 36, 49, 64 şeklinde giden örüntüde 20. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Kolay",
+          "text": "LED panel örüntüsünde 7, 12, 17, 22, ... örüntüsünün genel terimi hangisidir?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Zor",
+          "text": "Matematik sergi panosunda 64, 81, 100, 121 şeklinde giden örüntüde 20. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Zor",
+          "text": "Mozaik basamak modelinde 16, 25, 36, 49 şeklinde giden örüntüde 20. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Orta",
+          "text": "Mozaik modelde a_n = 6n + 7 kuralına göre 13. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Mozaik pano modelinde 12, 22, 32, 42, ... örüntüsünün genel terimi hangisidir?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Orta",
+          "text": "Renkli tablo şemasında a_n = 3n + 4 kuralına göre 10. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Renkli vitrin etiketlerinde 9, 16, 23, 30, ... örüntüsünün genel terimi hangisidir?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Zor",
+          "text": "Süsleme modelinde 49, 64, 81, 100 şeklinde giden örüntüde 20. terim kaçtır?"
+        },
+        {
+          "classLevel": "8. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Şerit afiş düzeninde 13, 24, 35, 46, ... örüntüsünün genel terimi hangisidir?"
+        }
+      ]
+    },
+    {
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "usageCount": 21,
+      "questions": [
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Zor",
+          "text": "Akıllı tahta örüntüsünde Bir aritmetik dizide a1 = 9 ve a10 = 81 ise ortak fark kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Atölye etiketlerinde 7, 16, 25, 34, ... aritmetik dizisinin 12. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Zor",
+          "text": "Atölye parça dizisinde Bir aritmetik dizide a1 = 7 ve a10 = 61 ise ortak fark kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Orta",
+          "text": "Azalan stok etiketlerinde İlk terimi 10, ortak farkı -2 olan aritmetik dizinin 15. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Orta",
+          "text": "Basamaklı puan çizelgesinde İlk terimi 13, ortak farkı -5 olan aritmetik dizinin 15. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Bilet sıra kodlarında 5, 12, 19, 26, ... aritmetik dizisinin 12. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Desenli koltuk numaralarında 3, 8, 13, 18, ... aritmetik dizisinin 12. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Zor",
+          "text": "Desenli oturma planında Bir aritmetik dizide a1 = 5 ve a10 = 41 ise ortak fark kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Orta",
+          "text": "Desenli sayaç panelinde İlk terimi 15, ortak farkı -7 olan aritmetik dizinin 15. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Orta",
+          "text": "Geriye giden sayı şeridinde İlk terimi 14, ortak farkı -6 olan aritmetik dizinin 15. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Işık paneli kodlarında 9, 20, 31, 42, ... aritmetik dizisinin 12. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Zor",
+          "text": "Kademeli kod şeridinde Bir aritmetik dizide a1 = 10 ve a10 = 91 ise ortak fark kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Orta",
+          "text": "Kademeli maliyet planında İlk terimi 16, ortak farkı -8 olan aritmetik dizinin 15. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Kademeli pano numaralarında 8, 18, 28, 38, ... aritmetik dizisinin 12. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Zor",
+          "text": "Mozaik dizi modelinde Bir aritmetik dizide a1 = 4 ve a10 = 31 ise ortak fark kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Mozaik şerit sayılarında 6, 14, 22, 30, ... aritmetik dizisinin 12. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Zor",
+          "text": "Renkli koltuk sıralarında Bir aritmetik dizide a1 = 6 ve a10 = 51 ise ortak fark kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Orta",
+          "text": "Renkli raf düzeninde İlk terimi 12, ortak farkı -4 olan aritmetik dizinin 15. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Kolay",
+          "text": "Renkli yarış parkuru tabelalarında 4, 10, 16, 22, ... aritmetik dizisinin 12. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Orta",
+          "text": "Sıcaklık ölçüm tablosunda İlk terimi 11, ortak farkı -3 olan aritmetik dizinin 15. terimi kaçtır?"
+        },
+        {
+          "classLevel": "9. Sınıf",
+          "difficulty": "Zor",
+          "text": "Sınav salonu numaralarında Bir aritmetik dizide a1 = 8 ve a10 = 71 ise ortak fark kaçtır?"
+        }
+      ]
+    }
+  ],
+  "mappings": [
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Kolay",
+      "text": "1, 3, 1, 3, 1, ... örüntüsünde boş yere hangi sayı gelmelidir?",
+      "image": "/uploads/patterns/grade1-easy.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Kolay",
+      "text": "2, 4, 2, 4, 2, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade1-easy.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Kolay",
+      "text": "5, 7, 5, 7, 5, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade1-easy.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Elma, armut, elma, armut, elma, ... örüntüsünde sıradaki meyve hangisidir?",
+      "image": "/uploads/patterns/grade1-fruit-alt.svg",
+      "optionImages": [
+        {
+          "text": "Armut",
+          "image": "/uploads/patterns/option-pear.svg"
+        },
+        {
+          "text": "Elma",
+          "image": "/uploads/patterns/option-apple.svg"
+        },
+        {
+          "text": "Muz",
+          "image": "/uploads/patterns/option-banana.svg"
+        },
+        {
+          "text": "Çilek",
+          "image": "/uploads/patterns/option-strawberry.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Kırmızı top, mavi top, kırmızı top, mavi top, ... örüntüsünde sıradaki topun rengi nedir?",
+      "image": "/uploads/patterns/grade1-easy.svg",
+      "optionImages": [
+        {
+          "text": "Kırmızı",
+          "image": "/uploads/patterns/option-red.svg"
+        },
+        {
+          "text": "Mavi",
+          "image": "/uploads/patterns/option-blue.svg"
+        },
+        {
+          "text": "Sarı",
+          "image": "/uploads/patterns/option-yellow.svg"
+        },
+        {
+          "text": "Yeşil",
+          "image": "/uploads/patterns/option-green.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Kolay",
+      "text": "▲, ■, ▲, ■, ▲, ... örüntüsünde sıradaki şekil hangisidir?",
+      "image": "/uploads/patterns/grade1-easy.svg",
+      "optionImages": [
+        {
+          "text": "■",
+          "image": "/uploads/patterns/option-square.svg"
+        },
+        {
+          "text": "▲",
+          "image": "/uploads/patterns/option-triangle.svg"
+        },
+        {
+          "text": "●",
+          "image": "/uploads/patterns/option-circle.svg"
+        },
+        {
+          "text": "★",
+          "image": "/uploads/patterns/option-star.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Kolay",
+      "text": "●, ○, ●, ○, ●, ... örüntüsünde sıradaki şekil hangisidir?",
+      "image": "/uploads/patterns/grade1-easy.svg",
+      "optionImages": [
+        {
+          "text": "○",
+          "image": "/uploads/patterns/option-circle.svg"
+        },
+        {
+          "text": "●",
+          "image": "/uploads/patterns/option-circle.svg"
+        },
+        {
+          "text": "■",
+          "image": "/uploads/patterns/option-square.svg"
+        },
+        {
+          "text": "▲",
+          "image": "/uploads/patterns/option-triangle.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Orta",
+      "text": "2, 2, 5, 2, 2, 5, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade1-medium.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Orta",
+      "text": "Elma, armut, armut, elma, armut, armut, ... örüntüsünde sıradaki meyve hangisidir?",
+      "image": "/uploads/patterns/grade1-medium.svg",
+      "optionImages": [
+        {
+          "text": "Elma",
+          "image": "/uploads/patterns/option-apple.svg"
+        },
+        {
+          "text": "Armut",
+          "image": "/uploads/patterns/option-pear.svg"
+        },
+        {
+          "text": "Muz",
+          "image": "/uploads/patterns/option-banana.svg"
+        },
+        {
+          "text": "Kiraz",
+          "image": "/uploads/patterns/option-strawberry.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Orta",
+      "text": "Güneş, bulut, bulut, güneş, bulut, bulut, ... örüntüsünde sıradaki şekil hangisidir?",
+      "image": "/uploads/patterns/grade1-medium.svg",
+      "optionImages": [
+        {
+          "text": "Güneş",
+          "image": "/uploads/patterns/option-sun.svg"
+        },
+        {
+          "text": "Bulut",
+          "image": "/uploads/patterns/option-cloud.svg"
+        },
+        {
+          "text": "Ay",
+          "image": "/uploads/patterns/option-moon.svg"
+        },
+        {
+          "text": "Yıldız",
+          "image": "/uploads/patterns/option-star.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Orta",
+      "text": "Kırmızı, mavi, mavi, kırmızı, mavi, mavi, ... örüntüsünde sıradaki renk nedir?",
+      "image": "/uploads/patterns/grade1-medium.svg",
+      "optionImages": [
+        {
+          "text": "Kırmızı",
+          "image": "/uploads/patterns/option-red.svg"
+        },
+        {
+          "text": "Mavi",
+          "image": "/uploads/patterns/option-blue.svg"
+        },
+        {
+          "text": "Sarı",
+          "image": "/uploads/patterns/option-yellow.svg"
+        },
+        {
+          "text": "Yeşil",
+          "image": "/uploads/patterns/option-green.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Orta",
+      "text": "■, ▲, ●, ■, ▲, ●, ... örüntüsünde sıradaki şekil hangisidir?",
+      "image": "/uploads/patterns/grade1-medium.svg",
+      "optionImages": [
+        {
+          "text": "■",
+          "image": "/uploads/patterns/option-square.svg"
+        },
+        {
+          "text": "▲",
+          "image": "/uploads/patterns/option-triangle.svg"
+        },
+        {
+          "text": "●",
+          "image": "/uploads/patterns/option-circle.svg"
+        },
+        {
+          "text": "★",
+          "image": "/uploads/patterns/option-star.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Orta",
+      "text": "▲, ■, ■, ▲, ■, ■, ... örüntüsünde sıradaki şekil hangisidir?",
+      "image": "/uploads/patterns/grade1-medium.svg",
+      "optionImages": [
+        {
+          "text": "▲",
+          "image": "/uploads/patterns/option-triangle.svg"
+        },
+        {
+          "text": "■",
+          "image": "/uploads/patterns/option-square.svg"
+        },
+        {
+          "text": "●",
+          "image": "/uploads/patterns/option-circle.svg"
+        },
+        {
+          "text": "★",
+          "image": "/uploads/patterns/option-star.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Orta",
+      "text": "●, ●, ○, ●, ●, ○, ... örüntüsünde sıradaki şekil hangisidir?",
+      "image": "/uploads/patterns/grade1-medium.svg",
+      "optionImages": [
+        {
+          "text": "●",
+          "image": "/uploads/patterns/option-circle.svg"
+        },
+        {
+          "text": "○",
+          "image": "/uploads/patterns/option-circle.svg"
+        },
+        {
+          "text": "■",
+          "image": "/uploads/patterns/option-square.svg"
+        },
+        {
+          "text": "▲",
+          "image": "/uploads/patterns/option-triangle.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Zor",
+      "text": "2, 7, 2, 7, 2, 7, ... örüntüsünde 13. sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade1-hard.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Zor",
+      "text": "3, 6, 3, 6, 3, 6, ... örüntüsünde 8. sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade1-hard.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Zor",
+      "text": "4, 8, 4, 8, 4, 8, ... örüntüsünde 10. sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade1-hard.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Zor",
+      "text": "5, 9, 5, 9, 5, 9, ... örüntüsünde 11. sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade1-hard.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Zor",
+      "text": "■, ●, ■, ●, ■, ●, ... örüntüsünde 7. sıradaki şekil hangisidir?",
+      "image": "/uploads/patterns/grade1-hard.svg",
+      "optionImages": [
+        {
+          "text": "■",
+          "image": "/uploads/patterns/option-square.svg"
+        },
+        {
+          "text": "●",
+          "image": "/uploads/patterns/option-circle.svg"
+        },
+        {
+          "text": "▲",
+          "image": "/uploads/patterns/option-triangle.svg"
+        },
+        {
+          "text": "○",
+          "image": "/uploads/patterns/option-circle.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Zor",
+      "text": "▲, ○, ▲, ○, ▲, ○, ... örüntüsünde 9. sıradaki şekil hangisidir?",
+      "image": "/uploads/patterns/grade1-triangle-circle.svg",
+      "optionImages": [
+        {
+          "text": "▲",
+          "image": "/uploads/patterns/option-triangle.svg"
+        },
+        {
+          "text": "○",
+          "image": "/uploads/patterns/option-circle.svg"
+        },
+        {
+          "text": "■",
+          "image": "/uploads/patterns/option-square.svg"
+        },
+        {
+          "text": "★",
+          "image": "/uploads/patterns/option-star.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "1. Sınıf",
+      "difficulty": "Zor",
+      "text": "○, ▲, ○, ▲, ○, ▲, ... örüntüsünde 12. sıradaki şekil hangisidir?",
+      "image": "/uploads/patterns/grade1-triangle-circle.svg",
+      "optionImages": [
+        {
+          "text": "▲",
+          "image": "/uploads/patterns/option-triangle.svg"
+        },
+        {
+          "text": "○",
+          "image": "/uploads/patterns/option-circle.svg"
+        },
+        {
+          "text": "■",
+          "image": "/uploads/patterns/option-square.svg"
+        },
+        {
+          "text": "●",
+          "image": "/uploads/patterns/option-circle.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Bakteri koloni şemasında 4, 16, 64, 256, ... geometrik dizisinin 6. terimi kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Desenli çoğalan karo modelinde 3, 9, 27, 81, ... geometrik dizisinin 6. terimi kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Geometrik tasarım çiziminde 8, 16, 32, 64, ... geometrik dizisinin 6. terimi kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Katlanarak artan bilet sayısında 5, 10, 20, 40, ... geometrik dizisinin 6. terimi kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Kolay",
+      "text": "LED çoğalma deseninde 6, 18, 54, 162, ... geometrik dizisinin 6. terimi kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Mozaik büyüme modelinde 7, 28, 112, 448, ... geometrik dizisinin 6. terimi kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Renkli ışık panellerinde 2, 4, 8, 16, ... geometrik dizisinin 6. terimi kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Orta",
+      "text": "Azalan parlaklık tablosunda 81, 27, 9, 3, ... geometrik dizisinin ortak oranı kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Orta",
+      "text": "Desenli cam süslemesinde 162, 54, 18, 6, ... geometrik dizisinin ortak oranı kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Orta",
+      "text": "Dijital sinyal örüntüsünde 405, 135, 45, 15, ... geometrik dizisinin ortak oranı kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Orta",
+      "text": "Kademeli bölmeli rafta 486, 162, 54, 18, ... geometrik dizisinin ortak oranı kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Orta",
+      "text": "Katlanarak küçülen modelde 324, 108, 36, 12, ... geometrik dizisinin ortak oranı kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Orta",
+      "text": "Mozaik oran deseninde 567, 189, 63, 21, ... geometrik dizisinin ortak oranı kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Orta",
+      "text": "Renkli kare panelinde 243, 81, 27, 9, ... geometrik dizisinin ortak oranı kaçtır?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Zor",
+      "text": "Atölye çoğalma planında a_n = 11 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Zor",
+      "text": "Desenli pul koleksiyonunda a_n = 6 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Zor",
+      "text": "Dijital gösterge modelinde a_n = 10 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Zor",
+      "text": "Geometrik tasarım toplamında a_n = 5 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Zor",
+      "text": "Katlanarak büyüyen ışık modelinde a_n = 7 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Zor",
+      "text": "Mozaik karo sayısında a_n = 9 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "10. Sınıf",
+      "difficulty": "Zor",
+      "text": "Renkli kare panelinin toplamında a_n = 8 x 2^(n-1) geometrik dizisinde ilk 5 terimin toplamı kaç eder?",
+      "image": "/uploads/patterns/grade10-geometric.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Atölye ölçüm çizelgesinde a_n = 6n² - 5 kuralına göre 4. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Desenli parabol panosunda a_n = 2n² - 1 kuralına göre 4. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Dijital tasarım modelinde a_n = 4n² - 3 kuralına göre 4. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Grafik afişindeki dizide a_n = 8n² - 7 kuralına göre 4. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Kolay",
+      "text": "LED güç tablosunda a_n = 7n² - 6 kuralına göre 4. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Mozaik sütun düzeninde a_n = 5n² - 4 kuralına göre 4. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Renkli kare kodlarında a_n = 3n² - 2 kuralına göre 4. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Orta",
+      "text": "Artan ışık seviyelerinde 6, 11, 18, 27, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Orta",
+      "text": "Atölye üretim planında 10, 15, 22, 31, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Orta",
+      "text": "Desenli büyüme modelinde 7, 12, 19, 28, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Orta",
+      "text": "Dijital desen akışında 11, 16, 23, 32, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Orta",
+      "text": "Mozaik fark tablosunda 9, 14, 21, 30, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Orta",
+      "text": "Renkli blok çizelgesinde 8, 13, 20, 29, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Orta",
+      "text": "Sayısal model panosunda 12, 17, 24, 33, ... dizisinin artış düzeni incelendiğinde sıradaki terim kaç olur?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Zor",
+      "text": "Atölye üretim raporunda Bir dizinin genel terimi a_n = n² + 3n ise a_10 + a_11 toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Zor",
+      "text": "Desenli veri modelinde Bir dizinin genel terimi a_n = n² + 3n ise a_6 + a_7 toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Zor",
+      "text": "Grafik modelinde Bir dizinin genel terimi a_n = n² + 3n ise a_11 + a_12 toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Zor",
+      "text": "Kodlu dizi tasarımında Bir dizinin genel terimi a_n = n² + 3n ise a_5 + a_6 toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Zor",
+      "text": "Mozaik hesap planında Bir dizinin genel terimi a_n = n² + 3n ise a_8 + a_9 toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Zor",
+      "text": "Renkli ölçüm tablosunda Bir dizinin genel terimi a_n = n² + 3n ise a_7 + a_8 toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "11. Sınıf",
+      "difficulty": "Zor",
+      "text": "Sınav hazırlık çizelgesinde Bir dizinin genel terimi a_n = n² + 3n ise a_9 + a_10 toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Atölye planlama tablosunda a_n = 7n - 6 kuralına göre 25. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Desenli fonksiyon panosunda a_n = 3n - 2 kuralına göre 25. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Grafik afiş düzeninde a_n = 8n - 7 kuralına göre 25. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Kolay",
+      "text": "LED kod dizisinde a_n = 5n - 4 kuralına göre 25. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Mozaik hesap modelinde a_n = 6n - 5 kuralına göre 25. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Renkli şerit tasarımında a_n = 4n - 3 kuralına göre 25. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Sayı kodu şeridinde a_n = 9n - 8 kuralına göre 25. terim kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Orta",
+      "text": "Atölye hesap çizelgesinde İlk terimi 8 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Orta",
+      "text": "Desenli üretim planında İlk terimi 3 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Orta",
+      "text": "Geometrik tasarım toplamında İlk terimi 2 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Orta",
+      "text": "Katlanarak artan paket sayısında İlk terimi 6 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Orta",
+      "text": "LED panel toplamında İlk terimi 7 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Orta",
+      "text": "Mozaik maliyet tablosunda İlk terimi 5 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Orta",
+      "text": "Renkli büyüme modelinde İlk terimi 4 ve ortak oranı 2 olan geometrik dizinin ilk 8 teriminin toplamı kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Zor",
+      "text": "Atölye üretim denkleminde a_n = n² + n + 7 dizisinde a_n = 117 olması için n kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Zor",
+      "text": "Desenli formül modelinde a_n = n² + n + 3 dizisinde a_n = 45 olması için n kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Zor",
+      "text": "Fonksiyonel desen çözümünde a_n = n² + n + 6 dizisinde a_n = 96 olması için n kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Zor",
+      "text": "Grafik modelleme sorusunda a_n = n² + n + 8 dizisinde a_n = 140 olması için n kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Zor",
+      "text": "Hedef terim tasarımında a_n = n² + n + 2 dizisinde a_n = 32 olması için n kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Zor",
+      "text": "Mozaik hesap planında a_n = n² + n + 5 dizisinde a_n = 77 olması için n kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "12. Sınıf",
+      "difficulty": "Zor",
+      "text": "Renkli dizi kodunda a_n = n² + n + 4 dizisinde a_n = 60 olması için n kaçtır?",
+      "image": "/uploads/patterns/grade11-12-formula.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Bahçedeki sayı halkalarında 11, 16, 21, 26, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Desenli sayı kartlarında 6, 11, 16, 21, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Mavi-kırmızı blok dizisinde 7, 12, 17, 22, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Puantiyeli adım taşlarında 9, 14, 19, 24, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Renkli boncuk şeridinde 5, 10, 15, 20, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Renkli küplerin üzerine yazılan sayılarda 10, 15, 20, 25, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Sınıf panosundaki ritmik sayı şeridinde 8, 13, 18, 23, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Orta",
+      "text": "Boya kalemleri dizilirken Kırmızı, Sarı, Mavi, Kırmızı, Sarı, Mavi, ... örüntüsünde 12. adımda hangi öğe vardır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": [
+        {
+          "text": "Mavi",
+          "image": "/uploads/patterns/option-blue.svg"
+        },
+        {
+          "text": "Kırmızı",
+          "image": "/uploads/patterns/option-red.svg"
+        },
+        {
+          "text": "Sarı",
+          "image": "/uploads/patterns/option-yellow.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Orta",
+      "text": "Desenli çıkartma şeridinde Elma, Armut, Muz, Elma, Armut, Muz, ... örüntüsünde 10. adımda hangi öğe vardır?",
+      "image": "/uploads/patterns/grade2-fruit-cycle.svg",
+      "optionImages": [
+        {
+          "text": "Elma",
+          "image": "/uploads/patterns/option-apple.svg"
+        },
+        {
+          "text": "Armut",
+          "image": "/uploads/patterns/option-pear.svg"
+        },
+        {
+          "text": "Muz",
+          "image": "/uploads/patterns/option-banana.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Orta",
+      "text": "Gökyüzü figürleri sıralanırken Ay, Yıldız, Bulut, Ay, Yıldız, Bulut, ... örüntüsünde 13. adımda hangi öğe vardır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": [
+        {
+          "text": "Ay",
+          "image": "/uploads/patterns/option-moon.svg"
+        },
+        {
+          "text": "Yıldız",
+          "image": "/uploads/patterns/option-star.svg"
+        },
+        {
+          "text": "Bulut",
+          "image": "/uploads/patterns/option-cloud.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Orta",
+      "text": "Hayvan kartları panosunda Kuş, Balık, Kedi, Kuş, Balık, Kedi, ... örüntüsünde 14. adımda hangi öğe vardır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": [
+        {
+          "text": "Balık",
+          "image": "/uploads/patterns/option-fish.svg"
+        },
+        {
+          "text": "Kuş",
+          "image": "/uploads/patterns/option-bird.svg"
+        },
+        {
+          "text": "Kedi",
+          "image": "/uploads/patterns/option-cat.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Orta",
+      "text": "Oyuncak rafındaki düzenlemede Kalem, Defter, Silgi, Kalem, Defter, Silgi, ... örüntüsünde 11. adımda hangi öğe vardır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": [
+        {
+          "text": "Defter",
+          "image": "/uploads/patterns/option-notebook.svg"
+        },
+        {
+          "text": "Kalem",
+          "image": "/uploads/patterns/option-pencil.svg"
+        },
+        {
+          "text": "Silgi",
+          "image": "/uploads/patterns/option-eraser.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Orta",
+      "text": "Renkli bayrak dizisinde Daire, Kare, Üçgen, Daire, Kare, Üçgen, ... örüntüsünde 9. adımda hangi öğe vardır?",
+      "image": "/uploads/patterns/grade2-three-cycle.svg",
+      "optionImages": [
+        {
+          "text": "Üçgen",
+          "image": "/uploads/patterns/option-triangle.svg"
+        },
+        {
+          "text": "Daire",
+          "image": "/uploads/patterns/option-circle.svg"
+        },
+        {
+          "text": "Kare",
+          "image": "/uploads/patterns/option-square.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Orta",
+      "text": "Şekil kartları sıralanırken Üçgen, Kare, Beşgen, Üçgen, Kare, Beşgen, ... örüntüsünde 8. adımda hangi öğe vardır?",
+      "image": "/uploads/patterns/grade2-three-cycle.svg",
+      "optionImages": [
+        {
+          "text": "Kare",
+          "image": "/uploads/patterns/option-square.svg"
+        },
+        {
+          "text": "Üçgen",
+          "image": "/uploads/patterns/option-triangle.svg"
+        }
+      ]
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Zor",
+      "text": "Boncuk abaküsünde 4, 6, 9, 13, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Zor",
+      "text": "Desenli kutuların üzerindeki sayılarda 2, 4, 7, 11, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Zor",
+      "text": "Parkurdaki adım kartlarında 3, 5, 8, 12, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Zor",
+      "text": "Renkli merdiven basamaklarında 1, 3, 6, 10, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Zor",
+      "text": "Sayı pulları dizilirken 6, 8, 11, 15, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Zor",
+      "text": "Çıkartma albümündeki numaralarda 7, 9, 12, 16, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "2. Sınıf",
+      "difficulty": "Zor",
+      "text": "Şerit halı deseninde 5, 7, 10, 14, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Desenli bileklik boncuklarında 8, 10, 12, 14, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Mozaik şeridindeki sayılarda 10, 12, 14, 16, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Park zeminindeki sayı dizisinde 13, 15, 17, 19, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Renkli kare taşlarda 7, 9, 11, 13, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Sayı balonları sıralanırken 9, 11, 13, 15, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Sınıf oyun kartlarında 12, 14, 16, 18, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Tahta blok kulesinde 11, 13, 15, 17, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Orta",
+      "text": "Adım adım eksilen pul sayısında 42, 39, 36, 33, ... örüntüsünde 12. terim kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Orta",
+      "text": "Azalan koltuk numaralarında 30, 27, 24, 21, ... örüntüsünde 6. terim kaçtır?",
+      "image": "/uploads/patterns/grade3-descending.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Orta",
+      "text": "Desenli raf etiketlerinde 36, 33, 30, 27, ... örüntüsünde 9. terim kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Orta",
+      "text": "Geriye doğru sayan sayaçta 34, 31, 28, 25, ... örüntüsünde 8. terim kaçtır?",
+      "image": "/uploads/patterns/grade3-descending.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Orta",
+      "text": "Mozaik taş sayılarında 40, 37, 34, 31, ... örüntüsünde 11. terim kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Orta",
+      "text": "Renkli karton şeritlerde 32, 29, 26, 23, ... örüntüsünde 7. terim kaçtır?",
+      "image": "/uploads/patterns/grade3-descending.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Orta",
+      "text": "Sıra numaraları inerken 38, 35, 32, 29, ... örüntüsünde 10. terim kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Zor",
+      "text": "Artan çizgi deseninde 10, 13, 17, 22, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Zor",
+      "text": "Boncuk kule sayılarında 7, 10, 14, 19, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Zor",
+      "text": "Desenli halı bordüründe 5, 8, 12, 17, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Zor",
+      "text": "Küp blok modelinde 6, 9, 13, 18, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Zor",
+      "text": "Renkli kare örüntüsünde 4, 7, 11, 16, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Zor",
+      "text": "Süsleme dizisinde 8, 11, 15, 20, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "3. Sınıf",
+      "difficulty": "Zor",
+      "text": "Sıralı taş modelinde 9, 12, 16, 21, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade2-4-patterns.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Boncuk dizisinin sayı etiketlerinde 14, 17, 20, 23, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-step3.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Desenli adım kartlarında 13, 16, 19, 22, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-step3.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Küp blok etiketlerinde 17, 20, 23, 26, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-step3.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Mozaik şeritte 15, 18, 21, 24, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-step3.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Renkli bayrak sayılarında 12, 15, 18, 21, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-step3.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Ritmik sayma panosunda 18, 21, 24, 27, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-step3.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Sıra numarası kartlarında 16, 19, 22, 25, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-step3.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Orta",
+      "text": "Blok kule tablosunda 15, 30, 45, 60 şeklinde giden örüntüde 13. terim kaç olur?",
+      "image": "/uploads/patterns/grade4-multiples.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Orta",
+      "text": "Boncuk gruplarında 12, 24, 36, 48 şeklinde giden örüntüde 10. terim kaç olur?",
+      "image": "/uploads/patterns/grade4-multiples.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Orta",
+      "text": "Desenli masa örtüsü sıralarında 9, 18, 27, 36 şeklinde giden örüntüde 7. terim kaç olur?",
+      "image": "/uploads/patterns/grade4-multiples.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Orta",
+      "text": "Karton kutu dizisinde 13, 26, 39, 52 şeklinde giden örüntüde 11. terim kaç olur?",
+      "image": "/uploads/patterns/grade4-multiples.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Orta",
+      "text": "Mozaik sütunlarında 11, 22, 33, 44 şeklinde giden örüntüde 9. terim kaç olur?",
+      "image": "/uploads/patterns/grade4-multiples.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Orta",
+      "text": "Renkli kare tablosunda 10, 20, 30, 40 şeklinde giden örüntüde 8. terim kaç olur?",
+      "image": "/uploads/patterns/grade4-multiples.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Orta",
+      "text": "Sınıf rafı düzeninde 14, 28, 42, 56 şeklinde giden örüntüde 12. terim kaç olur?",
+      "image": "/uploads/patterns/grade4-multiples.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Zor",
+      "text": "Boncuk çerçevesinde 4, 7, 12, 19, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-growing-odd.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Zor",
+      "text": "Desenli pencere süslemesinde 3, 6, 11, 18, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-growing-odd.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Zor",
+      "text": "Işık dizisindeki sayılarda 7, 10, 15, 22, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-growing-odd.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Zor",
+      "text": "Kare kart örüntüsünde 8, 11, 16, 23, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-growing-odd.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Zor",
+      "text": "Küp adımlarında 5, 8, 13, 20, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-growing-odd.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Zor",
+      "text": "Mozaik modelinde 6, 9, 14, 21, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-growing-odd.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "4. Sınıf",
+      "difficulty": "Zor",
+      "text": "Renkli taş bordüründe 2, 5, 10, 17, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade4-growing-odd.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Atölye parça dizisinde 10, 15, 20, 25, ... örüntüsünde 12. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-step5.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Basamak numaralarında 7, 12, 17, 22, ... örüntüsünde 9. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-step5.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Desenli bileklik tasarımında 4, 9, 14, 19, ... örüntüsünde 6. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-step5.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Kütüphane sıra etiketlerinde 6, 11, 16, 21, ... örüntüsünde 8. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-step5.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Mozaik şerit modelinde 8, 13, 18, 23, ... örüntüsünde 10. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-step5.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Renkli karo yolunda 5, 10, 15, 20, ... örüntüsünde 7. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-step5.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Sayı kartı panosunda 9, 14, 19, 24, ... örüntüsünde 11. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-step5.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Orta",
+      "text": "Atölye paket sayılarında 75, 70, 65, 60, ... örüntüsünde 10. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-descending-step.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Orta",
+      "text": "Azalan depo kutularında 60, 55, 50, 45, ... örüntüsünde 10. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-descending-step.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Orta",
+      "text": "Basamak basamak eksilen pul dizisinde 66, 61, 56, 51, ... örüntüsünde 10. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-descending-step.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Orta",
+      "text": "Desenli pano etiketlerinde 69, 64, 59, 54, ... örüntüsünde 10. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-descending-step.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Orta",
+      "text": "Koltuk sıralamasında 72, 67, 62, 57, ... örüntüsünde 10. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-descending-step.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Orta",
+      "text": "Renkli dolap numaralarında 63, 58, 53, 48, ... örüntüsünde 10. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-descending-step.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Orta",
+      "text": "Sayaç ekranında 78, 73, 68, 63, ... örüntüsünde 10. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-descending-step.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Zor",
+      "text": "Bahçe düzenindeki kare adımlarda 1, 4, 9, 16, ... kare sayı örüntüsünde 8. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-square-numbers.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Zor",
+      "text": "Desenli yer karolarında 1, 4, 9, 16, ... kare sayı örüntüsünde 6. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-square-numbers.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Zor",
+      "text": "Kare taş avlusunda 1, 4, 9, 16, ... kare sayı örüntüsünde 5. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-square-numbers.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Zor",
+      "text": "Küp yüzey deseninde 1, 4, 9, 16, ... kare sayı örüntüsünde 9. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-square-numbers.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Zor",
+      "text": "Matematik atölyesi tahtasında 1, 4, 9, 16, ... kare sayı örüntüsünde 11. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-square-numbers.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Zor",
+      "text": "Mozaik kare modelinde 1, 4, 9, 16, ... kare sayı örüntüsünde 7. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-square-numbers.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "5. Sınıf",
+      "difficulty": "Zor",
+      "text": "Renkli pano karesinde 1, 4, 9, 16, ... kare sayı örüntüsünde 10. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-square-numbers.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Adım kartlarında 13, 17, 21, 25, ... örüntüsünde 9. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Atölye sayı etiketlerinde 12, 16, 20, 24, ... örüntüsünde 9. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Boncuk panosunda 11, 15, 19, 23, ... örüntüsünde 9. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Desenli kart dizisinde 9, 13, 17, 21, ... örüntüsünde 9. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Karo taş modelinde 10, 14, 18, 22, ... örüntüsünde 9. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Küp blok rafında 14, 18, 22, 26, ... örüntüsünde 9. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Renkli LED şeritte 8, 12, 16, 20, ... örüntüsünde 9. terim kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Orta",
+      "text": "Desenli çubuk modelinde 3, 7, 13, 21, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Orta",
+      "text": "Kare tahta oyununda 7, 11, 17, 25, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Orta",
+      "text": "Kart şeridindeki artışlarda 5, 9, 15, 23, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Orta",
+      "text": "Kule modelinde 6, 10, 16, 24, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Orta",
+      "text": "Mozaik deseninde 2, 6, 12, 20, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Orta",
+      "text": "Renkli taş örüntüsünde 4, 8, 14, 22, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Orta",
+      "text": "Süsleme şablonunda 8, 12, 18, 26, ... örüntüsünde sıradaki sayı kaçtır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Zor",
+      "text": "Atölye kare modelinde Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 18. adımda kaç kare kullanılır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Zor",
+      "text": "Boncuk halkalarında Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 15. adımda kaç kare kullanılır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Zor",
+      "text": "Desenli çerçeve tasarımında Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 14. adımda kaç kare kullanılır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Zor",
+      "text": "Kibrit çöpü şekil modelinde Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 12. adımda kaç kare kullanılır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Zor",
+      "text": "Mozaik kenar sayısında Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 16. adımda kaç kare kullanılır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Zor",
+      "text": "Parke taş dizisinde Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 17. adımda kaç kare kullanılır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "6. Sınıf",
+      "difficulty": "Zor",
+      "text": "Renkli kare sıralarında Bir şekil örüntüsünde 1. adımda 3 kare, 2. adımda 5 kare, 3. adımda 7 kare kullanılıyor. 13. adımda kaç kare kullanılır?",
+      "image": "/uploads/patterns/grade5-6-tiles.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Afiş tasarımındaki sayı dizisinde 11, 21, 31, 41, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Akıllı tahta deseninde 10, 19, 28, 37, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Desenli bileklik modelinde 5, 9, 13, 17, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Kodlu kart sıralamasında 8, 15, 22, 29, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Koltuk etiketlerinde 9, 17, 25, 33, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Mozaik karo şeridinde 7, 13, 19, 25, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Renkli LED lambalarda 6, 11, 16, 21, ... örüntüsünün genel terimi aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Orta",
+      "text": "Atölye ölçü çizelgesinde 24, 21, 18, 15, ... örüntüsünün 11. terimi kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Orta",
+      "text": "Azalan sıcaklık tablosunda 19, 16, 13, 10, ... örüntüsünün 11. terimi kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Orta",
+      "text": "Basamaklı ışık panelinde 18, 15, 12, 9, ... örüntüsünün 11. terimi kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Orta",
+      "text": "Depo kutu numaralarında 20, 17, 14, 11, ... örüntüsünün 11. terimi kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Orta",
+      "text": "Kademeli fiyat kartlarında 22, 19, 16, 13, ... örüntüsünün 11. terimi kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Orta",
+      "text": "Mozaik dizilimde 23, 20, 17, 14, ... örüntüsünün 11. terimi kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Orta",
+      "text": "Renkli pano etiketlerinde 21, 18, 15, 12, ... örüntüsünün 11. terimi kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Zor",
+      "text": "Desenli zemin kaplamasında 3, 6, 11, 18, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Zor",
+      "text": "Kare motifli tasarımda 2, 5, 10, 17, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Zor",
+      "text": "Kodlanan görsel şeritte 5, 8, 13, 20, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Zor",
+      "text": "Matematik afişinde 7, 10, 15, 22, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Zor",
+      "text": "Mozaik büyüme modelinde 4, 7, 12, 19, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Zor",
+      "text": "Renkli dizi panosunda 6, 9, 14, 21, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "7. Sınıf",
+      "difficulty": "Zor",
+      "text": "Süsleme modelinde 8, 11, 16, 23, ... örüntüsünün genel kuralı aşağıdakilerden hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Desenli karo yolunda 8, 14, 20, 26, ... örüntüsünün genel terimi hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Dijital sayaç tasarımında 10, 18, 26, 34, ... örüntüsünün genel terimi hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Kodlu ışık dizisinde 11, 20, 29, 38, ... örüntüsünün genel terimi hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Kolay",
+      "text": "LED panel örüntüsünde 7, 12, 17, 22, ... örüntüsünün genel terimi hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Mozaik pano modelinde 12, 22, 32, 42, ... örüntüsünün genel terimi hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Renkli vitrin etiketlerinde 9, 16, 23, 30, ... örüntüsünün genel terimi hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Şerit afiş düzeninde 13, 24, 35, 46, ... örüntüsünün genel terimi hangisidir?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Orta",
+      "text": "Atölye hesap tablosunda a_n = 8n + 9 kuralına göre 15. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Orta",
+      "text": "Desenli kart düzeninde a_n = 4n + 5 kuralına göre 11. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Orta",
+      "text": "Dijital desen şeridinde a_n = 7n + 8 kuralına göre 14. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Orta",
+      "text": "Grafik kartlarında a_n = 9n + 10 kuralına göre 16. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Orta",
+      "text": "Kodlanmış sayı panelinde a_n = 5n + 6 kuralına göre 12. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Orta",
+      "text": "Mozaik modelde a_n = 6n + 7 kuralına göre 13. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Orta",
+      "text": "Renkli tablo şemasında a_n = 3n + 4 kuralına göre 10. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Zor",
+      "text": "Desenli pencere düzeninde 9, 16, 25, 36 şeklinde giden örüntüde 20. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Zor",
+      "text": "Kareli zemin tasarımında 4, 9, 16, 25 şeklinde giden örüntüde 20. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Zor",
+      "text": "Kodlu sayısal desenlerde 36, 49, 64, 81 şeklinde giden örüntüde 20. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Zor",
+      "text": "LED kare panelinde 25, 36, 49, 64 şeklinde giden örüntüde 20. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Zor",
+      "text": "Matematik sergi panosunda 64, 81, 100, 121 şeklinde giden örüntüde 20. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Zor",
+      "text": "Mozaik basamak modelinde 16, 25, 36, 49 şeklinde giden örüntüde 20. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "8. Sınıf",
+      "difficulty": "Zor",
+      "text": "Süsleme modelinde 49, 64, 81, 100 şeklinde giden örüntüde 20. terim kaçtır?",
+      "image": "/uploads/patterns/grade7-8-linear.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Atölye etiketlerinde 7, 16, 25, 34, ... aritmetik dizisinin 12. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Bilet sıra kodlarında 5, 12, 19, 26, ... aritmetik dizisinin 12. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Desenli koltuk numaralarında 3, 8, 13, 18, ... aritmetik dizisinin 12. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Işık paneli kodlarında 9, 20, 31, 42, ... aritmetik dizisinin 12. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Kademeli pano numaralarında 8, 18, 28, 38, ... aritmetik dizisinin 12. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Mozaik şerit sayılarında 6, 14, 22, 30, ... aritmetik dizisinin 12. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Kolay",
+      "text": "Renkli yarış parkuru tabelalarında 4, 10, 16, 22, ... aritmetik dizisinin 12. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Orta",
+      "text": "Azalan stok etiketlerinde İlk terimi 10, ortak farkı -2 olan aritmetik dizinin 15. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Orta",
+      "text": "Basamaklı puan çizelgesinde İlk terimi 13, ortak farkı -5 olan aritmetik dizinin 15. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Orta",
+      "text": "Desenli sayaç panelinde İlk terimi 15, ortak farkı -7 olan aritmetik dizinin 15. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Orta",
+      "text": "Geriye giden sayı şeridinde İlk terimi 14, ortak farkı -6 olan aritmetik dizinin 15. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Orta",
+      "text": "Kademeli maliyet planında İlk terimi 16, ortak farkı -8 olan aritmetik dizinin 15. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Orta",
+      "text": "Renkli raf düzeninde İlk terimi 12, ortak farkı -4 olan aritmetik dizinin 15. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Orta",
+      "text": "Sıcaklık ölçüm tablosunda İlk terimi 11, ortak farkı -3 olan aritmetik dizinin 15. terimi kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Zor",
+      "text": "Akıllı tahta örüntüsünde Bir aritmetik dizide a1 = 9 ve a10 = 81 ise ortak fark kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Zor",
+      "text": "Atölye parça dizisinde Bir aritmetik dizide a1 = 7 ve a10 = 61 ise ortak fark kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Zor",
+      "text": "Desenli oturma planında Bir aritmetik dizide a1 = 5 ve a10 = 41 ise ortak fark kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Zor",
+      "text": "Kademeli kod şeridinde Bir aritmetik dizide a1 = 10 ve a10 = 91 ise ortak fark kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Zor",
+      "text": "Mozaik dizi modelinde Bir aritmetik dizide a1 = 4 ve a10 = 31 ise ortak fark kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Zor",
+      "text": "Renkli koltuk sıralarında Bir aritmetik dizide a1 = 6 ve a10 = 51 ise ortak fark kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    },
+    {
+      "classLevel": "9. Sınıf",
+      "difficulty": "Zor",
+      "text": "Sınav salonu numaralarında Bir aritmetik dizide a1 = 8 ve a10 = 71 ise ortak fark kaçtır?",
+      "image": "/uploads/patterns/grade9-arithmetic.svg",
+      "optionImages": []
+    }
+  ]
+}
