@@ -143,8 +143,8 @@ const { generatePatternQuestions } = require('../services/aiQuestionGeneratorSer
 // API Anahtarınızı .env dosyasından çekiyoruz
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// MODEL SEÇİMİ: Gemini 3.0 Pro (En güçlü model)
-const MODEL_NAME = "gemini-1.5-pro"; // Not: 3.0 Preview erişiminde sorun yaşarsan 'gemini-1.5-pro' yapabilirsin.
+const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const COMPLEX_MODEL_NAME = process.env.GEMINI_COMPLEX_MODEL || process.env.GEMINI_MODEL || 'gemini-1.5-pro';
 
 // Yardımcı Fonksiyon: Dosya işleme (Resim için)
 function fileToGenerativePart(path, mimeType) {
@@ -419,7 +419,7 @@ exports.createStudyPlan = async (req, res) => {
   try {
     const { goal, hoursPerDay, daysLeft, weakTopics } = req.body;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" }); // Planlama için Pro daha iyidir
+    const model = genAI.getGenerativeModel({ model: COMPLEX_MODEL_NAME });
 
     const prompt = `
       Öğrenci Hedefi: ${goal}
@@ -539,7 +539,7 @@ exports.smartParseText = async (req, res) => {
           required: ['text', 'options', 'correctAnswer'],
         };
         const model = genAI.getGenerativeModel({
-          model: MODEL_NAME,
+          model: COMPLEX_MODEL_NAME,
           generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.2 },
         });
         const prompt = `Aşağıdaki metinden tek soruyu ayrıştır ve JSON döndür (LaTeX ifadelerini $...$ olarak yaz):\n\n${content}`;

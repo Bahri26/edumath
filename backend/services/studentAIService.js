@@ -2,7 +2,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Question = require("../models/Question");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const MODEL_NAME = "gemini-1.5-pro";
+const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
 /**
  * Öğrenci cevabını analiz eder ve uygun yeni soru önerir.
