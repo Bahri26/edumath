@@ -114,6 +114,7 @@ Render uzerinde izlenecek sira:
 
 Notlar:
 - React Router icin tum istekler `index.html` e rewrite edilir.
+- Frontend build komutu Render'da `npm ci --include=dev && npm run build` olmali; aksi halde `vite: not found` hatasi alinabilir.
 - Repo icindeki SVG pattern gorselleri deploy ile gelir.
 - Calisma aninda yuklenen dosyalar Render'da kalici degildir. Kalici medya icin Google Cloud Storage, Cloudinary veya benzeri object storage kullan.
 
