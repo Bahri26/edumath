@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   Plus, BookOpen, FileText, Trash2, Eye, 
   Clock, Award, Layers, Save, Sparkles, 
@@ -67,6 +67,7 @@ const DropZone = ({ difficulty, questions, onDrop, onRemove, label, colorClass, 
 export default function TeacherExamsPage() {
   const { showToast } = useToast();
   const [profile, setProfile] = useState({ branch: '', branchApproval: 'none' });
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [view, setView] = useState('list'); // 'list' veya 'studio'
   const [exams, setExams] = useState([]);
   const [allQuestions, setAllQuestions] = useState([]);
@@ -86,16 +87,29 @@ export default function TeacherExamsPage() {
   const [schedStart, setSchedStart] = useState('');
   const [schedEnd, setSchedEnd] = useState('');
   const [durationMin, setDurationMin] = useState(60);
+  const lastFetchedClassLevelRef = useRef('9. Sınıf');
 
   useEffect(() => {
+    let active = true;
     (async () => {
       try {
         const res = await apiClient.get('/users/profile');
         const branch = res.data?.branch || '';
         const branchApproval = res.data?.branchApproval || 'none';
+        if (!active) {
+          return;
+        }
         setProfile({ branch, branchApproval });
       } catch {}
+      finally {
+        if (active) {
+          setProfileLoaded(true);
+        }
+      }
     })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Auto-refresh profile while pending approval
@@ -121,12 +135,11 @@ export default function TeacherExamsPage() {
     return () => { if (timer) clearInterval(timer); };
   }, [profile.branch, profile.branchApproval]);
 
-  useEffect(() => {
-    fetchExams();
-    fetchQuestions();
-  }, [profile.branch, profile.branchApproval]);
-
   const fetchExams = async () => {
+    if (!profileLoaded) {
+      return;
+    }
+
     try {
       let res;
       if (profile.branch && profile.branchApproval === 'approved') {
@@ -141,16 +154,50 @@ export default function TeacherExamsPage() {
   };
 
   const fetchQuestions = async () => {
+    if (!profileLoaded) {
+      return;
+    }
+
     try {
+      const params = { limit: 500, classLevel };
       let res;
       if (profile.branch && profile.branchApproval === 'approved') {
-        res = await apiClient.get('/teacher/subject/questions', { params: { limit: 500, classLevel } });
+        res = await apiClient.get('/teacher/subject/questions', { params });
       } else {
-        res = await apiClient.get('/teacher/questions', { params: { limit: 200 } });
+        res = await apiClient.get('/teacher/questions', {
+          params: {
+            ...params,
+            ...(poolSubject !== 'Tümü' ? { subject: poolSubject } : {}),
+          },
+        });
       }
       setAllQuestions(res.data.data || []);
     } catch (err) { console.error('Sorular çekilemedi'); }
   };
+
+  useEffect(() => {
+    if (!profileLoaded) {
+      return;
+    }
+
+    fetchExams();
+  }, [profileLoaded, profile.branch, profile.branchApproval]);
+
+  useEffect(() => {
+    if (!profileLoaded) {
+      return;
+    }
+
+    if (lastFetchedClassLevelRef.current !== classLevel && (easyQ.length || mediumQ.length || hardQ.length)) {
+      setEasyQ([]);
+      setMediumQ([]);
+      setHardQ([]);
+      showToast('Sınıf filtresi değiştiği için seçili sorular temizlendi.', 'warning');
+    }
+
+    lastFetchedClassLevelRef.current = classLevel;
+    fetchQuestions();
+  }, [profileLoaded, profile.branch, profile.branchApproval, classLevel, poolSubject]);
 
   // Filtrelenmiş havuz soruları
   const poolQuestions = useMemo(() => (

@@ -5,6 +5,25 @@ const Survey = require('../models/Survey');
 const Exam = require('../models/Exam');
 const mongoose = require('mongoose');
 
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const applyClassLevelFilter = (query, classLevel) => {
+  if (!classLevel || classLevel === 'Tümü') {
+    return;
+  }
+
+  query.$or = [
+    { classLevel },
+    { class_level: classLevel },
+    { grade_level: classLevel },
+  ];
+};
+
+const mapQuestionRecord = (question) => ({
+  ...question,
+  classLevel: question.classLevel || question.class_level || question.grade_level || '',
+});
+
 // İç mantık: Öğretmen istatistiklerini hesapla
 async function buildTeacherStats(teacherId) {
   // Öğretmen bilgisi
@@ -234,43 +253,45 @@ exports.getStudentDetails = async (req, res) => {
 exports.getMyQuestions = async (req, res) => {
   try {
     const teacherId = req.user.id;
-    console.log('\n=== 🎓 getMyQuestions BAŞLADI ===');
-    console.log('Teacher ID:', teacherId);
-    console.log('Query params:', req.query);
 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
-    const { search, subject, classLevel, difficulty } = req.query;
+    const { search, subject, classLevel, difficulty, topic } = req.query;
 
     const query = { createdBy: teacherId };
     
     if (search) query.text = { $regex: search, $options: 'i' };
     if (subject && subject !== 'Tümü') query.subject = subject;
-    if (classLevel && classLevel !== 'Tümü') query.classLevel = classLevel;
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
-
-    console.log('Sorgu (query):', JSON.stringify(query));
+    if (topic && topic !== 'Tümü') query.topic = topic;
+    applyClassLevelFilter(query, classLevel);
 
     const total = await Question.countDocuments(query);
-    console.log('📊 Toplam bulunan soru sayısı:', total);
+    const projection = {
+      text: 1,
+      subject: 1,
+      topic: 1,
+      learningOutcome: 1,
+      mebReference: 1,
+      curriculumNote: 1,
+      classLevel: 1,
+      class_level: 1,
+      grade_level: 1,
+      difficulty: 1,
+      type: 1,
+      source: 1,
+      createdAt: 1,
+      image: 1,
+      options: 1,
+      correctAnswer: 1,
+      solution: 1,
+    };
 
-    if (total === 0) {
-      // Hiç soru yoksa, tümü için kontrol et
-      const allCount = await Question.countDocuments({});
-      console.log('⚠️  Hiç soru yok! Veritabanında toplam soru sayısı:', allCount);
-      if (allCount > 0) {
-        const sampleQuestion = await Question.findOne().limit(1);
-        console.log('📌 Örnek soru createdBy değeri:', sampleQuestion?.createdBy);
-      }
-    }
-
-    const questions = await Question.find(query)
+    const questions = await Question.find(query, projection)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit);
-
-    console.log('✅ Alınan sorular sayısı:', questions.length);
-    console.log('=== 🎓 getMyQuestions BİTTİ ===\n');
+      .limit(limit)
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -278,10 +299,9 @@ exports.getMyQuestions = async (req, res) => {
       totalPages: Math.ceil(total / limit),
       page: page,
       total: total,
-      data: questions
+      data: questions.map(mapQuestionRecord)
     });
   } catch (err) {
-    console.error('❌ getMyQuestions HATASI:', err);
     res.status(500).json({ message: 'Sorular alınamadı', error: err.message });
   }
 };
@@ -440,20 +460,40 @@ exports.getSubjectQuestions = async (req, res) => {
     const { search, classLevel, difficulty, topic } = req.query;
 
     // Önce branş (subject) eşleşmesini zorunlu tut
-    const query = { subject: { $regex: `^${subject}$`, $options: 'i' } };
+    const query = { subject: { $regex: `^${escapeRegex(subject)}$`, $options: 'i' } };
     if (search) query.text = { $regex: search, $options: 'i' };
     // İsteğe bağlı konu filtresi
     if (topic && topic !== 'Tümü') {
-      query.topic = { $regex: `^${topic}$`, $options: 'i' };
+      query.topic = { $regex: `^${escapeRegex(topic)}$`, $options: 'i' };
     }
-    if (classLevel && classLevel !== 'Tümü') query.classLevel = classLevel;
+    applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
 
     const total = await Question.countDocuments(query);
-    let questions = await Question.find(query)
+    const projection = {
+      text: 1,
+      subject: 1,
+      topic: 1,
+      learningOutcome: 1,
+      mebReference: 1,
+      curriculumNote: 1,
+      classLevel: 1,
+      class_level: 1,
+      grade_level: 1,
+      difficulty: 1,
+      type: 1,
+      source: 1,
+      createdAt: 1,
+      image: 1,
+      options: 1,
+      correctAnswer: 1,
+      solution: 1,
+    };
+    let questions = await Question.find(query, projection)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     // Hiç sonuç yoksa daha esnek bir eşleşme ile tekrar dene (boşluk/çeşitlemeler)
     if (total === 0) {
@@ -466,14 +506,15 @@ exports.getSubjectQuestions = async (req, res) => {
       }
       const looseTotal = await Question.countDocuments(looseQuery);
       if (looseTotal > 0) {
-        questions = await Question.find(looseQuery)
+        questions = await Question.find(looseQuery, projection)
           .sort({ createdAt: -1 })
           .skip((page - 1) * limit)
-          .limit(limit);
+          .limit(limit)
+          .lean();
       }
     }
 
-    res.json({ success: true, data: questions, total, page, totalPages: Math.ceil(total / limit) });
+    res.json({ success: true, data: questions.map(mapQuestionRecord), total, page, totalPages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ message: 'Branşa göre sorular alınamadı', error: err.message });
   }

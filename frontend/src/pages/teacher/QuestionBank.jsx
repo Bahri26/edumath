@@ -96,6 +96,7 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
 export default function QuestionBank() {
   const { showToast } = useToast();
   const [profile, setProfile] = useState({ branch: '', branchApproval: 'none' });
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -111,17 +112,29 @@ export default function QuestionBank() {
   const [topics, setTopics] = useState([]);
     // Load teacher profile for branch/approval
     useEffect(() => {
+      let active = true;
       (async () => {
         try {
           const res = await apiClient.get('/users/profile');
           const branch = res.data?.branch || '';
           const branchApproval = res.data?.branchApproval || 'none';
+          if (!active) {
+            return;
+          }
           setProfile({ branch, branchApproval });
           if (branch && branchApproval === 'approved') {
             setFilters(f => ({ ...f, subject: branch }));
           }
         } catch {}
+        finally {
+          if (active) {
+            setProfileLoaded(true);
+          }
+        }
       })();
+      return () => {
+        active = false;
+      };
     }, []);
     // Auto-refresh profile while pending approval (without referencing fetchQuestions before init)
     useEffect(() => {
@@ -184,6 +197,10 @@ export default function QuestionBank() {
   }, [debouncedSearch, filters, page, setSearchParams]);
 
   const fetchQuestions = useCallback(async () => {
+    if (!profileLoaded) {
+      return;
+    }
+
     setLoading(true);
     try {
       const params = {
@@ -201,10 +218,6 @@ export default function QuestionBank() {
         try {
           // Öncelik: öğretmen branşına özel endpoint (onay gerekli)
           res = await apiClient.get('/teacher/subject/questions', { params: rest });
-          // Boş sonuç ise genel listeye düş
-          if (!(res.data?.data?.length > 0)) {
-            res = await apiClient.get('/questions', { params: { ...rest, subject: subjectParam } });
-          }
         } catch (err) {
           // Yetki/Onay nedeniyle hata (401/403/404) durumunda genel endpoint'e düş
           try {
@@ -226,7 +239,7 @@ export default function QuestionBank() {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, filters, profile, showToast]);
+  }, [page, debouncedSearch, filters, profile, profileLoaded, showToast]);
 
   useEffect(() => { fetchQuestions(); }, [fetchQuestions]);
 

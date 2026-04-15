@@ -29,4 +29,8 @@ const ExamSchema = new mongoose.Schema({
   }]
 }, { timestamps: true, collection: 'exams' });
 
+ExamSchema.index({ createdBy: 1, createdAt: -1 }, { name: 'exams_created_by_created_at' });
+ExamSchema.index({ subject: 1, createdAt: -1 }, { name: 'exams_subject_created_at' });
+ExamSchema.index({ subject: 1, classLevel: 1, status: 1, createdAt: -1 }, { name: 'exams_subject_class_status_created_at' });
+
 module.exports = mongoose.model('Exam', ExamSchema);
