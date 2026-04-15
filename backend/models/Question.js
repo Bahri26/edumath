@@ -41,5 +41,8 @@ const QuestionSchema = new mongoose.Schema({
 }, { timestamps: true, collection: 'questions' });
 
 QuestionSchema.index({ text: 'text' });
+QuestionSchema.index({ createdBy: 1, createdAt: -1 }, { name: 'questions_created_by_created_at' });
+QuestionSchema.index({ subject: 1, classLevel: 1, difficulty: 1, createdAt: -1 }, { name: 'questions_subject_class_difficulty_created_at' });
+QuestionSchema.index({ subject: 1, classLevel: 1, topic: 1, createdAt: -1 }, { name: 'questions_subject_class_topic_created_at' });
 
 module.exports = mongoose.model('Question', QuestionSchema);

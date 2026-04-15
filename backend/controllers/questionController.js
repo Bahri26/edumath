@@ -1,5 +1,22 @@
 const Question = require('../models/Question');
 
+const applyClassLevelFilter = (query, classLevel) => {
+  if (!classLevel || classLevel === 'Tümü') {
+    return;
+  }
+
+  query.$or = [
+    { classLevel },
+    { class_level: classLevel },
+    { grade_level: classLevel },
+  ];
+};
+
+const mapQuestionRecord = (question) => ({
+  ...question,
+  classLevel: question.classLevel || question.class_level || question.grade_level || '',
+});
+
 function normalizeStoredImagePath(value) {
   if (!value || typeof value !== 'string') {
     return '';
@@ -29,7 +46,7 @@ exports.getQuestions = async (req, res, next) => {
     }
     
     if (subject && subject !== 'Tümü') query.subject = subject;
-    if (classLevel && classLevel !== 'Tümü') query.classLevel = classLevel;
+    applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
 
     // Eğer istek öğretmenden geliyorsa ve branşı onaylıysa, varsayılan olarak kendi branşındaki (subject) soruları göster
@@ -70,7 +87,8 @@ exports.getQuestions = async (req, res, next) => {
     let questions = await Question.find(query, projection)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     // Hiç sonuç yoksa, subject için daha gevşek bir eşleşme dene
     if (total === 0 && query.subject?.$regex) {
@@ -80,7 +98,8 @@ exports.getQuestions = async (req, res, next) => {
         questions = await Question.find(looseQuery, projection)
           .sort({ createdAt: -1 })
           .skip((page - 1) * limit)
-          .limit(limit);
+          .limit(limit)
+          .lean();
       }
     }
 
@@ -90,7 +109,7 @@ exports.getQuestions = async (req, res, next) => {
       totalPages: Math.ceil(total / limit),
       page: page,
       total: total,
-      data: questions
+      data: questions.map(mapQuestionRecord)
     });
 
   } catch (error) {
@@ -113,7 +132,7 @@ exports.getTeacherQuestions = async (req, res, next) => {
     }
     
     if (subject && subject !== 'Tümü') query.subject = subject;
-    if (classLevel && classLevel !== 'Tümü') query.classLevel = classLevel;
+    applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
 
     const total = await Question.countDocuments(query);
@@ -123,7 +142,8 @@ exports.getTeacherQuestions = async (req, res, next) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate('createdBy', 'name');
+      .populate('createdBy', 'name')
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -131,7 +151,7 @@ exports.getTeacherQuestions = async (req, res, next) => {
       totalPages: Math.ceil(total / limit),
       page: page,
       total: total,
-      data: questions
+      data: questions.map(mapQuestionRecord)
     });
 
   } catch (error) {
