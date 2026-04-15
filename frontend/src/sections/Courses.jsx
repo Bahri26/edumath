@@ -5,6 +5,59 @@ import { getCourses } from '../data/coursesData';
 
 const Courses = ({ lang, t }) => {
   const courses = getCourses(lang, t);
+  const researchModules = lang === 'tr'
+    ? [
+        {
+          title: 'Araştırma Alanları',
+          desc: 'Cebirsel topoloji, sayılar teorisi, diferansiyel geometri ve ileri analiz başlıklarında derinleşin.',
+        },
+        {
+          title: 'Seminer ve Okuma Grupları',
+          desc: 'Haftalık seminerler, paper reading session yapıları ve tez ekseni etrafında topluluk çalışmaları.',
+        },
+        {
+          title: 'Makale ve Preprint İnceleme',
+          desc: 'Yüklenen metinlerden özet, proof roadmap, önkoşul listesi ve kavram haritası üretin.',
+        },
+        {
+          title: 'İspat Atölyesi',
+          desc: 'Lemma önerileri, karşı örnek taraması ve adım adım ispat stratejileri ile çalışın.',
+        },
+        {
+          title: 'Tez ve Yayın Üretkenliği',
+          desc: 'Literatür zinciri, açık problem listesi ve yayın hazırlık akışı için yapılandırılmış araçlar.',
+        },
+        {
+          title: 'Akademik Yol Haritası',
+          desc: 'Yüksek lisans temelden araştırma seviyesine kadar ilerleme planı ve uzmanlık rotaları.',
+        },
+      ]
+    : [
+        {
+          title: 'Research Areas',
+          desc: 'Go deeper in algebraic topology, number theory, differential geometry, and advanced analysis.',
+        },
+        {
+          title: 'Seminars and Reading Groups',
+          desc: 'Weekly seminars, paper reading sessions, and thesis-oriented collaborative study tracks.',
+        },
+        {
+          title: 'Paper and Preprint Review',
+          desc: 'Generate summaries, proof roadmaps, prerequisite maps, and concept structure from uploaded texts.',
+        },
+        {
+          title: 'Proof Workshop',
+          desc: 'Work with lemma suggestions, counterexample scans, and stepwise proof strategies.',
+        },
+        {
+          title: 'Thesis and Publication Productivity',
+          desc: 'Use structured tools for literature chains, open problem lists, and paper preparation flow.',
+        },
+        {
+          title: 'Academic Roadmap',
+          desc: 'Follow progression tracks from graduate foundations to research-level specialization.',
+        },
+      ];
 
   // Kategoriye göre renk belirleme fonksiyonu
   const getCategoryStyles = (category) => {
@@ -91,16 +144,7 @@ const Courses = ({ lang, t }) => {
                     </div>
                   </div>
 
-                  {/* Alt Kısım: Fiyat ve Buton */}
-                  <div className="mt-auto flex items-center justify-between pt-6 border-t border-gray-50 dark:border-gray-800">
-                    <div className="flex flex-col">
-                      <span className="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
-                        {lang === 'tr' ? 'Kurs Ücreti' : 'Course Fee'}
-                      </span>
-                      <span className="text-3xl font-black text-indigo-600 dark:text-indigo-400 tracking-tighter">
-                        {course.price}
-                      </span>
-                    </div>
+                  <div className="mt-auto flex items-center justify-end pt-6 border-t border-gray-50 dark:border-gray-800">
                     <button className="bg-gray-900 dark:bg-indigo-600 text-white p-4 rounded-2xl hover:bg-indigo-600 dark:hover:bg-indigo-500 transition-all shadow-lg group-hover:shadow-indigo-200 dark:shadow-none">
                       <ArrowRight size={24} />
                     </button>
@@ -111,13 +155,30 @@ const Courses = ({ lang, t }) => {
           ))}
         </div>
         
-        {/* Tümünü Gör Butonu */}
+        {/* Doktora ve Araştırma Odaklı Modüller */}
         <FadeIn delay={400}>
-          <div className="text-center mt-16">
-            <button className="group inline-flex items-center gap-3 bg-white dark:bg-gray-900 border-2 border-gray-900 dark:border-indigo-500 text-gray-900 dark:text-white px-10 py-4 rounded-2xl font-black text-lg hover:bg-gray-900 hover:text-white dark:hover:bg-indigo-500 transition-all duration-300 shadow-xl shadow-gray-100 dark:shadow-none">
-              {t.courses.btnAll} 
-              <ArrowRight size={22} className="group-hover:translate-x-2 transition-transform" />
-            </button>
+          <div className="mt-16 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 p-8 md:p-10">
+            <div className="max-w-3xl">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-indigo-600 dark:text-indigo-400 mb-4">
+                {lang === 'tr' ? 'Doktora ve Araştırma Katmanı' : 'Doctoral and Research Layer'}
+              </p>
+              <h3 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight">
+                {lang === 'tr'
+                  ? 'İleri akademik matematik için seminer, makale ve ispat odaklı çalışma alanları'
+                  : 'Seminar, paper, and proof-focused study spaces for advanced academic mathematics'}
+              </h3>
+            </div>
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 mt-10">
+              {researchModules.map((item) => (
+                <div key={item.title} className="rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 mb-4">
+                    <ArrowRight size={18} />
+                  </div>
+                  <h4 className="text-lg font-black text-slate-900 dark:text-white mb-2">{item.title}</h4>
+                  <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{item.desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </FadeIn>
       </div>

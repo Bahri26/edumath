@@ -9,7 +9,6 @@ export const getCourses = (lang, t) => [
     lessons: `12 ${t.courses.lessons}`,
     students: `2.4k ${t.courses.students}`,
     rating: '4.9',
-    price: lang === 'tr' ? '₺250' : '$15',
     category: 'primary'
   },
   {
@@ -20,7 +19,6 @@ export const getCourses = (lang, t) => [
     lessons: `18 ${t.courses.lessons}`,
     students: `1.8k ${t.courses.students}`,
     rating: '4.8',
-    price: lang === 'tr' ? '₺450' : '$25',
     category: 'middle'
   },
   {
@@ -31,7 +29,6 @@ export const getCourses = (lang, t) => [
     lessons: `24 ${t.courses.lessons}`,
     students: `950 ${t.courses.students}`,
     rating: '4.9',
-    price: lang === 'tr' ? '₺600' : '$35',
     category: 'high'
   }
 ];

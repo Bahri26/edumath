@@ -7,22 +7,70 @@ const mongoose = require('mongoose');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const addAndClause = (query, clause) => {
+  if (!clause) {
+    return;
+  }
+
+  if (!query.$and) {
+    query.$and = [];
+  }
+
+  query.$and.push(clause);
+};
+
 const applyClassLevelFilter = (query, classLevel) => {
   if (!classLevel || classLevel === 'Tümü') {
     return;
   }
 
-  query.$or = [
+  addAndClause(query, {
+    $or: [
     { classLevel },
     { class_level: classLevel },
     { grade_level: classLevel },
-  ];
+    ],
+  });
 };
 
 const mapQuestionRecord = (question) => ({
   ...question,
   classLevel: question.classLevel || question.class_level || question.grade_level || '',
 });
+
+const buildQuestionSearch = (query, search, mode = 'text') => {
+  const term = String(search || '').trim();
+  if (!term) {
+    return null;
+  }
+
+  if (mode === 'text' && term.length >= 3) {
+    addAndClause(query, { $text: { $search: term } });
+    return { mode: 'text', term };
+  }
+
+  const regex = { $regex: escapeRegex(term), $options: 'i' };
+  addAndClause(query, {
+    $or: [
+      { text: regex },
+      { topic: regex },
+      { learningOutcome: regex },
+    ],
+  });
+  return { mode: 'regex', term };
+};
+
+const buildDifficultyCounts = async (query) => {
+  const rows = await Question.aggregate([
+    { $match: query },
+    { $group: { _id: '$difficulty', count: { $sum: 1 } } },
+  ]);
+
+  return rows.reduce((acc, row) => {
+    acc[row._id] = row.count;
+    return acc;
+  }, { Kolay: 0, Orta: 0, Zor: 0 });
+};
 
 // İç mantık: Öğretmen istatistiklerini hesapla
 async function buildTeacherStats(teacherId) {
@@ -260,13 +308,26 @@ exports.getMyQuestions = async (req, res) => {
 
     const query = { createdBy: teacherId };
     
-    if (search) query.text = { $regex: search, $options: 'i' };
     if (subject && subject !== 'Tümü') query.subject = subject;
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
     if (topic && topic !== 'Tümü') query.topic = topic;
     applyClassLevelFilter(query, classLevel);
+    const searchMeta = buildQuestionSearch(query, search, 'text');
 
-    const total = await Question.countDocuments(query);
+    let total = await Question.countDocuments(query);
+    let effectiveQuery = query;
+
+    if (searchMeta?.mode === 'text' && total === 0) {
+      effectiveQuery = { createdBy: teacherId };
+      if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
+      if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
+      if (topic && topic !== 'Tümü') effectiveQuery.topic = topic;
+      applyClassLevelFilter(effectiveQuery, classLevel);
+      buildQuestionSearch(effectiveQuery, search, 'regex');
+      total = await Question.countDocuments(effectiveQuery);
+    }
+
+    const difficultyCounts = await buildDifficultyCounts(effectiveQuery);
     const projection = {
       text: 1,
       subject: 1,
@@ -287,8 +348,15 @@ exports.getMyQuestions = async (req, res) => {
       solution: 1,
     };
 
-    const questions = await Question.find(query, projection)
-      .sort({ createdAt: -1 })
+    const sort = searchMeta?.mode === 'text' && effectiveQuery.$and?.some((clause) => clause.$text)
+      ? { score: { $meta: 'textScore' }, createdAt: -1 }
+      : { createdAt: -1 };
+
+    const questions = await Question.find(effectiveQuery, {
+      ...projection,
+      ...(sort.score ? { score: { $meta: 'textScore' } } : {}),
+    })
+      .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
@@ -299,6 +367,7 @@ exports.getMyQuestions = async (req, res) => {
       totalPages: Math.ceil(total / limit),
       page: page,
       total: total,
+      difficultyCounts,
       data: questions.map(mapQuestionRecord)
     });
   } catch (err) {
@@ -379,29 +448,32 @@ exports.getDashboardSummary = async (req, res) => {
 exports.getMyExams = async (req, res) => {
   try {
     const teacherId = req.user.id;
-    const { page, limit } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 9;
+    const search = String(req.query.search || '').trim();
+    const classLevel = String(req.query.classLevel || '').trim();
 
     const query = { createdBy: teacherId };
-    const sort = { createdAt: -1 };
-
-    if (page && limit) {
-      const p = parseInt(page) || 1;
-      const l = parseInt(limit) || 10;
-      const total = await Exam.countDocuments(query);
-      const exams = await Exam.find(query)
-        .sort(sort)
-        .skip((p - 1) * l)
-        .limit(l);
-      return res.json({
-        data: exams,
-        total,
-        pages: Math.ceil(total / l),
-        currentPage: p
-      });
+    if (search) {
+      query.title = { $regex: escapeRegex(search), $options: 'i' };
+    }
+    if (classLevel && classLevel !== 'Tümü') {
+      query.classLevel = classLevel;
     }
 
-    const exams = await Exam.find(query).sort(sort);
-    return res.json(exams);
+    const sort = { createdAt: -1 };
+    const total = await Exam.countDocuments(query);
+    const exams = await Exam.find(query)
+      .sort(sort)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+    return res.json({
+      data: exams,
+      total,
+      pages: Math.ceil(total / limit),
+      currentPage: page
+    });
   } catch (err) {
     res.status(500).json({ message: 'Sınavlar alınamadı', error: err.message });
   }
@@ -461,15 +533,29 @@ exports.getSubjectQuestions = async (req, res) => {
 
     // Önce branş (subject) eşleşmesini zorunlu tut
     const query = { subject: { $regex: `^${escapeRegex(subject)}$`, $options: 'i' } };
-    if (search) query.text = { $regex: search, $options: 'i' };
     // İsteğe bağlı konu filtresi
     if (topic && topic !== 'Tümü') {
       query.topic = { $regex: `^${escapeRegex(topic)}$`, $options: 'i' };
     }
     applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
+    const searchMeta = buildQuestionSearch(query, search, 'text');
 
-    const total = await Question.countDocuments(query);
+    let total = await Question.countDocuments(query);
+    let effectiveQuery = query;
+
+    if (searchMeta?.mode === 'text' && total === 0) {
+      effectiveQuery = { subject: { $regex: `^${escapeRegex(subject)}$`, $options: 'i' } };
+      if (topic && topic !== 'Tümü') {
+        effectiveQuery.topic = { $regex: `^${escapeRegex(topic)}$`, $options: 'i' };
+      }
+      applyClassLevelFilter(effectiveQuery, classLevel);
+      if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
+      buildQuestionSearch(effectiveQuery, search, 'regex');
+      total = await Question.countDocuments(effectiveQuery);
+    }
+
+    const difficultyCounts = await buildDifficultyCounts(effectiveQuery);
     const projection = {
       text: 1,
       subject: 1,
@@ -489,15 +575,21 @@ exports.getSubjectQuestions = async (req, res) => {
       correctAnswer: 1,
       solution: 1,
     };
-    let questions = await Question.find(query, projection)
-      .sort({ createdAt: -1 })
+    const sort = searchMeta?.mode === 'text' && effectiveQuery.$and?.some((clause) => clause.$text)
+      ? { score: { $meta: 'textScore' }, createdAt: -1 }
+      : { createdAt: -1 };
+    let questions = await Question.find(effectiveQuery, {
+      ...projection,
+      ...(sort.score ? { score: { $meta: 'textScore' } } : {}),
+    })
+      .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
 
     // Hiç sonuç yoksa daha esnek bir eşleşme ile tekrar dene (boşluk/çeşitlemeler)
-    if (total === 0) {
-      const looseQuery = { ...query };
+    if (total === 0 && !searchMeta) {
+      const looseQuery = { ...effectiveQuery };
       if (looseQuery.subject?.$regex) {
         looseQuery.subject = { $regex: subject, $options: 'i' }; // contains, case-insensitive
       }
@@ -514,7 +606,7 @@ exports.getSubjectQuestions = async (req, res) => {
       }
     }
 
-    res.json({ success: true, data: questions.map(mapQuestionRecord), total, page, totalPages: Math.ceil(total / limit) });
+    res.json({ success: true, data: questions.map(mapQuestionRecord), total, page, totalPages: Math.ceil(total / limit), difficultyCounts });
   } catch (err) {
     res.status(500).json({ message: 'Branşa göre sorular alınamadı', error: err.message });
   }
@@ -524,8 +616,11 @@ exports.getSubjectQuestions = async (req, res) => {
 exports.getSubjectTopics = async (req, res) => {
   try {
     const subject = req.userBranch;
+    const classLevel = String(req.query.classLevel || '').trim();
     // Mevcut sorular üzerinden eşsiz topic değerlerini topla
-    const topics = await Question.distinct('topic', { subject });
+    const query = { subject };
+    applyClassLevelFilter(query, classLevel);
+    const topics = await Question.distinct('topic', query);
     // Bazı veri setlerinde topic alanı olmayabilir; bu durumda boş dizi döner
     res.json({ success: true, topics: topics.filter(Boolean).sort() });
   } catch (err) {
@@ -537,19 +632,22 @@ exports.getSubjectTopics = async (req, res) => {
 exports.getSubjectExams = async (req, res) => {
   try {
     const subject = req.userBranch;
-    const { page, limit } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 9;
+    const search = String(req.query.search || '').trim();
+    const classLevel = String(req.query.classLevel || '').trim();
     const query = { subject };
+    if (search) {
+      query.title = { $regex: escapeRegex(search), $options: 'i' };
+    }
+    if (classLevel && classLevel !== 'Tümü') {
+      query.classLevel = classLevel;
+    }
     const sort = { createdAt: -1 };
 
-    if (page && limit) {
-      const p = parseInt(page) || 1;
-      const l = parseInt(limit) || 10;
-      const total = await Exam.countDocuments(query);
-      const exams = await Exam.find(query).sort(sort).skip((p - 1) * l).limit(l);
-      return res.json({ data: exams, total, pages: Math.ceil(total / l), currentPage: p });
-    }
-    const exams = await Exam.find(query).sort(sort);
-    res.json(exams);
+    const total = await Exam.countDocuments(query);
+    const exams = await Exam.find(query).sort(sort).skip((page - 1) * limit).limit(limit).lean();
+    res.json({ data: exams, total, pages: Math.ceil(total / limit), currentPage: page });
   } catch (err) {
     res.status(500).json({ message: 'Branşa göre sınavlar alınamadı', error: err.message });
   }
