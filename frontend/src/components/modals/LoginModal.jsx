@@ -2,7 +2,7 @@
 import React, { useState, useContext } from 'react';
 import { X, Mail, Lock, User, BookOpen, Briefcase, Loader2, ArrowRight, LogIn, UserPlus, AlertCircle, CheckCircle, GraduationCap } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext'; 
-import apiClient from '../../services/api'; 
+import apiClient, { withAuthRequestConfig } from '../../services/api'; 
 
 const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
   const [isLoginView, setIsLoginView] = useState(true); 
@@ -41,7 +41,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
         const response = await apiClient.post('/auth/login', {
           email: formData.email,
           password: formData.password
-        });
+        }, withAuthRequestConfig());
         const { token, user, refreshToken } = response.data;
         login(user, token);
         if (refreshToken) {
@@ -77,6 +77,9 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
         if (status === 400) friendly = 'Form verileri geçersiz. Lütfen alanları kontrol edin.';
         else if (status >= 500) friendly = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.';
         else friendly = 'Bir hata oluştu. Lütfen tekrar deneyin.';
+      }
+      if (err.code === 'ECONNABORTED') {
+        friendly = 'Giriş isteği zaman aşımına uğradı. Sunucu geç cevap veriyor; lütfen tekrar deneyin.';
       }
       setError(friendly);
     } finally {

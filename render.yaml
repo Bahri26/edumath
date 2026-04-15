@@ -29,6 +29,10 @@ services:
         value: 900000
       - key: AUTH_RATE_LIMIT_MAX
         value: 20
+      - key: AUTH_SLOW_LOG_MS
+        value: 800
+      - key: AUTH_DEBUG_TIMING
+        value: false
       - key: RATE_LIMIT_WINDOW_MS
         value: 900000
       - key: RATE_LIMIT_MAX
@@ -53,6 +57,8 @@ services:
         sync: false
       - key: VITE_API_TIMEOUT_MS
         value: 15000
+      - key: VITE_AUTH_TIMEOUT_MS
+        value: 30000
       - key: VITE_AI_TIMEOUT_MS
         value: 45000
     routes:
