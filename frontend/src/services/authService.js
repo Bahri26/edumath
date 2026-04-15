@@ -1,6 +1,6 @@
 // src/services/authService.js
 
-import apiClient from './api'; // Hazırladığınız temel API istemcisi
+import apiClient, { withAuthRequestConfig } from './api'; // Hazırladığınız temel API istemcisi
 // Not: axios kurulu olmalıdır (npm install axios)
 
 // API uç noktaları
@@ -26,7 +26,7 @@ const register = async (userData) => {
 // 2. Giriş Yapma İşlemi
 // -----------------------------------------------------------------
 const login = async (email, password) => {
-    const response = await apiClient.post(AUTH_URL + '/login', { email, password });
+    const response = await apiClient.post(AUTH_URL + '/login', { email, password }, withAuthRequestConfig());
     const payload = response.data || {};
     const token = payload.token || payload.data?.token;
     const user = payload.user || payload.data?.user;

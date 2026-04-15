@@ -13,6 +13,7 @@ const parseTimeout = (value, fallback) => {
 };
 
 const DEFAULT_TIMEOUT = parseTimeout(import.meta.env?.VITE_API_TIMEOUT_MS, 15000);
+const AUTH_TIMEOUT = parseTimeout(import.meta.env?.VITE_AUTH_TIMEOUT_MS, 30000);
 const AI_TIMEOUT = parseTimeout(import.meta.env?.VITE_AI_TIMEOUT_MS, 45000);
 
 const getAssetBaseUrl = () => {
@@ -90,6 +91,7 @@ export const withRequestConfig = (config = {}, timeout = DEFAULT_TIMEOUT) => ({
     timeout,
 });
 
+export const withAuthRequestConfig = (config = {}) => withRequestConfig(config, AUTH_TIMEOUT);
 export const withAiRequestConfig = (config = {}) => withRequestConfig(config, AI_TIMEOUT);
 
 // 🚨 1. İSTEK INTERCEPTOR (Token Ekleme)
@@ -133,7 +135,10 @@ apiClient.interceptors.response.use(
                 const path = error?.config?.url || '';
                 const msg = error?.response?.data?.message || error.message || 'Beklenmeyen hata';
                 if (error?.code === 'ECONNABORTED') {
-                    apiErrorNotifier('İşlem zaman aşımına uğradı. Sunucu geç cevap veriyor; tekrar deneyin veya AI timeout süresini artırın.', 'error');
+                    const timeoutMessage = path.includes('/auth/login')
+                        ? 'Giriş isteği zaman aşımına uğradı. Sunucu geç cevap veriyor; lütfen tekrar deneyin.'
+                        : 'İşlem zaman aşımına uğradı. Sunucu geç cevap veriyor; tekrar deneyin veya AI timeout süresini artırın.';
+                    apiErrorNotifier(timeoutMessage, 'error');
                 } else if (!error.response) {
                     apiErrorNotifier('Ağ bağlantı hatası. Lütfen kontrol edin.', 'error');
                 } else if (status >= 500) {
@@ -152,4 +157,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
-export { AI_TIMEOUT, DEFAULT_TIMEOUT };
+export { AI_TIMEOUT, AUTH_TIMEOUT, DEFAULT_TIMEOUT };

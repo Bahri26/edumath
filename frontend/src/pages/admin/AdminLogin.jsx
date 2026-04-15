@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../../services/api';
+import apiClient, { withAuthRequestConfig } from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 
 const AdminLogin = () => {
@@ -15,7 +15,7 @@ const AdminLogin = () => {
     e.preventDefault();
     setError(null); setLoading(true);
     try {
-      const resp = await apiClient.post('/auth/login', { email, password });
+      const resp = await apiClient.post('/auth/login', { email, password }, withAuthRequestConfig());
       const { token, user } = resp.data;
       if (!user || user.role !== 'admin') {
         setError('Admin yetkisi yok veya hatalı kullanıcı.');
@@ -24,7 +24,11 @@ const AdminLogin = () => {
         navigate('/admin');
       }
     } catch (err) {
-      setError(err?.response?.data?.message || 'Giriş hatası');
+      if (err?.code === 'ECONNABORTED') {
+        setError('Giriş isteği zaman aşımına uğradı. Sunucu geç cevap veriyor; lütfen tekrar deneyin.');
+      } else {
+        setError(err?.response?.data?.message || 'Giriş hatası');
+      }
     } finally { setLoading(false); }
   };
 

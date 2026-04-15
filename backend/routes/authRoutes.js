@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Joi = require('joi');
+const { performance } = require('perf_hooks');
 const validate = require('../middlewares/validationMiddleware');
 const User = require('../models/User'); // User modelini çağırıyoruz
 const RefreshToken = require('../models/RefreshToken');
@@ -60,6 +61,42 @@ const publicResetRequestSchema = Joi.object({
 });
 const PasswordResetRequest = require('../models/PasswordResetRequest');
 
+const normalizeIdentifier = (value) => String(value || '').trim().toLowerCase();
+const authSlowLogMs = Number(process.env.AUTH_SLOW_LOG_MS || 800);
+const authDebugTiming = String(process.env.AUTH_DEBUG_TIMING || '').toLowerCase() === 'true';
+
+const logAuthTiming = ({ identifier, totalMs, lookupMs, passwordMs, tokenMs, outcome, statusCode }) => {
+  if (!authDebugTiming && totalMs < authSlowLogMs) {
+    return;
+  }
+
+  console.log(
+    `[auth/login] outcome=${outcome} status=${statusCode} totalMs=${totalMs.toFixed(1)} lookupMs=${lookupMs.toFixed(1)} passwordMs=${passwordMs.toFixed(1)} tokenMs=${tokenMs.toFixed(1)} identifier=${identifier}`
+  );
+};
+
+const syncUserLoginIdentifiers = async (user) => {
+  if (!user) {
+    return;
+  }
+
+  const nextEmailLower = String(user.email || '').trim().toLowerCase();
+  const nextUsernameLower = user.username ? String(user.username).trim().toLowerCase() : undefined;
+  const update = {};
+
+  if (user.emailLower !== nextEmailLower) {
+    update.emailLower = nextEmailLower;
+  }
+
+  if ((user.usernameLower || undefined) !== nextUsernameLower) {
+    update.usernameLower = nextUsernameLower;
+  }
+
+  if (Object.keys(update).length > 0) {
+    await User.updateOne({ _id: user._id }, { $set: update });
+  }
+};
+
 // --- KAYIT OL ---
 router.post('/register', validate(registerSchema), async (req, res) => {
   try {
@@ -108,29 +145,65 @@ router.post('/register', validate(registerSchema), async (req, res) => {
 
 // --- GİRİŞ YAP ---
 router.post('/login', validate(loginSchema), async (req, res) => {
+  const startedAt = performance.now();
+  let lookupMs = 0;
+  let passwordMs = 0;
+  let tokenMs = 0;
+  let outcome = 'error';
+  let statusCode = 500;
+
   try {
     const { email, password } = req.body;
     const identifier = String(email || '').trim();
-    const user = await User.findOne({
-      $or: [
-        { email: identifier.toLowerCase() },
-        { username: { $regex: `^${identifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } },
-      ],
-    });
-    if (!user) return res.status(400).json({ message: "Kullanıcı bulunamadı." });
+    const normalizedIdentifier = normalizeIdentifier(identifier);
+    let user = null;
+    const lookupStartedAt = performance.now();
+
+    if (identifier.includes('@')) {
+      user = await User.findOne({ emailLower: normalizedIdentifier });
+      if (!user) {
+        user = await User.findOne({ email: identifier });
+      }
+    } else {
+      user = await User.findOne({ usernameLower: normalizedIdentifier });
+      if (!user) {
+        user = await User.findOne({ username: identifier });
+      }
+    }
+
+    lookupMs = performance.now() - lookupStartedAt;
+
+    if (!user) {
+      outcome = 'user_not_found';
+      statusCode = 400;
+      return res.status(400).json({ message: "Kullanıcı bulunamadı." });
+    }
+
+    await syncUserLoginIdentifiers(user);
 
     // Hesap durumu kontrolü
     if (user.status === 'pending') {
+      outcome = 'pending';
+      statusCode = 403;
       return res.status(403).json({ message: 'Hesabınız admin onayı bekliyor.' });
     }
     if (user.status === 'disabled') {
+      outcome = 'disabled';
+      statusCode = 403;
       return res.status(403).json({ message: 'Hesabınız devre dışı bırakılmış.' });
     }
 
+    const passwordStartedAt = performance.now();
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Şifre hatalı." });
+    passwordMs = performance.now() - passwordStartedAt;
+    if (!isMatch) {
+      outcome = 'invalid_password';
+      statusCode = 400;
+      return res.status(400).json({ message: "Şifre hatalı." });
+    }
 
     // Access & Refresh token üret
+    const tokenStartedAt = performance.now();
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
@@ -138,6 +211,9 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     const hashed = hashToken(refreshToken);
     const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000);
     await RefreshToken.create({ user: user._id, hashedToken: hashed, expiresAt });
+    tokenMs = performance.now() - tokenStartedAt;
+    outcome = 'success';
+    statusCode = 200;
 
     res.json({ 
       token: accessToken, 
@@ -147,6 +223,10 @@ router.post('/login', validate(loginSchema), async (req, res) => {
   } catch (error) {
     console.error("Login Hatası:", error);
     res.status(500).json({ message: "Giriş hatası: " + error.message });
+  } finally {
+    const identifier = String(req.body?.email || '').trim();
+    const totalMs = performance.now() - startedAt;
+    logAuthTiming({ identifier, totalMs, lookupMs, passwordMs, tokenMs, outcome, statusCode });
   }
 });
 

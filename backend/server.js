@@ -11,6 +11,8 @@ const compression = require('compression');
 
 dotenv.config();
 
+const User = require('./models/User');
+
 const app = express();
 
 // Middleware
@@ -71,6 +73,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --- VERİTABANI BAĞLANTISI ---
 let dbConnected = false;
+let loginIdentifiersPrepared = false;
 const defaultDbName = 'Edumath';
 const configuredDbName = (process.env.MONGODB_DB || process.env.MONGO_DB || defaultDbName).trim();
 // Allow building Atlas URI from components to avoid URL-encoding issues
@@ -97,6 +100,18 @@ const connectDB = async () => {
             serverSelectionTimeoutMS: 5000,
         });
         dbConnected = true;
+
+        if (!loginIdentifiersPrepared) {
+            try {
+                const syncResult = await User.syncLoginIdentifiers();
+                await User.createIndexes();
+                loginIdentifiersPrepared = true;
+                console.log(`✅ Login alanlari hazir: ${syncResult.modifiedCount} kayit guncellendi.`);
+            } catch (indexError) {
+                console.error(`⚠️ Login alanlari hazirlanamadi: ${indexError.message}`);
+            }
+        }
+
         const hostInfo = conn?.connection?.host || 'unknown';
         const activeDbName = conn?.connection?.name || configuredDbName;
         console.log(`✅ MongoDB Bağlandı: ${hostInfo} / DB: ${activeDbName}`);
@@ -113,6 +128,7 @@ connectDB();
 
 mongoose.connection.on('disconnected', () => {
     dbConnected = false;
+    loginIdentifiersPrepared = false;
     console.warn('⚠️ MongoDB bağlantısı koptu, yeniden bağlanılıyor...');
     setTimeout(connectDB, 5000);
 });
