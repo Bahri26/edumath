@@ -248,7 +248,11 @@ export default function QuestionBank() {
     (async () => {
       if (profile.branch && profile.branchApproval === 'approved') {
         try {
-          const res = await apiClient.get('/teacher/subject/topics');
+          const params = {};
+          if (filters.classLevel && filters.classLevel !== 'Tümü') {
+            params.classLevel = filters.classLevel;
+          }
+          const res = await apiClient.get('/teacher/subject/topics', { params });
           const list = res.data?.topics || [];
           setTopics(list);
           // Eğer mevcut topic filtresi listede yoksa sıfırla
@@ -259,7 +263,7 @@ export default function QuestionBank() {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile.branch, profile.branchApproval]);
+  }, [profile.branch, profile.branchApproval, filters.classLevel]);
 
   const handleDelete = async (id) => {
     if (window.confirm("Bu soruyu silmek istediğinizden emin misiniz?")) {

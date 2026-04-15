@@ -1,21 +1,59 @@
 const Question = require('../models/Question');
 
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const addAndClause = (query, clause) => {
+  if (!clause) {
+    return;
+  }
+
+  if (!query.$and) {
+    query.$and = [];
+  }
+
+  query.$and.push(clause);
+};
+
 const applyClassLevelFilter = (query, classLevel) => {
   if (!classLevel || classLevel === 'Tümü') {
     return;
   }
 
-  query.$or = [
+  addAndClause(query, {
+    $or: [
     { classLevel },
     { class_level: classLevel },
     { grade_level: classLevel },
-  ];
+    ],
+  });
 };
 
 const mapQuestionRecord = (question) => ({
   ...question,
   classLevel: question.classLevel || question.class_level || question.grade_level || '',
 });
+
+const buildQuestionSearch = (query, search, mode = 'text') => {
+  const term = String(search || '').trim();
+  if (!term) {
+    return null;
+  }
+
+  if (mode === 'text' && term.length >= 3) {
+    addAndClause(query, { $text: { $search: term } });
+    return { mode: 'text', term };
+  }
+
+  const regex = { $regex: escapeRegex(term), $options: 'i' };
+  addAndClause(query, {
+    $or: [
+      { text: regex },
+      { topic: regex },
+      { learningOutcome: regex },
+    ],
+  });
+  return { mode: 'regex', term };
+};
 
 function normalizeStoredImagePath(value) {
   if (!value || typeof value !== 'string') {
@@ -40,14 +78,10 @@ exports.getQuestions = async (req, res, next) => {
 
     const query = {};
     
-    // Metin Arama
-    if (search) {
-      query.text = { $regex: search, $options: 'i' };
-    }
-    
     if (subject && subject !== 'Tümü') query.subject = subject;
     applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
+    const searchMeta = buildQuestionSearch(query, search, 'text');
 
     // Eğer istek öğretmenden geliyorsa ve branşı onaylıysa, varsayılan olarak kendi branşındaki (subject) soruları göster
     // (subject filtrelenmemişse veya 'Tümü' ise)
@@ -64,7 +98,31 @@ exports.getQuestions = async (req, res, next) => {
       }
     } catch {}
 
-    const total = await Question.countDocuments(query);
+    let total = await Question.countDocuments(query);
+    let effectiveQuery = query;
+
+    if (searchMeta?.mode === 'text' && total === 0) {
+      effectiveQuery = {};
+      if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
+      applyClassLevelFilter(effectiveQuery, classLevel);
+      if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
+      buildQuestionSearch(effectiveQuery, search, 'regex');
+
+      try {
+        if (req.user && req.user.role === 'teacher') {
+          const User = require('../models/User');
+          const u = await User.findById(req.user.id).select('branch branchApproval');
+          if (u && u.branch && u.branchApproval === 'approved') {
+            const noSubjectFilter = !('subject' in req.query) || req.query.subject === 'Tümü' || !effectiveQuery.subject;
+            if (noSubjectFilter) {
+              effectiveQuery.subject = { $regex: `^${u.branch}$`, $options: 'i' };
+            }
+          }
+        }
+      } catch {}
+
+      total = await Question.countDocuments(effectiveQuery);
+    }
 
     // Sadece özet alanlar + correctAnswer ve solution
     const projection = {
@@ -84,15 +142,22 @@ exports.getQuestions = async (req, res, next) => {
       correctAnswer: 1,
       solution: 1
     };
-    let questions = await Question.find(query, projection)
-      .sort({ createdAt: -1 })
+    const sort = searchMeta?.mode === 'text' && effectiveQuery.$and?.some((clause) => clause.$text)
+      ? { score: { $meta: 'textScore' }, createdAt: -1 }
+      : { createdAt: -1 };
+
+    let questions = await Question.find(effectiveQuery, {
+      ...projection,
+      ...(sort.score ? { score: { $meta: 'textScore' } } : {}),
+    })
+      .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
 
     // Hiç sonuç yoksa, subject için daha gevşek bir eşleşme dene
-    if (total === 0 && query.subject?.$regex) {
-      const looseQuery = { ...query, subject: { $regex: req.user?.role === 'teacher' ? req.userBranch || '' : '', $options: 'i' } };
+    if (total === 0 && effectiveQuery.subject?.$regex && !searchMeta) {
+      const looseQuery = { ...effectiveQuery, subject: { $regex: req.user?.role === 'teacher' ? req.userBranch || '' : '', $options: 'i' } };
       const looseTotal = await Question.countDocuments(looseQuery);
       if (looseTotal > 0) {
         questions = await Question.find(looseQuery, projection)
@@ -126,20 +191,29 @@ exports.getTeacherQuestions = async (req, res, next) => {
 
     const query = {};
     
-    // Metin Arama
-    if (search) {
-      query.text = { $regex: search, $options: 'i' };
-    }
-    
     if (subject && subject !== 'Tümü') query.subject = subject;
     applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
+    const searchMeta = buildQuestionSearch(query, search, 'text');
 
-    const total = await Question.countDocuments(query);
+    let total = await Question.countDocuments(query);
+    let effectiveQuery = query;
+
+    if (searchMeta?.mode === 'text' && total === 0) {
+      effectiveQuery = {};
+      if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
+      applyClassLevelFilter(effectiveQuery, classLevel);
+      if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
+      buildQuestionSearch(effectiveQuery, search, 'regex');
+      total = await Question.countDocuments(effectiveQuery);
+    }
 
     // Tüm alanları döndür
-    const questions = await Question.find(query)
-      .sort({ createdAt: -1 })
+    const sort = searchMeta?.mode === 'text' && effectiveQuery.$and?.some((clause) => clause.$text)
+      ? { score: { $meta: 'textScore' }, createdAt: -1 }
+      : { createdAt: -1 };
+    const questions = await Question.find(effectiveQuery, sort.score ? { score: { $meta: 'textScore' } } : undefined)
+      .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit)
       .populate('createdBy', 'name')

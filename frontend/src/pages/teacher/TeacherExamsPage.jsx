@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { 
-  Plus, BookOpen, FileText, Trash2, Eye, 
+  Plus, BookOpen, FileText, Trash2, Eye, Search,
   Clock, Award, Layers, Save, Sparkles, 
-  ChevronRight, Calendar, ArrowLeft 
+  ChevronLeft, ChevronRight, Calendar, ArrowLeft 
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -71,7 +71,14 @@ export default function TeacherExamsPage() {
   const [view, setView] = useState('list'); // 'list' veya 'studio'
   const [exams, setExams] = useState([]);
   const [allQuestions, setAllQuestions] = useState([]);
+  const [examTotal, setExamTotal] = useState(0);
+  const [examPage, setExamPage] = useState(1);
+  const [examTotalPages, setExamTotalPages] = useState(1);
+  const [examSearch, setExamSearch] = useState('');
+  const [debouncedExamSearch, setDebouncedExamSearch] = useState('');
+  const [examClassFilter, setExamClassFilter] = useState('Tümü');
   const [loading, setLoading] = useState(true);
+  const [poolLoading, setPoolLoading] = useState(false);
   const [previewId, setPreviewId] = useState(null);
 
   // Stüdyo State'leri
@@ -82,6 +89,11 @@ export default function TeacherExamsPage() {
   const [hardQ, setHardQ] = useState([]);
   const [poolSubject, setPoolSubject] = useState('Tümü');
   const [poolSearch, setPoolSearch] = useState('');
+  const [debouncedPoolSearch, setDebouncedPoolSearch] = useState('');
+  const [poolPage, setPoolPage] = useState(1);
+  const [poolTotalPages, setPoolTotalPages] = useState(1);
+  const [poolTotal, setPoolTotal] = useState(0);
+  const [poolDifficultyCounts, setPoolDifficultyCounts] = useState({ Kolay: 0, Orta: 0, Zor: 0 });
   const SUBJECTS = ['Tümü', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
   // Zamanlama & Süre
   const [schedStart, setSchedStart] = useState('');
@@ -112,6 +124,16 @@ export default function TeacherExamsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedPoolSearch(poolSearch.trim()), 250);
+    return () => clearTimeout(timer);
+  }, [poolSearch]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedExamSearch(examSearch.trim()), 250);
+    return () => clearTimeout(timer);
+  }, [examSearch]);
+
   // Auto-refresh profile while pending approval
   useEffect(() => {
     let timer;
@@ -141,14 +163,23 @@ export default function TeacherExamsPage() {
     }
 
     try {
+      setLoading(true);
+      const params = {
+        page: examPage,
+        limit: 9,
+        ...(debouncedExamSearch ? { search: debouncedExamSearch } : {}),
+        ...(examClassFilter !== 'Tümü' ? { classLevel: examClassFilter } : {}),
+      };
       let res;
       if (profile.branch && profile.branchApproval === 'approved') {
-        res = await apiClient.get('/teacher/subject/exams');
+        res = await apiClient.get('/teacher/subject/exams', { params });
       } else {
-        res = await apiClient.get('/teacher/my-exams'); // only own exams
+        res = await apiClient.get('/teacher/my-exams', { params });
       }
       const data = Array.isArray(res.data) ? res.data : (res.data?.data || []);
       setExams(data);
+      setExamTotal(res.data?.total || data.length || 0);
+      setExamTotalPages(res.data?.pages || 1);
     } catch (err) { showToast('Sınavlar yüklenemedi', 'error'); }
     finally { setLoading(false); }
   };
@@ -159,7 +190,13 @@ export default function TeacherExamsPage() {
     }
 
     try {
-      const params = { limit: 500, classLevel };
+      setPoolLoading(true);
+      const params = {
+        page: poolPage,
+        limit: 24,
+        classLevel,
+        ...(debouncedPoolSearch ? { search: debouncedPoolSearch } : {}),
+      };
       let res;
       if (profile.branch && profile.branchApproval === 'approved') {
         res = await apiClient.get('/teacher/subject/questions', { params });
@@ -172,7 +209,11 @@ export default function TeacherExamsPage() {
         });
       }
       setAllQuestions(res.data.data || []);
+      setPoolTotal(res.data.total || 0);
+      setPoolTotalPages(res.data.totalPages || 1);
+      setPoolDifficultyCounts(res.data.difficultyCounts || { Kolay: 0, Orta: 0, Zor: 0 });
     } catch (err) { console.error('Sorular çekilemedi'); }
+    finally { setPoolLoading(false); }
   };
 
   useEffect(() => {
@@ -181,7 +222,7 @@ export default function TeacherExamsPage() {
     }
 
     fetchExams();
-  }, [profileLoaded, profile.branch, profile.branchApproval]);
+  }, [profileLoaded, profile.branch, profile.branchApproval, examPage, debouncedExamSearch, examClassFilter]);
 
   useEffect(() => {
     if (!profileLoaded) {
@@ -197,21 +238,24 @@ export default function TeacherExamsPage() {
 
     lastFetchedClassLevelRef.current = classLevel;
     fetchQuestions();
-  }, [profileLoaded, profile.branch, profile.branchApproval, classLevel, poolSubject]);
+  }, [profileLoaded, profile.branch, profile.branchApproval, classLevel, poolSubject, debouncedPoolSearch, poolPage]);
+
+  useEffect(() => {
+    setPoolPage(1);
+  }, [classLevel, poolSubject, debouncedPoolSearch]);
+
+  useEffect(() => {
+    setExamPage(1);
+  }, [debouncedExamSearch, examClassFilter]);
 
   // Filtrelenmiş havuz soruları
-  const poolQuestions = useMemo(() => (
-    allQuestions
-      .filter(q => q.classLevel === classLevel)
-      .filter(q => poolSubject === 'Tümü' || q.subject === poolSubject)
-      .filter(q => poolSearch ? (q.text || '').toLowerCase().includes(poolSearch.toLowerCase()) : true)
-  ), [allQuestions, classLevel, poolSubject, poolSearch]);
+  const poolQuestions = useMemo(() => allQuestions, [allQuestions]);
 
   const availableCounts = useMemo(() => ({
-    Kolay: poolQuestions.filter(q => q.difficulty === 'Kolay').length,
-    Orta: poolQuestions.filter(q => q.difficulty === 'Orta').length,
-    Zor: poolQuestions.filter(q => q.difficulty === 'Zor').length,
-  }), [poolQuestions]);
+    Kolay: poolDifficultyCounts.Kolay || 0,
+    Orta: poolDifficultyCounts.Orta || 0,
+    Zor: poolDifficultyCounts.Zor || 0,
+  }), [poolDifficultyCounts]);
 
   const existsInAny = (id) => ([...easyQ, ...mediumQ, ...hardQ].some(q => q._id === id));
   const tryAdd = (zoneSetter, zone, q, expectedDiff) => {
@@ -261,13 +305,16 @@ export default function TeacherExamsPage() {
           <div className="lg:col-span-1 space-y-4">
             <h2 className="text-xl font-black px-2">Soru Havuzu</h2>
             <div className="flex items-center gap-2 px-2">
-              <input
-                type="text"
-                value={poolSearch}
-                onChange={(e) => setPoolSearch(e.target.value)}
-                placeholder="Havuzda ara..."
-                className="flex-1 p-2 rounded-lg border dark:bg-slate-800 dark:text-white"
-              />
+              <div className="relative flex-1">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={poolSearch}
+                  onChange={(e) => setPoolSearch(e.target.value)}
+                  placeholder="Havuzda ara..."
+                  className="w-full pl-9 p-2 rounded-lg border dark:bg-slate-800 dark:text-white"
+                />
+              </div>
               <select
                 value={profile.branchApproval === 'approved' ? (profile.branch || 'Tümü') : poolSubject}
                 onChange={(e) => setPoolSubject(e.target.value)}
@@ -303,10 +350,23 @@ export default function TeacherExamsPage() {
                 </div>
               </div>
             </div>
+            <div className="px-2 flex items-center justify-between text-xs text-slate-500">
+              <span>{poolTotal} soru</span>
+              <span>Sayfa {poolPage}/{poolTotalPages}</span>
+            </div>
             <div className="space-y-3 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
+              {poolLoading && <div className="text-xs text-slate-500 px-2">Havuz yükleniyor...</div>}
               {poolQuestions.map(q => (
                 <DraggableQuestionCard key={q._id} question={q} onDragStart={(e) => e.dataTransfer.setData('question', JSON.stringify(q))} />
               ))}
+            </div>
+            <div className="px-2 flex items-center justify-between gap-2">
+              <Button variant="outline" size="sm" disabled={poolPage <= 1 || poolLoading} onClick={() => setPoolPage((prev) => Math.max(1, prev - 1))}>
+                <ChevronLeft size={14} /> Önceki
+              </Button>
+              <Button variant="outline" size="sm" disabled={poolPage >= poolTotalPages || poolLoading} onClick={() => setPoolPage((prev) => Math.min(poolTotalPages, prev + 1))}>
+                Sonraki <ChevronRight size={14} />
+              </Button>
             </div>
           </div>
           <div className="lg:col-span-3 grid md:grid-cols-3 gap-6">
@@ -331,7 +391,7 @@ export default function TeacherExamsPage() {
           <h1 className="text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
             <FileText size={32} className="text-indigo-600" /> Sınav Yönetimi
           </h1>
-          <p className="text-slate-500 font-medium mt-1">Toplam {exams.length} sınavın bulunuyor.</p>
+          <p className="text-slate-500 font-medium mt-1">Toplam {examTotal} sınavın bulunuyor.</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-2 mr-4 text-xs">
@@ -369,6 +429,26 @@ export default function TeacherExamsPage() {
           <Button variant="primary" size="md" onClick={() => setView('studio')}>
             <Plus size={20} /> Yeni Sınav Oluştur
           </Button>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-[1.75rem] shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+        <div className="relative w-full md:max-w-md">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={examSearch}
+            onChange={(e) => setExamSearch(e.target.value)}
+            placeholder="Sınav başlığında ara..."
+            className="w-full pl-9 pr-3 py-2 rounded-xl border dark:bg-slate-900 dark:text-white"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <select value={examClassFilter} onChange={(e) => setExamClassFilter(e.target.value)} className="p-2 rounded-xl border text-sm dark:bg-slate-900 dark:text-white">
+            <option value="Tümü">Tüm Sınıflar</option>
+            {CLASS_LEVELS.map((level) => <option key={level} value={level}>{level}</option>)}
+          </select>
+          <span className="text-xs text-slate-500">Sayfa {examPage}/{examTotalPages}</span>
         </div>
       </div>
 
@@ -443,6 +523,14 @@ export default function TeacherExamsPage() {
           ))}
         </div>
       )}
+      <div className="flex items-center justify-between gap-2">
+        <Button variant="outline" size="sm" disabled={examPage <= 1 || loading} onClick={() => setExamPage((prev) => Math.max(1, prev - 1))}>
+          <ChevronLeft size={14} /> Önceki
+        </Button>
+        <Button variant="outline" size="sm" disabled={examPage >= examTotalPages || loading} onClick={() => setExamPage((prev) => Math.min(examTotalPages, prev + 1))}>
+          Sonraki <ChevronRight size={14} />
+        </Button>
+      </div>
       {previewId && (
         <ExamPreviewModal examId={previewId} onClose={() => setPreviewId(null)} />
       )}
