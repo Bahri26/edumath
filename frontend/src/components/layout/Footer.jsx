@@ -1,10 +1,9 @@
 import React from 'react';
-import { 
-  GraduationCap, Phone, MapPin, Mail, ChevronRight, 
-  Facebook, Twitter, Instagram, Linkedin 
-} from 'lucide-react';
+import { GraduationCap, Phone, MapPin, Mail, ChevronRight } from 'lucide-react';
 
 const Footer = ({ t }) => {
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer className="bg-gray-900 dark:bg-gray-950 text-gray-300 pt-16 pb-8 border-t border-gray-800 dark:border-gray-900 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,19 +24,20 @@ const Footer = ({ t }) => {
           <div>
             <h3 className="text-white font-semibold text-lg mb-4">{t.footer.quickLinks}</h3>
             <ul className="space-y-3 text-sm">
-              <li><a href="#" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.home}</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.about}</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.courses}</a></li>
+              <li><a href="#home" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.home}</a></li>
+              <li><a href="#about" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.about}</a></li>
+              <li><a href="#courses" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.courses}</a></li>
               <li><a href="#curriculum" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.curriculum}</a></li>
+              <li><a href="#contact" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.contact}</a></li>
             </ul>
           </div>
 
           <div>
             <h3 className="text-white font-semibold text-lg mb-4">{t.footer.popularCourses}</h3>
             <ul className="space-y-3 text-sm">
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">LGS Matematik</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">TYT-AYT Kampı</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Geometri 101</a></li>
+              <li><a href="#curriculum" className="hover:text-indigo-400 transition-colors">{t.footer.schoolTrack}</a></li>
+              <li><a href="#courses" className="hover:text-indigo-400 transition-colors">{t.footer.researchTrack}</a></li>
+              <li><a href="#contact" className="hover:text-indigo-400 transition-colors">{t.footer.demoTrack}</a></li>
             </ul>
           </div>
 
@@ -61,7 +61,7 @@ const Footer = ({ t }) => {
         </div>
 
         <div className="border-t border-gray-800 dark:border-gray-900 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-          <p>&copy; 2024 Edumath. {t.footer.rights}</p>
+          <p>&copy; {currentYear} Edumath. {t.footer.rights}</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#" className="hover:text-white transition-colors">{t.footer.privacy}</a>
             <a href="#" className="hover:text-white transition-colors">{t.footer.terms}</a>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Bileşenleri İçe Aktar
@@ -13,12 +13,14 @@ import Curriculum from '../sections/Curriculum'; // Kademeli Örüntü Müfredat
 import Courses from '../sections/Courses';       // İnteraktif Örüntü Modülleri
 import Contact from '../sections/Contact';
 import Chatbox from '../components/ui/Chatbox';
+import { AuthContext } from '../context/AuthContext';
 
 // Veriyi İçe Aktar
 import { translations } from '../data/translations';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [lang, setLang] = useState('tr');
   const [theme, setTheme] = useState('light');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -30,6 +32,68 @@ const LandingPage = () => {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const upsertMeta = (selector, attribute, value) => {
+    let element = document.head.querySelector(selector);
+
+    if (!element) {
+      element = document.createElement('meta');
+      const [attrName, attrValue] = selector
+        .replace('meta[', '')
+        .replace(']', '')
+        .split('=');
+
+      element.setAttribute(attrName, attrValue.replace(/"/g, ''));
+      document.head.appendChild(element);
+    }
+
+    element.setAttribute(attribute, value);
+  };
+
+  const updateCanonical = (href) => {
+    let link = document.head.querySelector('link[rel="canonical"]');
+
+    if (!link) {
+      link = document.createElement('link');
+      link.setAttribute('rel', 'canonical');
+      document.head.appendChild(link);
+    }
+
+    link.setAttribute('href', href);
+  };
+
+  const routeByRole = (targetRole) => {
+    if (targetRole === 'student') {
+      navigate('/student/home');
+      return;
+    }
+
+    if (targetRole === 'teacher') {
+      navigate('/teacher/overview');
+    }
+  };
+
+  const openRoleEntry = (targetRole) => {
+    if (user?.role === targetRole || (targetRole === 'teacher' && user?.role === 'admin')) {
+      routeByRole(targetRole);
+      return;
+    }
+
+    if (targetRole === 'research') {
+      scrollToSection('courses');
+      return;
+    }
+
+    setIsLoginModalOpen(true);
+  };
+
   // Tema değişikliğini body'ye uygula (Karanlık mod desteği için)
   useEffect(() => {
     if (theme === 'dark') {
@@ -38,6 +102,37 @@ const LandingPage = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [theme]);
+
+  useEffect(() => {
+    const metadata = lang === 'tr'
+      ? {
+          title: 'Edumath | Matematik Öğrenme ve Akademik Araştırma Platformu',
+          description: 'Edumath, okul matematiği programları ile yüksek lisans ve doktora düzeyi akademik araştırma modüllerini aynı platformda sunan yapay zeka destekli öğrenme ortamıdır.',
+          ogTitle: 'Edumath | Matematik Öğrenme ve Akademik Araştırma Platformu',
+          ogDescription: 'Öğrenci, öğretmen ve akademik araştırma akışlarını ayrıştıran yapay zeka destekli matematik platformu.',
+          locale: 'tr_TR',
+          htmlLang: 'tr',
+        }
+      : {
+          title: 'Edumath | Math Learning and Academic Research Platform',
+          description: 'Edumath is an AI-supported environment that combines school mathematics programs with graduate and doctoral research modules.',
+          ogTitle: 'Edumath | Math Learning and Academic Research Platform',
+          ogDescription: 'A mathematics platform with dedicated journeys for students, teachers, and academic researchers.',
+          locale: 'en_US',
+          htmlLang: 'en',
+        };
+
+    document.title = metadata.title;
+    document.documentElement.lang = metadata.htmlLang;
+
+    upsertMeta('meta[name="description"]', 'content', metadata.description);
+    upsertMeta('meta[property="og:title"]', 'content', metadata.ogTitle);
+    upsertMeta('meta[property="og:description"]', 'content', metadata.ogDescription);
+    upsertMeta('meta[property="og:locale"]', 'content', metadata.locale);
+    upsertMeta('meta[name="twitter:title"]', 'content', metadata.ogTitle);
+    upsertMeta('meta[name="twitter:description"]', 'content', metadata.ogDescription);
+    updateCanonical(window.location.origin + '/');
+  }, [lang]);
 
   // Login Başarılı Olduğunda Yönlendirme
   const handleLoginSuccess = (userRole) => {
@@ -78,7 +173,15 @@ const LandingPage = () => {
       <main className="flex-grow">
         
         {/* Hero: "Örüntüleri Keşfet" temalı giriş alanı */}
-        <Hero t={t} theme={theme} />
+        <Hero
+          t={t}
+          theme={theme}
+          onPrimaryAction={() => setIsLoginModalOpen(true)}
+          onSecondaryAction={() => scrollToSection('courses')}
+          onStudentTrackClick={() => openRoleEntry('student')}
+          onTeacherTrackClick={() => openRoleEntry('teacher')}
+          onResearchTrackClick={() => scrollToSection('courses')}
+        />
 
         {/* About: Matematiksel düşünme ve örüntülerin önemi */}
         <About t={t} />

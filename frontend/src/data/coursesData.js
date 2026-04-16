@@ -15,7 +15,7 @@ export const getCourses = (lang, t) => [
     id: 2,
     title: lang === 'tr' ? 'Adım Adım Cebirsel Örüntüler' : 'Algebraic Patterns Step-by-Step',
     level: lang === 'tr' ? 'Ortaokul (5-8. Sınıf)' : 'Middle School (Grades 5-8)',
-    image: 'https://placehold.co/600x400?text=Course+Image',
+    image: logo,
     lessons: `18 ${t.courses.lessons}`,
     students: `1.8k ${t.courses.students}`,
     rating: '4.8',

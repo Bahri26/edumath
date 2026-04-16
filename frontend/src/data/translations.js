@@ -13,9 +13,22 @@ export const translations = {
       titleStart: 'Edumath ile',
       titleHighlight: 'Matematiği',
       titleEnd: 'Keşfet',
-      desc: 'Modern öğrenme teknikleri ve yapay zeka destekli altyapımız ile matematik artık çok daha anlaşılır ve eğlenceli.',
+      desc: 'Yapay zeka destekli öğrenme altyapısı ile okul matematiğinden ileri akademik çalışmaya uzanan net ve ölçülebilir bir gelişim alanı sunuyoruz.',
+      scope: 'İlkokuldan liseye uzanan öğrenme yolu ile yüksek lisans ve doktora düzeyi araştırma akışlarını aynı platformda ayrışmış şekilde sunar.',
       btnStart: 'Hemen Başla',
-      btnMore: 'Daha Fazla Bilgi'
+      btnMore: 'Programları İncele',
+      audienceStudentBadge: 'Öğrenci Girişi',
+      audienceStudentTitle: 'Öğrenciler için seviyeye göre kişiselleştirilmiş öğrenme yolu',
+      audienceStudentDesc: 'Sınıf bazlı ilerleme, konu odaklı çalışma ve yapay zeka destekli yönlendirme ile öğrenciyi net bir rutinde tutar.',
+      audienceStudentCta: 'Öğrenci akışını aç',
+      audienceTeacherBadge: 'Öğretmen Girişi',
+      audienceTeacherTitle: 'Öğretmenler için soru, sınav ve takip merkezli çalışma paneli',
+      audienceTeacherDesc: 'Soru bankası, sınav oluşturma, kazanım takibi ve öğrenci ilerleme ekranları ile öğretim sürecini tek yerden yönetin.',
+      audienceTeacherCta: 'Öğretmen paneline geç',
+      audienceResearchBadge: 'Akademik Katman',
+      audienceResearchTitle: 'Seminer, makale ve ispat odaklı araştırma alanı',
+      audienceResearchDesc: 'Yüksek lisans ve doktora öğrencileri için okuma grupları, proof workshop, tez üretkenliği ve araştırma planlama modülleri.',
+      audienceResearchCta: 'Araştırma modüllerini aç'
     },
     about: {
       title: 'HAKKIMIZDA',
@@ -43,13 +56,23 @@ export const translations = {
       gradeLabel: 'Sınıf'
     },
     courses: {
-      title: 'Popüler',
-      titleHighlight: 'Kurslarımız',
-      desc: 'Hedefine uygun eğitimi seç, başarını şansa bırakma.',
+      title: 'Programlar',
+      titleHighlight: 've Araştırma Alanları',
+      desc: 'Okul matematiği için yapılandırılmış ders yollarını ve ileri akademik matematik için araştırma modüllerini ayrı akışlarda keşfedin.',
       lessons: 'Ders',
       students: 'Öğrenci',
       btnReview: 'İncele',
-      btnAll: 'Tüm Kursları Görüntüle'
+      btnAll: 'Tüm Kursları Görüntüle',
+      schoolTrackBadge: 'Okul Akışı',
+      schoolTrackTitle: 'İlkokuldan liseye kadar hedefe göre ilerleyen ders programları',
+      schoolTrackDesc: 'Konu sıralaması, sınıf seviyesine göre filtreleme ve öğretmen kullanımına uygun içerik havuzu ile öğrenciyi net bir rotada tutar.',
+      schoolTrackHeading: 'Sınıf seviyesine göre ders programları',
+      schoolTrackLink: 'Müfredatı aç',
+      researchTrackBadge: 'Akademik Katman',
+      researchTrackTitle: 'Makale, seminer ve ispat üretimine odaklanan ileri matematik alanı',
+      researchTrackDesc: 'Ders kataloğundan ayrı çalışan araştırma katmanı; paper review, açık problem takibi ve tez üretkenliği gibi ihtiyaçlara odaklanır.',
+      researchTrackHeading: 'Araştırma modülleri ve akademik çalışma alanları',
+      researchTrackLead: 'Bu alan, lisansüstü ve doktora düzeyi kullanıcıların ders tüketmekten çok araştırma üretmek için ihtiyaç duyduğu yapılandırılmış araçları öne çıkarır.'
     },
     contact: {
       title: 'Bizimle',
@@ -79,12 +102,15 @@ export const translations = {
     footer: {
       desc: 'Eğitimde dijital dönüşümün öncüsü. Modern araçlarla geleceği şekillendiriyoruz.',
       quickLinks: 'Hızlı Erişim',
-      popularCourses: 'Popüler Kurslar',
+      popularCourses: 'Öne Çıkan Akışlar',
       contact: 'İletişim',
       rights: 'Tüm hakları saklıdır.',
       privacy: 'Gizlilik Politikası',
       terms: 'Kullanım Şartları',
-      cookies: 'Çerez Politikası'
+      cookies: 'Çerez Politikası',
+      schoolTrack: 'Okul Matematiği Programları',
+      researchTrack: 'Araştırma ve Doktora Modülleri',
+      demoTrack: 'Demo ve Bilgi Talebi'
     }
   },
   en: {
@@ -101,9 +127,22 @@ export const translations = {
       titleStart: 'Discover Math with',
       titleHighlight: 'Edumath',
       titleEnd: '',
-      desc: 'Mathematics is now much more understandable and fun with our modern learning techniques and AI-supported infrastructure.',
+      desc: 'We provide a clear, measurable development path from school mathematics to advanced academic study with AI-supported learning infrastructure.',
+      scope: 'The platform separates school-level learning journeys from graduate and doctoral research workflows while keeping them under one product vision.',
       btnStart: 'Get Started',
-      btnMore: 'Learn More'
+      btnMore: 'Explore Programs',
+      audienceStudentBadge: 'Student Entry',
+      audienceStudentTitle: 'Personalized learning journey for students by level',
+      audienceStudentDesc: 'Keeps students in a clear routine with grade-based progression, topic-focused study, and AI-supported guidance.',
+      audienceStudentCta: 'Open student flow',
+      audienceTeacherBadge: 'Teacher Entry',
+      audienceTeacherTitle: 'A working panel for teachers built around questions, exams, and tracking',
+      audienceTeacherDesc: 'Manage question banks, exam creation, outcome tracking, and student progress from one place.',
+      audienceTeacherCta: 'Go to teacher panel',
+      audienceResearchBadge: 'Academic Layer',
+      audienceResearchTitle: 'A research space centered on seminars, papers, and proof work',
+      audienceResearchDesc: 'Reading groups, proof workshops, thesis productivity, and planning modules for graduate and doctoral-level learners.',
+      audienceResearchCta: 'Open research modules'
     },
     about: {
       title: 'ABOUT US',
@@ -131,13 +170,23 @@ export const translations = {
       gradeLabel: 'Grade'
     },
     courses: {
-      title: 'Popular',
-      titleHighlight: 'Courses',
-      desc: 'Choose the education that suits your goal, do not leave your success to chance.',
+      title: 'Programs',
+      titleHighlight: 'and Research Areas',
+      desc: 'Explore structured lesson tracks for school mathematics and separate research modules for advanced academic mathematics.',
       lessons: 'Lessons',
       students: 'Students',
       btnReview: 'Review',
-      btnAll: 'View All Courses'
+      btnAll: 'View All Courses',
+      schoolTrackBadge: 'School Track',
+      schoolTrackTitle: 'Progressive lesson programs from primary school to high school',
+      schoolTrackDesc: 'Keeps students on a clear path with level-based filtering, sequenced topics, and a teacher-friendly content structure.',
+      schoolTrackHeading: 'Lesson programs by grade band',
+      schoolTrackLink: 'Open curriculum',
+      researchTrackBadge: 'Academic Layer',
+      researchTrackTitle: 'Advanced mathematics space focused on papers, seminars, and proof production',
+      researchTrackDesc: 'A research layer that runs separately from the lesson catalog and focuses on paper review, open problems, and thesis productivity.',
+      researchTrackHeading: 'Research modules and academic workspaces',
+      researchTrackLead: 'This area prioritizes structured tools for graduate and doctoral users who need to produce research, not only consume lessons.'
     },
     contact: {
       title: 'Get in',
@@ -167,12 +216,15 @@ export const translations = {
     footer: {
       desc: 'Pioneer of digital transformation in education. Shaping the future with modern tools.',
       quickLinks: 'Quick Links',
-      popularCourses: 'Popular Courses',
+      popularCourses: 'Featured Tracks',
       contact: 'Contact',
       rights: 'All rights reserved.',
       privacy: 'Privacy Policy',
       terms: 'Terms of Use',
-      cookies: 'Cookie Policy'
+      cookies: 'Cookie Policy',
+      schoolTrack: 'School Mathematics Programs',
+      researchTrack: 'Research and Doctoral Modules',
+      demoTrack: 'Demo and Information Request'
     }
   }
 };
