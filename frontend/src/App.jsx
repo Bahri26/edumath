@@ -20,6 +20,7 @@ const ExamsPage = lazy(() => import('./pages/common/ExamsPage'));
 const SurveysPage = lazy(() => import('./pages/common/SurveysPage')); // 🚨 GÜNCEL: Ortak Anket Sayfası
 const ProfilePage = lazy(() => import('./pages/common/ProfilePage'));
 const ResetPassword = lazy(() => import('./pages/common/ResetPassword'));
+const AudienceLandingPage = lazy(() => import('./pages/AudienceLandingPage'));
 
 // --- 3. ÖĞRETMEN SAYFALARI ---
 const TeacherHome = lazy(() => import('./pages/teacher/TeacherHome'));
@@ -61,6 +62,9 @@ function App() {
               ANA SAYFA (LANDING PAGE)
              ========================================================= */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/students" element={<AudienceLandingPage audience="student" />} />
+          <Route path="/teachers" element={<AudienceLandingPage audience="teacher" />} />
+          <Route path="/research" element={<AudienceLandingPage audience="research" />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* =========================================================

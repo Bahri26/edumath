@@ -69,29 +69,18 @@ const LandingPage = () => {
     link.setAttribute('href', href);
   };
 
-  const routeByRole = (targetRole) => {
+  const openRoleEntry = (targetRole) => {
     if (targetRole === 'student') {
-      navigate('/student/home');
+      navigate('/students');
       return;
     }
 
     if (targetRole === 'teacher') {
-      navigate('/teacher/overview');
-    }
-  };
-
-  const openRoleEntry = (targetRole) => {
-    if (user?.role === targetRole || (targetRole === 'teacher' && user?.role === 'admin')) {
-      routeByRole(targetRole);
+      navigate('/teachers');
       return;
     }
 
-    if (targetRole === 'research') {
-      scrollToSection('courses');
-      return;
-    }
-
-    setIsLoginModalOpen(true);
+    navigate('/research');
   };
 
   // Tema değişikliğini body'ye uygula (Karanlık mod desteği için)
@@ -180,7 +169,7 @@ const LandingPage = () => {
           onSecondaryAction={() => scrollToSection('courses')}
           onStudentTrackClick={() => openRoleEntry('student')}
           onTeacherTrackClick={() => openRoleEntry('teacher')}
-          onResearchTrackClick={() => scrollToSection('courses')}
+          onResearchTrackClick={() => openRoleEntry('research')}
         />
 
         {/* About: Matematiksel düşünme ve örüntülerin önemi */}
