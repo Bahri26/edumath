@@ -89,6 +89,39 @@ const Courses = ({ lang, t }) => {
           </div>
         </FadeIn>
 
+        <FadeIn delay={180}>
+          <div className="grid gap-5 lg:grid-cols-2 mb-12">
+            <div className="rounded-[1.75rem] border border-amber-200 dark:border-amber-900/60 bg-amber-50/80 dark:bg-amber-950/20 p-6">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-700 dark:text-amber-300 mb-3">
+                {t.courses.schoolTrackBadge}
+              </p>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{t.courses.schoolTrackTitle}</h3>
+              <p className="text-sm sm:text-base leading-7 text-gray-700 dark:text-gray-300">{t.courses.schoolTrackDesc}</p>
+            </div>
+            <div className="rounded-[1.75rem] border border-sky-200 dark:border-sky-900/60 bg-sky-50/80 dark:bg-sky-950/20 p-6">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-sky-700 dark:text-sky-300 mb-3">
+                {t.courses.researchTrackBadge}
+              </p>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{t.courses.researchTrackTitle}</h3>
+              <p className="text-sm sm:text-base leading-7 text-gray-700 dark:text-gray-300">{t.courses.researchTrackDesc}</p>
+            </div>
+          </div>
+        </FadeIn>
+
+        <FadeIn delay={220}>
+          <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-400 mb-2">
+                {t.courses.schoolTrackBadge}
+              </p>
+              <h3 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white">{t.courses.schoolTrackHeading}</h3>
+            </div>
+            <a href="#curriculum" className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors">
+              {t.courses.schoolTrackLink}
+            </a>
+          </div>
+        </FadeIn>
+
         {/* Kurs Kartları Izgarası */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
           {courses.map((course, index) => (
@@ -160,13 +193,14 @@ const Courses = ({ lang, t }) => {
           <div className="mt-16 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 p-8 md:p-10">
             <div className="max-w-3xl">
               <p className="text-xs font-black uppercase tracking-[0.25em] text-indigo-600 dark:text-indigo-400 mb-4">
-                {lang === 'tr' ? 'Doktora ve Araştırma Katmanı' : 'Doctoral and Research Layer'}
+                {t.courses.researchTrackBadge}
               </p>
               <h3 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight">
-                {lang === 'tr'
-                  ? 'İleri akademik matematik için seminer, makale ve ispat odaklı çalışma alanları'
-                  : 'Seminar, paper, and proof-focused study spaces for advanced academic mathematics'}
+                {t.courses.researchTrackHeading}
               </h3>
+              <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-300">
+                {t.courses.researchTrackLead}
+              </p>
             </div>
             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 mt-10">
               {researchModules.map((item) => (
