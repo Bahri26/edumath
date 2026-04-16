@@ -80,6 +80,18 @@ const audienceContent = {
       guide: {
         title: 'Ogrenci Kullanim Kilavuzu',
         intro: 'Platformu ilk kez kullanan bir ogrenci icin en hizli baslangic akisi asagidaki gibidir.',
+        checklistTitle: 'Ilk Gun Kontrol Listesi',
+        checklist: [
+          'Profil ve sinif seviyesini dogrula.',
+          'Bekleyen odevleri ve sinavlari kontrol et.',
+          'Bu hafta calisilacak ilk iki konuyu sec.',
+        ],
+        screensTitle: 'En Cok Kullanilacak Ekranlar',
+        screens: [
+          'Ogrenci ana sayfasi: gunluk akis ve devam eden dersler.',
+          'Derslerim: seviye bazli icerik ve tekrar duzeni.',
+          'Takvim ve gorev alani: haftalik plan ve bekleyen calismalar.',
+        ],
         steps: [
           {
             title: 'Hesaba giris yap ve ana sayfayi ac',
@@ -136,6 +148,18 @@ const audienceContent = {
       guide: {
         title: 'Ogretmen Kullanim Kilavuzu',
         intro: 'Platformu ders yonetimi icin kullanan bir ogretmenin temel akisi asagidaki adimlarla ilerler.',
+        checklistTitle: 'Ilk Kurulum Kontrol Listesi',
+        checklist: [
+          'Brans ve sinif duzeyi filtrelerini dogru sec.',
+          'Soru bankasinda kullanilacak temel konu havuzunu belirle.',
+          'Bu hafta uygulanacak sinav veya egzersiz akislarini netlestir.',
+        ],
+        screensTitle: 'En Cok Kullanilacak Ekranlar',
+        screens: [
+          'Soru bankasi: konu, zorluk ve sinif bazli filtreleme.',
+          'Sinavlar: secilen sorularla hizli kurgu ve tekrar kullanim.',
+          'Ogrenci ilerleme ve raporlar: sonuc analizi ve sonraki planlama.',
+        ],
         steps: [
           {
             title: 'Once soru bankasini filtrele',
@@ -219,6 +243,18 @@ const audienceContent = {
       guide: {
         title: 'Student Usage Guide',
         intro: 'This is the fastest starting flow for a student using the platform for the first time.',
+        checklistTitle: 'First-Day Checklist',
+        checklist: [
+          'Confirm your profile and class level.',
+          'Review pending assignments and exams.',
+          'Pick the first two topics you will study this week.',
+        ],
+        screensTitle: 'Most Useful Screens',
+        screens: [
+          'Student home: daily flow and current lessons.',
+          'My courses: level-based content and revision structure.',
+          'Calendar and task area: weekly plan and pending work.',
+        ],
         steps: [
           {
             title: 'Sign in and open the home panel',
@@ -275,6 +311,18 @@ const audienceContent = {
       guide: {
         title: 'Teacher Usage Guide',
         intro: 'The core workflow for a teacher using the platform for lesson and assessment management is shown below.',
+        checklistTitle: 'Setup Checklist',
+        checklist: [
+          'Confirm branch and class-level filters.',
+          'Define the core topic pool you will use from the question bank.',
+          'Decide this week\'s exam or exercise flows before publishing.',
+        ],
+        screensTitle: 'Most Useful Screens',
+        screens: [
+          'Question bank: filter by topic, difficulty, and class level.',
+          'Exams: build and reuse assessment flows quickly.',
+          'Student progress and reports: analyze results and shape the next plan.',
+        ],
         steps: [
           {
             title: 'Start by filtering the question bank',
@@ -566,17 +614,47 @@ const AudienceLandingPage = ({ audience }) => {
                 </div>
 
                 <FadeIn delay={180} direction="up">
-                  <aside className="rounded-[1.5rem] border border-white/70 bg-white/90 p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900/90">
-                    <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-600 dark:text-emerald-400">
-                      {lang === 'tr' ? 'Hizli Ipuclari' : 'Quick Tips'}
-                    </p>
-                    <div className="mt-5 space-y-4">
-                      {content.guide.tips.map((tip) => (
-                        <div key={tip} className="flex items-start gap-3 rounded-2xl bg-gray-50 px-4 py-4 dark:bg-gray-800/80">
-                          <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-500" size={18} />
-                          <p className="text-sm font-medium leading-7 text-gray-700 dark:text-gray-200">{tip}</p>
-                        </div>
-                      ))}
+                  <aside className="space-y-5">
+                    <div className="rounded-[1.5rem] border border-white/70 bg-white/90 p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900/90">
+                      <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-600 dark:text-amber-400">
+                        {content.guide.checklistTitle}
+                      </p>
+                      <div className="mt-5 space-y-4">
+                        {content.guide.checklist.map((item) => (
+                          <div key={item} className="flex items-start gap-3 rounded-2xl bg-gray-50 px-4 py-4 dark:bg-gray-800/80">
+                            <CheckCircle2 className="mt-0.5 shrink-0 text-amber-500" size={18} />
+                            <p className="text-sm font-medium leading-7 text-gray-700 dark:text-gray-200">{item}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-[1.5rem] border border-white/70 bg-white/90 p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900/90">
+                      <p className="text-xs font-black uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-400">
+                        {content.guide.screensTitle}
+                      </p>
+                      <div className="mt-5 space-y-4">
+                        {content.guide.screens.map((screen) => (
+                          <div key={screen} className="flex items-start gap-3 rounded-2xl bg-gray-50 px-4 py-4 dark:bg-gray-800/80">
+                            <ArrowRight className="mt-0.5 shrink-0 text-indigo-500" size={18} />
+                            <p className="text-sm font-medium leading-7 text-gray-700 dark:text-gray-200">{screen}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-[1.5rem] border border-white/70 bg-white/90 p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900/90">
+                      <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-600 dark:text-emerald-400">
+                        {lang === 'tr' ? 'Hizli Ipuclari' : 'Quick Tips'}
+                      </p>
+                      <div className="mt-5 space-y-4">
+                        {content.guide.tips.map((tip) => (
+                          <div key={tip} className="flex items-start gap-3 rounded-2xl bg-gray-50 px-4 py-4 dark:bg-gray-800/80">
+                            <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-500" size={18} />
+                            <p className="text-sm font-medium leading-7 text-gray-700 dark:text-gray-200">{tip}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </aside>
                 </FadeIn>
