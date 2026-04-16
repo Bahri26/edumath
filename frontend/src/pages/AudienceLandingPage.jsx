@@ -9,12 +9,55 @@ import FadeIn from '../components/ui/FadeIn';
 import { AuthContext } from '../context/AuthContext';
 import { translations } from '../data/translations';
 
+const upsertMeta = (selector, attribute, value) => {
+  let element = document.head.querySelector(selector);
+
+  if (!element) {
+    element = document.createElement('meta');
+    const [attrName, attrValue] = selector
+      .replace('meta[', '')
+      .replace(']', '')
+      .split('=');
+
+    element.setAttribute(attrName, attrValue.replace(/"/g, ''));
+    document.head.appendChild(element);
+  }
+
+  element.setAttribute(attribute, value);
+};
+
+const updateCanonical = (href) => {
+  let link = document.head.querySelector('link[rel="canonical"]');
+
+  if (!link) {
+    link = document.createElement('link');
+    link.setAttribute('rel', 'canonical');
+    document.head.appendChild(link);
+  }
+
+  link.setAttribute('href', href);
+};
+
+const upsertJsonLd = (data) => {
+  let script = document.head.querySelector('script[data-edumath-jsonld="audience"]');
+
+  if (!script) {
+    script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.setAttribute('data-edumath-jsonld', 'audience');
+    document.head.appendChild(script);
+  }
+
+  script.textContent = JSON.stringify(data);
+};
+
 const audienceContent = {
   tr: {
     student: {
       badge: 'Ogrenci Akisi',
       title: 'Ogrenciler icin net, seviyeye gore ilerleyen matematik yolu',
       intro: 'Sinif duzeyi, konu sirasi ve ogrenme hizi birlikte ele alinmis bir calisma akisi.',
+      seoDescription: 'Edumath ogrenci kullanim kilavuzu ile ders akisi, odev takibi, sinav sureci ve seviyeye gore ilerleme yapisini inceleyin.',
       primaryCta: 'Ogrenci paneline gir',
       secondaryCta: 'Ana sayfaya don',
       heroIcon: GraduationCap,
@@ -34,11 +77,43 @@ const audienceContent = {
         { title: 'Odev ve Sinav Takibi', desc: 'Gelen gorevleri, tekrar planini ve sinav akisini tek yerden izleyin.', icon: CheckCircle2 },
         { title: 'Kalici Ogrenme Rutini', desc: 'Kisa ama duzenli tekrar bloklari ile ilerleme kaybi yasamayin.', icon: Sparkles },
       ],
+      guide: {
+        title: 'Ogrenci Kullanim Kilavuzu',
+        intro: 'Platformu ilk kez kullanan bir ogrenci icin en hizli baslangic akisi asagidaki gibidir.',
+        steps: [
+          {
+            title: 'Hesaba giris yap ve ana sayfayi ac',
+            desc: 'Giris sonrasinda ogrenci panelindeki ana sayfadan guncel ders, odev ve sinav akisini gor.',
+          },
+          {
+            title: 'Sinif ve ders seviyeni kontrol et',
+            desc: 'Sana uygun konu listesinin acilmasi icin dogru sinif seviyesi ve ders akisini sec.',
+          },
+          {
+            title: 'Derslerini ve odevlerini sirayla tamamla',
+            desc: 'Ilk olarak bekleyen odevleri bitir, sonra ders iceriklerine ve tekrar bloklarina gec.',
+          },
+          {
+            title: 'Sinavlardan sonra eksik konulari isaretle',
+            desc: 'Sinav sonucu sonrasi zorlandigin konu basliklarini not et ve ayni gun icinde kisa tekrar yap.',
+          },
+          {
+            title: 'Takvim ve ilerleme ekranini haftalik kontrol et',
+            desc: 'Haftanin sonunda tamamlanan dersleri, bekleyen gorevleri ve bir sonraki hedefleri gozden gecir.',
+          },
+        ],
+        tips: [
+          'Her gun kisa ama duzenli tekrar yapisi daha verimli calisir.',
+          'Sadece ihtiyac duydugun konulara odaklanmak ilerleme hizini artirir.',
+          'Sinav sonrasi ayni gun icinde yapilan tekrar kaliciligi guclendirir.',
+        ],
+      },
     },
     teacher: {
       badge: 'Ogretmen Akisi',
       title: 'Ogretmenler icin soru, sinav ve ogrenci takibi odakli kontrol paneli',
       intro: 'Icerik uretimi ve olcme-degerlendirme surecini tek panelde toplayan ogretmen odakli akis.',
+      seoDescription: 'Edumath ogretmen kullanim kilavuzu ile soru bankasi, sinav olusturma, ogrenci takibi ve raporlama akislarini inceleyin.',
       primaryCta: 'Ogretmen paneline gir',
       secondaryCta: 'Ana sayfaya don',
       heroIcon: Users,
@@ -58,11 +133,43 @@ const audienceContent = {
         { title: 'Sinav Akisi', desc: 'Secilen sorularla hizli sinav kurgusu olusturun ve tekrar kullanin.', icon: LineChart },
         { title: 'Ogrenci Gozlemi', desc: 'Ilerleme, eksik konu ve performans egilimlerini tek yerden izleyin.', icon: Users },
       ],
+      guide: {
+        title: 'Ogretmen Kullanim Kilavuzu',
+        intro: 'Platformu ders yonetimi icin kullanan bir ogretmenin temel akisi asagidaki adimlarla ilerler.',
+        steps: [
+          {
+            title: 'Once soru bankasini filtrele',
+            desc: 'Ders, sinif seviyesi, konu ve zorluk alanlarini secerek gereksiz kayitlari disarida birak.',
+          },
+          {
+            title: 'Sinav veya egzersiz akisini olustur',
+            desc: 'Secilen sorulari bir sinav ya da egzersiz setine donustur ve amacina gore kaydet.',
+          },
+          {
+            title: 'Kazanima gore dagilimi kontrol et',
+            desc: 'Hazirlanan icerigin konu ve kazanima gore dengeli olup olmadigini son kez incele.',
+          },
+          {
+            title: 'Ogrenci ilerleme ekranindan sonuc takip et',
+            desc: 'Uygulama sonrasi zorlanilan konulari ve sinif genelindeki egilimleri ogrenci takip ekranindan izle.',
+          },
+          {
+            title: 'Raporlara gore bir sonraki icerigi planla',
+            desc: 'Elde edilen sonuclara gore yeni egzersiz, tekrar veya sinav yapisini belirle.',
+          },
+        ],
+        tips: [
+          'Sinav olusturmadan once soru havuzunu daraltmak sureyi ciddi bicimde azaltir.',
+          'Sinif degistiginde konu ve soru havuzunu yeniden yuklemek daha dogru sonuc verir.',
+          'Rapor ekranini yalnizca sonuc icin degil bir sonraki planlama icin kullan.',
+        ],
+      },
     },
     research: {
       badge: 'Akademik Arastirma',
       title: 'Yuksek lisans ve doktora duzeyi matematik icin ayri bir calisma katmani',
       intro: 'Ders katalogundan ayri duran; makale, seminer, proof workshop ve tez uretkenligini merkeze alan bir arastirma akisi.',
+      seoDescription: 'Edumath akademik arastirma alani; paper review, proof workshop, tez uretkenligi ve seminer odakli matematik calisma akislarini sunar.',
       primaryCta: 'Arastirma akisina gir',
       secondaryCta: 'Ana sayfaya don',
       heroIcon: Microscope,
@@ -89,6 +196,7 @@ const audienceContent = {
       badge: 'Student Flow',
       title: 'A clear mathematics journey for students organized by level',
       intro: 'A study flow where grade level, topic order, and learning pace are handled together.',
+      seoDescription: 'Review the Edumath student usage guide covering lesson flow, assignments, exams, and level-based learning structure.',
       primaryCta: 'Open student panel',
       secondaryCta: 'Back to homepage',
       heroIcon: GraduationCap,
@@ -108,11 +216,43 @@ const audienceContent = {
         { title: 'Assignment and Exam Tracking', desc: 'Follow incoming work, revision flow, and exams in one place.', icon: CheckCircle2 },
         { title: 'Sustained Study Routine', desc: 'Keep progress stable with short but consistent revision blocks.', icon: Sparkles },
       ],
+      guide: {
+        title: 'Student Usage Guide',
+        intro: 'This is the fastest starting flow for a student using the platform for the first time.',
+        steps: [
+          {
+            title: 'Sign in and open the home panel',
+            desc: 'After login, start from the student home page to see current lessons, assignments, and exam flow.',
+          },
+          {
+            title: 'Confirm your class level and lesson path',
+            desc: 'Choose the correct grade level so the right topic list and lesson sequence open for you.',
+          },
+          {
+            title: 'Complete lessons and assignments in order',
+            desc: 'Finish pending assignments first, then continue with lesson content and revision blocks.',
+          },
+          {
+            title: 'Mark weak topics after exams',
+            desc: 'After each exam, note the topics where you struggled and repeat them on the same day.',
+          },
+          {
+            title: 'Review calendar and progress weekly',
+            desc: 'At the end of each week, check completed lessons, pending work, and the next study targets.',
+          },
+        ],
+        tips: [
+          'Short, consistent revision blocks are more effective than irregular long sessions.',
+          'Focusing only on the topics you need speeds up your progress.',
+          'Same-day review after an exam improves retention.',
+        ],
+      },
     },
     teacher: {
       badge: 'Teacher Flow',
       title: 'A control panel for teachers focused on questions, exams, and student tracking',
       intro: 'A teacher-facing workflow that brings content production and assessment together in one place.',
+      seoDescription: 'Review the Edumath teacher usage guide for question bank filtering, exam creation, student tracking, and reporting workflows.',
       primaryCta: 'Open teacher panel',
       secondaryCta: 'Back to homepage',
       heroIcon: Users,
@@ -132,11 +272,43 @@ const audienceContent = {
         { title: 'Exam Workflow', desc: 'Build reusable exam structures quickly from selected questions.', icon: LineChart },
         { title: 'Student Observation', desc: 'Watch progress, missing topics, and performance patterns from one place.', icon: Users },
       ],
+      guide: {
+        title: 'Teacher Usage Guide',
+        intro: 'The core workflow for a teacher using the platform for lesson and assessment management is shown below.',
+        steps: [
+          {
+            title: 'Start by filtering the question bank',
+            desc: 'Use lesson, class level, topic, and difficulty filters to exclude irrelevant records early.',
+          },
+          {
+            title: 'Create an exam or exercise flow',
+            desc: 'Turn the selected questions into an exam or exercise set and save it according to your teaching goal.',
+          },
+          {
+            title: 'Check outcome coverage',
+            desc: 'Review whether the content distribution stays balanced across topics and learning outcomes.',
+          },
+          {
+            title: 'Track results through student progress',
+            desc: 'After applying the activity, inspect difficult topics and class-level patterns through the student progress view.',
+          },
+          {
+            title: 'Plan the next content round from reports',
+            desc: 'Use the results to decide the next exercise, revision, or exam structure.',
+          },
+        ],
+        tips: [
+          'Narrowing the question pool before exam creation saves significant time.',
+          'When the class changes, reload topic and question filters for cleaner results.',
+          'Use reports not only to observe results but also to shape the next plan.',
+        ],
+      },
     },
     research: {
       badge: 'Academic Research',
       title: 'A separate workspace for graduate and doctoral mathematics',
       intro: 'A research flow separated from the lesson catalog, centered on papers, seminars, proof work, and thesis productivity.',
+      seoDescription: 'Edumath research space offers mathematics workflows for paper review, proof workshops, thesis productivity, and seminar-centered study.',
       primaryCta: 'Open research flow',
       secondaryCta: 'Back to homepage',
       heroIcon: Microscope,
@@ -170,6 +342,7 @@ const AudienceLandingPage = ({ audience }) => {
   const t = translations[lang] || translations.tr;
   const content = audienceContent[lang]?.[audience] || audienceContent.tr.student;
   const HeroIcon = content.heroIcon;
+  const canonicalPath = audience === 'student' ? '/students' : audience === 'teacher' ? '/teachers' : '/research';
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
@@ -208,13 +381,30 @@ const AudienceLandingPage = ({ audience }) => {
   }, [theme]);
 
   useEffect(() => {
-    const pageTitle = lang === 'tr'
-      ? `Edumath | ${content.title}`
-      : `Edumath | ${content.title}`;
+    const pageTitle = `Edumath | ${content.title}`;
+    const canonicalUrl = `${window.location.origin}${canonicalPath}`;
 
     document.title = pageTitle;
     document.documentElement.lang = lang;
-  }, [content.title, lang]);
+
+    upsertMeta('meta[name="description"]', 'content', content.seoDescription);
+    upsertMeta('meta[property="og:title"]', 'content', pageTitle);
+    upsertMeta('meta[property="og:description"]', 'content', content.seoDescription);
+    upsertMeta('meta[property="og:url"]', 'content', canonicalUrl);
+    upsertMeta('meta[property="og:locale"]', 'content', lang === 'tr' ? 'tr_TR' : 'en_US');
+    upsertMeta('meta[name="twitter:title"]', 'content', pageTitle);
+    upsertMeta('meta[name="twitter:description"]', 'content', content.seoDescription);
+    updateCanonical(canonicalUrl);
+    upsertJsonLd({
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: pageTitle,
+      description: content.seoDescription,
+      url: canonicalUrl,
+      about: audience,
+      inLanguage: lang,
+    });
+  }, [audience, canonicalPath, content.seoDescription, content.title, lang]);
 
   const handleLoginSuccess = (userRole) => {
     setIsLoginModalOpen(false);
@@ -233,6 +423,7 @@ const AudienceLandingPage = ({ audience }) => {
     { id: 'courses', title: content.sections.coursesTitle, text: content.sections.coursesText },
     { id: 'contact', title: content.sections.contactTitle, text: content.sections.contactText },
   ];
+  const hasGuide = Boolean(content.guide);
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
@@ -341,6 +532,58 @@ const AudienceLandingPage = ({ audience }) => {
             ))}
           </div>
         </section>
+
+        {hasGuide && (
+          <section className="px-4 pb-16 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl rounded-[2rem] border border-indigo-200 bg-indigo-50/70 p-8 md:p-10 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+              <FadeIn delay={80}>
+                <div className="max-w-3xl">
+                  <p className="text-xs font-black uppercase tracking-[0.24em] text-indigo-700 dark:text-indigo-300">
+                    {lang === 'tr' ? 'Kullanim Kilavuzu' : 'Usage Guide'}
+                  </p>
+                  <h2 className="mt-4 text-3xl font-black text-gray-900 dark:text-white md:text-4xl">
+                    {content.guide.title}
+                  </h2>
+                  <p className="mt-4 text-base leading-8 text-gray-700 dark:text-gray-300">
+                    {content.guide.intro}
+                  </p>
+                </div>
+              </FadeIn>
+
+              <div className="mt-10 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+                <div className="space-y-4">
+                  {content.guide.steps.map((step, index) => (
+                    <FadeIn key={step.title} delay={120 + index * 70} direction="up">
+                      <div className="rounded-[1.5rem] border border-white/70 bg-white/90 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900/90">
+                        <div className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-600 text-sm font-black text-white">
+                          {index + 1}
+                        </div>
+                        <h3 className="mt-4 text-xl font-black text-gray-900 dark:text-white">{step.title}</h3>
+                        <p className="mt-2 text-sm leading-7 text-gray-600 dark:text-gray-300">{step.desc}</p>
+                      </div>
+                    </FadeIn>
+                  ))}
+                </div>
+
+                <FadeIn delay={180} direction="up">
+                  <aside className="rounded-[1.5rem] border border-white/70 bg-white/90 p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900/90">
+                    <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-600 dark:text-emerald-400">
+                      {lang === 'tr' ? 'Hizli Ipuclari' : 'Quick Tips'}
+                    </p>
+                    <div className="mt-5 space-y-4">
+                      {content.guide.tips.map((tip) => (
+                        <div key={tip} className="flex items-start gap-3 rounded-2xl bg-gray-50 px-4 py-4 dark:bg-gray-800/80">
+                          <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-500" size={18} />
+                          <p className="text-sm font-medium leading-7 text-gray-700 dark:text-gray-200">{tip}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </aside>
+                </FadeIn>
+              </div>
+            </div>
+          </section>
+        )}
       </main>
 
       <Footer t={t} />
