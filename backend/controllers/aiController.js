@@ -383,23 +383,29 @@ exports.generatePracticeQuestions = async (req, res) => {
       Bu zayıf noktaları hedefleyen, öğretici nitelikte 5 adet orta seviye soru hazırla.
     `;
 
-    const result = await model.generateContent(prompt);
-    const questions = JSON.parse(result.response.text());
-
     const interactiveQuestions = buildInteractivePracticeQuestions(weakTopics || []);
-    const normalizedQuestions = (Array.isArray(questions) ? questions : []).map((question, index) => ({
-      ...question,
-      id: `practice-${index + 1}`,
-      type: question.type || 'multiple-choice',
-      options: Array.isArray(question.options) ? question.options : Object.values(question.options || {}),
-      explanation: question.explanation || '',
-    }));
+    let normalizedQuestions = [];
+
+    try {
+      const result = await model.generateContent(prompt);
+      const questions = JSON.parse(result.response.text());
+      normalizedQuestions = (Array.isArray(questions) ? questions : []).map((question, index) => ({
+        ...question,
+        id: `practice-${index + 1}`,
+        type: question.type || 'multiple-choice',
+        options: Array.isArray(question.options) ? question.options : Object.values(question.options || {}),
+        explanation: question.explanation || '',
+      }));
+    } catch (aiError) {
+      console.warn('Practice AI fallback used:', aiError?.message || aiError);
+      normalizedQuestions = buildFallbackPracticeQuestions(weakTopics || []);
+    }
 
     res.json({ questions: [...interactiveQuestions, ...normalizedQuestions].slice(0, 5) });
 
   } catch (error) {
     console.error("Alıştırma Üretme Hatası:", error);
-    res.status(500).json({ message: "Alıştırma hazırlanamadı." });
+    res.status(200).json({ questions: buildFallbackPracticeQuestions(req.body?.weakTopics || []).slice(0, 5), message: "AI geçici olarak kullanılamadı, yerel alıştırmalar gösterildi." });
   }
 };
 
@@ -648,6 +654,36 @@ function buildInteractivePracticeQuestions(weakTopics = []) {
         ],
         correctOrder: ['find-rule', 'check-delta', 'apply-rule', 'verify'],
       },
+    },
+  ];
+}
+
+function buildFallbackPracticeQuestions(weakTopics = []) {
+  const primaryTopic = weakTopics[0] || 'Oruntuler';
+  return [
+    {
+      id: 'fallback-practice-1',
+      type: 'multiple-choice',
+      text: `${primaryTopic} konusunda 6, 9, 12, 15, ... oruntusunun sonraki terimi nedir?`,
+      options: ['18', '17', '21', '16'],
+      correctAnswer: '18',
+      explanation: 'Oruntu her adimda 3 artiyor. 15 sayisindan sonra 18 gelir.',
+    },
+    {
+      id: 'fallback-practice-2',
+      type: 'multiple-choice',
+      text: `${primaryTopic} icin 20, 18, 16, 14, ... dizisinde eksik kural hangisidir?`,
+      options: ['Her adimda 2 azalir', 'Her adimda 2 artar', 'Tekrarli oruntu vardir', 'Kare sayilar ilerler'],
+      correctAnswer: 'Her adimda 2 azalir',
+      explanation: 'Ardisik terimler arasindaki fark -2 oldugu icin kural her adimda 2 azalma seklindedir.',
+    },
+    {
+      id: 'fallback-practice-3',
+      type: 'multiple-choice',
+      text: `${primaryTopic} icin 3, 6, 12, 24, ... oruntusunda sonraki terim hangisidir?`,
+      options: ['48', '30', '36', '42'],
+      correctAnswer: '48',
+      explanation: 'Her terim bir oncekinin 2 kati oldugu icin 24 sonrasinda 48 gelir.',
     },
   ];
 }
