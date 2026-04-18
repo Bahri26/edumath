@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Bell } from 'lucide-react';
+import { Plus, Bell, BookOpen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import StatCard from '../../components/ui/StatCard';
 import ActivityRow from '../../components/ui/ActivityRow';
 import { useToast } from '../../context/ToastContext';
@@ -21,6 +22,7 @@ const formatRelativeTime = (value) => {
 };
 
 const TeacherHome = () => {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
@@ -91,7 +93,15 @@ const TeacherHome = () => {
             {stats ? `${(stats.totalStudents ?? 0)} öğrenciniz var, Sınıf ortalaması: ${(stats.classAverage ?? 0)}` : 'Verileri yükleniyor...'}
           </p>
         </div>
-
+        <Button
+          variant="secondary"
+          size="md"
+          className="self-start lg:self-auto"
+          onClick={() => navigate('/teachers')}
+        >
+          <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded text-indigo-600 dark:text-indigo-300"><BookOpen size={16} /></div>
+          <span>Kullanım Kılavuzu</span>
+        </Button>
       </div>
 
       {/* İstatistik Kartları */}
