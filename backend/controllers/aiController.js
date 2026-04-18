@@ -386,7 +386,16 @@ exports.generatePracticeQuestions = async (req, res) => {
     const result = await model.generateContent(prompt);
     const questions = JSON.parse(result.response.text());
 
-    res.json({ questions });
+    const interactiveQuestions = buildInteractivePracticeQuestions(weakTopics || []);
+    const normalizedQuestions = (Array.isArray(questions) ? questions : []).map((question, index) => ({
+      ...question,
+      id: `practice-${index + 1}`,
+      type: question.type || 'multiple-choice',
+      options: Array.isArray(question.options) ? question.options : Object.values(question.options || {}),
+      explanation: question.explanation || '',
+    }));
+
+    res.json({ questions: [...interactiveQuestions, ...normalizedQuestions].slice(0, 5) });
 
   } catch (error) {
     console.error("Alıştırma Üretme Hatası:", error);
@@ -602,3 +611,43 @@ exports.generatePatternQuestionPack = async (req, res) => {
     res.status(500).json({ message: 'AI soru paketi uretilemedi.', error: error.message });
   }
 };
+
+function buildInteractivePracticeQuestions(weakTopics = []) {
+  const primaryTopic = weakTopics[0] || 'Oruntuler';
+  return [
+    {
+      id: 'interactive-matching',
+      type: 'matching',
+      text: `${primaryTopic} konusunda kurallari dogru oruntulerle eslestir.`,
+      explanation: 'Her oruntuyu artis veya tekrar turune gore eslestirmen gerekir.',
+      interactionData: {
+        prompts: [
+          { id: 'repeat', label: '2, 4, 2, 4, ...' },
+          { id: 'step', label: '5, 8, 11, 14, ...' },
+          { id: 'square', label: '1, 4, 9, 16, ...' },
+        ],
+        options: ['Tekrarlayan oruntu', '+3 artan oruntu', 'Kare sayi oruntusu'],
+        correctPairs: {
+          repeat: 'Tekrarlayan oruntu',
+          step: '+3 artan oruntu',
+          square: 'Kare sayi oruntusu',
+        },
+      },
+    },
+    {
+      id: 'interactive-sequence',
+      type: 'sequence',
+      text: 'Bir oruntuyu cozerken izlenecek adimlari dogru siraya koy.',
+      explanation: 'Once kural bulunur, sonra artis tipi kontrol edilir, ardindan eksik terim hesaplanir.',
+      interactionData: {
+        items: [
+          { id: 'find-rule', label: 'Oruntudeki kuralı bul' },
+          { id: 'check-delta', label: 'Artis veya azalis farkini kontrol et' },
+          { id: 'apply-rule', label: 'Kurali eksik terime uygula' },
+          { id: 'verify', label: 'Buldugun sonucun oruntuye uydugunu dogrula' },
+        ],
+        correctOrder: ['find-rule', 'check-delta', 'apply-rule', 'verify'],
+      },
+    },
+  ];
+}

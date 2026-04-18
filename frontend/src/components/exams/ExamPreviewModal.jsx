@@ -4,6 +4,7 @@ import apiClient from '../../services/api';
 import { renderWithLatex } from '../../utils/latex.jsx';
 import Button from '../ui/Button.jsx';
 import Card from '../ui/Card.jsx';
+import QuestionVisual from '../questions/QuestionVisual.jsx';
 
 const normalizeOptions = (options) => {
   if (!Array.isArray(options)) return [];
@@ -77,6 +78,7 @@ export default function ExamPreviewModal({ examId, onClose }) {
                         <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded ${q.difficulty === 'Zor' ? 'bg-rose-50 text-rose-700' : q.difficulty === 'Orta' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>{q.difficulty}</span>
                       </div>
                       <div className="text-sm text-slate-800 dark:text-slate-200 mb-4 leading-relaxed">{renderWithLatex(q.text)}</div>
+                      <QuestionVisual src={q.image} alt={`Soru ${idx + 1} gorseli`} className="mb-4 h-56" />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {opts.map((opt, i) => (
                           <div key={i} className={`flex items-start gap-2 p-3 rounded-xl border ${opt.text === q.correctAnswer ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 dark:border-slate-700'}`}>

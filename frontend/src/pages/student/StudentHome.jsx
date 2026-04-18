@@ -1,20 +1,20 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { PlayCircle, Target, CheckCircle, Clock, BookOpen, CircleHelp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { studentProfile as staticProfile, continueLearning as staticContinue, myCourses as staticCourses, upcomingAssignments as staticAssignments } from '../../data/studentData';
 import ProgressPanel from '../../components/ui/ProgressPanel';
 import CourseCard from '../../components/ui/CourseCard';
 import { LanguageContext } from '../../context/LanguageContext';
 import apiClient from '../../services/api';
+import GuideDrawer from '../../components/help/GuideDrawer.jsx';
 
 const StudentHome = () => {
   const { language } = useContext(LanguageContext);
-  const navigate = useNavigate();
   const [profile, setProfile] = useState(staticProfile);
   const [grade, setGrade] = useState(staticProfile.grade || '');
   const [courses, setCourses] = useState(staticCourses);
   const [continueLearning, setContinueLearning] = useState(staticContinue);
   const [assignments, setAssignments] = useState(staticAssignments);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   // Öğrenci profilini backend'den çek
   useEffect(() => {
@@ -89,7 +89,7 @@ const StudentHome = () => {
               <PlayCircle size={20} /> {getText("continueLesson")}
             </button>
             <button
-              onClick={() => navigate('/students')}
+              onClick={() => setIsGuideOpen(true)}
               className="mt-3 bg-white/10 border border-white/20 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/20 transition-colors"
             >
               <CircleHelp size={20} /> Kullanım Kılavuzu
@@ -176,6 +176,7 @@ const StudentHome = () => {
           </div>
         </div>
       </div>
+      <GuideDrawer audience="student" open={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
     </div>
   );
 };
