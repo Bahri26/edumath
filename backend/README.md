@@ -56,6 +56,39 @@ Collections are created automatically on first write. If you created `User` manu
   - `POST /api/ai/smart-parse-text` (JSON body: `{ content }`)
 - Without a key, image mode falls back to manual edit and returns `imagePath`.
 
+## Object Storage (R2/S3 Compatible)
+
+- Default behavior remains local `backend/uploads` storage.
+- For production, prefer R2 or S3 by setting `STORAGE_PROVIDER=r2` or `STORAGE_PROVIDER=s3`.
+- Required env vars for R2/S3 mode:
+   - `S3_BUCKET_NAME`
+   - `S3_REGION`
+   - `S3_ACCESS_KEY_ID`
+   - `S3_SECRET_ACCESS_KEY`
+   - `S3_PUBLIC_BASE_URL`
+- For R2, also set:
+   - `S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com`
+
+What is stored:
+- Teacher-uploaded question images
+- Option images
+- AI-generated SVG visuals
+
+Recommended R2 example:
+
+```env
+STORAGE_PROVIDER=r2
+S3_BUCKET_NAME=edumath-assets
+S3_REGION=auto
+S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+S3_ACCESS_KEY_ID=<r2-access-key>
+S3_SECRET_ACCESS_KEY=<r2-secret-key>
+S3_PUBLIC_BASE_URL=https://pub-xxxx.r2.dev
+S3_FORCE_PATH_STYLE=false
+```
+
+With storage configured, the application stores public URLs in MongoDB instead of relying on Render's ephemeral filesystem.
+
 ## Cloud Run Deployment
 
 This repository includes a Dockerfile in `backend/`.
@@ -82,4 +115,4 @@ This repository includes a Dockerfile in `backend/`.
 - Ensure `FRONTEND_URL` matches the deployed frontend origin for CORS. If you need multiple origins, use `ALLOWED_ORIGINS` with comma-separated values.
 
 ## Notes
-- Cloud Run filesystem is ephemeral. For persistent uploads, use Google Cloud Storage (GCS).
+- Render and Cloud Run filesystems are ephemeral. For persistent uploads, use object storage such as R2, S3, or GCS.

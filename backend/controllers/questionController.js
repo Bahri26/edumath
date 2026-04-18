@@ -1,4 +1,5 @@
 const Question = require('../models/Question');
+const { uploadFile, deleteStoredAsset } = require('../services/storageService');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -67,6 +68,30 @@ function normalizeStoredImagePath(value) {
   return value.startsWith('/uploads')
     ? value
     : `/uploads/${value.replace(/^\/?uploads\/?/, '')}`;
+}
+
+function normalizeOptionPayload(options) {
+  if (Array.isArray(options)) {
+    return options;
+  }
+
+  if (typeof options === 'string' && options.trim()) {
+    return [options];
+  }
+
+  return [];
+}
+
+function parseInteractionData(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === 'object') {
+    return value;
+  }
+
+  return JSON.parse(value);
 }
 
 // --- 1. SORULARI GETİR (Filtreleme + Pagination) ---
@@ -138,6 +163,8 @@ exports.getQuestions = async (req, res, next) => {
       source: 1,
       createdAt: 1,
       image: 1,
+      imageKey: 1,
+      imageProvider: 1,
       options: 1,
       correctAnswer: 1,
       solution: 1
@@ -253,28 +280,37 @@ exports.createQuestion = async (req, res, next) => {
     const mainImgFile = req.files ? req.files.find(f => f.fieldname === 'image') : null;
     // Allow using previously uploaded image path (from smart-parse)
     let mainImagePath = '';
+    let mainImageKey = '';
+    let mainImageProvider = '';
     if (mainImgFile) {
-      mainImagePath = `/uploads/${mainImgFile.filename}`;
+      const uploaded = await uploadFile(mainImgFile, 'questions');
+      mainImagePath = uploaded.url;
+      mainImageKey = uploaded.key;
+      mainImageProvider = uploaded.provider;
     } else if (req.body.imagePath) {
       mainImagePath = normalizeStoredImagePath(req.body.imagePath);
     }
 
     // 2. Şıkları İşle
     let optionsData = [];
-    if (req.body.options && Array.isArray(req.body.options)) {
-      optionsData = req.body.options.map(optText => ({ text: optText, image: '' }));
+    const optionValues = normalizeOptionPayload(req.body.options);
+    if (optionValues.length > 0) {
+      optionsData = optionValues.map(optText => ({ text: optText, image: '', imageKey: '', imageProvider: '' }));
     }
 
     // 3. Şık Resimlerini Eşleştir
     if (req.files) {
-      req.files.forEach(f => {
+      for (const f of req.files) {
         if (f.fieldname.startsWith('optionImage_')) {
           const index = parseInt(f.fieldname.split('_')[1]);
           if (optionsData[index]) {
-            optionsData[index].image = `/uploads/${f.filename}`;
+            const uploaded = await uploadFile(f, 'question-options');
+            optionsData[index].image = uploaded.url;
+            optionsData[index].imageKey = uploaded.key;
+            optionsData[index].imageProvider = uploaded.provider;
           }
         }
-      });
+      }
     }
 
     const newQuestion = await Question.create({
@@ -284,8 +320,10 @@ exports.createQuestion = async (req, res, next) => {
       curriculumNote,
       visualPrompt: visualPrompt || '',
       interactiveType: interactiveType || 'none',
-      interactionData: interactionData ? JSON.parse(interactionData) : null,
+      interactionData: parseInteractionData(interactionData),
       image: mainImagePath,
+      imageKey: mainImageKey,
+      imageProvider: mainImageProvider,
       options: optionsData,
       source: source || 'Manuel',
       createdBy
@@ -349,31 +387,53 @@ exports.updateQuestion = async (req, res, next) => {
     const fields = ['text', 'subject', 'classLevel', 'difficulty', 'type', 'correctAnswer', 'solution', 'source', 'topic', 'learningOutcome', 'mebReference', 'curriculumNote', 'visualPrompt', 'interactiveType'];
     fields.forEach(f => { if(req.body[f]) question[f] = req.body[f]; });
     if (req.body.interactionData) {
-      question.interactionData = JSON.parse(req.body.interactionData);
+      question.interactionData = parseInteractionData(req.body.interactionData);
     }
 
     // Ana Resim Güncellemesi
     const mainImgFile = req.files ? req.files.find(f => f.fieldname === 'image') : null;
     if (mainImgFile) {
-      question.image = `/uploads/${mainImgFile.filename}`;
+      await deleteStoredAsset({ key: question.imageKey, provider: question.imageProvider, url: question.image });
+      const uploaded = await uploadFile(mainImgFile, 'questions');
+      question.image = uploaded.url;
+      question.imageKey = uploaded.key;
+      question.imageProvider = uploaded.provider;
     } else if (req.body.imagePath) {
-      question.image = normalizeStoredImagePath(req.body.imagePath);
+      const nextImagePath = normalizeStoredImagePath(req.body.imagePath);
+      if (nextImagePath !== question.image) {
+        await deleteStoredAsset({ key: question.imageKey, provider: question.imageProvider, url: question.image });
+        question.image = nextImagePath;
+        question.imageKey = '';
+        question.imageProvider = '';
+      }
     }
 
     // Şık Güncellemesi
-    if (req.body.options && Array.isArray(req.body.options)) {
-       let newOptions = req.body.options.map((txt, i) => {
-          const oldImg = question.options[i] ? question.options[i].image : '';
-          return { text: txt, image: oldImg };
+    const optionPayload = normalizeOptionPayload(req.body.options);
+    if (optionPayload.length > 0) {
+       let newOptions = optionPayload.map((txt, i) => {
+          const oldOption = question.options[i] || {};
+          return {
+            text: txt,
+            image: oldOption.image || '',
+            imageKey: oldOption.imageKey || '',
+            imageProvider: oldOption.imageProvider || '',
+          };
        });
 
        if (req.files) {
-         req.files.forEach(f => {
+         for (const f of req.files) {
             if (f.fieldname.startsWith('optionImage_')) {
                const index = parseInt(f.fieldname.split('_')[1]);
-               if (newOptions[index]) newOptions[index].image = `/uploads/${f.filename}`;
+               if (newOptions[index]) {
+                 await deleteStoredAsset({ key: newOptions[index].imageKey, provider: newOptions[index].imageProvider, url: newOptions[index].image });
+                 const uploaded = await uploadFile(f, 'question-options');
+                 newOptions[index].image = uploaded.url;
+                 newOptions[index].imageKey = uploaded.key;
+                 newOptions[index].imageProvider = uploaded.provider;
+               }
             }
-         });
+         }
        }
        question.options = newOptions;
     }
@@ -389,6 +449,16 @@ exports.updateQuestion = async (req, res, next) => {
 // --- 5. SİLME ---
 exports.deleteQuestion = async (req, res, next) => {
   try {
+    const question = await Question.findById(req.params.id);
+    if (!question) {
+      return res.status(404).json({ success: false, message: 'Soru bulunamadı.' });
+    }
+
+    await deleteStoredAsset({ key: question.imageKey, provider: question.imageProvider, url: question.image });
+    for (const option of question.options || []) {
+      await deleteStoredAsset({ key: option.imageKey, provider: option.imageProvider, url: option.image });
+    }
+
     await Question.findByIdAndDelete(req.params.id);
     res.status(200).json({ success: true, message: 'Soru silindi.' });
   } catch (error) {
