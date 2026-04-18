@@ -15,6 +15,22 @@ const User = require('./models/User');
 
 const app = express();
 
+const trustProxy = process.env.TRUST_PROXY;
+if (typeof trustProxy === 'string' && trustProxy.trim() !== '') {
+    const normalized = trustProxy.trim().toLowerCase();
+    if (normalized === 'true') {
+        app.set('trust proxy', true);
+    } else if (normalized === 'false') {
+        app.set('trust proxy', false);
+    } else if (!Number.isNaN(Number(trustProxy))) {
+        app.set('trust proxy', Number(trustProxy));
+    } else {
+        app.set('trust proxy', trustProxy);
+    }
+} else if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+}
+
 // Middleware
 const allowedOrigins = [
     process.env.FRONTEND_URL,
