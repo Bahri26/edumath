@@ -118,7 +118,7 @@ function buildFallbackQuestionBank() {
   };
 }
 
-function generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject }) {
+async function generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject }) {
   const bank = buildFallbackQuestionBank();
   const sourceQuestions = bank[classLevel]?.[difficulty] || [];
   const questions = await Promise.all(

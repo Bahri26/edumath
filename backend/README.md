@@ -101,6 +101,7 @@ This repository includes a Dockerfile in `backend/`.
    - Build uses Dockerfile automatically
 3. Configure service:
    - Env vars: `MONGODB_URI`, `MONGODB_DB`, `FRONTEND_URL`
+   - Behind Render or another proxy, set `TRUST_PROXY=1` (or rely on the production default)
    - Optional multi-origin CORS: `ALLOWED_ORIGINS=https://edumath-client.onrender.com,http://localhost:5173`
    - Secret env var: `GEMINI_API_KEY` → source: Secret Manager
    - Ingress: allow unauthenticated (testing)
