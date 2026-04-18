@@ -1,11 +1,4 @@
-const fs = require('fs');
-const path = require('path');
-
-const OUTPUT_DIR = path.join(__dirname, '..', 'uploads', 'generated');
-
-function ensureOutputDir() {
-  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-}
+const { uploadSvg } = require('./storageService');
 
 function escapeXml(value = '') {
   return String(value)
@@ -65,13 +58,9 @@ function buildSvg(question) {
 </svg>`.trim();
 }
 
-function renderPatternSvg(question) {
-  ensureOutputDir();
+async function renderPatternSvg(question) {
   const safeTopic = String(question.topic || 'pattern').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32) || 'pattern';
-  const fileName = `${safeTopic}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.svg`;
-  const filePath = path.join(OUTPUT_DIR, fileName);
-  fs.writeFileSync(filePath, buildSvg(question), 'utf8');
-  return `/uploads/generated/${fileName}`;
+  return uploadSvg(buildSvg(question), 'generated', `${safeTopic}.svg`);
 }
 
 module.exports = {

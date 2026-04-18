@@ -3,12 +3,16 @@ const mongoose = require('mongoose');
 // Şıklar için alt şema
 const OptionSchema = new mongoose.Schema({
   text: { type: String, default: '' },
-  image: { type: String, default: '' } 
+  image: { type: String, default: '' },
+  imageKey: { type: String, default: '' },
+  imageProvider: { type: String, default: '' }
 });
 
 const QuestionSchema = new mongoose.Schema({
   text: { type: String, required: true },
   image: { type: String },
+  imageKey: { type: String, default: '' },
+  imageProvider: { type: String, default: '' },
   visualPrompt: { type: String, default: '' },
   subject: { type: String, default: 'Matematik', index: true },
   // Konu başlığı (ör. "Örüntüler")

@@ -121,22 +121,24 @@ function buildFallbackQuestionBank() {
 function generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject }) {
   const bank = buildFallbackQuestionBank();
   const sourceQuestions = bank[classLevel]?.[difficulty] || [];
-  const questions = Array.from({ length: Math.min(count, sourceQuestions.length) }, (_, index) => {
-    const question = sourceQuestions[index];
-    return {
-      ...question,
-      subject,
-      topic,
-      classLevel,
-      difficulty,
-      type: 'multiple-choice',
-      source: 'AI',
-    };
-  });
+  const questions = await Promise.all(
+    Array.from({ length: Math.min(count, sourceQuestions.length) }, async (_, index) => {
+      const question = sourceQuestions[index];
+      return sanitizeQuestion({
+        ...question,
+        subject,
+        topic,
+        classLevel,
+        difficulty,
+        type: 'multiple-choice',
+        source: 'AI',
+      }, { classLevel, difficulty, topic, subject });
+    })
+  );
 
   return {
     generator: 'fallback',
-    questions,
+    questions: questions.filter(Boolean),
   };
 }
 
@@ -214,7 +216,7 @@ function normalizeOptions(options, correctAnswer) {
   return uniqueOptions.slice(0, 4);
 }
 
-function sanitizeQuestion(question, defaults) {
+async function sanitizeQuestion(question, defaults) {
   const correctAnswer = String(question.correctAnswer || '').trim();
   const options = normalizeOptions(question.options, correctAnswer);
 
@@ -243,7 +245,10 @@ function sanitizeQuestion(question, defaults) {
     source: 'AI',
   };
 
-  sanitized.image = renderPatternSvg(sanitized);
+  const generatedImage = await renderPatternSvg(sanitized);
+  sanitized.image = generatedImage.url;
+  sanitized.imageKey = generatedImage.key;
+  sanitized.imageProvider = generatedImage.provider;
   return sanitized;
 }
 
@@ -270,9 +275,9 @@ async function generatePatternQuestions({
   const prompt = buildPrompt({ classLevel, difficulty, count, topic, subject });
   const result = await model.generateContent(prompt);
   const rawQuestions = JSON.parse(result.response.text());
-  const questions = rawQuestions
-    .map((question) => sanitizeQuestion(question, { classLevel, difficulty, topic, subject }))
-    .filter(Boolean);
+  const questions = (await Promise.all(
+    rawQuestions.map((question) => sanitizeQuestion(question, { classLevel, difficulty, topic, subject }))
+  )).filter(Boolean);
 
   return {
     generator: 'gemini',
