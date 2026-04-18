@@ -15,6 +15,7 @@ import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
 import SkeletonCard from '../../components/ui/SkeletonCard';
 import { renderWithLatex } from '../../utils/latex.jsx';
+import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
 
 
 const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
@@ -62,6 +63,7 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
       {expanded && (
         <div className="px-6 pb-6 pt-2 border-t border-slate-50 dark:border-slate-700 space-y-6 animate-in slide-in-from-top-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <QuestionVisual src={question.image} alt="Soru gorseli" className="md:col-span-2 h-56" />
             {question.options?.map((opt, idx) => (
               <div key={idx} className={`p-4 rounded-2xl border-2 flex items-center gap-4 ${
                 question.correctAnswer === (opt.text || opt)

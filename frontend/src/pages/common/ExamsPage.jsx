@@ -8,6 +8,86 @@ import { renderWithLatex } from '../../utils/latex.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Badge from '../../components/ui/Badge.jsx';
 import Card from '../../components/ui/Card.jsx';
+import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
+
+const isSequenceCorrect = (items, state) => {
+  if (!Array.isArray(items) || !Array.isArray(state) || items.length !== state.length) {
+    return false;
+  }
+  return items.every((itemId, index) => state[index] === itemId);
+};
+
+const MatchingPracticeCard = ({ question, state, onChange }) => {
+  const prompts = question.interactionData?.prompts || [];
+  const options = question.interactionData?.options || [];
+  const correctPairs = question.interactionData?.correctPairs || {};
+  const selectedMap = state?.selected || {};
+  const isComplete = prompts.every((prompt) => selectedMap[prompt.id]);
+  const isCorrect = isComplete && prompts.every((prompt) => selectedMap[prompt.id] === correctPairs[prompt.id]);
+
+  return (
+    <div className={`space-y-4 rounded-2xl border-2 p-5 ${isComplete ? (isCorrect ? 'border-green-200 bg-green-50/40' : 'border-rose-200 bg-rose-50/40') : 'border-slate-200 dark:border-slate-700'}`}>
+      {prompts.map((prompt) => (
+        <div key={prompt.id} className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between rounded-xl bg-white dark:bg-slate-800 p-3 border border-slate-200 dark:border-slate-700">
+          <div className="font-medium text-slate-800 dark:text-slate-100">{prompt.label}</div>
+          <select
+            value={selectedMap[prompt.id] || ''}
+            onChange={(event) => onChange(prompt.id, event.target.value, correctPairs)}
+            className="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
+            disabled={isComplete}
+          >
+            <option value="">Eslestirme sec</option>
+            {options.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        </div>
+      ))}
+      {isComplete && (
+        <div className={`rounded-xl p-4 text-sm ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-rose-100 text-rose-800'}`}>
+          <strong>{isCorrect ? 'Dogru eslestirme.' : 'Bir veya daha fazla eslestirme yanlis.'}</strong> {question.explanation}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SequencePracticeCard = ({ question, state, onMove }) => {
+  const items = question.interactionData?.items || [];
+  const correctOrder = question.interactionData?.correctOrder || [];
+  const currentOrder = Array.isArray(state?.selected) && state.selected.length ? state.selected : items.map((item) => item.id);
+  const isLocked = !!state?.checked;
+  const isCorrect = state?.checked ? isSequenceCorrect(correctOrder, currentOrder) : false;
+
+  return (
+    <div className={`space-y-3 rounded-2xl border-2 p-5 ${state?.checked ? (isCorrect ? 'border-green-200 bg-green-50/40' : 'border-rose-200 bg-rose-50/40') : 'border-slate-200 dark:border-slate-700'}`}>
+      {currentOrder.map((itemId, index) => {
+        const item = items.find((entry) => entry.id === itemId);
+        return (
+          <div key={itemId} className="flex items-center justify-between gap-3 rounded-xl bg-white dark:bg-slate-800 p-3 border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">{index + 1}</span>
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{item?.label}</span>
+            </div>
+            {!isLocked && (
+              <div className="flex gap-2">
+                <button type="button" onClick={() => onMove(index, -1, currentOrder)} disabled={index === 0} className="rounded-lg border px-3 py-1 text-xs disabled:opacity-40">Yukari</button>
+                <button type="button" onClick={() => onMove(index, 1, currentOrder)} disabled={index === currentOrder.length - 1} className="rounded-lg border px-3 py-1 text-xs disabled:opacity-40">Asagi</button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {!isLocked ? (
+        <button type="button" onClick={() => onMove(-1, 0, currentOrder, true)} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white">Siralamayi Kontrol Et</button>
+      ) : (
+        <div className={`rounded-xl p-4 text-sm ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-rose-100 text-rose-800'}`}>
+          <strong>{isCorrect ? 'Siralama dogru.' : 'Siralama hatali.'}</strong> {question.explanation}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ExamsPage = ({ role }) => {
   const [exams, setExams] = useState([]);
@@ -178,6 +258,40 @@ const ExamsPage = ({ role }) => {
     }));
   };
 
+  const handleMatchingAnswer = (qIndex, promptId, selectedValue, correctPairs) => {
+    setPracticeState((prev) => {
+      const selected = { ...(prev[qIndex]?.selected || {}), [promptId]: selectedValue };
+      const requiredPromptIds = Object.keys(correctPairs || {});
+      const isComplete = requiredPromptIds.length > 0 && requiredPromptIds.every((id) => selected[id]);
+      const isCorrect = isComplete && requiredPromptIds.every((id) => selected[id] === correctPairs[id]);
+      return {
+        ...prev,
+        [qIndex]: {
+          selected,
+          isCorrect,
+          checked: isComplete,
+        },
+      };
+    });
+  };
+
+  const handleSequenceMove = (qIndex, index, direction, currentOrder, checkOnly = false) => {
+    setPracticeState((prev) => {
+      const nextOrder = [...currentOrder];
+      if (!checkOnly) {
+        const swapIndex = index + direction;
+        [nextOrder[index], nextOrder[swapIndex]] = [nextOrder[swapIndex], nextOrder[index]];
+      }
+      return {
+        ...prev,
+        [qIndex]: {
+          selected: nextOrder,
+          checked: checkOnly,
+        },
+      };
+    });
+  };
+
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -218,6 +332,7 @@ const ExamsPage = ({ role }) => {
               <div className="text-lg font-medium text-slate-800 dark:text-white mb-4">
                 {renderWithLatex(q.text)}
               </div>
+              <QuestionVisual src={q.image} alt={`Soru ${idx + 1} gorseli`} className="mb-4 h-56" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {(Array.isArray(q.options) ? q.options : []).map((opt, i) => {
                   const optionText = opt?.text || '';
@@ -331,11 +446,15 @@ const ExamsPage = ({ role }) => {
                       <span className="bg-purple-50 text-purple-700 font-bold px-3 py-1 rounded-lg text-sm">Soru {idx + 1}</span>
                     </div>
                     
-                    {/* Soru Metni (Basit LaTeX desteği için Latex kütüphanesi eklenebilir) */}
                     <p className="text-lg font-medium text-slate-800 dark:text-white mb-6">{q.text || q.questionText}</p>
+                    <QuestionVisual src={q.image} alt={`Antrenman ${idx + 1} gorseli`} className="mb-4 h-56" />
 
+                    {q.type === 'matching' ? (
+                      <MatchingPracticeCard question={q} state={state} onChange={(promptId, selectedValue, correctPairs) => handleMatchingAnswer(idx, promptId, selectedValue, correctPairs)} />
+                    ) : q.type === 'sequence' ? (
+                      <SequencePracticeCard question={q} state={state} onMove={(index, direction, currentOrder, checkOnly = false) => handleSequenceMove(idx, index, direction, currentOrder, checkOnly)} />
+                    ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                      {/* Seçenekler bazen Array bazen Object gelebilir, kontrol ediyoruz */}
                       {(Array.isArray(q.options) ? q.options : Object.values(q.options)).map((opt, i) => {
                         const optKey = ["A", "B", "C", "D"][i]; // Harf karşılığı
                         const isSelected = state?.selected === (q.options.A ? optKey : opt); // Backend formatına göre kontrol
@@ -361,9 +480,9 @@ const ExamsPage = ({ role }) => {
                         )
                       })}
                     </div>
+                    )}
 
-                    {/* Çözüm Açıklaması - Sadece cevaplanınca görünür */}
-                    {isAnswered && (
+                    {isAnswered && q.type !== 'matching' && q.type !== 'sequence' && (
                       <div className={`mt-4 p-4 rounded-xl text-sm ${state.isCorrect ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
                         <div className="font-bold mb-1 flex items-center gap-2">
                            {state.isCorrect ? <CheckCircle size={16}/> : <X size={16}/>}

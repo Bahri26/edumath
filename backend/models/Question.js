@@ -9,6 +9,7 @@ const OptionSchema = new mongoose.Schema({
 const QuestionSchema = new mongoose.Schema({
   text: { type: String, required: true },
   image: { type: String },
+  visualPrompt: { type: String, default: '' },
   subject: { type: String, default: 'Matematik', index: true },
   // Konu başlığı (ör. "Örüntüler")
   topic: { type: String, default: '', index: true },
@@ -29,7 +30,9 @@ const QuestionSchema = new mongoose.Schema({
   },
 
   difficulty: { type: String, enum: ['Kolay', 'Orta', 'Zor'], default: 'Orta', index: true },
-  type: { type: String, enum: ['multiple-choice', 'true-false', 'fill-blank'], default: 'multiple-choice' },
+  type: { type: String, enum: ['multiple-choice', 'true-false', 'fill-blank', 'matching', 'sequence'], default: 'multiple-choice' },
+  interactiveType: { type: String, enum: ['none', 'matching', 'sequence'], default: 'none' },
+  interactionData: { type: mongoose.Schema.Types.Mixed, default: null },
   correctAnswer: { type: String, required: true },
   solution: { type: String, default: '' },
   options: [OptionSchema],

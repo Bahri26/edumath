@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Bell, BookOpen } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import StatCard from '../../components/ui/StatCard';
 import ActivityRow from '../../components/ui/ActivityRow';
 import { useToast } from '../../context/ToastContext';
 import apiClient from '../../services/api';
 import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
+import GuideDrawer from '../../components/help/GuideDrawer.jsx';
 
 const formatRelativeTime = (value) => {
   if (!value) return '-';
@@ -22,13 +22,13 @@ const formatRelativeTime = (value) => {
 };
 
 const TeacherHome = () => {
-  const navigate = useNavigate();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
   const [students, setStudents] = useState([]);
   // Dashboard summary extra (topic, trend, etc.)
   const [dashboardReports, setDashboardReports] = useState(null);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   useEffect(() => {
     // Use dashboard-summary for all stats
@@ -84,6 +84,7 @@ const TeacherHome = () => {
     .slice(0, 8);
 
   return (
+    <>
     <div className="animate-fade-in space-y-6">
       {/* Başlık Alanı */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -97,7 +98,7 @@ const TeacherHome = () => {
           variant="secondary"
           size="md"
           className="self-start lg:self-auto"
-          onClick={() => navigate('/teachers')}
+          onClick={() => setIsGuideOpen(true)}
         >
           <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded text-indigo-600 dark:text-indigo-300"><BookOpen size={16} /></div>
           <span>Kullanım Kılavuzu</span>
@@ -211,6 +212,8 @@ const TeacherHome = () => {
         </div>
       </div>
     </div>
+    <GuideDrawer audience="teacher" open={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+    </>
   );
 };
 

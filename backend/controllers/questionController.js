@@ -234,7 +234,7 @@ exports.getTeacherQuestions = async (req, res, next) => {
 };
 exports.createQuestion = async (req, res, next) => {
   try {
-    const { text, subject, classLevel, difficulty, type, correctAnswer, solution, source, topic, learningOutcome, mebReference, curriculumNote } = req.body;
+    const { text, subject, classLevel, difficulty, type, correctAnswer, solution, source, topic, learningOutcome, mebReference, curriculumNote, visualPrompt, interactiveType, interactionData } = req.body;
     const createdBy = req.user?.id || req.body.createdBy;
 
     // Teacher branch enforcement: if teacher has approved branch, lock subject to branch
@@ -282,6 +282,9 @@ exports.createQuestion = async (req, res, next) => {
       learningOutcome,
       mebReference,
       curriculumNote,
+      visualPrompt: visualPrompt || '',
+      interactiveType: interactiveType || 'none',
+      interactionData: interactionData ? JSON.parse(interactionData) : null,
       image: mainImagePath,
       options: optionsData,
       source: source || 'Manuel',
@@ -343,8 +346,11 @@ exports.updateQuestion = async (req, res, next) => {
     if (!question) return res.status(404).json({ message: "Soru bulunamadı" });
 
     // Temel alanları güncelle
-    const fields = ['text', 'subject', 'classLevel', 'difficulty', 'type', 'correctAnswer', 'solution', 'source', 'topic'];
+    const fields = ['text', 'subject', 'classLevel', 'difficulty', 'type', 'correctAnswer', 'solution', 'source', 'topic', 'learningOutcome', 'mebReference', 'curriculumNote', 'visualPrompt', 'interactiveType'];
     fields.forEach(f => { if(req.body[f]) question[f] = req.body[f]; });
+    if (req.body.interactionData) {
+      question.interactionData = JSON.parse(req.body.interactionData);
+    }
 
     // Ana Resim Güncellemesi
     const mainImgFile = req.files ? req.files.find(f => f.fieldname === 'image') : null;

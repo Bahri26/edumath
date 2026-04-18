@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
+const { renderPatternSvg } = require('./svgPatternRenderer');
 
 const MODEL_NAME = process.env.GEMINI_COMPLEX_MODEL || process.env.GEMINI_MODEL || 'gemini-1.5-pro';
 
@@ -225,7 +226,7 @@ function sanitizeQuestion(question, defaults) {
     return null;
   }
 
-  return {
+  const sanitized = {
     text: String(question.text || '').trim(),
     options,
     correctAnswer,
@@ -241,6 +242,9 @@ function sanitizeQuestion(question, defaults) {
     type: 'multiple-choice',
     source: 'AI',
   };
+
+  sanitized.image = renderPatternSvg(sanitized);
+  return sanitized;
 }
 
 async function generatePatternQuestions({
