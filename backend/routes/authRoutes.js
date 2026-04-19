@@ -65,6 +65,18 @@ const normalizeIdentifier = (value) => String(value || '').trim().toLowerCase();
 const authSlowLogMs = Number(process.env.AUTH_SLOW_LOG_MS || 800);
 const authDebugTiming = String(process.env.AUTH_DEBUG_TIMING || '').toLowerCase() === 'true';
 
+const shouldSyncLoginIdentifiers = (user) => {
+  if (!user) {
+    return false;
+  }
+
+  const emailLower = String(user.email || '').trim().toLowerCase();
+  const username = String(user.username || '').trim();
+  const usernameLower = username ? username.toLowerCase() : undefined;
+
+  return user.emailLower !== emailLower || (user.usernameLower || undefined) !== usernameLower;
+};
+
 const logAuthTiming = ({ identifier, totalMs, lookupMs, passwordMs, tokenMs, outcome, statusCode }) => {
   if (!authDebugTiming && totalMs < authSlowLogMs) {
     return;
@@ -101,20 +113,22 @@ const syncUserLoginIdentifiers = async (user) => {
 router.post('/register', validate(registerSchema), async (req, res) => {
   try {
     const { name, username, email, password, role, grade, schoolType } = req.body;
+    const normalizedEmail = normalizeIdentifier(email);
+    const normalizedUsername = username ? normalizeIdentifier(username) : '';
 
     const autoApprove = String(process.env.AUTO_APPROVE_USERS || '').toLowerCase() === 'true';
 
-    // Email kontrolü
-    const existingUser = await User.findOne({ email });
+    const [existingUser, existingUsername] = await Promise.all([
+      User.findOne({ emailLower: normalizedEmail }).select('_id').lean(),
+      normalizedUsername ? User.findOne({ usernameLower: normalizedUsername }).select('_id').lean() : Promise.resolve(null),
+    ]);
+
     if (existingUser) {
       return res.status(400).json({ message: "Bu e-posta zaten kayıtlı." });
     }
 
-    if (username) {
-      const existingUsername = await User.findOne({ username: { $regex: `^${username}$`, $options: 'i' } });
-      if (existingUsername) {
-        return res.status(400).json({ message: 'Bu kullanıcı adı zaten kayıtlı.' });
-      }
+    if (existingUsername) {
+      return res.status(400).json({ message: 'Bu kullanıcı adı zaten kayıtlı.' });
     }
 
     // Kayıt (hashleme User pre-save hook'unda yapılır)
@@ -179,7 +193,9 @@ router.post('/login', validate(loginSchema), async (req, res) => {
       return res.status(400).json({ message: "Kullanıcı bulunamadı." });
     }
 
-    await syncUserLoginIdentifiers(user);
+    if (shouldSyncLoginIdentifiers(user)) {
+      await syncUserLoginIdentifiers(user);
+    }
 
     // Hesap durumu kontrolü
     if (user.status === 'pending') {
