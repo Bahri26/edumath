@@ -138,6 +138,7 @@ exports.analyzeAndSuggest = async (req, res) => {
 const { GoogleGenerativeAI, SchemaType } = require("@google/generative-ai");
 const fs = require("fs");
 const pathLib = require('path');
+const Tesseract = require('tesseract.js');
 const { generatePatternQuestions } = require('../services/aiQuestionGeneratorService');
 
 // API Anahtarınızı .env dosyasından çekiyoruz
@@ -154,6 +155,120 @@ function fileToGenerativePart(path, mimeType) {
       mimeType,
     },
   };
+}
+
+function buildDefaultParsedQuestion(overrides = {}) {
+  return {
+    text: '',
+    options: ['', '', '', ''],
+    correctAnswer: '',
+    solution: '',
+    subject: 'Matematik',
+    classLevel: '9. Sınıf',
+    difficulty: 'Orta',
+    ...overrides,
+  };
+}
+
+function normalizeOptions(options) {
+  if (!Array.isArray(options) || options.length === 0) {
+    return ['', '', '', ''];
+  }
+
+  return options.slice(0, 4).concat(Array(4).fill('')).slice(0, 4).map((value) => String(value || '').trim());
+}
+
+function parseStructuredQuestionText(content, defaults = {}) {
+  const fallback = buildDefaultParsedQuestion(defaults);
+  const normalized = String(content || '').replace(/\r/g, '\n');
+  if (!normalized.trim()) {
+    return fallback;
+  }
+
+  const lines = normalized.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  const optionRegexes = [
+    /^\*?\s*A[\)\.\:]\s*(.+)$/i,
+    /^\*?\s*B[\)\.\:]\s*(.+)$/i,
+    /^\*?\s*C[\)\.\:]\s*(.+)$/i,
+    /^\*?\s*D[\)\.\:]\s*(.+)$/i,
+  ];
+
+  const questionTextLines = [];
+  const options = ['', '', '', ''];
+  let correctAnswer = '';
+  let inOptions = false;
+
+  for (const line of lines) {
+    const answerMatch = line.match(/^(?:Doğru\s*Cevap|Cevap|Answer)\s*[:=]\s*([A-D])/i);
+    if (answerMatch) {
+      const index = 'ABCD'.indexOf(answerMatch[1].toUpperCase());
+      if (index >= 0 && options[index]) {
+        correctAnswer = options[index];
+      }
+      continue;
+    }
+
+    const markedOption = line.match(/^\*\s*([A-D])[\)\.\:]\s*(.+)$/i);
+    if (markedOption) {
+      const index = 'ABCD'.indexOf(markedOption[1].toUpperCase());
+      options[index] = markedOption[2].trim();
+      correctAnswer = options[index];
+      inOptions = true;
+      continue;
+    }
+
+    let matched = false;
+    for (let index = 0; index < optionRegexes.length; index += 1) {
+      const optionMatch = line.match(optionRegexes[index]);
+      if (optionMatch) {
+        options[index] = optionMatch[1].trim();
+        inOptions = true;
+        matched = true;
+        break;
+      }
+    }
+
+    if (matched) {
+      continue;
+    }
+
+    if (!inOptions) {
+      questionTextLines.push(line);
+    }
+  }
+
+  if (!correctAnswer) {
+    const tailMatch = normalized.match(/\(([A-D])\)\s*$/m);
+    if (tailMatch) {
+      const index = 'ABCD'.indexOf(tailMatch[1].toUpperCase());
+      if (index >= 0 && options[index]) {
+        correctAnswer = options[index];
+      }
+    }
+  }
+
+  const text = questionTextLines.join(' ').trim();
+  return buildDefaultParsedQuestion({
+    ...defaults,
+    text,
+    options: normalizeOptions(options),
+    correctAnswer: correctAnswer || options[0] || '',
+  });
+}
+
+async function extractTextFromImageWithOcr(filePath) {
+  try {
+    const result = await Tesseract.recognize(filePath, 'tur+eng', {
+      logger: () => {},
+    });
+    return String(result?.data?.text || '').trim();
+  } catch (primaryError) {
+    console.warn('smartParse OCR tur+eng failed, retrying with eng:', primaryError?.message);
+    const retryResult = await Tesseract.recognize(filePath, 'eng', {
+      logger: () => {},
+    });
+    return String(retryResult?.data?.text || '').trim();
+  }
 }
 
 // ------------------------------------------------------------------
@@ -238,40 +353,58 @@ exports.smartParse = async (req, res) => {
     `;
 
     let data;
+    let parseMode = 'ai';
     try {
       const result = await model.generateContent([instruction, imagePart]);
       const raw = result.response.text();
       let parsed;
       try { parsed = JSON.parse(raw); } catch (e) { parsed = {}; }
-      data = {
+      data = buildDefaultParsedQuestion({
         text: parsed.text || "",
-        options: Array.isArray(parsed.options) && parsed.options.length > 0
-          ? parsed.options.slice(0, 4).concat(Array(4).fill("")).slice(0, 4)
-          : ["", "", "", ""],
+        options: normalizeOptions(parsed.options),
         correctAnswer: parsed.correctAnswer || "",
         solution: parsed.solution || "",
         subject: parsed.subject || "Matematik",
         classLevel: parsed.classLevel || "9. Sınıf",
         difficulty: parsed.difficulty || "Orta",
         imagePath: imageUrl,
-      };
+      });
+
+      const hasUsefulAiResult = data.text.trim() || data.options.some((option) => option.trim());
+      if (!hasUsefulAiResult) {
+        throw new Error('AI parse returned empty fields');
+      }
     } catch (aiErr) {
-      // AI KEY eksik/invalid ise kullanıcıya manuel düzenleme için fallback ver
-      console.warn('smartParse AI error, fallback to manual:', aiErr?.message);
-      data = {
-        text: "",
-        options: ["", "", "", ""],
-        correctAnswer: "",
-        solution: "",
-        subject: "Matematik",
-        classLevel: "9. Sınıf",
-        difficulty: "Orta",
+      console.warn('smartParse AI error, fallback to OCR:', aiErr?.message);
+      parseMode = 'ocr';
+      try {
+        const ocrText = await extractTextFromImageWithOcr(req.file.path);
+        data = parseStructuredQuestionText(ocrText, {
+          imagePath: imageUrl,
+        });
+      } catch (ocrErr) {
+        console.warn('smartParse OCR fallback failed, fallback to manual:', ocrErr?.message);
+        parseMode = 'manual';
+        data = buildDefaultParsedQuestion({
         imagePath: imageUrl,
-      };
+        });
+      }
     }
 
     // Dosyayı sakla (temp klasörde erişilebilir), temizleme yok
-    return res.json({ success: true, data });
+    return res.json({
+      success: true,
+      data,
+      meta: {
+        parseMode,
+        autoFilled: Boolean(data.text.trim() || data.options.some((option) => option.trim())),
+      },
+      message: parseMode === 'ai'
+        ? 'Görsel AI ile ayrıştırıldı.'
+        : parseMode === 'ocr'
+          ? 'AI kullanılamadı, OCR ile alanlar dolduruldu.'
+          : 'AI ve OCR kullanılamadı, alanları manuel doldurun.',
+    });
   } catch (error) {
     console.error("smartParse Hatası:", error);
     try { fs.unlinkSync(req.file?.path); } catch(e) {}
@@ -469,72 +602,7 @@ exports.smartParseText = async (req, res) => {
       return res.status(400).json({ message: 'İçerik boş. Lütfen soruyu yapıştırın.' });
     }
 
-    // Basit yerel ayrıştırıcı (AI anahtarı yoksa güvenli fallback)
-    const lines = content.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    const optionRegexes = [
-      /^\*?\s*A[\).\:]\s*(.+)$/i,
-      /^\*?\s*B[\).\:]\s*(.+)$/i,
-      /^\*?\s*C[\).\:]\s*(.+)$/i,
-      /^\*?\s*D[\).\:]\s*(.+)$/i,
-    ];
-
-    let questionTextLines = [];
-    let options = ['', '', '', ''];
-    let correctAnswer = '';
-    let inOptions = false;
-
-    for (const line of lines) {
-      // Answer hints
-      const ansMatch = line.match(/^(?:Doğru\s*Cevap|Cevap|Answer)\s*[:=]\s*([A-D])/i);
-      if (ansMatch) {
-        const idx = 'ABCD'.indexOf(ansMatch[1].toUpperCase());
-        if (idx >= 0 && options[idx]) correctAnswer = options[idx];
-        continue;
-      }
-      // Marked with * at option line
-      const starOpt = line.match(/^\*\s*([A-D])[\).\:]\s*(.+)$/i);
-      if (starOpt) {
-        const idx = 'ABCD'.indexOf(starOpt[1].toUpperCase());
-        options[idx] = starOpt[2].trim();
-        correctAnswer = options[idx];
-        inOptions = true;
-        continue;
-      }
-      // Options A-D
-      let matched = false;
-      for (let i = 0; i < 4; i++) {
-        const m = line.match(optionRegexes[i]);
-        if (m) {
-          options[i] = m[1].trim();
-          inOptions = true;
-          matched = true;
-          break;
-        }
-      }
-      if (matched) continue;
-      // Non-option lines
-      if (!inOptions) questionTextLines.push(line);
-    }
-
-    const text = questionTextLines.join(' ').trim();
-    // If correctAnswer still empty, try to match by trailing marker like (C)
-    if (!correctAnswer) {
-      const tail = content.match(/\(([A-D])\)\s*$/m);
-      if (tail) {
-        const idx = 'ABCD'.indexOf(tail[1].toUpperCase());
-        if (idx >= 0 && options[idx]) correctAnswer = options[idx];
-      }
-    }
-
-    const data = {
-      text,
-      options: options.map(o => o || ''),
-      correctAnswer: correctAnswer || options[0] || '',
-      solution: '',
-      subject: 'Matematik',
-      classLevel: '9. Sınıf',
-      difficulty: 'Orta',
-    };
+    const data = parseStructuredQuestionText(content);
 
     // Eğer GEMINI_API_KEY varsa, daha iyi ayrıştırma için LLM kullanmayı dene
     if (process.env.GEMINI_API_KEY) {
@@ -564,7 +632,7 @@ exports.smartParseText = async (req, res) => {
         // Güvenli birleştirme
         data.text = llm.text || data.text;
         if (Array.isArray(llm.options) && llm.options.length) {
-          data.options = llm.options.slice(0, 4).concat(Array(4).fill('')).slice(0, 4);
+          data.options = normalizeOptions(llm.options);
         }
         data.correctAnswer = llm.correctAnswer || data.correctAnswer;
         data.solution = llm.solution || data.solution;

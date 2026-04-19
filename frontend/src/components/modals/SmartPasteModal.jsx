@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Loader2, Image as ImageIcon, Check, ArrowRight } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
-import apiClient from '../../services/api';
+import apiClient, { withAiRequestConfig } from '../../services/api';
 import Button from '../ui/Button.jsx';
 import Card from '../ui/Card.jsx';
 
@@ -42,9 +42,12 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     try {
       // Backend'deki multimodal Gemini Flash endpoint'ini çağırıyoruz
       const res = await apiClient.post('/ai/smart-parse', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        ...withAiRequestConfig(),
       });
       const data = res.data?.data || {};
+      const parseMode = res.data?.meta?.parseMode;
+      const serverMessage = res.data?.message;
       setParsedData({
         text: data.text || '',
         options: Array.isArray(data.options) ? data.options : ['', '', '', ''],
@@ -60,7 +63,13 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         setImage(data.imagePath);
       }
       setStep('editing'); // Düzenleme aşamasına geç
-      showToast("Görsel analiz edildi veya manuel düzenleme için hazır.", "success");
+      if (parseMode === 'manual') {
+        showToast(serverMessage || 'AI ve OCR sonuç vermedi. Alanları manuel doldurun.', 'error');
+      } else if (parseMode === 'ocr') {
+        showToast(serverMessage || 'AI kullanılamadı, OCR ile alanlar dolduruldu.', 'success');
+      } else {
+        showToast(serverMessage || 'Görsel analiz edildi.', 'success');
+      }
     } catch (err) {
       // Fallback to manual: keep local preview and open editing with blanks
       setParsedData(prev => ({
