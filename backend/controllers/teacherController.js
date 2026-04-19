@@ -75,7 +75,7 @@ const buildDifficultyCounts = async (query) => {
 // İç mantık: Öğretmen istatistiklerini hesapla
 async function buildTeacherStats(teacherId) {
   // Öğretmen bilgisi
-  const teacher = await User.findById(teacherId);
+  const teacher = await User.findById(teacherId).select('role branch').lean();
   if (!teacher || teacher.role !== 'teacher') {
     return {
       totalStudents: 0,
@@ -99,24 +99,22 @@ async function buildTeacherStats(teacherId) {
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  const teacherStudents = await Student.find({ teacherId: teacher._id })
-    .select('averageScore')
-    .lean();
-
-  const totalQuestions = await Question.countDocuments({ subject: branch });
-  const todayQuestions = await Question.countDocuments({
-    subject: branch,
-    createdAt: { $gte: todayStart, $lte: todayEnd }
-  });
-
-  const totalExams = await Exam.countDocuments({ subject: branch });
-  const todayExams = await Exam.countDocuments({
-    subject: branch,
-    createdAt: { $gte: todayStart, $lte: todayEnd }
-  });
+  const [teacherStudents, totalQuestions, todayQuestions, totalExams, todayExams, totalTeachers] = await Promise.all([
+    Student.find({ teacherId: teacher._id }).select('averageScore').lean(),
+    Question.countDocuments({ subject: branch }),
+    Question.countDocuments({
+      subject: branch,
+      createdAt: { $gte: todayStart, $lte: todayEnd }
+    }),
+    Exam.countDocuments({ subject: branch }),
+    Exam.countDocuments({
+      subject: branch,
+      createdAt: { $gte: todayStart, $lte: todayEnd }
+    }),
+    User.countDocuments({ role: 'teacher' }),
+  ]);
 
   const totalStudents = teacherStudents.length;
-  const totalTeachers = await User.countDocuments({ role: 'teacher' });
 
   let classAverage = 0;
   if (teacherStudents.length > 0) {
@@ -379,54 +377,54 @@ exports.getMyQuestions = async (req, res) => {
 exports.getDashboardSummary = async (req, res) => {
   try {
     const teacherId = req.user.id;
-    const teacher = await User.findById(teacherId).select('branch');
+    const teacher = await User.findById(teacherId).select('branch').lean();
     const branch = teacher?.branch || 'Matematik';
-    const stats = await buildTeacherStats(teacherId);
-    const teacherStudents = await Student.find({ teacherId })
-      .select('grade averageScore createdAt')
-      .sort({ createdAt: -1 })
-      .lean();
-
-    const topicPerformance = await Question.aggregate([
-      { $match: { subject: { $regex: `^${branch}$`, $options: 'i' }, topic: { $exists: true, $ne: '' } } },
-      { $group: { 
-        _id: '$topic', 
-        total: { $sum: 1 },
-        avgDifficulty: { $avg: { 
-          $cond: [
-            { $eq: ['$difficulty', 'Kolay'] }, 1,
-            { $cond: [{ $eq: ['$difficulty', 'Orta'] }, 2, 3] }
-          ]
-        }}
-      }},
-      { $sort: { total: -1 } }
-    ]);
-
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const dailyTrend = await Exam.aggregate([
-      { $match: { 
-        subject: { $regex: `^${branch}$`, $options: 'i' },
-        createdAt: { $gte: sevenDaysAgo }
-      }},
-      { $group: {
-        _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-        avgScore: { $avg: '$averageScore' },
-        count: { $sum: 1 }
-      }},
-      { $sort: { _id: 1 } }
+    const branchRegex = { $regex: `^${branch}$`, $options: 'i' };
+
+    const [stats, teacherStudents, topicPerformance, dailyTrend, recentQuestions, recentExams] = await Promise.all([
+      buildTeacherStats(teacherId),
+      Student.find({ teacherId })
+        .select('grade averageScore createdAt')
+        .sort({ createdAt: -1 })
+        .lean(),
+      Question.aggregate([
+        { $match: { subject: branchRegex, topic: { $exists: true, $ne: '' } } },
+        { $group: { 
+          _id: '$topic', 
+          total: { $sum: 1 },
+          avgDifficulty: { $avg: { 
+            $cond: [
+              { $eq: ['$difficulty', 'Kolay'] }, 1,
+              { $cond: [{ $eq: ['$difficulty', 'Orta'] }, 2, 3] }
+            ]
+          }}
+        }},
+        { $sort: { total: -1 } }
+      ]),
+      Exam.aggregate([
+        { $match: { 
+          subject: branchRegex,
+          createdAt: { $gte: sevenDaysAgo }
+        }},
+        { $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          avgScore: { $avg: '$averageScore' },
+          count: { $sum: 1 }
+        }},
+        { $sort: { _id: 1 } }
+      ]),
+      Question.find({ subject: branchRegex })
+        .select('text difficulty classLevel createdAt image')
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .lean(),
+      Exam.find({ subject: branchRegex })
+        .select('title classLevel createdAt status results')
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .lean(),
     ]);
-
-    const recentQuestions = await Question.find({ subject: { $regex: `^${branch}$`, $options: 'i' } })
-      .select('text difficulty classLevel createdAt image')
-      .sort({ createdAt: -1 })
-      .limit(8)
-      .lean();
-
-    const recentExams = await Exam.find({ subject: { $regex: `^${branch}$`, $options: 'i' } })
-      .select('title classLevel createdAt status results')
-      .sort({ createdAt: -1 })
-      .limit(8)
-      .lean();
 
     res.json({
       stats,
