@@ -6,14 +6,31 @@ global.IntersectionObserver = class {
   disconnect() {}
 };
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { ToastProvider } from '../../context/ToastContext';
 import ExamsPage from './ExamsPage';
 
+vi.mock('../../services/api', () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({ data: [] }),
+    post: vi.fn().mockResolvedValue({ data: {} }),
+  },
+  registerApiErrorNotifier: vi.fn(),
+}));
+
+vi.mock('../../services/examService', () => ({
+  createExam: vi.fn().mockResolvedValue({}),
+}));
+
 describe('ExamsPage', () => {
-  it('renders main section', () => {
-    render(<ExamsPage />);
-    expect(screen.getByText(/sınav|exam/i)).toBeInTheDocument();
+  it('renders main section', async () => {
+    render(
+      <ToastProvider>
+        <ExamsPage />
+      </ToastProvider>
+    );
+    expect(await screen.findByRole('heading', { name: /sınav|exam/i })).toBeInTheDocument();
   });
 });
