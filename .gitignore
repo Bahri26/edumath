@@ -47,6 +47,12 @@ backend/uploads/*
 !backend/uploads/temp/.gitkeep
 
 # =============================
+# Gecici / dahili
+# =============================
+.git-commit-msg.tmp
+*.tmp
+
+# =============================
 # IDE / OS
 # =============================
 .vscode/
