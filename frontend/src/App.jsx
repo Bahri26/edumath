@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import {
-  BookOpen, FileText, CheckCircle, Trophy, LayoutGrid, Puzzle, Users, BarChart2,
-  Settings, User, Calendar, Target, MessageSquare,
+  BookOpen, FileText, CheckCircle, Trophy, LayoutGrid, Users, BarChart2,
+  Calendar, Target, MessageSquare,
 } from 'lucide-react';
 import DashboardLayout from './pages/DashboardLayout';
 import { ThemeProvider } from './context/ThemeContext';
@@ -91,10 +91,7 @@ function App() {
                   { id: 'skill-tree', label: 'Kazanım Ağacı', icon: LayoutGrid, path: '/teacher/skill-tree' },
                   { id: 'student-progress', label: 'Öğrenci İlerleme', icon: Users, path: '/teacher/student-progress' },
                   { id: 'reports', label: 'Raporlar', icon: BarChart2, path: '/teacher/reports' },
-                  { id: 'pattern-builder', label: 'Örüntü Oluştur', icon: Puzzle, path: '/teacher/pattern-builder' },
                   { id: 'surveys', label: 'Anketler', icon: FileText, path: '/teacher/surveys' },
-                  { id: 'profile', label: 'Profil', icon: User, path: '/teacher/profile' },
-                  { id: 'settings', label: 'Ayarlar', icon: Settings, path: '/teacher/settings' },
                 ]}
               />
             </ProtectedRoute>
@@ -135,8 +132,6 @@ function App() {
                   { id: 'messages', label: 'Mesajlar', icon: MessageSquare, path: '/student/messages' },
                   { id: 'leaderboard', label: 'Sıralama', icon: Trophy, path: '/student/leaderboard' },
                   { id: 'calendar', label: 'Takvim', icon: Calendar, path: '/student/calendar' },
-                  { id: 'profile', label: 'Profil', icon: User, path: '/student/profile' },
-                  { id: 'settings', label: 'Ayarlar', icon: Settings, path: '/student/settings' },
                 ]}
               />
             </ProtectedRoute>
