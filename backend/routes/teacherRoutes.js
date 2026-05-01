@@ -13,6 +13,9 @@ router.get('/stats', protect, role(['teacher']), teacherController.getTeacherSta
 // 📈 RAPORLAR
 router.get('/reports', protect, role(['teacher']), teacherController.getClassReports);
 
+// 💡 İPUCU İSTEKLERİ (öğrencilerin zorlandığı yerler)
+router.get('/hint-requests', protect, role(['teacher']), teacherController.getHintRequests);
+
 // ❓ SORULAR (ÖĞRETMENIN KENDİ SORULARI)
 router.get('/questions', protect, role(['teacher']), teacherController.getMyQuestions);
 // Branşa göre tüm soru bankası (onaylı branş gerekli)
@@ -28,6 +31,8 @@ router.get('/students', protect, role(['teacher']), teacherController.getClassSt
 
 // 👤 ÖĞRENCİ DETAYLARI
 router.get('/students/:studentId', protect, role(['teacher']), teacherController.getStudentDetails);
+// 📈 Öğrenci ilerleme (lesson quiz progress)
+router.get('/students/:studentId/progress', protect, role(['teacher']), teacherController.getStudentProgress);
 
 // 📋 DASHBOARD ÖZET
 router.get('/dashboard-summary', protect, role(['teacher']), teacherController.getDashboardSummary);

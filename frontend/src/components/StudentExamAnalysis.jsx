@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { examResultAnalysis } from "../services/aiService";
 
 export default function StudentExamAnalysis({ examAnswers }) {
   const [result, setResult] = useState(null);
@@ -9,10 +9,9 @@ export default function StudentExamAnalysis({ examAnswers }) {
   useEffect(() => {
     if (!examAnswers) return;
     setLoading(true);
-    axios
-      .post("/api/ai/exam-result-analysis", { answers: examAnswers, studentId: "currentStudent" })
-      .then((res) => {
-        setResult(res.data);
+    examResultAnalysis({ answers: examAnswers, studentId: "currentStudent" })
+      .then((data) => {
+        setResult(data);
         setLoading(false);
       })
       .catch((err) => {

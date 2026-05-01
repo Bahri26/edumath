@@ -1,22 +1,35 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState, useCallback, Fragment, useMemo } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import QuestionFormModal from '../../components/exams/QuestionFormModal';
 import SmartPasteModal from '../../components/modals/SmartPasteModal'; // AI Yapıştır Modalı
-import { 
-  Plus, Edit2, Trash2, Search, FileText, Layers, Loader2, 
-  ChevronLeft, ChevronRight, CheckCircle, Star, Copy, Download,
-  Clock, Filter, Sparkles, Hash
+import AiGenerateQuizModal from '../../components/modals/AiGenerateQuizModal';
+import {
+  Plus, Edit2, Trash2, Search, FileText, Layers,
+  ChevronLeft, ChevronRight, Star,
+  Sparkles, Hash,
+  LayoutGrid,
+  Wand2,
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import 'katex/dist/katex.min.css';
-import { InlineMath } from 'react-katex';
 import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
 import SkeletonCard from '../../components/ui/SkeletonCard';
 import { renderWithLatex } from '../../utils/latex.jsx';
 import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
+import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
+import {
+  PATTERN_TOPIC_ORDER,
+  PATTERN_TOPIC_ALL_UNDER,
+  sortPatternTopicsUi,
+} from '../../constants/patternTopicsUi';
 
+const MATH_TOPIC_OPTIONS_FALLBACK = [
+  'Tümü',
+  PATTERN_TOPIC_ALL_UNDER,
+  ...PATTERN_TOPIC_ORDER,
+];
 
 const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
   const difficultyStyles = {
@@ -44,12 +57,17 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
               <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
                 {question.subject}
               </span>
+              {question.topic && (
+                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 border border-violet-100 dark:border-violet-800/40">
+                  {question.topic}
+                </span>
+              )}
             </div>
             <div className="text-slate-800 dark:text-slate-200 font-medium text-base md:text-lg">
               {renderWithLatex(question.text)}
             </div>
           </div>
-          <div className="flex md:flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300" onClick={e => e.stopPropagation()}>
+          <div className="flex md:flex-col gap-2 opacity-60 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300" onClick={e => e.stopPropagation()}>
             <button onClick={() => onEdit(question)} className="p-2.5 bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-indigo-600 transition-all">
               <Edit2 size={18} />
             </button>
@@ -62,8 +80,14 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
 
       {expanded && (
         <div className="px-6 pb-6 pt-2 border-t border-slate-50 dark:border-slate-700 space-y-6 animate-in slide-in-from-top-2">
+          <QuestionVisual src={question.image} alt="" className="w-full" />
+          {question.learningOutcome && (
+            <div className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+              <span className="font-black uppercase tracking-wider text-[9px] text-slate-400">Kazanım</span>
+              {' '}{question.learningOutcome}
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <QuestionVisual src={question.image} alt="Soru gorseli" className="md:col-span-2 h-56" />
             {question.options?.map((opt, idx) => (
               <div key={idx} className={`p-4 rounded-2xl border-2 flex items-center gap-4 ${
                 question.correctAnswer === (opt.text || opt)
@@ -83,10 +107,10 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
           </div>
           {question.solution && (
             <div className="p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
-              <div className="flex items-center gap-2 mb-2 text-indigo-600 font-black text-[10px] uppercase">
-                <Sparkles size={14} /> Çözüm & İpucu
+              <div className="flex items-center gap-2 mb-3 text-indigo-600 font-black text-[10px] uppercase">
+                <Sparkles size={14} /> Adım adım çözüm
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-300 italic">{renderWithLatex(question.solution)}</p>
+              <SolutionDisplay text={question.solution} className="italic" />
             </div>
           )}
         </div>
@@ -105,6 +129,7 @@ export default function QuestionBank() {
   const [expandedId, setExpandedId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSmartPasteOpen, setIsSmartPasteOpen] = useState(false);
+  const [isAiGenerateOpen, setIsAiGenerateOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [manualForm, setManualForm] = useState(null);
   const [mainImage, setMainImage] = useState({ file: null, preview: '' });
@@ -127,7 +152,9 @@ export default function QuestionBank() {
           if (branch && branchApproval === 'approved') {
             setFilters(f => ({ ...f, subject: branch }));
           }
-        } catch {}
+        } catch {
+          /* profil yüklemede sorun sessiz geçilir */
+        }
         finally {
           if (active) {
             setProfileLoaded(true);
@@ -142,7 +169,8 @@ export default function QuestionBank() {
     useEffect(() => {
       let timer;
       if (profile.branch && profile.branchApproval === 'pending') {
-        timer = setInterval(async () => {
+        const tick = async () => {
+          if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
           try {
             const res = await apiClient.get('/users/profile');
             const branch = res.data?.branch || '';
@@ -151,12 +179,14 @@ export default function QuestionBank() {
               setProfile({ branch, branchApproval });
               setFilters(f => ({ ...f, subject: branch }));
               showToast('Branş onaylandı! İçerikleriniz yükleniyor…', 'success');
-              // Trigger list refresh via state change
               setPage(1);
               clearInterval(timer);
             }
-          } catch {}
-        }, 5000);
+          } catch {
+            /* periyot içi profil yenileme hatası göz ardı edilir */
+          }
+        };
+        timer = setInterval(tick, 8000);
       }
       return () => { if (timer) clearInterval(timer); };
     }, [profile.branch, profile.branchApproval, showToast]);
@@ -198,6 +228,16 @@ export default function QuestionBank() {
     setSearchParams(params, { replace: true });
   }, [debouncedSearch, filters, page, setSearchParams]);
 
+  const aiFilterDefaults = useMemo(
+    () => ({
+      subject: filters.subject,
+      topic: filters.topic,
+      classLevel: filters.classLevel,
+      difficulty: filters.difficulty,
+    }),
+    [filters.subject, filters.topic, filters.classLevel, filters.difficulty]
+  );
+
   const fetchQuestions = useCallback(async () => {
     if (!profileLoaded) {
       return;
@@ -209,24 +249,20 @@ export default function QuestionBank() {
         page,
         limit: 8,
         search: debouncedSearch,
-        ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== 'Tümü'))
+        sortBy: 'topic',
+        ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== 'Tümü')),
       };
       // If branch approved, use subject-wide endpoint (ignores external subject filter and uses teacher branch)
       let res;
       const shouldUseSubjectEndpoint = (profile.branch && profile.branchApproval === 'approved') || (filters.subject && filters.subject !== 'Tümü');
       if (shouldUseSubjectEndpoint) {
-        const { subject, ...rest } = params; // subject'i backend tarafı branştan belirliyor; topic kalır
+        const rest = { ...params };
+        delete rest.subject;
         const subjectParam = profile.branch && profile.branchApproval === 'approved' ? profile.branch : filters.subject;
         try {
-          // Öncelik: öğretmen branşına özel endpoint (onay gerekli)
           res = await apiClient.get('/teacher/subject/questions', { params: rest });
-        } catch (err) {
-          // Yetki/Onay nedeniyle hata (401/403/404) durumunda genel endpoint'e düş
-          try {
-            res = await apiClient.get('/questions', { params: { ...rest, subject: subjectParam } });
-          } catch (innerErr) {
-            throw innerErr;
-          }
+        } catch {
+          res = await apiClient.get('/questions', { params: { ...rest, subject: subjectParam } });
         }
       } else {
         res = await apiClient.get('/teacher/questions', { params });
@@ -236,7 +272,7 @@ export default function QuestionBank() {
         setTotalPages(res.data.totalPages || 1);
         setTotalQuestions(res.data.total || 0);
       }
-    } catch (err) {
+    } catch {
       showToast('Veriler senkronize edilemedi', 'error');
     } finally {
       setLoading(false);
@@ -255,13 +291,15 @@ export default function QuestionBank() {
             params.classLevel = filters.classLevel;
           }
           const res = await apiClient.get('/teacher/subject/topics', { params });
-          const list = res.data?.topics || [];
-          setTopics(list);
-          // Eğer mevcut topic filtresi listede yoksa sıfırla
-          if (filters.topic !== 'Tümü' && !list.includes(filters.topic)) {
+          const prioritized = sortPatternTopicsUi(res.data?.topics || []);
+          setTopics(prioritized);
+          const allowedTopics = new Set(['Tümü', PATTERN_TOPIC_ALL_UNDER, 'Örüntüler', ...prioritized]);
+          if (!allowedTopics.has(filters.topic)) {
             setFilters(f => ({ ...f, topic: 'Tümü' }));
           }
-        } catch {}
+        } catch {
+          /* konu listesi alınamadı; filtre yine de çalışır */
+        }
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -276,8 +314,7 @@ export default function QuestionBank() {
       try {
         await apiClient.delete(`/questions/${id}`);
         showToast("Soru başarıyla silindi", "success");
-      } catch (err) {
-        // Rollback on failure
+      } catch {
         setQuestions(prev);
         setTotalQuestions(t => t + 1);
         showToast("Soru silinemedi", "error");
@@ -294,17 +331,79 @@ export default function QuestionBank() {
           <h1 className="text-5xl font-black tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
             Soru Bankası
           </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
+            Matematik soruları örüntü alt konularına göre gruplanır (şekil dizileri, sabit adımlı sayı örüntüsü,
+            kare/üçgensel sayılar vb.); kazanım metinleri MEB matematik programındaki örüntü çerçevesiyle uyumludur.
+          </p>
           <div className="flex items-center gap-2 text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">
-            <span className="text-indigo-600 font-black">#</span> TOPLAM {totalQuestions} ESER BULUNUYOR
+            <span className="text-indigo-600 font-black">#</span> TOPLAM {totalQuestions} SORU
           </div>
         </div>
 
-        <div className="flex gap-4">
-          <Button variant="outline" size="md" onClick={() => setIsSmartPasteOpen(true)} className="px-6 py-4 rounded-2xl border-2 border-indigo-600 text-indigo-600">
+        <div className="flex flex-wrap gap-3 justify-end">
+          <Link
+            to="/teacher/pattern-builder"
+            className="inline-flex items-center gap-2 px-6 py-4 rounded-2xl border-2 border-violet-500/80 text-violet-700 dark:text-violet-300 dark:border-violet-500/50 font-bold text-sm hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-colors"
+          >
+            <LayoutGrid size={20} /> Örüntü şablonu
+          </Link>
+          <Button
+            variant="outline"
+            size="md"
+            onClick={() => setIsSmartPasteOpen(true)}
+            disabled={profile.branchApproval !== 'approved'}
+            title={profile.branchApproval !== 'approved' ? 'Branş onayından sonra kullanılabilir' : ''}
+            className="px-6 py-4 rounded-2xl border-2 border-indigo-600 text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <Sparkles size={20} /> Akıllı Yapıştır
           </Button>
+          <Button
+            variant="outline"
+            size="md"
+            onClick={() => setIsAiGenerateOpen(true)}
+            disabled={profile.branchApproval !== 'approved'}
+            title={profile.branchApproval !== 'approved' ? 'Branş onayından sonra kullanılabilir' : ''}
+            className="px-6 py-4 rounded-2xl border-2 border-violet-600 text-violet-700 dark:text-violet-300 dark:border-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Wand2 size={20} /> AI ile çoktan seçmeli
+          </Button>
 
-          <Button variant="primary" size="md" onClick={() => { setEditingQuestion(null); setManualForm(null); setMainImage({file:null, preview:''}); setIsModalOpen(true); }} className="px-8 py-4 rounded-2xl">
+          <Button
+            variant="primary"
+            size="md"
+            disabled={profile.branchApproval !== 'approved'}
+            title={profile.branchApproval !== 'approved' ? 'Branş onayından sonra kullanılabilir' : ''}
+            onClick={() => {
+              setEditingQuestion(null);
+              const subj =
+                profile.branchApproval === 'approved' && profile.branch
+                  ? profile.branch
+                  : filters.subject !== 'Tümü'
+                    ? filters.subject
+                    : 'Matematik';
+              const isMath =
+                subj === 'Matematik' ||
+                (profile.branchApproval === 'approved' && profile.branch === 'Matematik');
+              setManualForm(
+                isMath
+                  ? {
+                      text: '',
+                      subject: subj,
+                      topic: PATTERN_TOPIC_ORDER[0],
+                      learningOutcome: '',
+                      classLevel: '2. Sınıf',
+                      difficulty: 'Kolay',
+                      correctAnswer: '',
+                      solution: '',
+                      options: ['', '', '', '', ''],
+                    }
+                  : null
+              );
+              setMainImage({ file: null, preview: '' });
+              setIsModalOpen(true);
+            }}
+            className="px-8 py-4 rounded-2xl"
+          >
             <Plus size={24} /> Yeni Soru Ekle
           </Button>
         </div>
@@ -330,16 +429,50 @@ export default function QuestionBank() {
             options={profile.branch && profile.branchApproval === 'approved' ? [profile.branch] : ['Tümü', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji']}
             disabled={profile.branchApproval === 'approved'}
           />
-          <FilterSelect 
-            icon={<Layers size={14}/>} 
+          <FilterSelect
+            icon={<Layers size={14} />}
             value={filters.topic}
-            onChange={(v) => setFilters({...filters, topic: v})}
-            options={['Tümü', ...topics]}
+            onChange={(v) => { setFilters({ ...filters, topic: v }); setPage(1); }}
+            options={
+              filters.subject === 'Matematik' || (profile.branchApproval === 'approved' && profile.branch === 'Matematik')
+                ? (topics.length > 0
+                    ? ['Tümü', PATTERN_TOPIC_ALL_UNDER, ...sortPatternTopicsUi(topics)]
+                    : MATH_TOPIC_OPTIONS_FALLBACK)
+                : ['Tümü', ...sortPatternTopicsUi(topics)]
+            }
           />
           <FilterSelect icon={<Hash size={14}/>} value={filters.classLevel} onChange={(v) => setFilters({...filters, classLevel: v})} options={['Tümü', ...Array.from({length:12}, (_,i)=>`${i+1}. Sınıf`)]} />
           <FilterSelect icon={<Star size={14}/>} value={filters.difficulty} onChange={(v) => setFilters({...filters, difficulty: v})} options={['Tümü', 'Kolay', 'Orta', 'Zor']} />
         </div>
       </div>
+
+      {(filters.subject === 'Matematik' || (profile.branchApproval === 'approved' && profile.branch === 'Matematik')) && (
+        <div className="flex flex-wrap items-center gap-2 px-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hızlı filtre</span>
+          <button
+            type="button"
+            onClick={() => { setFilters((f) => ({ ...f, topic: 'Örüntüler' })); setPage(1); }}
+            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+              filters.topic === 'Örüntüler' || filters.topic === PATTERN_TOPIC_ALL_UNDER
+                ? 'border-indigo-600 bg-indigo-50 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300'
+            }`}
+          >
+            Yalnız örüntü
+          </button>
+          <button
+            type="button"
+            onClick={() => { setFilters((f) => ({ ...f, topic: 'Tümü' })); setPage(1); }}
+            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+              filters.topic === 'Tümü'
+                ? 'border-slate-500 bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-100'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 dark:bg-slate-800 dark:border-slate-600'
+            }`}
+          >
+            Tüm alt konular
+          </button>
+        </div>
+      )}
 
       {/* Approval gate */}
       {profile.branchApproval !== 'approved' && (
@@ -362,16 +495,51 @@ export default function QuestionBank() {
             <p className="text-slate-400 font-bold">Aranan kriterlere uygun soru bulunamadı.</p>
           </div>
         ) : (
-          questions.map(q => (
-            <QuestionCard 
-              key={q._id} 
-              question={q} 
-              expanded={expandedId === q._id}
-              onToggle={() => setExpandedId(expandedId === q._id ? null : q._id)}
-              onDelete={handleDelete}
-              onEdit={(q) => { setEditingQuestion(q); setIsModalOpen(true); }}
-            />
-          ))
+          questions.map((q, idx) => {
+            const topicLine = q.topic || 'Konu belirtilmemiş';
+            const showTopicHeading = ['Tümü', PATTERN_TOPIC_ALL_UNDER, 'Örüntüler'].includes(filters.topic)
+              && (idx === 0 || (questions[idx - 1].topic || 'Konu belirtilmemiş') !== topicLine);
+            return (
+              <Fragment key={q._id}>
+                {showTopicHeading && (
+                  <div className={`flex items-center gap-3 px-2 ${idx === 0 ? '' : 'mt-8 pt-2 border-t border-slate-100 dark:border-slate-800'}`}>
+                    <LayoutGrid size={16} className="text-violet-500 shrink-0" />
+                    <span className="text-[11px] font-black uppercase tracking-widest text-violet-700 dark:text-violet-300">
+                      {topicLine}
+                    </span>
+                  </div>
+                )}
+                <QuestionCard
+                  question={q}
+                  expanded={expandedId === q._id}
+                  onToggle={() => setExpandedId(expandedId === q._id ? null : q._id)}
+                  onDelete={handleDelete}
+                  onEdit={(question) => {
+                    setEditingQuestion(question);
+                    const opts = (question.options || []).map((o) => (typeof o === 'string' ? o : (o?.text ?? '')));
+                    const padded = [...opts, '', '', '', '', ''].slice(0, 5);
+                    const subj =
+                      profile.branchApproval === 'approved' && profile.branch
+                        ? profile.branch
+                        : (question.subject || 'Matematik');
+                    setManualForm({
+                      text: question.text || '',
+                      subject: subj,
+                      topic: question.topic || '',
+                      learningOutcome: question.learningOutcome || '',
+                      classLevel: question.classLevel || '9. Sınıf',
+                      difficulty: question.difficulty || 'Orta',
+                      correctAnswer: typeof question.correctAnswer === 'string' ? question.correctAnswer : String(question.correctAnswer ?? ''),
+                      solution: question.solution || '',
+                      options: padded,
+                    });
+                    setMainImage(question.image ? { file: null, preview: question.image } : { file: null, preview: '' });
+                    setIsModalOpen(true);
+                  }}
+                />
+              </Fragment>
+            );
+          })
         )}
       </div>
 
@@ -401,15 +569,37 @@ export default function QuestionBank() {
         />
       )}
 
+      {isAiGenerateOpen && (
+        <AiGenerateQuizModal
+          isOpen={isAiGenerateOpen}
+          onClose={() => setIsAiGenerateOpen(false)}
+          profile={profile}
+          filterDefaults={aiFilterDefaults}
+          onSaved={fetchQuestions}
+          onRequestEditOne={(form) => {
+            setEditingQuestion(null);
+            setManualForm(form);
+            setMainImage({ file: null, preview: '' });
+            setIsAiGenerateOpen(false);
+            setIsModalOpen(true);
+          }}
+        />
+      )}
+
       {isSmartPasteOpen && (
         <SmartPasteModal 
           isOpen={isSmartPasteOpen}
           onClose={() => setIsSmartPasteOpen(false)}
           onParsed={(parsed, imageFile) => {
-            // Soru oluşturma modalını parsed verilerle aç
+            const resolvedSubject =
+              profile.branchApproval === 'approved'
+                ? (profile.branch || 'Matematik')
+                : (parsed.subject || 'Matematik');
             setManualForm({
               text: parsed.text || '',
-              subject: profile.branchApproval === 'approved' ? (profile.branch || 'Matematik') : (parsed.subject || 'Matematik'),
+              subject: resolvedSubject,
+              topic: resolvedSubject === 'Matematik' ? (parsed.topic || PATTERN_TOPIC_ORDER[0]) : (parsed.topic || ''),
+              learningOutcome: parsed.learningOutcome || '',
               classLevel: parsed.classLevel || '9. Sınıf',
               difficulty: parsed.difficulty || 'Orta',
               correctAnswer: parsed.correctAnswer || '',

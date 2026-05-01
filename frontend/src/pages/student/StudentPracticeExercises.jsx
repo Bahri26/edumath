@@ -5,6 +5,15 @@ import {
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { LanguageContext } from '../../context/LanguageContext';
+import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
+import { MatchingPracticeCard, SequencePracticeCard } from '../../components/exams/InteractivePracticeCards.jsx';
+import StudentHint from '../../components/StudentHint.jsx';
+
+const optionLabel = (opt) => {
+  if (opt == null) return '';
+  if (typeof opt === 'object') return String(opt.text ?? '');
+  return String(opt);
+};
 
 // --- Difficulty Color Badge ---
 const DifficultyBadge = (level) => {
@@ -141,6 +150,71 @@ export default function StudentPracticeExercises() {
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState(null);
 
+  const isQuestionAnswered = (question, map) => {
+    const stored = map[question._id];
+    if (stored === undefined || stored === null || stored === '') return false;
+    if (question.type === 'matching') {
+      try {
+        const obj = typeof stored === 'string' ? JSON.parse(stored) : stored;
+        const prompts = question.interactionData?.prompts || [];
+        return !!(obj && prompts.length && prompts.every((p) => obj[p.id]));
+      } catch {
+        return false;
+      }
+    }
+    if (question.type === 'sequence') {
+      try {
+        const obj = typeof stored === 'string' ? JSON.parse(stored) : stored;
+        return !!(obj && obj.locked && Array.isArray(obj.order));
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const allQuestionsAnswered = (exercise, map) => {
+    const qs = exercise?.questions || [];
+    if (!qs.length) return false;
+    return qs.every((q) => isQuestionAnswered(q, map));
+  };
+
+  const handleMatchingPractice = (questionId, promptId, selectedValue) => {
+    setExerciseAnswers((prev) => {
+      const prevRaw = prev[questionId];
+      let selected = {};
+      try {
+        selected = prevRaw ? (typeof prevRaw === 'string' ? JSON.parse(prevRaw) : prevRaw) : {};
+      } catch {
+        selected = {};
+      }
+      selected = { ...selected, [promptId]: selectedValue };
+      return { ...prev, [questionId]: JSON.stringify(selected) };
+    });
+  };
+
+  const handleSequencePractice = (questionId, index, direction, currentOrder, checkOnly = false) => {
+    setExerciseAnswers((prev) => {
+      const prevRaw = prev[questionId];
+      let parsed = null;
+      try {
+        parsed = prevRaw ? (typeof prevRaw === 'string' ? JSON.parse(prevRaw) : prevRaw) : null;
+      } catch {
+        parsed = null;
+      }
+
+      const baseOrder = Array.isArray(parsed?.order) ? [...parsed.order] : [...currentOrder];
+      let nextOrder = [...baseOrder];
+      if (!checkOnly) {
+        const swapIndex = index + direction;
+        if (swapIndex < 0 || swapIndex >= nextOrder.length) return prev;
+        [nextOrder[index], nextOrder[swapIndex]] = [nextOrder[swapIndex], nextOrder[index]];
+        return { ...prev, [questionId]: JSON.stringify({ order: nextOrder, locked: false }) };
+      }
+      return { ...prev, [questionId]: JSON.stringify({ order: nextOrder, locked: true }) };
+    });
+  };
+
   // ---- Fetch Exercises ----
   useEffect(() => {
     const fetchExercises = async () => {
@@ -150,7 +224,7 @@ export default function StudentPracticeExercises() {
         if (res.data.data) {
           setExercises(res.data.data);
         }
-      } catch (err) {
+      } catch {
         showToast('Egzersizler yüklenemedi', 'error');
       } finally {
         setLoading(false);
@@ -170,7 +244,7 @@ export default function StudentPracticeExercises() {
   const handleSubmitAnswers = async () => {
     if (!selectedExercise) return;
 
-    if (Object.keys(exerciseAnswers).length !== selectedExercise.questions?.length) {
+    if (!allQuestionsAnswered(selectedExercise, exerciseAnswers)) {
       showToast(getText('answerAll'), 'error');
       return;
     }
@@ -190,7 +264,7 @@ export default function StudentPracticeExercises() {
       if (refreshRes.data.data) {
         setExercises(refreshRes.data.data);
       }
-    } catch (err) {
+    } catch {
       showToast('Cevaplar gönderilemedi', 'error');
     } finally {
       setSubmitting(false);
@@ -248,28 +322,68 @@ export default function StudentPracticeExercises() {
                     {question.text}
                   </h3>
 
+                  {question.image && (
+                    <div className="mb-4">
+                      <QuestionVisual src={question.image} alt="" className="w-full max-h-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950" />
+                    </div>
+                  )}
+
                   {/* Options */}
-                  {question.options && question.options.length > 0 ? (
+                  {question.type === 'matching' ? (
+                    <MatchingPracticeCard
+                      question={question}
+                      state={(() => {
+                        try {
+                          const raw = exerciseAnswers[question._id];
+                          const obj = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : {};
+                          return { selected: obj || {} };
+                        } catch {
+                          return { selected: {} };
+                        }
+                      })()}
+                      onChange={(promptId, value) => handleMatchingPractice(question._id, promptId, value)}
+                    />
+                  ) : question.type === 'sequence' ? (
+                    <SequencePracticeCard
+                      question={question}
+                      state={(() => {
+                        try {
+                          const raw = exerciseAnswers[question._id];
+                          const obj = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : null;
+                          if (obj && Array.isArray(obj.order)) {
+                            return { selected: obj.order, checked: !!obj.locked };
+                          }
+                        } catch {
+                          /* ignore */
+                        }
+                        return undefined;
+                      })()}
+                      onMove={(index, direction, ord, checkOnly) => handleSequencePractice(question._id, index, direction, ord, checkOnly)}
+                    />
+                  ) : question.options && question.options.length > 0 ? (
                     <div className="space-y-2">
-                      {question.options.map((opt, idx) => (
-                        <label
-                          key={idx}
-                          className="flex items-center gap-3 p-3 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors"
-                        >
-                          <input
-                            type="radio"
-                            name={question._id}
-                            value={opt}
-                            checked={exerciseAnswers[question._id] === opt}
-                            onChange={(e) => setExerciseAnswers(prev => ({
-                              ...prev,
-                              [question._id]: e.target.value
-                            }))}
-                            className="w-4 h-4"
-                          />
-                          <span className="text-slate-700 dark:text-slate-300">{opt}</span>
-                        </label>
-                      ))}
+                      {question.options.map((opt, idx) => {
+                        const label = optionLabel(opt);
+                        return (
+                          <label
+                            key={idx}
+                            className="flex items-center gap-3 p-3 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="radio"
+                              name={question._id}
+                              value={label}
+                              checked={exerciseAnswers[question._id] === label}
+                              onChange={(e) => setExerciseAnswers((prev) => ({
+                                ...prev,
+                                [question._id]: e.target.value
+                              }))}
+                              className="w-4 h-4"
+                            />
+                            <span className="text-slate-700 dark:text-slate-300">{label}</span>
+                          </label>
+                        );
+                      })}
                     </div>
                   ) : (
                     <input
@@ -283,6 +397,19 @@ export default function StudentPracticeExercises() {
                       className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
                     />
                   )}
+
+                  <StudentHint
+                    questionId={question._id}
+                    questionText={question.text}
+                    studentAnswer={
+                      typeof exerciseAnswers[question._id] === 'string'
+                        ? exerciseAnswers[question._id]
+                        : ''
+                    }
+                    topic={question.topic}
+                    subject={question.subject}
+                    compact
+                  />
                 </div>
               ))}
             </div>

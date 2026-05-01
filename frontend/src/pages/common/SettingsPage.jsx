@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { User, Lock, Save, Mail, Briefcase, GraduationCap, Loader2, Bell, Moon, Sun, Trash2, CheckCircle } from 'lucide-react';
 import apiClient from '../../services/api';
-import { toast } from 'react-toastify';
+import { useToast } from '../../context/ToastContext';
 
 const SettingsPage = ({ role = 'student' }) => {
+  const { showToast } = useToast();
   // Şifre değiştirme modalı için state
   const [showPwdModal, setShowPwdModal] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
@@ -72,7 +73,7 @@ const SettingsPage = ({ role = 'student' }) => {
     try {
       await apiClient.put('/users/profile', { [field]: value });
     } catch (error) {
-      alert('Ayar güncellenemedi: ' + (error.response?.data?.message || error.message));
+      showToast('Ayar güncellenemedi: ' + (error.response?.data?.message || error.message), 'error');
     }
   };
 
@@ -80,9 +81,9 @@ const SettingsPage = ({ role = 'student' }) => {
     setSaving(true);
     try {
       await apiClient.put('/users/profile', formData);
-      toast.success("Bilgileriniz başarıyla güncellendi! ✅");
+      showToast("Bilgileriniz başarıyla güncellendi.", 'success');
     } catch (error) {
-      toast.error("Hata oluştu: " + (error.response?.data?.message || error.message));
+      showToast("Hata oluştu: " + (error.response?.data?.message || error.message), 'error');
     } finally {
       setSaving(false);
     }
@@ -94,7 +95,7 @@ const SettingsPage = ({ role = 'student' }) => {
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true, readAt: new Date().toISOString() })));
       setUnreadCount(0);
     } catch (error) {
-      alert('Bildirimler okunmadı olarak işaretlenemedi: ' + (error.response?.data?.message || error.message));
+      showToast('Bildirimler okunmadı olarak işaretlenemedi: ' + (error.response?.data?.message || error.message), 'error');
     }
   };
 
@@ -187,11 +188,11 @@ const SettingsPage = ({ role = 'student' }) => {
               if (!window.confirm('Hesabınızı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) return;
               try {
                 await apiClient.delete('/users/delete');
-                toast.success('Hesabınız silindi.');
+                showToast('Hesabınız silindi.', 'success');
                 localStorage.clear();
                 window.location.href = '/';
               } catch (err) {
-                toast.error('Hesap silinemedi: ' + (err.response?.data?.message || err.message));
+                showToast('Hesap silinemedi: ' + (err.response?.data?.message || err.message), 'error');
               }
             }}
           >Hesabımı Sil</button>
@@ -233,12 +234,12 @@ const SettingsPage = ({ role = 'student' }) => {
                   setPwdLoading(true);
                   try {
                     await apiClient.post('/users/change-password', { oldPassword, newPassword });
-                    toast.success('Şifreniz başarıyla değiştirildi!');
+                    showToast('Şifreniz başarıyla değiştirildi.', 'success');
                     setShowPwdModal(false);
                     setOldPassword('');
                     setNewPassword('');
                   } catch (err) {
-                    toast.error('Şifre değiştirilemedi: ' + (err.response?.data?.message || err.message));
+                    showToast('Şifre değiştirilemedi: ' + (err.response?.data?.message || err.message), 'error');
                   } finally {
                     setPwdLoading(false);
                   }

@@ -1,6 +1,7 @@
 import apiClient, { withAiRequestConfig } from './api';
 
-// Smart parse an image into structured question fields
+/** Tüm çıktı Gemini / backend `aiController`; istemci tarafında tek giriş noktası. */
+
 export async function smartParseImage(file) {
   const formData = new FormData();
   formData.append('image', file);
@@ -8,49 +9,89 @@ export async function smartParseImage(file) {
     headers: { 'Content-Type': 'multipart/form-data' },
     ...withAiRequestConfig(),
   });
-  return res.data; // { success, data: { text, options, correctAnswer, solution, subject, classLevel, difficulty } }
+  return res.data;
 }
 
-// Solve a question from plain text (and optional options)
-export async function solveTextQuestion({ text, options }) {
-  const res = await apiClient.post('/ai/solve-text', { text, options }, withAiRequestConfig());
-  return res.data; // { success, solution, correctAnswer }
+export async function smartParseText(content) {
+  const res = await apiClient.post('/ai/smart-parse-text', { content }, withAiRequestConfig());
+  return res.data;
 }
 
-// Analyze performance (markdown insights)
+export async function solveFromImage(file) {
+  const formData = new FormData();
+  formData.append('image', file);
+  const res = await apiClient.post('/ai/solve-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    ...withAiRequestConfig(),
+  });
+  return res.data;
+}
+
+export async function generateQuiz({
+  topic,
+  difficulty,
+  count,
+  classLevel,
+  subject,
+  googleGrounding,
+}) {
+  const res = await apiClient.post(
+    '/ai/generate-quiz',
+    { topic, difficulty, count, classLevel, subject, googleGrounding },
+    withAiRequestConfig()
+  );
+  return res.data;
+}
+
+export async function generatePatternQuestionPack(payload) {
+  const res = await apiClient.post('/ai/generate-pattern-pack', payload ?? {}, withAiRequestConfig());
+  return res.data;
+}
+
+export async function generatePracticeQuestions({ weakTopics, difficulty = 'Orta', count = 5 }) {
+  const res = await apiClient.post(
+    '/ai/practice',
+    { weakTopics, difficulty, count },
+    withAiRequestConfig()
+  );
+  return res.data;
+}
+
 export async function analyzePerformance({ examHistory = [], studentName = 'Öğrenci' }) {
   const res = await apiClient.post('/ai/analyze', { examHistory, studentName }, withAiRequestConfig());
-  return res.data; // { analysis }
+  return res.data;
 }
 
-// Create a personalized study plan
 export async function createStudyPlan({ goal, hoursPerDay, daysLeft, weakTopics }) {
   const res = await apiClient.post('/ai/study-plan', { goal, hoursPerDay, daysLeft, weakTopics }, withAiRequestConfig());
-  return res.data; // { plan }
+  return res.data;
 }
 
-// Recommend next topic for a course
-export async function recommendNextTopic({ courseTitle, classLevel, recentWeakTopics }) {
-  const res = await apiClient.post('/ai/next-topic', { courseTitle, classLevel, recentWeakTopics }, withAiRequestConfig());
-  return res.data; // { success, topic, rationale, suggestedPacePerWeek }
+export async function teacherReport({ examResults }) {
+  const res = await apiClient.post('/ai/teacher-report', { examResults }, withAiRequestConfig());
+  return res.data;
 }
 
-// Recommend courses based on weak topics and catalog
-export async function recommendCourses({ weakTopics, coursesCatalog }) {
-  const res = await apiClient.post('/ai/recommend-courses', { weakTopics, coursesCatalog }, withAiRequestConfig());
-  return res.data; // { success, recommendations: [{ title, reason, score }] }
+export async function examResultAnalysis(payload) {
+  const res = await apiClient.post('/ai/exam-result-analysis', payload, withAiRequestConfig());
+  return res.data;
+}
+
+export async function getHint({ questionText, studentAnswer, questionId, topic, subject }) {
+  const res = await apiClient.post(
+    '/ai/get-hint',
+    { questionText, studentAnswer, questionId, topic, subject },
+    withAiRequestConfig()
+  );
+  return res.data;
+}
+
+export async function analyzeAndSuggest({ answer, studentId }) {
+  const res = await apiClient.post('/ai/analyze-and-suggest', { answer, studentId }, withAiRequestConfig());
+  return res.data;
 }
 
 export async function chatWithAI(message) {
-  try {
-    const res = await apiClient.post('/chat', { message }, withAiRequestConfig());
-    return res.data; // { reply }
-  } catch (err) {
-    const status = err?.response?.status;
-    if (status === 401) {
-      const res = await apiClient.post('/chat/public', { message }, withAiRequestConfig());
-      return res.data;
-    }
-    throw err;
-  }
+  const res = await apiClient.post('/chat', { message }, withAiRequestConfig());
+  return res.data;
 }

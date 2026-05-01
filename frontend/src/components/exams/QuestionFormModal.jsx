@@ -20,6 +20,7 @@ const QuestionFormModal = ({
     text: '',
     subject: 'Matematik',
     topic: '',
+    learningOutcome: '',
     classLevel: '9. Sınıf',
     difficulty: 'Orta',
     correctAnswer: '',
@@ -38,6 +39,7 @@ const QuestionFormModal = ({
     text: effectiveForm?.text || '',
     subject: lockedSubject ? lockedSubject : (effectiveForm?.subject || 'Matematik'),
     topic: effectiveForm?.topic || '',
+    learningOutcome: effectiveForm?.learningOutcome || '',
     classLevel: effectiveForm?.classLevel || '9. Sınıf',
     difficulty: effectiveForm?.difficulty || 'Orta',
     correctAnswer: effectiveForm?.correctAnswer || '',
@@ -192,6 +194,26 @@ const QuestionFormModal = ({
           {/* 3. BÖLÜM: SINIFLANDIRMA VE ÇÖZÜM */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
              <div className="lg:col-span-1 space-y-4 bg-slate-50 dark:bg-slate-900/50 p-6 rounded-[2rem]">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Konu</label>
+                  <input
+                    type="text"
+                    value={form.topic}
+                    onChange={(e) => setField('topic', e.target.value)}
+                    placeholder="Örn: Örüntüler — Geometrik (şekil)"
+                    className="w-full p-3 bg-white dark:bg-slate-800 rounded-xl border-none text-xs font-bold shadow-sm outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Kazanım (isteğe bağlı)</label>
+                  <textarea
+                    rows={2}
+                    value={form.learningOutcome}
+                    onChange={(e) => setField('learningOutcome', e.target.value)}
+                    placeholder="MEB kazanım ifadesi veya kısa hedef..."
+                    className="w-full p-3 bg-white dark:bg-slate-800 rounded-xl border-none text-xs font-medium shadow-sm outline-none resize-none"
+                  />
+                </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Zorluk</label>
                   <select value={form.difficulty} onChange={e => setField('difficulty', e.target.value)} className="w-full p-3 bg-white dark:bg-slate-800 rounded-xl border-none text-xs font-bold shadow-sm outline-none">

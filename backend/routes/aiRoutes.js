@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const aiController = require('../controllers/aiController');
+const protect = require('../middlewares/authMiddleware');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -10,8 +11,8 @@ const fs = require('fs');
 router.post('/teacher-report', aiController.teacherReport);
 // 7. Sınav Sonucu Değerlendirme & Analiz
 router.post('/exam-result-analysis', aiController.examResultAnalysis);
-// 8. Soru Çözerken İpucu
-router.post('/get-hint', aiController.getHint);
+// 8. Soru Çözerken İpucu (öğrenci girişi ile çağrılır; LearningEvent yazılır)
+router.post('/get-hint', protect, aiController.getHint);
 // 6. Öğrenci Cevabı Analiz & Soru Önerisi
 router.post('/analyze-and-suggest', aiController.analyzeAndSuggest);
 

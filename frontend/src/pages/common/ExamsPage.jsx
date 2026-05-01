@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Clock, FileText, Plus, Trash2, Play, CheckCircle, AlertTriangle, X, Brain, Sparkles, GripVertical } from 'lucide-react';
 import apiClient from '../../services/api';
+import { generatePracticeQuestions } from '../../services/aiService';
 import { useToast } from '../../context/ToastContext';
 import { createExam } from '../../services/examService';
 import SkeletonCard from '../../components/ui/SkeletonCard';
@@ -9,85 +10,7 @@ import Button from '../../components/ui/Button.jsx';
 import Badge from '../../components/ui/Badge.jsx';
 import Card from '../../components/ui/Card.jsx';
 import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
-
-const isSequenceCorrect = (items, state) => {
-  if (!Array.isArray(items) || !Array.isArray(state) || items.length !== state.length) {
-    return false;
-  }
-  return items.every((itemId, index) => state[index] === itemId);
-};
-
-const MatchingPracticeCard = ({ question, state, onChange }) => {
-  const prompts = question.interactionData?.prompts || [];
-  const options = question.interactionData?.options || [];
-  const correctPairs = question.interactionData?.correctPairs || {};
-  const selectedMap = state?.selected || {};
-  const isComplete = prompts.every((prompt) => selectedMap[prompt.id]);
-  const isCorrect = isComplete && prompts.every((prompt) => selectedMap[prompt.id] === correctPairs[prompt.id]);
-
-  return (
-    <div className={`space-y-4 rounded-2xl border-2 p-5 ${isComplete ? (isCorrect ? 'border-green-200 bg-green-50/40' : 'border-rose-200 bg-rose-50/40') : 'border-slate-200 dark:border-slate-700'}`}>
-      {prompts.map((prompt) => (
-        <div key={prompt.id} className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between rounded-xl bg-white dark:bg-slate-800 p-3 border border-slate-200 dark:border-slate-700">
-          <div className="font-medium text-slate-800 dark:text-slate-100">{prompt.label}</div>
-          <select
-            value={selectedMap[prompt.id] || ''}
-            onChange={(event) => onChange(prompt.id, event.target.value, correctPairs)}
-            className="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
-            disabled={isComplete}
-          >
-            <option value="">Eslestirme sec</option>
-            {options.map((option) => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
-        </div>
-      ))}
-      {isComplete && (
-        <div className={`rounded-xl p-4 text-sm ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-rose-100 text-rose-800'}`}>
-          <strong>{isCorrect ? 'Dogru eslestirme.' : 'Bir veya daha fazla eslestirme yanlis.'}</strong> {question.explanation}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const SequencePracticeCard = ({ question, state, onMove }) => {
-  const items = question.interactionData?.items || [];
-  const correctOrder = question.interactionData?.correctOrder || [];
-  const currentOrder = Array.isArray(state?.selected) && state.selected.length ? state.selected : items.map((item) => item.id);
-  const isLocked = !!state?.checked;
-  const isCorrect = state?.checked ? isSequenceCorrect(correctOrder, currentOrder) : false;
-
-  return (
-    <div className={`space-y-3 rounded-2xl border-2 p-5 ${state?.checked ? (isCorrect ? 'border-green-200 bg-green-50/40' : 'border-rose-200 bg-rose-50/40') : 'border-slate-200 dark:border-slate-700'}`}>
-      {currentOrder.map((itemId, index) => {
-        const item = items.find((entry) => entry.id === itemId);
-        return (
-          <div key={itemId} className="flex items-center justify-between gap-3 rounded-xl bg-white dark:bg-slate-800 p-3 border border-slate-200 dark:border-slate-700">
-            <div className="flex items-center gap-3">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">{index + 1}</span>
-              <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{item?.label}</span>
-            </div>
-            {!isLocked && (
-              <div className="flex gap-2">
-                <button type="button" onClick={() => onMove(index, -1, currentOrder)} disabled={index === 0} className="rounded-lg border px-3 py-1 text-xs disabled:opacity-40">Yukari</button>
-                <button type="button" onClick={() => onMove(index, 1, currentOrder)} disabled={index === currentOrder.length - 1} className="rounded-lg border px-3 py-1 text-xs disabled:opacity-40">Asagi</button>
-              </div>
-            )}
-          </div>
-        );
-      })}
-      {!isLocked ? (
-        <button type="button" onClick={() => onMove(-1, 0, currentOrder, true)} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white">Siralamayi Kontrol Et</button>
-      ) : (
-        <div className={`rounded-xl p-4 text-sm ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-rose-100 text-rose-800'}`}>
-          <strong>{isCorrect ? 'Siralama dogru.' : 'Siralama hatali.'}</strong> {question.explanation}
-        </div>
-      )}
-    </div>
-  );
-};
+import { MatchingPracticeCard, SequencePracticeCard } from '../../components/exams/InteractivePracticeCards.jsx';
 
 const ExamsPage = ({ role }) => {
   const [exams, setExams] = useState([]);
@@ -101,11 +24,9 @@ const ExamsPage = ({ role }) => {
   const [selectedClass, setSelectedClass] = useState('9. Sınıf');
   const [examSubject, setExamSubject] = useState('');
   const [formError, setFormError] = useState('');
-  const [availableQuestions, setAvailableQuestions] = useState([]);
   const [selectedQuestions, setSelectedQuestions] = useState([]);
-  const [draggedQuestion, setDraggedQuestion] = useState(null);
   const [activeTab, setActiveTab] = useState('create');
-  const { showToast } = useToast ? useToast() : { showToast: () => {} };
+  const { showToast } = useToast();
 
   // --- ÖĞRENCİ STATE ---
   const [activeExam, setActiveExam] = useState(null);
@@ -152,14 +73,14 @@ const ExamsPage = ({ role }) => {
         classLevel: selectedClass,
         subject: examSubject
       });
-      showToast && showToast(`"${examSubject}" konusunda sınav başarıyla oluşturuldu!`, "success");
+      showToast(`"${examSubject}" konusunda sınav başarıyla oluşturuldu!`, "success");
       setShowCreateModal(false);
       setNewTitle('');
       setExamSubject('');
       fetchExams();
     } catch (err) {
       setFormError("Hata: " + (err.response?.data?.message || err.message));
-      showToast && showToast("Sınav oluşturulamadı.", "error");
+      showToast("Sınav oluşturulamadı.", "error");
     } finally {
       setCreatingExam(false);
     }
@@ -194,8 +115,8 @@ const ExamsPage = ({ role }) => {
           return prev - 1;
         });
       }, 1000);
-    } catch (err) {
-      alert("Sınav başlatılamadı.");
+    } catch {
+      showToast("Sınav başlatılamadı.", "error");
     }
   };
 
@@ -211,7 +132,7 @@ const ExamsPage = ({ role }) => {
       fetchExams();
     } catch (err) {
       const msg = err?.response?.data?.message || 'Sınav gönderilirken hata oluştu.';
-      alert(msg);
+      showToast(msg, 'error');
     }
   };
 
@@ -222,7 +143,7 @@ const ExamsPage = ({ role }) => {
       setMyResult(res.data);
     } catch (err) {
       const msg = err?.response?.data?.message || 'Sonuç bulunamadı.';
-      alert(msg);
+      showToast(msg, 'error');
     }
   };
 
@@ -232,16 +153,19 @@ const ExamsPage = ({ role }) => {
     
     setLoadingAI(true);
     try {
-      // Backend'deki yeni route: /api/ai/practice (Bunu routes dosyasına eklemeyi unutma!)
-      const res = await apiClient.post('/ai/practice', { 
+      const data = await generatePracticeQuestions({
         weakTopics: examResult.weakTopics,
         difficulty: 'Orta',
-        count: 5
+        count: 5,
       });
-      setPracticeQuestions(res.data.questions);
+      setPracticeQuestions(data.questions);
     } catch (err) {
       console.error(err);
-      alert("AI şu an meşgul, lütfen tekrar dene.");
+      const status = err?.response?.status;
+      const msg = status === 429
+        ? 'AI kotası dolu, biraz sonra tekrar deneyin.'
+        : 'AI şu an meşgul, lütfen tekrar dene.';
+      showToast(msg, 'error');
     } finally {
       setLoadingAI(false);
     }
@@ -488,7 +412,6 @@ const ExamsPage = ({ role }) => {
                            {state.isCorrect ? <CheckCircle size={16}/> : <X size={16}/>}
                            {state.isCorrect ? "Doğru Cevap!" : "Yanlış Cevap"}
                         </div>
-                        <p><strong>Çözüm:</strong> {q.explanation}</p>
                       </div>
                     )}
                   </div>
@@ -697,14 +620,12 @@ const ExamsPage = ({ role }) => {
                     ].map(q => (
                       <div
                         key={q.id}
-                        draggable
-                        onDragStart={() => setDraggedQuestion(q)}
                         onClick={() => {
                           if (!selectedQuestions.find(sq => sq.id === q.id)) {
                             setSelectedQuestions([...selectedQuestions, q]);
                           }
                         }}
-                        className="p-2 bg-teal-50 dark:bg-teal-900/20 border border-teal-300 dark:border-teal-700 rounded-lg cursor-grab hover:shadow-md active:cursor-grabbing transition-all"
+                        className="p-2 bg-teal-50 dark:bg-teal-900/20 border border-teal-300 dark:border-teal-700 rounded-lg cursor-pointer hover:shadow-md transition-all"
                       >
                         <div className="flex items-start gap-1.5">
                           <GripVertical size={12} className="text-teal-600 dark:text-teal-400 mt-0.5 flex-shrink-0" />

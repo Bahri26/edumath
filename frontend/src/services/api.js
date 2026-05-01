@@ -1,11 +1,21 @@
 import axios from 'axios';
 
-// Base URL: Use env when available, else Vite dev proxy
-const API_BASE = import.meta.env?.VITE_API_URL
-    ? `${import.meta.env.VITE_API_URL}/api`
-    : '/api';
-
 const trimTrailingSlash = (value = '') => value.replace(/\/+$/, '');
+
+const viteBackendUrl = trimTrailingSlash(import.meta.env?.VITE_API_URL || '');
+
+/** Sunucu kökü (/uploads burada); VITE_API_URL bazen …/api ile biter — görseller /api/uploads altında değildir. */
+export const getBackendOrigin = () => {
+    if (!viteBackendUrl) {
+        return '';
+    }
+    return viteBackendUrl.replace(/\/api\/?$/i, '') || viteBackendUrl;
+};
+
+// Base URL: Use env when available, else Vite dev proxy
+const API_BASE = viteBackendUrl
+    ? (/\/api\/?$/i.test(viteBackendUrl) ? viteBackendUrl : `${viteBackendUrl}/api`)
+    : '/api';
 
 const parseTimeout = (value, fallback) => {
     const parsed = Number(value);
@@ -22,9 +32,25 @@ const getAssetBaseUrl = () => {
         return explicitAssetBase;
     }
 
-    const apiBase = trimTrailingSlash(import.meta.env?.VITE_API_URL || '');
-    if (apiBase) {
-        return apiBase;
+    // Geliştirme: ön yüz :5173, API :8000 — görselleri kökten /uploads ile iste (Vite proxy).
+    // Aksi halde http://localhost:8000/uploads... kullanılır; ortamda engellenebiliyor.
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
+        const apiRoot = getBackendOrigin();
+        if (apiRoot) {
+            try {
+                const apiHost = new URL(apiRoot).host;
+                if (apiHost && apiHost !== window.location.host) {
+                    return '';
+                }
+            } catch {
+                /* ignore */
+            }
+        }
+    }
+
+    const origin = getBackendOrigin();
+    if (origin) {
+        return origin;
     }
 
     if (typeof window !== 'undefined' && window.location?.origin) {
@@ -39,16 +65,51 @@ export const resolveAssetUrl = (value) => {
         return value;
     }
 
-    if (/^https?:\/\//i.test(value) || value.startsWith('blob:') || value.startsWith('data:')) {
-        return value;
+    let v = value.trim().replace(/\\/g, '/');
+
+    if (v.startsWith('blob:') || v.startsWith('data:')) {
+        return v;
     }
 
-    if (!value.startsWith('/uploads/')) {
-        return value;
+    if (/^https?:\/\//i.test(v)) {
+        if (/\/api\/uploads\//i.test(v)) {
+            return v.replace(/^(https?:\/\/[^/]+)\/api(\/uploads\/)/i, '$1$2');
+        }
+        return v;
+    }
+
+    if (v.startsWith('/api/uploads/')) {
+        v = `/uploads/${v.slice('/api/uploads/'.length).replace(/^\/+/, '')}`;
+    } else if (/^api\/uploads\//i.test(v)) {
+        v = `/uploads/${v.replace(/^api\/uploads\/?/i, '').replace(/^\/+/, '')}`;
+    }
+
+    // Bazı eski kayıtlar "/uploads" öneki olmadan klasör adı ile gelebilir (örn: "generated/..svg")
+    if (!v.startsWith('/uploads/') && !v.startsWith('uploads/')) {
+        const knownRoots = [
+            'generated/',
+            'pattern-templates/',
+            'patterns/',
+            'seed-math-bank/',
+            'seed-pattern-bank/',
+            'temp/',
+        ];
+        if (knownRoots.some((root) => v.startsWith(root))) {
+            v = `/uploads/${v}`;
+        }
+    }
+
+    const path = v.startsWith('/uploads/')
+        ? v
+        : v.startsWith('uploads/')
+          ? `/${v}`
+          : null;
+    if (!path) {
+        return v;
     }
 
     const assetBase = getAssetBaseUrl();
-    return assetBase ? `${assetBase}${value}` : value;
+    return assetBase ? `${assetBase}${path}` : path;
 };
 
 const normalizeAssetUrls = (payload) => {
@@ -141,6 +202,14 @@ apiClient.interceptors.response.use(
                     apiErrorNotifier(timeoutMessage, 'error');
                 } else if (!error.response) {
                     apiErrorNotifier('Ağ bağlantı hatası. Lütfen kontrol edin.', 'error');
+                } else if (status === 429) {
+                    const hint = error?.response?.data?.hint;
+                    const retryAfter = error?.response?.headers?.['retry-after'];
+                    const wait = retryAfter ? ` ${retryAfter} sn sonra tekrar deneyin.` : ' Bir süre sonra tekrar deneyin.';
+                    apiErrorNotifier(
+                        `Kota/limit aşıldı.${wait}${hint ? ' ' + hint : ''}`,
+                        'error',
+                    );
                 } else if (status >= 500) {
                     apiErrorNotifier('Sunucu hatası. Lütfen daha sonra tekrar deneyin.', 'error');
                 } else if (status === 404) {
@@ -151,7 +220,9 @@ apiClient.interceptors.response.use(
                     apiErrorNotifier(msg, 'error');
                 }
             }
-        } catch {}
+        } catch {
+            /* apiErrorNotifier kendi içinde patlarsa sessiz geçilir */
+        }
         return Promise.reject(error);
     }
 );

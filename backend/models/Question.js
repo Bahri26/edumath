@@ -43,7 +43,10 @@ const QuestionSchema = new mongoose.Schema({
   
   // Kaynak (Manuel/AI)
   source: { type: String, enum: ['Manuel', 'AI'], default: 'Manuel', index: true },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
+  // Adaptif ölçme / şablon meta (UI ve analitik için)
+  assessmentMeta: { type: mongoose.Schema.Types.Mixed, default: null },
 
 }, { timestamps: true, collection: 'questions' });
 

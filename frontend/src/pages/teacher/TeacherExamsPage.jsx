@@ -1,16 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { 
-  Plus, BookOpen, FileText, Trash2, Eye, Search,
+  Plus, FileText, Trash2, Eye, Search,
   Clock, Award, Layers, Save, Sparkles, 
-  ChevronLeft, ChevronRight, Calendar, ArrowLeft 
+  ChevronLeft, ChevronRight, Calendar, ArrowLeft, GripVertical,
 } from 'lucide-react';
-import apiClient from '../../services/api';
+import apiClient, { resolveAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import 'katex/dist/katex.min.css';
-import { InlineMath } from 'react-katex';
 import { CLASS_LEVELS } from '../../data/classLevelsAndDifficulties';
 import SkeletonCard from '../../components/ui/SkeletonCard';
-import { useMemo } from 'react';
 import { renderWithLatex } from '../../utils/latex.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
@@ -18,47 +16,82 @@ import ExamPreviewModal from '../../components/exams/ExamPreviewModal.jsx';
 
 // --- Alt Bileşenler (Stüdyo için) ---
 
-const DraggableQuestionCard = ({ question, onDragStart }) => (
-  <div
-    draggable
-    onDragStart={(e) => onDragStart(e, question)}
-    className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 cursor-grab active:cursor-grabbing hover:shadow-xl transition-all"
-  >
-    <div className="flex items-center gap-2 mb-2">
-      <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase ${
-        question.difficulty === 'Zor' ? 'bg-rose-50 text-rose-600' : question.difficulty === 'Orta' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
-      }`}>
-        {question.difficulty}
-      </span>
+const DraggableQuestionCard = ({ question, onDragStart, onAddClick }) => {
+  const imgSrc = resolveAssetUrl(question.image);
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 flex overflow-hidden hover:shadow-xl transition-all">
+      <div
+        draggable
+        title="Sürükleyip ilgili zorluk kutusuna bırakın (Kolay / Orta / Zor)"
+        onDragStart={(e) => onDragStart(e)}
+        className="shrink-0 w-11 flex flex-col items-center justify-center border-r border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/50 cursor-grab active:cursor-grabbing text-slate-400 hover:text-indigo-500 py-2"
+        aria-label="Sürükleyip zorluk kutusuna bırak"
+      >
+        <GripVertical size={18} />
+      </div>
+      <button
+        type="button"
+        onClick={onAddClick}
+        title="Tek tık: soru doğru zorluk sütununa eklenir (en fazla 7)"
+        className="flex-1 text-left p-3 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-none"
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase ${
+            question.difficulty === 'Zor' ? 'bg-rose-50 text-rose-600' : question.difficulty === 'Orta' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
+          }`}>
+            {question.difficulty}
+          </span>
+          <span className="text-[9px] font-bold text-indigo-500">Tıkla → ekle</span>
+        </div>
+        {imgSrc ? (
+          <div className="mb-2 h-14 w-full flex items-center justify-center rounded-xl bg-gradient-to-br from-slate-50 to-indigo-50/40 dark:from-slate-900 dark:to-indigo-950/20 border border-slate-100 dark:border-slate-700 overflow-hidden">
+            <img src={imgSrc} alt="" className="max-h-full max-w-full object-contain" />
+          </div>
+        ) : null}
+        <p className="text-xs font-medium text-slate-700 dark:text-slate-200 line-clamp-2">
+          {renderWithLatex(question.text)}
+        </p>
+      </button>
     </div>
-    <div className="flex items-start gap-3">
-      <p className="flex-1 text-xs font-medium text-slate-700 dark:text-slate-200 line-clamp-2">
-        {renderWithLatex(question.text)}
-      </p>
-    </div>
-  </div>
-);
+  );
+};
 
-const DropZone = ({ difficulty, questions, onDrop, onRemove, label, colorClass, icon: Icon, availableCount }) => (
+const DropZone = ({ questions, onDropQuestion, onRemove, label, colorClass, icon, availableCount }) => (
   <div className="space-y-4">
     <div className={`p-4 rounded-[1.5rem] text-white flex items-center justify-between shadow-lg ${colorClass}`}>
       <div className="flex items-center gap-3">
-        <Icon size={18} />
+        {React.createElement(icon, { size: 18 })}
         <span className="font-black text-xs uppercase tracking-wider">{label}</span>
       </div>
       <span className="text-xs font-bold">{questions.length}/7 • Uygun: {availableCount}</span>
     </div>
     <div
       onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => { e.preventDefault(); onDrop(JSON.parse(e.dataTransfer.getData('question'))); }}
+      onDrop={(e) => {
+        e.preventDefault();
+        try {
+          const raw = e.dataTransfer.getData('question');
+          if (!raw) return;
+          const q = JSON.parse(raw);
+          if (q?._id) onDropQuestion(q);
+        } catch {
+          /* geçersiz sürükleme */
+        }
+      }}
       className="rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-700 p-4 min-h-[250px] space-y-2 bg-slate-50/50 dark:bg-slate-900/30"
     >
-      {questions.map((q, idx) => (
+      {questions.map((q, idx) => {
+        const slotImg = resolveAssetUrl(q.image);
+        return (
         <div key={q._id} className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 flex items-center gap-2 group">
-          <p className="flex-1 text-[10px] font-bold truncate">{renderWithLatex(q.text)}</p>
-          <button onClick={() => onRemove(idx)} className="text-slate-300 hover:text-rose-500 transition-all"><Trash2 size={12} /></button>
+          {slotImg ? (
+            <img src={slotImg} alt="" className="h-9 w-9 shrink-0 object-contain rounded-lg border border-slate-100 dark:border-slate-700 bg-white" />
+          ) : null}
+          <p className="flex-1 text-[10px] font-bold line-clamp-2">{renderWithLatex(q.text)}</p>
+          <button type="button" onClick={() => onRemove(idx)} className="text-slate-300 hover:text-rose-500 transition-all shrink-0"><Trash2 size={12} /></button>
         </div>
-      ))}
+      );
+      })}
     </div>
   </div>
 );
@@ -112,7 +145,9 @@ export default function TeacherExamsPage() {
           return;
         }
         setProfile({ branch, branchApproval });
-      } catch {}
+      } catch {
+        /* profil isteği isteğe bağlı */
+      }
       finally {
         if (active) {
           setProfileLoaded(true);
@@ -151,7 +186,9 @@ export default function TeacherExamsPage() {
             fetchQuestions();
             clearInterval(timer);
           }
-        } catch {}
+        } catch {
+          /* aralık yenileme hatası yok sayılır */
+        }
       }, 5000);
     }
     return () => { if (timer) clearInterval(timer); };
@@ -180,7 +217,9 @@ export default function TeacherExamsPage() {
       setExams(data);
       setExamTotal(res.data?.total || data.length || 0);
       setExamTotalPages(res.data?.pages || 1);
-    } catch (err) { showToast('Sınavlar yüklenemedi', 'error'); }
+    } catch {
+      showToast('Sınavlar yüklenemedi', 'error');
+    }
     finally { setLoading(false); }
   };
 
@@ -212,7 +251,9 @@ export default function TeacherExamsPage() {
       setPoolTotal(res.data.total || 0);
       setPoolTotalPages(res.data.totalPages || 1);
       setPoolDifficultyCounts(res.data.difficultyCounts || { Kolay: 0, Orta: 0, Zor: 0 });
-    } catch (err) { console.error('Sorular çekilemedi'); }
+    } catch {
+      console.error('Sorular çekilemedi');
+    }
     finally { setPoolLoading(false); }
   };
 
@@ -257,13 +298,61 @@ export default function TeacherExamsPage() {
     Zor: poolDifficultyCounts.Zor || 0,
   }), [poolDifficultyCounts]);
 
-  const existsInAny = (id) => ([...easyQ, ...mediumQ, ...hardQ].some(q => q._id === id));
-  const tryAdd = (zoneSetter, zone, q, expectedDiff) => {
-    if (q.difficulty !== expectedDiff) return;
-    if (existsInAny(q._id)) { showToast('Bu soru zaten eklendi', 'error'); return; }
-    if (zone.length >= 7) { showToast('Bu bölüm dolu', 'error'); return; }
-    zoneSetter([...zone, q]);
-  };
+  const studioBucketsRef = useRef({ easyQ, mediumQ, hardQ });
+  studioBucketsRef.current = { easyQ, mediumQ, hardQ };
+
+  const addQuestionCommon = useCallback((q) => {
+    const { easyQ: ez, mediumQ: md, hardQ: hd } = studioBucketsRef.current;
+    const merged = [...ez, ...md, ...hd];
+    if (!q?._id) {
+      return;
+    }
+    const id = String(q._id);
+    if (merged.some((x) => String(x._id) === id)) {
+      showToast('Bu soru zaten sınavda', 'error');
+      return;
+    }
+    const d = q.difficulty;
+    if (d === 'Kolay') {
+      if (ez.length >= 7) {
+        showToast('Kolay sütunu dolu — en fazla 7 soru (7/7)', 'error');
+        return;
+      }
+      setEasyQ([...ez, q]);
+      return;
+    }
+    if (d === 'Orta') {
+      if (md.length >= 7) {
+        showToast('Orta sütunu dolu — en fazla 7 soru (7/7)', 'error');
+        return;
+      }
+      setMediumQ([...md, q]);
+      return;
+    }
+    if (d === 'Zor') {
+      if (hd.length >= 7) {
+        showToast('Zor sütunu dolu — en fazla 7 soru (7/7)', 'error');
+        return;
+      }
+      setHardQ([...hd, q]);
+      return;
+    }
+    showToast('Bu sorunun zorluk etiketi eksik (Kolay / Orta / Zor bekleniyor)', 'error');
+  }, [showToast]);
+
+  const handleDropIntoZone = useCallback((q, zoneDifficulty) => {
+    if (!q) {
+      return;
+    }
+    if (q.difficulty !== zoneDifficulty) {
+      showToast(
+        `Bu soru "${q.difficulty}". ${zoneDifficulty} kutusuna sürükleyemezsiniz — doğru sütunu kullanın ya da kart üzerindeki metne tıklayın.`,
+        'warning',
+      );
+      return;
+    }
+    addQuestionCommon(q);
+  }, [addQuestionCommon, showToast]);
 
   const handleCreate = async () => {
     if (easyQ.length !== 7 || mediumQ.length !== 7 || hardQ.length !== 7) {
@@ -271,7 +360,7 @@ export default function TeacherExamsPage() {
     }
     try {
       const payload = {
-        name: examName,
+        name: (examName || '').trim() || `Sınav • ${classLevel}`,
         classLevel,
         duration: durationMin || 60,
         questions: [...easyQ, ...mediumQ, ...hardQ].map(q => q._id),
@@ -282,28 +371,43 @@ export default function TeacherExamsPage() {
       showToast('Sınav yayınlandı!', 'success');
       setView('list');
       fetchExams();
-    } catch (err) { showToast('Hata oluştu', 'error'); }
+    } catch {
+      showToast('Hata oluştu', 'error');
+    }
   };
 
   if (view === 'studio') {
     return (
       <div className="p-6 space-y-8 animate-in slide-in-from-right duration-500">
-        <div className="flex justify-between items-center">
-          <button onClick={() => {
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <button type="button" onClick={() => {
             const hasUnsaved = easyQ.length + mediumQ.length + hardQ.length > 0;
             if (hasUnsaved && !window.confirm('Stüdyodan çıkmak üzeresin. Eklenmiş sorular kaybolacak, emin misin?')) return;
             setView('list');
-          }} className="flex items-center gap-2 text-slate-500 font-bold hover:text-indigo-600 transition-all">
+          }} className="flex items-center gap-2 text-slate-500 font-bold hover:text-indigo-600 transition-all shrink-0">
             <ArrowLeft size={20} /> Listeye Dön
           </button>
-          <button onClick={handleCreate} className="px-10 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black shadow-xl shadow-indigo-100 flex items-center gap-2 hover:scale-105 transition-all">
+          <input
+            type="text"
+            value={examName}
+            onChange={(e) => setExamName(e.target.value)}
+            placeholder={`Sınav başlığı (ör. Örüntüler • ${classLevel})`}
+            className="w-full sm:flex-1 sm:max-w-md order-last sm:order-none px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-sm font-semibold outline-none focus:ring-2 focus:ring-indigo-500/30"
+          />
+          <button type="button" onClick={handleCreate} className="px-10 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 hover:scale-105 transition-all shrink-0">
             <Save size={20} /> Sınavı Yayınla
           </button>
         </div>
         {/* Üst Ayarlar: Sınıf ve Havuz filtreleri */}
         <div className="grid lg:grid-cols-4 gap-8">
           <div className="lg:col-span-1 space-y-4">
-            <h2 className="text-xl font-black px-2">Soru Havuzu</h2>
+            <div className="px-2 space-y-1">
+              <h2 className="text-xl font-black">Soru Havuzu</h2>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                Soruya <strong className="text-slate-700 dark:text-slate-300">tıklayın</strong> — otomatik olarak kendi zorluk sütununa eklenir (her sütunda en fazla <strong>7</strong> soru).
+                Görsel eklemek için <strong>Soru Bankası</strong>ndan soruyu düzenleyin veya <strong>Örüntü Oluşturucu</strong> ile üretin; bu ekranda dosya yükleme yoktur.
+              </p>
+            </div>
             <div className="flex items-center gap-2 px-2">
               <div className="relative flex-1">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -356,8 +460,16 @@ export default function TeacherExamsPage() {
             </div>
             <div className="space-y-3 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
               {poolLoading && <div className="text-xs text-slate-500 px-2">Havuz yükleniyor...</div>}
-              {poolQuestions.map(q => (
-                <DraggableQuestionCard key={q._id} question={q} onDragStart={(e) => e.dataTransfer.setData('question', JSON.stringify(q))} />
+              {poolQuestions.map((q) => (
+                <DraggableQuestionCard
+                  key={q._id}
+                  question={q}
+                  onAddClick={() => addQuestionCommon(q)}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('question', JSON.stringify(q));
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                />
               ))}
             </div>
             <div className="px-2 flex items-center justify-between gap-2">
@@ -370,9 +482,9 @@ export default function TeacherExamsPage() {
             </div>
           </div>
           <div className="lg:col-span-3 grid md:grid-cols-3 gap-6">
-            <DropZone difficulty="Kolay" label="7 Kolay" questions={easyQ} availableCount={availableCounts.Kolay} onDrop={(q) => tryAdd(setEasyQ, easyQ, q, 'Kolay')} onRemove={(i) => setEasyQ(easyQ.filter((_, idx) => idx !== i))} colorClass="bg-emerald-500" icon={Award} />
-            <DropZone difficulty="Orta" label="7 Orta" questions={mediumQ} availableCount={availableCounts.Orta} onDrop={(q) => tryAdd(setMediumQ, mediumQ, q, 'Orta')} onRemove={(i) => setMediumQ(mediumQ.filter((_, idx) => idx !== i))} colorClass="bg-amber-500" icon={Award} />
-            <DropZone difficulty="Zor" label="7 Zor" questions={hardQ} availableCount={availableCounts.Zor} onDrop={(q) => tryAdd(setHardQ, hardQ, q, 'Zor')} onRemove={(i) => setHardQ(hardQ.filter((_, idx) => idx !== i))} colorClass="bg-rose-500" icon={Award} />
+            <DropZone label="7 Kolay" questions={easyQ} availableCount={availableCounts.Kolay} onDropQuestion={(q) => handleDropIntoZone(q, 'Kolay')} onRemove={(i) => setEasyQ(easyQ.filter((_, idx) => idx !== i))} colorClass="bg-emerald-500" icon={Award} />
+            <DropZone label="7 Orta" questions={mediumQ} availableCount={availableCounts.Orta} onDropQuestion={(q) => handleDropIntoZone(q, 'Orta')} onRemove={(i) => setMediumQ(mediumQ.filter((_, idx) => idx !== i))} colorClass="bg-amber-500" icon={Award} />
+            <DropZone label="7 Zor" questions={hardQ} availableCount={availableCounts.Zor} onDropQuestion={(q) => handleDropIntoZone(q, 'Zor')} onRemove={(i) => setHardQ(hardQ.filter((_, idx) => idx !== i))} colorClass="bg-rose-500" icon={Award} />
           </div>
         </div>
       </div>
@@ -426,7 +538,7 @@ export default function TeacherExamsPage() {
           }}>
             <Sparkles size={18}/> Hızlı Sınav
           </Button>
-          <Button variant="primary" size="md" onClick={() => setView('studio')}>
+          <Button variant="primary" size="md" onClick={() => { setExamName(''); setEasyQ([]); setMediumQ([]); setHardQ([]); setView('studio'); }}>
             <Plus size={20} /> Yeni Sınav Oluştur
           </Button>
         </div>
@@ -482,7 +594,7 @@ export default function TeacherExamsPage() {
                        try {
                          await apiClient.delete(`/exams/${exam._id}`);
                          showToast('Sınav silindi', 'success');
-                       } catch (err) {
+                       } catch {
                          setExams(prev);
                          showToast('Sınav silinemedi', 'error');
                        }
@@ -509,7 +621,7 @@ export default function TeacherExamsPage() {
                       try {
                         await apiClient.put(`/exams/${exam._id}`, { duration: val });
                         showToast('Süre güncellendi', 'success');
-                      } catch (err) {
+                      } catch {
                         setExams(prev);
                         showToast('Süre güncellenemedi', 'error');
                       }

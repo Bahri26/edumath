@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Loader2, Image as ImageIcon, Check, ArrowRight } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
-import apiClient, { withAiRequestConfig } from '../../services/api';
+import { describeApiError } from '../../utils/errorMessage';
+import apiClient from '../../services/api';
+import { smartParseImage, smartParseText } from '../../services/aiService';
 import Button from '../ui/Button.jsx';
-import Card from '../ui/Card.jsx';
 
 export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   const { showToast } = useToast();
@@ -36,18 +37,11 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     setUploadedFile(file);
     setLoading(true);
 
-    const formData = new FormData();
-    formData.append('image', file);
-
     try {
-      // Backend'deki multimodal Gemini Flash endpoint'ini çağırıyoruz
-      const res = await apiClient.post('/ai/smart-parse', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        ...withAiRequestConfig(),
-      });
-      const data = res.data?.data || {};
-      const parseMode = res.data?.meta?.parseMode;
-      const serverMessage = res.data?.message;
+      const body = await smartParseImage(file);
+      const data = body?.data || {};
+      const parseMode = body?.meta?.parseMode;
+      const serverMessage = body?.message;
       setParsedData({
         text: data.text || '',
         options: Array.isArray(data.options) ? data.options : ['', '', '', ''],
@@ -82,7 +76,16 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         difficulty: prev.difficulty || 'Orta'
       }));
       setStep('editing');
-      showToast("AI anahtarı geçersiz. Lütfen metni elle düzenleyin veya Kopyala‑Yapıştır modunu kullanın.", "error");
+      const status = err?.response?.status;
+      if (status === 429) {
+        showToast(describeApiError(err, 'AI kotası dolu. Birazdan tekrar deneyin.'), 'error');
+      } else if (status === 401 || status === 403) {
+        showToast('AI yetki sorunu. Yöneticiye anahtar/izin için bildirin.', 'error');
+      } else if (err?.code === 'ECONNABORTED') {
+        showToast('AI yanıt zaman aşımına uğradı. Tekrar deneyin.', 'error');
+      } else {
+        showToast(describeApiError(err, 'Görsel analiz edilemedi. Alanları elle doldurun.'), 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -158,11 +161,11 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     } catch (err) {
       // Backend'e fallback (opsiyonel)
       try {
-        const res = await apiClient.post('/ai/smart-parse-text', { content });
-        setParsedData(res.data.data);
+        const body = await smartParseText(content);
+        setParsedData(body.data);
         setStep('editing');
         showToast('Metin ayrıştırıldı (AI).', 'success');
-        await handleFinalSave(res.data.data);
+        await handleFinalSave(body.data);
         return true;
       } catch {
         showToast('Metin ayrıştırılamadı', 'error');
@@ -187,7 +190,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       onParsed(); // Listeyi yenile
       onClose(); // Modalı kapat
     } catch (err) {
-      showToast("Kaydedilirken bir hata oluştu.", "error");
+      showToast(describeApiError(err, 'Kaydedilirken bir hata oluştu.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -200,7 +203,13 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+    <div
+      className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Akıllı görsel/metin analiz"
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+    >
       <div className="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95">
         
         {/* Header */}

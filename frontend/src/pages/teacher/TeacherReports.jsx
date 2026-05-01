@@ -1,19 +1,57 @@
-import React, { useState, useContext } from 'react';
-import { 
-  BarChart2, TrendingUp, TrendingDown, Users, AlertCircle, 
-  Download, Calendar, ChevronDown, CheckCircle 
+import React, { useState, useContext, useEffect } from 'react';
+import {
+  BarChart2, TrendingUp, TrendingDown, Users, AlertCircle,
+  Download, Calendar, ChevronDown, CheckCircle, Lightbulb, Loader2
 } from 'lucide-react';
 import { LanguageContext } from '../../context/LanguageContext';
+import apiClient from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 const TeacherReports = () => {
   const { language } = useContext(LanguageContext);
+  const { showToast } = useToast();
   const [period, setPeriod] = useState('Bu Dönem');
+  const [hintData, setHintData] = useState(null);
+  const [hintLoading, setHintLoading] = useState(false);
+  const [hintRange, setHintRange] = useState(30);
+
+  useEffect(() => {
+    let active = true;
+    setHintLoading(true);
+    apiClient
+      .get(`/teacher/hint-requests?days=${hintRange}`)
+      .then((res) => {
+        if (active) setHintData(res?.data?.data || null);
+      })
+      .catch((err) => {
+        if (!active) return;
+        const msg = err?.response?.data?.message || 'İpucu istekleri alınamadı.';
+        if (err?.response?.status !== 403) {
+          showToast(msg, 'error');
+        }
+        setHintData(null);
+      })
+      .finally(() => active && setHintLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [hintRange, showToast]);
+
+  const formatDate = (iso) => {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
+    } catch {
+      return '';
+    }
+  };
 
   // --- DİL ÇEVIRILERI ---
   const t = {
     TR: {
       title: "Sınıf Raporları",
-      subtitle: "11-A Sınıfı detaylı başarı analizi.",
+      subtitle: "Sınıf bazlı başarı analizi (örnek veri).",
       period: "Bu Dönem",
       downloadPDF: "PDF İndir",
       classAvg: "Sınıf Ortalaması",
@@ -26,7 +64,7 @@ const TeacherReports = () => {
     },
     EN: {
       title: "Class Reports",
-      subtitle: "11-A class detailed performance analysis.",
+      subtitle: "Class performance analysis (sample data).",
       period: "This Period",
       downloadPDF: "Download PDF",
       classAvg: "Class Average",
@@ -176,6 +214,133 @@ const TeacherReports = () => {
               </div>
           </div>
 
+      </div>
+
+      {/* --- İPUCU İSTEKLERİ (Öğrencilerin Zorlandığı Konular) --- */}
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="text-amber-500" size={20} />
+            <div>
+              <h3 className="font-bold text-lg text-slate-800 dark:text-white">İpucu İstekleri</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Öğrenciler hangi konularda en çok ipucu istedi? Eksik bilgi raporu.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {[7, 30, 90].map((d) => (
+              <button
+                key={d}
+                onClick={() => setHintRange(d)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  hintRange === d
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                Son {d} gün
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {hintLoading ? (
+          <div className="flex items-center gap-2 text-slate-500 text-sm">
+            <Loader2 className="animate-spin" size={16} /> Yükleniyor…
+          </div>
+        ) : !hintData || hintData.totalHints === 0 ? (
+          <div className="text-sm text-slate-500 dark:text-slate-400 py-8 text-center">
+            Bu aralıkta öğrencilerden ipucu isteği yok.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div>
+              <h4 className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">
+                En Çok Zorlanılan Konular
+              </h4>
+              <ul className="space-y-2">
+                {(hintData.byTopic || []).slice(0, 8).map((row, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm"
+                  >
+                    <span className="text-slate-700 dark:text-slate-200 truncate pr-2">
+                      {row.topic || 'Konu yok'}
+                    </span>
+                    <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                      {row.count}×
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">
+                En Çok İpucu İsteyen Öğrenciler
+              </h4>
+              <ul className="space-y-2">
+                {(hintData.byStudent || []).slice(0, 8).map((s, i) => (
+                  <li
+                    key={s.userId || i}
+                    className="rounded-lg bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-slate-700 dark:text-slate-200 truncate pr-2">
+                        {s.name}
+                      </span>
+                      <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                        {s.count} ipucu
+                      </span>
+                    </div>
+                    {s.topics?.length > 0 && (
+                      <div className="mt-1 text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {s.topics.slice(0, 3).join(' · ')}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">
+                Son İstekler
+              </h4>
+              <ul className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {(hintData.recent || []).slice(0, 12).map((r) => (
+                  <li
+                    key={r._id}
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-slate-700 dark:text-slate-200">
+                        {r.studentName}
+                      </span>
+                      <span className="text-slate-400 dark:text-slate-500">
+                        {formatDate(r.createdAt)}
+                      </span>
+                    </div>
+                    {r.topic && (
+                      <div className="text-amber-600 dark:text-amber-400 mt-0.5">{r.topic}</div>
+                    )}
+                    {r.questionPreview && (
+                      <div className="mt-1 text-slate-500 dark:text-slate-400 line-clamp-2">
+                        “{r.questionPreview}”
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-4">
+          İpucu artık öğrenciye otomatik gösterilmez; öğrenci açıkça "İpucu al" düğmesine bastığında
+          kaydedilir. Bu rapor, sınıfın hangi konularda eksiği olduğunu görmenizi sağlar.
+        </p>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Brain, CheckCircle, X } from 'lucide-react';
+import StudentHint from '../StudentHint.jsx';
 
 // This component handles the display and interaction of AI-generated practice questions.
 const AIPractice = ({ questions }) => {
@@ -82,9 +83,17 @@ const AIPractice = ({ questions }) => {
                       {state.isCorrect ? <CheckCircle size={16}/> : <X size={16}/>}
                       {state.isCorrect ? "Doğru Cevap!" : "Yanlış Cevap"}
                   </div>
-                  <p><strong>Çözüm:</strong> {q.explanation}</p>
                 </div>
               )}
+
+              <StudentHint
+                questionId={q._id}
+                questionText={q.text || q.questionText}
+                studentAnswer={state?.selected || ''}
+                topic={q.topic}
+                subject={q.subject}
+                compact
+              />
             </div>
           );
         })}

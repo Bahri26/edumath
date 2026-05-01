@@ -6,6 +6,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware');
 const User = require('../models/User');
 const Student = require('../models/Student');
+const { gradeQuestionAnswer } = require('../utils/questionGrading');
 
 // 1. TÜM SINAVLARI GETİR
 router.get('/', async (req, res) => {
@@ -209,14 +210,16 @@ router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (r
     let weakTopicsSet = new Set();
     const topicCounts = new Map();
 
-    exam.questions.forEach(q => {
+    exam.questions.forEach((q) => {
       const focusArea = q.learningOutcome || q.topic || q.subject;
+      const rawAnswer = answers[q._id] ?? answers[String(q._id)];
+      const ok = gradeQuestionAnswer(q, rawAnswer);
 
       // Eğer cevap yanlışsa veya boşsa, o sorunun kazanımını veya konusunu zayıf alan olarak ekle.
-      if (answers[q._id] !== q.correctAnswer) {
-        if (focusArea) { 
-           weakTopicsSet.add(focusArea);
-           topicCounts.set(focusArea, (topicCounts.get(focusArea) || 0) + 1);
+      if (!ok) {
+        if (focusArea) {
+          weakTopicsSet.add(focusArea);
+          topicCounts.set(focusArea, (topicCounts.get(focusArea) || 0) + 1);
         }
       } else {
         correctCount++;

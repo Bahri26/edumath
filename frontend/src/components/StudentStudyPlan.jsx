@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { createStudyPlan } from "../services/aiService";
 
 export default function StudentStudyPlan({ weakTopics, goal, hoursPerDay, daysLeft }) {
   const [plan, setPlan] = useState("");
@@ -9,10 +9,9 @@ export default function StudentStudyPlan({ weakTopics, goal, hoursPerDay, daysLe
   useEffect(() => {
     if (!weakTopics || !goal || !hoursPerDay || !daysLeft) return;
     setLoading(true);
-    axios
-      .post("/api/ai/study-plan", { weakTopics, goal, hoursPerDay, daysLeft })
-      .then((res) => {
-        setPlan(res.data.plan);
+    createStudyPlan({ weakTopics, goal, hoursPerDay, daysLeft })
+      .then((data) => {
+        setPlan(data.plan);
         setLoading(false);
       })
       .catch((err) => {

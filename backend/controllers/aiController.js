@@ -106,15 +106,70 @@ exports.teacherReport = async (req, res) => {
 
 // 8. SORU ÇÖZERKEN İPUCU VEREN AI
 exports.getHint = async (req, res) => {
+  const { questionText, studentAnswer, questionId, topic, subject } = req.body || {};
   try {
-    const { questionText, studentAnswer } = req.body;
-    if (!questionText) return res.status(400).json({ message: "Soru metni gerekli." });
+    if (!questionText && !questionId) {
+      return res.status(400).json({ message: 'Soru metni veya soru ID gerekli.' });
+    }
+
+    let resolvedText = String(questionText || '').trim();
+    let resolvedTopic = String(topic || '').trim();
+    let resolvedSubject = String(subject || '').trim();
+
+    if (questionId && (!resolvedText || !resolvedTopic || !resolvedSubject)) {
+      try {
+        const Question = require('../models/Question');
+        const q = await Question.findById(questionId).select('text topic subject');
+        if (q) {
+          if (!resolvedText) resolvedText = q.text || '';
+          if (!resolvedTopic) resolvedTopic = q.topic || '';
+          if (!resolvedSubject) resolvedSubject = q.subject || '';
+        }
+      } catch {
+        /* yardimci sorgu basarisiz olursa hint yine cikarilir */
+      }
+    }
+
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    const prompt = `Bir öğrenci şu soruyu çözüyor: ${questionText}\nÖğrencinin cevabı: ${studentAnswer || "Henüz cevap yok"}\nKısa, yol gösterici bir ipucu ver. Cevabı açıkça söyleme.`;
+    const prompt = `Bir öğrenci şu soruyu çözüyor: ${resolvedText || '(soru metni alınamadı)'}\n` +
+      `Öğrencinin cevabı: ${studentAnswer || 'Henüz cevap yok'}\n` +
+      `Kısa, yol gösterici bir ipucu ver. Cevabı açıkça söyleme. 1-3 cümle yeterli.`;
     const result = await model.generateContent(prompt);
-    res.json({ hint: result.response.text() });
+    const hintText = result.response.text();
+
+    // Öğrenci-rol kontrolü; öğretmen test ederken de event yazma
+    if (req.user && req.user.role === 'student') {
+      try {
+        const LearningEvent = require('../models/LearningEvent');
+        await LearningEvent.create({
+          userId: req.user.id,
+          type: 'hint',
+          subject: resolvedSubject || '',
+          topic: resolvedTopic || '',
+          meta: {
+            questionId: questionId || null,
+            questionPreview: (resolvedText || '').slice(0, 160),
+            studentAnswer: String(studentAnswer || '').slice(0, 160),
+            hintPreview: String(hintText || '').slice(0, 200),
+          },
+        });
+      } catch (logErr) {
+        console.warn('hint event yazılamadı:', logErr?.message);
+      }
+    }
+
+    res.json({ hint: hintText });
   } catch (error) {
-    res.status(500).json({ message: "İpucu üretilemedi.", error: error.message });
+    const status = Number(error?.status || 0);
+    const msg = String(error?.message || '');
+    if (status === 429 || /quota|resource.?exhausted/i.test(msg)) {
+      return res.status(429).json({
+        message: 'AI kotası dolu, ipucu üretilemedi.',
+        hint: 'Birazdan tekrar dene.',
+      });
+    }
+    console.error('getHint hatası:', msg);
+    res.status(500).json({ message: 'İpucu üretilemedi.', error: msg });
   }
 };
 // 6. 🧑‍🎓 ÖĞRENCİ CEVABI ANALİZ & KİŞİSELLEŞTİRİLMİŞ SORU ÖNERİSİ
@@ -140,12 +195,21 @@ const fs = require("fs");
 const pathLib = require('path');
 const Tesseract = require('tesseract.js');
 const { generatePatternQuestions } = require('../services/aiQuestionGeneratorService');
+const { generateContentAsJson } = require('../services/geminiJsonGeneration');
+const { buildMebPromptBlock } = require('../constants/mebCurriculumContext');
+const {
+  fetchQuestionPoolSamples,
+  formatSamplesForPrompt,
+} = require('../services/questionPoolSamplesService');
+const { LEARNING_OUTCOME_BY_LABEL } = require('../constants/patternTopics');
 
 // API Anahtarınızı .env dosyasından çekiyoruz
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
-const COMPLEX_MODEL_NAME = process.env.GEMINI_COMPLEX_MODEL || process.env.GEMINI_MODEL || 'gemini-1.5-pro';
+const { DEFAULT_GEMINI_FLASH, DEFAULT_GEMINI_COMPLEX } = require('../constants/geminiDefaults');
+const MODEL_NAME = process.env.GEMINI_MODEL || DEFAULT_GEMINI_FLASH;
+const COMPLEX_MODEL_NAME =
+  process.env.GEMINI_COMPLEX_MODEL || process.env.GEMINI_MODEL || DEFAULT_GEMINI_COMPLEX;
 
 // Yardımcı Fonksiyon: Dosya işleme (Resim için)
 function fileToGenerativePart(path, mimeType) {
@@ -417,63 +481,139 @@ exports.smartParse = async (req, res) => {
 // ------------------------------------------------------------------
 exports.generateQuiz = async (req, res) => {
   try {
-    const { topic, difficulty, count, classLevel } = req.body;
+    const {
+      topic,
+      difficulty,
+      count,
+      classLevel,
+      subject: subjectRaw,
+      googleGrounding,
+    } = req.body;
+
+    if (!topic || !difficulty || !classLevel || !count) {
+      return res.status(400).json({ message: 'Eksik alan: topic, difficulty, classLevel, count gerekli.' });
+    }
+
+    const subject =
+      typeof subjectRaw === 'string' && subjectRaw.trim()
+        ? subjectRaw.trim()
+        : 'Matematik';
+
+    const poolSamples = await fetchQuestionPoolSamples({
+      subject,
+      topic,
+      classLevel,
+      limit: 8,
+    });
+    const poolBlock = formatSamplesForPrompt(poolSamples);
+    const mebBlock = buildMebPromptBlock({ subject, topic, classLevel });
+    const outcomeHint = LEARNING_OUTCOME_BY_LABEL[topic]
+      ? `Oruntu alt konusunda MEB ile hizalı ilgili kazanım özeti: ${LEARNING_OUTCOME_BY_LABEL[topic]}`
+      : '';
+
+    const useGrounding =
+      googleGrounding !== false &&
+      String(process.env.GEMINI_GOOGLE_GROUNDING || '1').trim() !== '0';
 
     const schema = {
-      description: "Matematik soru listesi",
+      description:
+        `MEB programi ve havuz uyumlu ${subject} coktan secmeli sorular (Google zeminlemesi kullanilirsa güvenilir web özetinden yararlan)`,
       type: SchemaType.ARRAY,
       items: {
         type: SchemaType.OBJECT,
         properties: {
-          text: { type: SchemaType.STRING, description: "Soru metni, LaTeX içerir" },
+          text: {
+            type: SchemaType.STRING,
+            description:
+              'Soru metni; gerekli ise LaTeX $...$. Havuzdan birebir kopya yapma; yeni guvenilir taslak yaz.',
+          },
           options: {
             type: SchemaType.ARRAY,
             items: { type: SchemaType.STRING },
-            description: "4 adet seçenek (A, B, C, D)"
+            description: 'Tam 4 secenek; yalnizca bir dogru',
           },
-          correctAnswer: { type: SchemaType.STRING, description: "Doğru cevabın tam metni" },
-          subject: { type: SchemaType.STRING },
-          difficulty: { type: SchemaType.STRING },
-          classLevel: { type: SchemaType.STRING },
-          explanation: { type: SchemaType.STRING, description: "Sorunun çözüm adımları" }
+          correctAnswer: {
+            type: SchemaType.STRING,
+            description: 'Dogru sirada secenegin tam metni (options ile birebir ayni)',
+          },
+          explanation: {
+            type: SchemaType.STRING,
+            description:
+              'Kisa pedagogik cozum; gereksiz tekrardan kacin.',
+          },
+          mebReference: {
+            type: SchemaType.STRING,
+            description:
+              'MEB ogretim programi ile uyumlu kisa referans cumlesi (Alan/kazanım turu ile ilgili dus yapıcı ifade)',
+          },
+          learningOutcome: {
+            type: SchemaType.STRING,
+            description: 'Bu sorunun hedefledigi kazanima yakin tek cumle.',
+          },
         },
-        required: ["text", "options", "correctAnswer", "subject", "difficulty", "explanation"]
-      }
+        required: ['text', 'options', 'correctAnswer', 'explanation'],
+      },
     };
 
-    const model = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: schema,
-        temperature: 0.3
-      },
+    const prompt = `
+${mebBlock}
+
+GORUNTU / HAZIRLAYICI BILGI:
+Sinif: ${classLevel}
+Ders: ${subject}
+Unite/Konu: ${topic}
+Zorluk: ${difficulty}
+Uretilecek soru sayisi: ${Math.min(15, Math.max(1, Number(count) || 1))}
+${outcomeHint ? `\n${outcomeHint}\n` : ''}
+
+SORU BANKASINDAN (${subject}${classLevel !== 'Tümü' ? `, ${classLevel}` : ''} — bağlam icin anonimlestirildi; TELIF/LITERAL KOPYA ETME — yalnizca seviye, dil ve yazim tarzına uy):
+${poolBlock}
+
+GOREV:
+- Yukaridaki havuzdan SADECE yapı ve bilissel düzey fikir al; soru koklerini yeniden yaz, farkli baglam ve rakamlar kullan.
+- ${useGrounding ? 'Google Search zeminlemesi kullaniliyorsa; tanimları ve güncel egitim uyumunu güvenilir acik kaynak ozetinden dogrula. Uydurma kesin yil veya madda numarasi yazma.' : 'Kaynak gerektiren tanimlari genel akademik doğruluga sadik kalerek yaz.'}
+- Her soru icin tam 4 secenek ve "correctAnswer" alanını secenklerden biri olarak doldur.
+- JSON olarak sadece dizi don.
+
+`.trim();
+
+    const parsedData = await generateContentAsJson({
+      genAI,
+      modelName: COMPLEX_MODEL_NAME,
+      prompt,
+      responseSchema: schema,
+      temperature: 0.28,
+      enableGoogleGrounding: useGrounding && Boolean(process.env.GEMINI_API_KEY),
     });
 
-    const prompt = `
-      Konu: ${topic}
-      Zorluk: ${difficulty}
-      Sınıf: ${classLevel}
-      Adet: ${count}
-      Bu kriterlere uygun matematik soruları oluştur. Seçenekler string array olsun.
-    `;
+    if (!Array.isArray(parsedData)) {
+      return res.status(502).json({ message: 'Gecersiz model ciktisi.' });
+    }
 
-    const result = await model.generateContent(prompt);
-    const parsedData = JSON.parse(result.response.text());
-
-    // Frontend formatına uyum
-    const formattedData = parsedData.map(q => ({
+    const formattedData = parsedData.map((q) => ({
       ...q,
-      type: "multiple-choice",
-      subject: topic,
-      classLevel: classLevel
+      type: 'multiple-choice',
+      subject,
+      topic,
+      classLevel,
     }));
 
     res.json(formattedData);
-
   } catch (error) {
-    console.error("Soru Üretme Hatası:", error);
-    res.status(500).json({ message: "Soru üretilemedi." });
+    console.error('Soru Üretme Hatası:', error);
+    const msg = String(error?.message || '');
+    const status = Number(error?.status || error?.statusCode || 0);
+    const quotaLike = status === 429 || /429|\bquota\b|resource.?exhausted/i.test(msg);
+    if (quotaLike) {
+      return res.status(429).json({
+        message: 'Gemini kota/billing limiti nedeniyle soru üretilemedi.',
+        hint:
+          'Google AI Studio / Cloud Console tarafinda proje faturalandirmasi acik olmali ve backend GEMINI_API_KEY bu projeye ait olmali. Hata "free_tier" diyorsa anahtar ucretli projeye bagli degil demektir.',
+        detail: msg,
+      });
+    }
+
+    res.status(500).json({ message: 'Soru üretilemedi.', detail: msg });
   }
 };
 
@@ -664,6 +804,7 @@ exports.generatePatternQuestionPack = async (req, res) => {
       count = 5,
       topic = 'Örüntüler',
       subject = 'Matematik',
+      googleGrounding,
     } = req.body || {};
 
     const result = await generatePatternQuestions({
@@ -672,6 +813,7 @@ exports.generatePatternQuestionPack = async (req, res) => {
       count: Number(count) || 5,
       topic,
       subject,
+      googleGrounding,
     });
 
     res.json({
@@ -679,6 +821,7 @@ exports.generatePatternQuestionPack = async (req, res) => {
       generator: result.generator,
       count: result.questions.length,
       questions: result.questions,
+      ...(result.hint ? { hint: result.hint } : {}),
     });
   } catch (error) {
     console.error('generatePatternQuestionPack Hatası:', error);

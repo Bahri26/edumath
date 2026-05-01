@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PlayCircle, Target, CheckCircle, Clock, BookOpen, CircleHelp } from 'lucide-react';
 import { studentProfile as staticProfile, continueLearning as staticContinue, myCourses as staticCourses, upcomingAssignments as staticAssignments } from '../../data/studentData';
 import ProgressPanel from '../../components/ui/ProgressPanel';
@@ -8,6 +9,7 @@ import apiClient from '../../services/api';
 import GuideDrawer from '../../components/help/GuideDrawer.jsx';
 
 const StudentHome = () => {
+  const navigate = useNavigate();
   const { language } = useContext(LanguageContext);
   const [profile, setProfile] = useState(staticProfile);
   const [grade, setGrade] = useState(staticProfile.grade || '');
@@ -54,7 +56,7 @@ const StudentHome = () => {
   // --- DİL ÇEVIRILERI ---
   const t = {
     TR: {
-      welcome: "Tekrar Hoşgeldin",
+      welcome: "Tekrar hoş geldin",
       ready: "dersinde kaldığın yerden devam etmeye hazır mısın?",
       continueLesson: "Derse Devam Et",
       lastTopic: "Son Konu",
@@ -85,7 +87,10 @@ const StudentHome = () => {
             <p className="text-indigo-100 opacity-90 mb-6 max-w-lg">
               {grade ? `${grade} için` : ''} Harika gidiyorsun! <span className="font-semibold text-yellow-300">{continueLearning.course}</span> {getText("ready")}
             </p>
-            <button className="bg-white text-indigo-600 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-50 transition-colors shadow-lg">
+            <button
+              onClick={() => navigate('/student/exercises')}
+              className="bg-white text-indigo-600 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-50 transition-colors shadow-lg"
+            >
               <PlayCircle size={20} /> {getText("continueLesson")}
             </button>
             <button
@@ -149,7 +154,12 @@ const StudentHome = () => {
                   <p className="font-medium text-slate-700 dark:text-slate-300">Bir test çöz</p>
                   <p className="text-xs text-slate-400">0/1 • 150 XP</p>
                 </div>
-                <button className="text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded font-bold">Başla</button>
+                <button
+                  onClick={() => navigate('/student/quizzes')}
+                  className="text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded font-bold hover:bg-indigo-100"
+                >
+                  Başla
+                </button>
               </div>
             </div>
           </div>

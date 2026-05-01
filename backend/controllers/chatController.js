@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { DEFAULT_GEMINI_FLASH } = require('../constants/geminiDefaults');
 
 // API Anahtarını al
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -12,7 +13,9 @@ exports.chatWithAI = async (req, res) => {
     }
 
     // Modeli seç (Gemini 1.5 Flash hızlı ve ekonomiktir)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL || DEFAULT_GEMINI_FLASH,
+    });
 
     // AI'ya kimlik kazandır (System Prompt)
     const prompt = `

@@ -3,10 +3,11 @@ const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  username: { type: String, unique: true, sparse: true, trim: true },
-  usernameLower: { type: String, unique: true, sparse: true, trim: true },
-  email: { type: String, required: true, unique: true },
-  emailLower: { type: String, unique: true, trim: true },
+  // unique / index → aşağıdaki explicit index(...) ile Atlas’taki sabit index adları eşlenir.
+  username: { type: String, trim: true },
+  usernameLower: { type: String, trim: true },
+  email: { type: String, required: true },
+  emailLower: { type: String, trim: true },
   password: { type: String, required: true },
   role: { 
     type: String, 
@@ -39,8 +40,17 @@ const UserSchema = new mongoose.Schema({
 
 }, { timestamps: true, collection: 'users' });
 
-UserSchema.index({ emailLower: 1 }, { unique: true, name: 'users_email_lower_unique' });
-UserSchema.index({ usernameLower: 1 }, { unique: true, sparse: true, name: 'users_username_lower_unique' });
+// Index adları Atlas/eskı kurulumlarla uyumlu: email_unique yaygın; mongoose'un email_1 üretmesi engellenir.
+UserSchema.index({ email: 1 }, { unique: true, name: 'email_unique' });
+UserSchema.index({ emailLower: 1 }, { unique: true, name: 'emailLower_1' });
+UserSchema.index(
+  { username: 1 },
+  { unique: true, sparse: true, name: 'username_1' }
+);
+UserSchema.index(
+  { usernameLower: 1 },
+  { unique: true, sparse: true, name: 'usernameLower_1' }
+);
 
 UserSchema.pre('validate', function(next) {
   if (typeof this.email === 'string') {

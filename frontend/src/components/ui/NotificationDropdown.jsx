@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, Check, Trash2, Info, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import apiClient from '../../services/api';
 
@@ -8,23 +8,24 @@ const NotificationDropdown = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
 
-  // Verileri Çek
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
     try {
       const res = await apiClient.get('/notifications');
-      setNotifications(res.data);
-      setUnreadCount(res.data.filter(n => !n.isRead).length);
+      const list = Array.isArray(res.data) ? res.data : [];
+      setNotifications(list);
+      setUnreadCount(list.filter(n => !n.isRead).length);
     } catch (error) {
-      console.error("Bildirim hatası:", error);
+      // Sessiz: bildirim hatası kullanıcıya gösterilmesin
+      console.warn('Bildirim alınamadı', error?.response?.status);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchNotifications();
-    // Opsiyonel: Her 30 saniyede bir yeni bildirim var mı kontrol et
-    const interval = setInterval(fetchNotifications, 30000);
+    const interval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchNotifications]);
 
   // Dropdown dışına tıklanırsa kapat
   useEffect(() => {

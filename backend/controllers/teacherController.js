@@ -1,8 +1,10 @@
+const { sortPatternTopics, buildTopicMongoClause } = require('../constants/patternTopics');
 const User = require('../models/User');
 const Student = require('../models/Student');
 const Question = require('../models/Question');
 const Survey = require('../models/Survey');
 const Exam = require('../models/Exam');
+const UserProgress = require('../models/UserProgress');
 const mongoose = require('mongoose');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -295,6 +297,38 @@ exports.getStudentDetails = async (req, res) => {
   }
 };
 
+// ✅ 6.b ÖĞRENCİ İLERLEME (Lesson quiz progress)
+// UI: pages/teacher/StudentProgressDashboard.jsx -> GET /api/teacher/students/:studentId/progress
+exports.getStudentProgress = async (req, res) => {
+  try {
+    const { studentId } = req.params; // Student collection _id
+    const teacherId = req.user.id;
+
+    const student = await Student.findOne({ _id: studentId, teacherId }).select('userId');
+    if (!student) {
+      return res.status(403).json({ message: 'Bu öğrenciye erişim izniniz yok' });
+    }
+
+    const rows = await UserProgress.find({ userId: student.userId })
+      .populate('lessonId', 'title')
+      .sort({ lastAttempt: -1 })
+      .lean();
+
+    const progress = rows.map((row) => ({
+      lessonId: row.lessonId?._id || row.lessonId,
+      lessonTitle: row.lessonId?.title || '',
+      correctCount: row.correctCount || 0,
+      wrongCount: row.wrongCount || 0,
+      xp: row.xp || 0,
+      lastAttempt: row.lastAttempt || null,
+    }));
+
+    return res.json({ progress });
+  } catch (err) {
+    return res.status(500).json({ message: 'İlerleme alınamadı', error: err.message });
+  }
+};
+
 // ✅ 7. ÖĞRETMENIN SORULARINI GETİR (PAGINATION + FİLTRELEME)
 exports.getMyQuestions = async (req, res) => {
   try {
@@ -302,13 +336,15 @@ exports.getMyQuestions = async (req, res) => {
 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
-    const { search, subject, classLevel, difficulty, topic } = req.query;
+    const { search, subject, classLevel, difficulty, topic, sortBy } = req.query;
+    const sortByTopic = String(sortBy || '').toLowerCase() === 'topic';
 
     const query = { createdBy: teacherId };
     
     if (subject && subject !== 'Tümü') query.subject = subject;
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
-    if (topic && topic !== 'Tümü') query.topic = topic;
+    const topicClause = buildTopicMongoClause(topic, escapeRegex);
+    if (topicClause) query.topic = topicClause;
     applyClassLevelFilter(query, classLevel);
     const searchMeta = buildQuestionSearch(query, search, 'text');
 
@@ -319,7 +355,8 @@ exports.getMyQuestions = async (req, res) => {
       effectiveQuery = { createdBy: teacherId };
       if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
       if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
-      if (topic && topic !== 'Tümü') effectiveQuery.topic = topic;
+      const fc = buildTopicMongoClause(topic, escapeRegex);
+      if (fc) effectiveQuery.topic = fc;
       applyClassLevelFilter(effectiveQuery, classLevel);
       buildQuestionSearch(effectiveQuery, search, 'regex');
       total = await Question.countDocuments(effectiveQuery);
@@ -348,7 +385,9 @@ exports.getMyQuestions = async (req, res) => {
 
     const sort = searchMeta?.mode === 'text' && effectiveQuery.$and?.some((clause) => clause.$text)
       ? { score: { $meta: 'textScore' }, createdAt: -1 }
-      : { createdAt: -1 };
+      : sortByTopic
+        ? { topic: 1, createdAt: -1 }
+        : { createdAt: -1 };
 
     const questions = await Question.find(effectiveQuery, {
       ...projection,
@@ -527,14 +566,13 @@ exports.getSubjectQuestions = async (req, res) => {
     const subject = req.userBranch; // branchApprovalMiddleware set eder
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
-    const { search, classLevel, difficulty, topic } = req.query;
+    const { search, classLevel, difficulty, topic, sortBy } = req.query;
+    const sortByTopic = String(sortBy || '').toLowerCase() === 'topic';
 
     // Önce branş (subject) eşleşmesini zorunlu tut
     const query = { subject: { $regex: `^${escapeRegex(subject)}$`, $options: 'i' } };
-    // İsteğe bağlı konu filtresi
-    if (topic && topic !== 'Tümü') {
-      query.topic = { $regex: `^${escapeRegex(topic)}$`, $options: 'i' };
-    }
+    const topicClause = buildTopicMongoClause(topic, escapeRegex);
+    if (topicClause) query.topic = topicClause;
     applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
     const searchMeta = buildQuestionSearch(query, search, 'text');
@@ -544,9 +582,8 @@ exports.getSubjectQuestions = async (req, res) => {
 
     if (searchMeta?.mode === 'text' && total === 0) {
       effectiveQuery = { subject: { $regex: `^${escapeRegex(subject)}$`, $options: 'i' } };
-      if (topic && topic !== 'Tümü') {
-        effectiveQuery.topic = { $regex: `^${escapeRegex(topic)}$`, $options: 'i' };
-      }
+      const fc2 = buildTopicMongoClause(topic, escapeRegex);
+      if (fc2) effectiveQuery.topic = fc2;
       applyClassLevelFilter(effectiveQuery, classLevel);
       if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
       buildQuestionSearch(effectiveQuery, search, 'regex');
@@ -575,7 +612,9 @@ exports.getSubjectQuestions = async (req, res) => {
     };
     const sort = searchMeta?.mode === 'text' && effectiveQuery.$and?.some((clause) => clause.$text)
       ? { score: { $meta: 'textScore' }, createdAt: -1 }
-      : { createdAt: -1 };
+      : sortByTopic
+        ? { topic: 1, createdAt: -1 }
+        : { createdAt: -1 };
     let questions = await Question.find(effectiveQuery, {
       ...projection,
       ...(sort.score ? { score: { $meta: 'textScore' } } : {}),
@@ -591,13 +630,14 @@ exports.getSubjectQuestions = async (req, res) => {
       if (looseQuery.subject?.$regex) {
         looseQuery.subject = { $regex: subject, $options: 'i' }; // contains, case-insensitive
       }
-      if (looseQuery.topic?.$regex) {
-        looseQuery.topic = { $regex: topic || '', $options: 'i' };
+      if (topic && topic !== 'Tümü') {
+        const looseClause = buildTopicMongoClause(topic, escapeRegex);
+        if (looseClause) looseQuery.topic = looseClause;
       }
       const looseTotal = await Question.countDocuments(looseQuery);
       if (looseTotal > 0) {
         questions = await Question.find(looseQuery, projection)
-          .sort({ createdAt: -1 })
+          .sort(sort)
           .skip((page - 1) * limit)
           .limit(limit)
           .lean();
@@ -618,9 +658,9 @@ exports.getSubjectTopics = async (req, res) => {
     // Mevcut sorular üzerinden eşsiz topic değerlerini topla
     const query = { subject };
     applyClassLevelFilter(query, classLevel);
-    const topics = await Question.distinct('topic', query);
-    // Bazı veri setlerinde topic alanı olmayabilir; bu durumda boş dizi döner
-    res.json({ success: true, topics: topics.filter(Boolean).sort() });
+    const rawTopics = await Question.distinct('topic', query);
+    const topics = sortPatternTopics(rawTopics);
+    res.json({ success: true, topics });
   } catch (err) {
     res.status(500).json({ message: 'Konu listesi alınamadı', error: err.message });
   }
@@ -648,5 +688,121 @@ exports.getSubjectExams = async (req, res) => {
     res.json({ data: exams, total, pages: Math.ceil(total / limit), currentPage: page });
   } catch (err) {
     res.status(500).json({ message: 'Branşa göre sınavlar alınamadı', error: err.message });
+  }
+};
+
+// ✅ 14. ÖĞRENCİLERİN İPUCU İSTEKLERİ (öğretmen panosu)
+// UI: TeacherReports.jsx -> GET /api/teacher/hint-requests?days=30
+exports.getHintRequests = async (req, res) => {
+  try {
+    const teacherId = req.user.id;
+    const teacher = await User.findById(teacherId).select('role branch').lean();
+    if (!teacher || teacher.role !== 'teacher') {
+      return res.status(403).json({ message: 'Sadece öğretmenler erişebilir.' });
+    }
+
+    const days = Math.max(1, Math.min(180, Number(req.query.days) || 30));
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    // Öğretmenin sınıfındaki öğrencilerin userId listesi
+    const myStudents = await Student.find({ teacherId }).select('userId').lean();
+    const studentUserIds = myStudents
+      .map((s) => s.userId)
+      .filter(Boolean)
+      .map((id) => new mongoose.Types.ObjectId(id));
+
+    if (studentUserIds.length === 0) {
+      return res.json({
+        success: true,
+        data: { totalHints: 0, byTopic: [], byStudent: [], recent: [] },
+        days,
+      });
+    }
+
+    const LearningEvent = require('../models/LearningEvent');
+    const branch = teacher.branch || '';
+
+    const baseMatch = {
+      userId: { $in: studentUserIds },
+      type: 'hint',
+      createdAt: { $gte: since },
+    };
+    if (branch) {
+      // branş filtresi: subject boş kayıtları da al (eski olaylar için), ama farklı branş varsa hariç
+      baseMatch.$or = [{ subject: branch }, { subject: '' }, { subject: { $exists: false } }];
+    }
+
+    const [totalHints, byTopic, byStudentRaw, recentRaw] = await Promise.all([
+      LearningEvent.countDocuments(baseMatch),
+      LearningEvent.aggregate([
+        { $match: baseMatch },
+        { $group: { _id: { topic: { $ifNull: ['$topic', ''] } }, count: { $sum: 1 } } },
+        { $project: { _id: 0, topic: '$_id.topic', count: 1 } },
+        { $sort: { count: -1 } },
+        { $limit: 15 },
+      ]),
+      LearningEvent.aggregate([
+        { $match: baseMatch },
+        {
+          $group: {
+            _id: '$userId',
+            count: { $sum: 1 },
+            lastAt: { $max: '$createdAt' },
+            topics: { $addToSet: { $ifNull: ['$topic', ''] } },
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 20 },
+      ]),
+      LearningEvent.find(baseMatch)
+        .sort({ createdAt: -1 })
+        .limit(40)
+        .lean(),
+    ]);
+
+    // userId -> name eşle
+    const userIdsForLookup = new Set([
+      ...byStudentRaw.map((r) => String(r._id)),
+      ...recentRaw.map((r) => String(r.userId)),
+    ]);
+    const usersList = await User.find({ _id: { $in: Array.from(userIdsForLookup) } })
+      .select('name email')
+      .lean();
+    const userMap = new Map(usersList.map((u) => [String(u._id), u]));
+
+    const byStudent = byStudentRaw.map((r) => {
+      const u = userMap.get(String(r._id));
+      return {
+        userId: String(r._id),
+        name: u?.name || 'Öğrenci',
+        email: u?.email || '',
+        count: r.count,
+        lastAt: r.lastAt,
+        topics: (r.topics || []).filter(Boolean).slice(0, 5),
+      };
+    });
+
+    const recent = recentRaw.map((r) => {
+      const u = userMap.get(String(r.userId));
+      return {
+        _id: String(r._id),
+        userId: String(r.userId),
+        studentName: u?.name || 'Öğrenci',
+        topic: r.topic || '',
+        subject: r.subject || '',
+        createdAt: r.createdAt,
+        questionPreview: r.meta?.questionPreview || '',
+        studentAnswer: r.meta?.studentAnswer || '',
+      };
+    });
+
+    res.json({
+      success: true,
+      data: { totalHints, byTopic, byStudent, recent },
+      days,
+    });
+  } catch (err) {
+    console.error('getHintRequests error:', err);
+    res.status(500).json({ message: 'İpucu istekleri alınamadı', error: err.message });
   }
 };

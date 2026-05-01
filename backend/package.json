@@ -2,11 +2,23 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "seed:test-users": "node scripts/seedTestUsers.js",
-    "seed:patterns": "node scripts/seedPatternsCurriculum.js",
-    "seed:login-users": "node scripts/seedLoginUsers.js",
-    "verify:pattern-images": "node scripts/verifyPatternImageMappings.js",
-    "generate:ai-pattern-pack": "node scripts/generateAIPatternQuestionPack.js"
+    "seed:test-users": "node scripts/seed/seedTestUsers.js",
+    "seed:patterns": "node scripts/seed/seedPatternsCurriculum.js",
+    "seed:login-users": "node scripts/seed/seedLoginUsers.js",
+    "seed:teacher-students": "node scripts/seed/seedTeacherStudents.js",
+    "seed:sample-questions": "node scripts/seed/seedSampleQuestions.js",
+    "verify:pattern-images": "node scripts/tools/verifyPatternImageMappings.js",
+    "verify:gemini": "node scripts/tools/verifyGeminiKey.js",
+    "generate:ai-pattern-pack": "node scripts/tools/generateAIPatternQuestionPack.js",
+    "tool:approve-branch": "node scripts/tools/approveBranch.js",
+    "tool:make-token": "node scripts/tools/makeToken.js",
+    "tool:purge-questions": "node scripts/tools/purgeAllQuestions.js",
+    "migrate:fix-questions": "node scripts/migrations/fixQuestions.js",
+    "migrate:normalize-subjects": "node scripts/migrations/normalizeQuestionSubjects.js",
+    "migrate:backfill-exam-creator": "node scripts/migrations/backfillExamCreatedBy.js",
+    "migrate:reset-students": "node scripts/migrations/resetStudents.js",
+    "migrate:reset-bank": "node scripts/migrations/resetAndSeedMathQuestionBank.js",
+    "test:e2e-exam-exercise": "node scripts/tests/e2eInteractiveExamExercise.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1032.0",

@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import {
-  BookOpen, FileText, CheckCircle, Trophy, LayoutGrid, Users, BarChart2, Settings, User, Calendar
+  BookOpen, FileText, CheckCircle, Trophy, LayoutGrid, Puzzle, Users, BarChart2,
+  Settings, User, Calendar, Target, MessageSquare,
 } from 'lucide-react';
 import DashboardLayout from './pages/DashboardLayout';
 import { ThemeProvider } from './context/ThemeContext';
@@ -30,6 +31,7 @@ const TeacherExerciseCreator = lazy(() => import('./pages/teacher/TeacherExercis
 const SkillTreeBuilder = lazy(() => import('./pages/teacher/SkillTreeBuilder'));
 const StudentProgressDashboard = lazy(() => import('./pages/teacher/StudentProgressDashboard'));
 const TeacherReports = lazy(() => import('./pages/teacher/TeacherReports'));
+const PatternTemplateBuilder = lazy(() => import('./pages/teacher/PatternTemplateBuilder'));
 // import TeacherSurveys... -> ARTIK GEREK YOK (Ortak sayfayı kullanacağız)
 
 // --- 4. ÖĞRENCİ SAYFALARI ---
@@ -41,6 +43,8 @@ const SkillTree = lazy(() => import('./pages/student/SkillTree'));
 const LessonQuiz = lazy(() => import('./pages/student/LessonQuiz'));
 const StudentCalendar = lazy(() => import('./pages/student/StudentCalendar'));
 const StudentLeaderboard = lazy(() => import('./pages/student/StudentLeaderboard'));
+const StudentMessaging = lazy(() => import('./pages/student/StudentMessaging'));
+const StudentPracticeExercises = lazy(() => import('./pages/student/StudentPracticeExercises'));
 
 // --- 5. YÖNETİCİ SAYFALARI ---
 const AdminResetRequests = lazy(() => import('./pages/admin/AdminResetRequests'));
@@ -55,7 +59,12 @@ function App() {
   return (
     <ThemeProvider>
       <LanguageProvider>
-        <Suspense fallback={<div className="p-10 text-center">Yükleniyor...</div>}>
+        <Suspense fallback={(
+          <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 gap-3" role="status" aria-live="polite">
+            <div className="h-10 w-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
+            <span className="text-sm text-slate-500 dark:text-slate-300">Yükleniyor…</span>
+          </div>
+        )}>
           <ErrorBoundary>
           <Routes>
           {/* =========================================================
@@ -82,9 +91,10 @@ function App() {
                   { id: 'skill-tree', label: 'Kazanım Ağacı', icon: LayoutGrid, path: '/teacher/skill-tree' },
                   { id: 'student-progress', label: 'Öğrenci İlerleme', icon: Users, path: '/teacher/student-progress' },
                   { id: 'reports', label: 'Raporlar', icon: BarChart2, path: '/teacher/reports' },
+                  { id: 'pattern-builder', label: 'Örüntü Oluştur', icon: Puzzle, path: '/teacher/pattern-builder' },
                   { id: 'surveys', label: 'Anketler', icon: FileText, path: '/teacher/surveys' },
-                  // { id: 'settings', label: 'Ayarlar', icon: Settings, path: '/teacher/settings' },
-                  // { id: 'profile', label: 'Profil', icon: User, path: '/teacher/profile' },
+                  { id: 'profile', label: 'Profil', icon: User, path: '/teacher/profile' },
+                  { id: 'settings', label: 'Ayarlar', icon: Settings, path: '/teacher/settings' },
                 ]}
               />
             </ProtectedRoute>
@@ -100,6 +110,7 @@ function App() {
             <Route path="skill-tree" element={<SkillTreeBuilder />} />
             <Route path="student-progress" element={<StudentProgressDashboard />} />
             <Route path="reports" element={<TeacherReports />} />
+            <Route path="pattern-builder" element={<PatternTemplateBuilder />} />
             <Route path="surveys" element={<SurveysPage role="teacher" />} />
             <Route path="settings" element={<SettingsPage role="teacher" />} />
             <Route path="profile" element={<ProfilePage role="teacher" />} />
@@ -116,12 +127,16 @@ function App() {
                   { id: 'home', label: 'Ana Sayfa', icon: BookOpen, path: '/student/home' },
                   { id: 'courses', label: 'Derslerim', icon: BookOpen, path: '/student/courses' },
                   { id: 'assignments', label: 'Ödevler', icon: CheckCircle, path: '/student/assignments' },
+                  { id: 'exercises', label: 'Çalışma Merkezi', icon: Trophy, path: '/student/exercises' },
+                  { id: 'practice', label: 'AI Antrenman', icon: Target, path: '/student/practice' },
+                  { id: 'skill-tree', label: 'Konu Ağacı', icon: LayoutGrid, path: '/student/skill-tree' },
                   { id: 'quizzes', label: 'Sınavlar', icon: FileText, path: '/student/quizzes' },
                   { id: 'surveys', label: 'Anketler', icon: FileText, path: '/student/surveys' },
+                  { id: 'messages', label: 'Mesajlar', icon: MessageSquare, path: '/student/messages' },
                   { id: 'leaderboard', label: 'Sıralama', icon: Trophy, path: '/student/leaderboard' },
                   { id: 'calendar', label: 'Takvim', icon: Calendar, path: '/student/calendar' },
-                  // { id: 'settings', label: 'Ayarlar', icon: Settings, path: '/student/settings' },
-                  // { id: 'profile', label: 'Profil', icon: User, path: '/student/profile' },
+                  { id: 'profile', label: 'Profil', icon: User, path: '/student/profile' },
+                  { id: 'settings', label: 'Ayarlar', icon: Settings, path: '/student/settings' },
                 ]}
               />
             </ProtectedRoute>
@@ -137,6 +152,8 @@ function App() {
             <Route path="lesson/:lessonId" element={<LessonQuiz />} />
             <Route path="leaderboard" element={<StudentLeaderboard />} />
             <Route path="calendar" element={<StudentCalendar />} />
+            <Route path="practice" element={<StudentPracticeExercises />} />
+            <Route path="messages" element={<StudentMessaging />} />
 
             {/* 🚨 GÜNCEL: Ortak Anket Sayfası (Rol: Student) */}
             <Route path="surveys" element={<SurveysPage role="student" />} />

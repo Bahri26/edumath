@@ -3,9 +3,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Briefcase, GraduationCap, Camera, Save, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { SUBJECTS } from '../../data/classLevelsAndDifficulties';
 import apiClient from '../../services/api';
-import { toast } from 'react-toastify';
+import { useToast } from '../../context/ToastContext';
 
 const ProfilePage = ({ role }) => {
+  const { showToast } = useToast();
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -32,14 +33,13 @@ const ProfilePage = ({ role }) => {
           avatar: res.data.avatar || '',
         });
         setAvatarPreview(res.data.avatar || '');
-      } catch (e) {
-        // fallback demo
+      } catch {
         setProfile({
-          name: role === 'teacher' ? 'Bahadır SARI' : 'Öğrenci Adı',
-          email: 'bahadir26@hotmail.com',
-          branch: role === 'teacher' ? '' : '',
+          name: '',
+          email: '',
+          branch: '',
           branchApproval: 'none',
-          grade: role === 'student' ? '' : '',
+          grade: '',
           avatar: '',
         });
       }
@@ -67,9 +67,9 @@ const ProfilePage = ({ role }) => {
     setSaving(true);
     try {
       await apiClient.put('/users/profile', profile);
-      toast.success('Profiliniz güncellendi!');
+      showToast('Profiliniz güncellendi!', 'success');
     } catch (err) {
-      toast.error('Profil güncellenemedi: ' + (err.response?.data?.message || err.message));
+      showToast('Profil güncellenemedi: ' + (err.response?.data?.message || err.message), 'error');
     } finally {
       setSaving(false);
     }
@@ -148,14 +148,14 @@ const ProfilePage = ({ role }) => {
                     className="px-4 py-3 rounded-xl bg-indigo-600 text-white font-semibold"
                     onClick={async ()=>{
                       try {
-                        if (!profile.branch) { toast.error('Lütfen önce bir branş seçin.'); return; }
+                        if (!profile.branch) { showToast('Lütfen önce bir branş seçin.', 'error'); return; }
                         await apiClient.put('/users/profile', { branch: profile.branch });
                         const res = await apiClient.get('/users/profile');
                         setProfile(p=>({ ...p, branchApproval: res.data.branchApproval || 'pending' }));
-                        toast.success('Branş onay talebi gönderildi. Admin onayı sonrası erişim açılacak.');
+                        showToast('Branş onay talebi gönderildi. Admin onayı sonrası erişim açılacak.', 'success');
                       } catch (e) {
                         const msg = e?.response?.data?.message || 'Talep oluşturulamadı';
-                        toast.error(msg);
+                        showToast(msg, 'error');
                       }
                     }}
                   >Onaya Gönder</button>

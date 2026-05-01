@@ -1,6 +1,7 @@
 const Exercise = require('../models/Exercise');
 const Question = require('../models/Question');
 const User = require('../models/User');
+const { gradeQuestionAnswer } = require('../utils/questionGrading');
 
 // ✅ 1. EGZERSIZ OLUŞTUR (AI - Teacher)
 exports.createExercise = async (req, res, next) => {
@@ -105,7 +106,10 @@ exports.getStudentExercises = async (req, res, next) => {
       .skip((page - 1) * limit)
       .limit(limit)
       .populate('createdBy', 'name')
-      .populate('questions', 'text difficulty options correctAnswer');
+      .populate(
+        'questions',
+        'text difficulty type options correctAnswer solution image imageKey imageProvider interactiveType interactionData topic subject'
+      );
 
     // Her egzersiz için öğrencinin ilerlemesini ekle
     const enrichedExercises = exercises.map(ex => {
@@ -175,29 +179,40 @@ exports.deleteExercise = async (req, res, next) => {
 exports.submitExercise = async (req, res, next) => {
   try {
     const studentId = req.user.id;
-    const { exerciseId, answers } = req.body;
+    const exerciseId = req.params.id || req.body.exerciseId;
+    const { answers } = req.body;
 
-    const exercise = await Exercise.findById(exerciseId);
+    const exercise = await Exercise.findById(exerciseId).populate(
+      'questions',
+      'text difficulty type options correctAnswer solution image imageKey imageProvider interactiveType interactionData topic subject'
+    );
     if (!exercise) {
       return res.status(404).json({ message: 'Egzersiz bulunamadı' });
     }
 
     let correctCount = 0;
     const submittedAnswers = [];
+    const reviewByQuestion = {};
 
     // Her sorunun cevabını kontrol et
-    for (const [questionId, userAnswer] of Object.entries(answers)) {
-      const question = exercise.questions.find(q => q._id.toString() === questionId);
+    for (const [questionId, userAnswer] of Object.entries(answers || {})) {
+      const question = exercise.questions.find((q) => String(q._id) === String(questionId));
       if (question) {
-        const isCorrect = userAnswer === question.correctAnswer;
-        if (isCorrect) correctCount++;
-        
+        const isCorrect = gradeQuestionAnswer(question, userAnswer);
+        if (isCorrect) correctCount += 1;
+
         submittedAnswers.push({
           questionId,
           answer: userAnswer,
           correct: isCorrect,
           timeSpent: 0
         });
+
+        reviewByQuestion[questionId] = {
+          isCorrect,
+          userAnswer,
+          correctAnswer: question.correctAnswer,
+        };
       }
     }
 
@@ -227,13 +242,20 @@ exports.submitExercise = async (req, res, next) => {
 
     await exercise.save();
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Egzersiz tamamlandı',
       score,
       points,
       correctCount,
-      totalQuestions: exercise.totalQuestions
+      totalQuestions: exercise.totalQuestions,
+      data: {
+        score,
+        points,
+        correctCount,
+        totalQuestions: exercise.totalQuestions,
+        answers: reviewByQuestion,
+      },
     });
   } catch (error) {
     next(error);

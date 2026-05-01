@@ -1,10 +1,9 @@
 import React from "react";
-import axios from "axios";
+import { teacherReport } from "../services/aiService";
 
 export default function DownloadTeacherReportButton({ examResults }) {
   const handleDownload = async () => {
-    const res = await axios.post("/api/ai/teacher-report", { examResults });
-    const data = res.data;
+    const data = await teacherReport({ examResults });
     const csv = [
       ["Konu", "Doğru", "Toplam", "%"],
       ...data.topicReport.map(t => [t.topic, t.correct, t.total, t.percent])

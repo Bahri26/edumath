@@ -20,17 +20,29 @@ const StudentCalendar = () => {
   };
 
   const getText = (key) => t[language]?.[key] || t.TR[key];
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 11, 17)); // December 17, 2025
+  const [currentDate, setCurrentDate] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  });
 
-  // Mock Calendar Events
-  const events = [
-    { date: '2025-12-18', title: 'Matematik Ödevinin Son Tarihi', type: 'deadline', time: '23:59' },
-    { date: '2025-12-19', title: 'Fizik Sınavı', type: 'exam', time: '09:00' },
-    { date: '2025-12-22', title: 'İngilizce Proje Sunumu', type: 'submission', time: '14:00' },
-    { date: '2025-12-24', title: 'Kimya Quiz', type: 'exam', time: '10:30' },
-    { date: '2025-12-27', title: 'Tarih Ödevinin Son Tarihi', type: 'deadline', time: '18:00' },
-    { date: '2025-12-29', title: 'Geometri Sınavı', type: 'exam', time: '13:00' },
-  ];
+  // Demo etkinlikler — bugünden itibaren ileri günlere yerleştirilir
+  const events = useMemo(() => {
+    const today = new Date();
+    const offsets = [
+      { days: 1, title: 'Matematik Ödevinin Son Tarihi', type: 'deadline', time: '23:59' },
+      { days: 3, title: 'Fizik Sınavı', type: 'exam', time: '09:00' },
+      { days: 6, title: 'İngilizce Proje Sunumu', type: 'submission', time: '14:00' },
+      { days: 8, title: 'Kimya Quiz', type: 'exam', time: '10:30' },
+      { days: 12, title: 'Tarih Ödevinin Son Tarihi', type: 'deadline', time: '18:00' },
+      { days: 15, title: 'Geometri Sınavı', type: 'exam', time: '13:00' },
+    ];
+    const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return offsets.map((o) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() + o.days);
+      return { date: fmt(d), title: o.title, type: o.type, time: o.time };
+    });
+  }, []);
 
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
@@ -95,6 +107,9 @@ const StudentCalendar = () => {
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Takvim</h1>
         </div>
         <p className="text-slate-600 dark:text-slate-400">Akademik takvimini yönet ve önemli etkinlikleri takip et.</p>
+        <p className="text-[11px] uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold">
+          Demo veri
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

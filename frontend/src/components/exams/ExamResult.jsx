@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, AlertTriangle, Sparkles } from 'lucide-react';
-import apiClient from '../../services/api';
+import { generatePracticeQuestions } from '../../services/aiService';
 import AIPractice from './AIPractice';
 
 const ExamResult = ({ result, onBack }) => {
@@ -13,12 +13,12 @@ const ExamResult = ({ result, onBack }) => {
     setLoadingAI(true);
     setPracticeQuestions(null);
     try {
-      const res = await apiClient.post('/ai/practice', { 
+      const data = await generatePracticeQuestions({
         weakTopics: result.weakTopics,
-        difficulty: 'Orta', // This could be a user option in the future
-        count: 5
+        difficulty: 'Orta',
+        count: 5,
       });
-      setPracticeQuestions(res.data.questions);
+      setPracticeQuestions(data.questions);
     } catch (err) {
       console.error(err);
       alert("AI şu an meşgul, lütfen tekrar dene.");

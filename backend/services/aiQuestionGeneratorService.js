@@ -1,7 +1,16 @@
 const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 const { renderPatternSvg } = require('./svgPatternRenderer');
+const { buildMebPromptBlock } = require('../constants/mebCurriculumContext');
+const {
+  fetchQuestionPoolSamples,
+  formatSamplesForPrompt,
+} = require('./questionPoolSamplesService');
+const { generateContentAsJson } = require('./geminiJsonGeneration');
+const { LEARNING_OUTCOME_BY_LABEL } = require('../constants/patternTopics');
 
-const MODEL_NAME = process.env.GEMINI_COMPLEX_MODEL || process.env.GEMINI_MODEL || 'gemini-1.5-pro';
+const { DEFAULT_GEMINI_COMPLEX } = require('../constants/geminiDefaults');
+const MODEL_NAME =
+  process.env.GEMINI_COMPLEX_MODEL || process.env.GEMINI_MODEL || DEFAULT_GEMINI_COMPLEX;
 
 function getClient() {
   if (!process.env.GEMINI_API_KEY) {
@@ -118,22 +127,91 @@ function buildFallbackQuestionBank() {
   };
 }
 
+/**
+ * Bankada birebir sinif+zorluk yoksa en yakin kovayi sec (2. sinif+zorlukta bos kalmasin).
+ */
+function pickFallbackSourceQuestions(bank, classLevel, difficulty) {
+  const tryGet = (cl, diff) => bank[cl]?.[diff] || [];
+
+  let list = tryGet(classLevel, difficulty);
+  if (list.length) {
+    return list;
+  }
+
+  const difficulties = ['Kolay', 'Orta', 'Zor'];
+  for (const d of difficulties) {
+    list = tryGet(classLevel, d);
+    if (list.length) {
+      return list;
+    }
+  }
+
+  const gradeMatch = String(classLevel || '').match(/(\d+)/);
+  const g = gradeMatch ? parseInt(gradeMatch[1], 10) : 5;
+  const closest = g <= 4 ? '1. Sınıf' : g <= 8 ? '5. Sınıf' : '9. Sınıf';
+
+  list = tryGet(closest, difficulty);
+  if (list.length) {
+    return list;
+  }
+
+  for (const d of difficulties) {
+    list = tryGet(closest, d);
+    if (list.length) {
+      return list;
+    }
+  }
+
+  for (const cl of ['1. Sınıf', '5. Sınıf', '9. Sınıf']) {
+    for (const d of difficulties) {
+      list = tryGet(cl, d);
+      if (list.length) {
+        return list;
+      }
+    }
+  }
+
+  return [];
+}
+
+function flattenFallbackBank(bank) {
+  const out = [];
+  Object.values(bank || {}).forEach((byDifficulty) => {
+    Object.values(byDifficulty || {}).forEach((arr) => {
+      if (Array.isArray(arr)) out.push(...arr);
+    });
+  });
+  return out;
+}
+
 async function generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject }) {
   const bank = buildFallbackQuestionBank();
-  const sourceQuestions = bank[classLevel]?.[difficulty] || [];
+  let pool = pickFallbackSourceQuestions(bank, classLevel, difficulty);
+  if (!pool.length) {
+    pool = flattenFallbackBank(bank);
+  }
+  if (!pool.length) {
+    return { generator: 'fallback', questions: [] };
+  }
+
+  const desired = Math.min(20, Math.max(1, Number(count) || 5));
+  const picked = Array.from({ length: desired }, (_, i) => pool[i % pool.length]);
+
   const questions = await Promise.all(
-    Array.from({ length: Math.min(count, sourceQuestions.length) }, async (_, index) => {
-      const question = sourceQuestions[index];
-      return sanitizeQuestion({
-        ...question,
-        subject,
-        topic,
-        classLevel,
-        difficulty,
-        type: 'multiple-choice',
-        source: 'AI',
-      }, { classLevel, difficulty, topic, subject });
-    })
+    picked.map((question) =>
+      sanitizeQuestion(
+        {
+          ...question,
+          subject,
+          topic,
+          classLevel,
+          difficulty,
+          type: 'multiple-choice',
+          source: 'AI',
+        },
+        { classLevel, difficulty, topic, subject }
+      )
+    )
   );
 
   return {
@@ -152,7 +230,11 @@ function getQuestionSchema() {
         text: { type: SchemaType.STRING },
         options: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
         correctAnswer: { type: SchemaType.STRING },
-        solution: { type: SchemaType.STRING },
+        solution: {
+          type: SchemaType.STRING,
+          description:
+            'Adim adim cozum: 3-6 satir, her satir "1. ..." "2. ..." veya "1) ..." ile baslasin; satir kiriligi ile ayirin',
+        },
         learningOutcome: { type: SchemaType.STRING },
         mebReference: { type: SchemaType.STRING },
         curriculumNote: { type: SchemaType.STRING },
@@ -172,30 +254,45 @@ function getQuestionSchema() {
   };
 }
 
-function buildPrompt({ classLevel, difficulty, count, topic, subject }) {
+function buildPrompt({
+  classLevel,
+  difficulty,
+  count,
+  topic,
+  subject,
+  poolBlock,
+  groundingLine,
+}) {
+  const mebBlock = buildMebPromptBlock({ subject, topic, classLevel });
+  const outcomeHint = LEARNING_OUTCOME_BY_LABEL[topic]
+    ? `Ozellikle su kazanima yaklas: ${LEARNING_OUTCOME_BY_LABEL[topic]}`
+    : '';
+
   return `
 Sen deneyimli bir Turk matematik ogretmenisin.
 
-Gorevin: ${classLevel} duzeyi icin ${topic} konusunda ${count} adet ${difficulty} seviye, MEB kazanimlarina uygun, estetik ve ogretici coktan secmeli soru uret.
+${mebBlock}
 
-Kurallar:
-- Ders: ${subject}
-- Konu: ${topic}
-- Dil: dogal, kisa, ogrenci dostu Turkce.
-- Soru metni "${classLevel} kolay/or ta/zor" gibi etiketlerle baslamasin.
-- Sorular birbirinden farkli olsun; tekrar eden kaliplar kurma.
-- Ilkokulda renk, sekil, nesne, oyuncak, meyve, gunluk hayat baglamlari kullan.
-- Ortaokul ve lisede tablo, kutucuk, mozaik, veri serisi, adim kurali gibi daha anlamli baglamlar kullan.
-- Her soruda 4 secenek olsun ve yalnizca 1 dogru cevap bulunsun.
-- Cozum pedagojik olsun; sadece cevap degil, kuralin nasil bulundugunu anlatsin.
-- visualPrompt alani, o soruya uygun SVG/gorsel uretmek icin kisa bir sanat yonlendirmesi olsun.
-- Dogrudan kullanilabilir JSON don.
+GORUNTU:
+- Sinif: ${classLevel}
+- Konu (örüntü / kazanım kapsamı): ${topic}
+- Zorluk: ${difficulty}
+- Soru sayisi: ${count}
+${outcomeHint ? `- ${outcomeHint}\n` : ''}
 
-Kalite kosullari:
-- Sayi, sekil veya nesne oruntusu net anlasilsin.
-- Celdiricilar mantikli olsun.
-- Sorular gorselle desteklenmeye elverisli olsun.
-- MEB uyumunu genelleme, kurali bulma, eksik ogeyi tamamlama, terim bulma gibi kazanımlarla kur.
+${groundingLine}
+
+SORU BANKASI BAGLAMI (ogretmen havuzundan — BIREBIR KOPYALA YOK; yalnizca seviye ve tur):
+${poolBlock}
+
+GOREV — URETIM KURALLARI:
+- Dil: dogal, kisa, Turkce ogrenci dostu.
+- Soru metni "${classLevel} kolay/or ta/zor" gibi gereksiz etiketle baslamasin.
+- Ilkokul: renk, sekil, nesne, oyuncak, meyve, gunluk hayat. Ortaokul/lise: tablo, veri dizisi, anlamli baglam.
+- 4 secenek; tek dogru (correctAnswer tam metni options icinde yer alsin).
+- Cozum (solution): adim adim; 3-6 satir, her satir "1. ... / 2. ... / 3. ..." (veya "1) ...") ile baslasin ve satir sonuyla ayirin. Son satirda kesin olarak dogru secenege nasil ulasildigi yazilsin.
+- visualPrompt: SVG için kisa görsel tasarlama direktifi.
+- mebReference, learningOutcome ve curriculumNote alanlarini MEVCUT MUFREDATA UYGUN bicimde tutarli yaz.
 `;
 }
 
@@ -252,37 +349,104 @@ async function sanitizeQuestion(question, defaults) {
   return sanitized;
 }
 
+function buildGeminiFallbackHint(error) {
+  const msg = String(error?.message || error || '').toLowerCase();
+  if (msg.includes('429') || msg.includes('quota') || msg.includes('resource_exhausted')) {
+    return 'Gemini kota aşıldı — sorular yerel şablon bankasından oluşturuldu.';
+  }
+  if (msg.includes('404') || msg.includes('not found')) {
+    return 'Gemini modeli bu anahtarda yok — yerel paket kullanıldı.';
+  }
+  return 'Gemini yanıt vermedi — yerel paket kullanıldı.';
+}
+
 async function generatePatternQuestions({
   classLevel,
   difficulty,
   count = 5,
   topic = 'Örüntüler',
   subject = 'Matematik',
-}) {
+  googleGrounding,
+} = {}) {
   const client = getClient();
   if (!client) {
-    return generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject });
+    const fb = await generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject });
+    return {
+      ...fb,
+      ...(fb.questions?.length ? { hint: 'GEMINI_API_KEY tanımlı değil; yerel paket kullanıldı.' } : {}),
+    };
   }
 
-  const model = client.getGenerativeModel({
-    model: MODEL_NAME,
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: getQuestionSchema(),
-    },
+  let poolSamples = [];
+  try {
+    poolSamples = await fetchQuestionPoolSamples({
+      subject,
+      topic,
+      classLevel,
+      limit: 8,
+    });
+  } catch (e) {
+    console.warn('Havuz ornekleri alinamadi:', e.message);
+  }
+  const poolBlock = formatSamplesForPrompt(poolSamples);
+
+  const useGrounding =
+    googleGrounding !== false &&
+    String(process.env.GEMINI_GOOGLE_GROUNDING || '1').trim() !== '0';
+
+  const groundingLine = useGrounding
+    ? 'Google Search zemini kullaniliyorsa; MEB matematik öruntu kazanımları ve yaygın eğim tanımlarını güvenilir web özetlerinden doğrula; uydurma madde kodu yazma.'
+    : 'Genel akademik doğruluğa ve MEB bağlam blokuna uy.';
+
+  const prompt = buildPrompt({
+    classLevel,
+    difficulty,
+    count,
+    topic,
+    subject,
+    poolBlock,
+    groundingLine,
   });
 
-  const prompt = buildPrompt({ classLevel, difficulty, count, topic, subject });
-  const result = await model.generateContent(prompt);
-  const rawQuestions = JSON.parse(result.response.text());
+  let rawQuestions;
+  try {
+    rawQuestions = await generateContentAsJson({
+      genAI: client,
+      modelName: MODEL_NAME,
+      prompt,
+      responseSchema: getQuestionSchema(),
+      temperature: 0.22,
+      enableGoogleGrounding: useGrounding,
+    });
+  } catch (e) {
+    console.warn('Gemini üretimi basarisiz, yerel pakete dönülüyor:', e.message);
+    const fb = await generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject });
+    return { ...fb, ...(fb.questions?.length ? { hint: buildGeminiFallbackHint(e) } : {}) };
+  }
+
+  if (!Array.isArray(rawQuestions)) {
+    const fb = await generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject });
+    return {
+      ...fb,
+      ...(fb.questions?.length ? { hint: 'Geçersiz model çıktısı — yerel paket kullanıldı.' } : {}),
+    };
+  }
+
   const questions = (await Promise.all(
-    rawQuestions.map((question) => sanitizeQuestion(question, { classLevel, difficulty, topic, subject }))
+    rawQuestions.map((question) =>
+      sanitizeQuestion(question, { classLevel, difficulty, topic, subject })
+    )
   )).filter(Boolean);
 
-  return {
-    generator: 'gemini',
-    questions,
-  };
+  const out = { generator: 'gemini', questions };
+  if (!questions.length) {
+    const fb = await generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject });
+    return {
+      ...fb,
+      ...(fb.questions?.length ? { hint: 'Üretilen sorular doğrulanamadı — yerel paket kullanıldı.' } : {}),
+    };
+  }
+  return out;
 }
 
 module.exports = {

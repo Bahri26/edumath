@@ -86,6 +86,8 @@ app.use(express.json());
 
 // Resimler için Uploads klasörünü dışarı aç
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Geriye dönük uyumluluk: eski kayıtlar /api/uploads ile gelebilir
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --- VERİTABANI BAĞLANTISI ---
 let dbConnected = false;
@@ -176,6 +178,7 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const adminRoutes = require('./routes/adminRoutes');
 const progressRoutes = require('./routes/progressRoutes');
+const patternTemplateRoutes = require('./routes/patternTemplateRoutes');
 
 // --- ROTALARI AKTİF ET ---
 app.use('/api/auth', authRoutes);
@@ -195,6 +198,7 @@ app.use('/api/admin', adminRoutes); // Admin işlemleri
 app.use('/api/progress', progressRoutes); // İlerleme ve trendler
     app.use('/api/topics', require('./routes/topicRoutes'));
     app.use('/api/lessons', require('./routes/lessonRoutes'));
+app.use('/api/pattern-templates', patternTemplateRoutes);
 
 // --- API Dokümantasyonu ---
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

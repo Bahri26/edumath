@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { teacherReport } from "../services/aiService";
 import { Bar, Pie } from "react-chartjs-2";
 import "chart.js/auto";
 
@@ -11,10 +11,9 @@ export default function TeacherReportView({ examResults }) {
   useEffect(() => {
     if (!examResults) return;
     setLoading(true);
-    axios
-      .post("/api/ai/teacher-report", { examResults })
-      .then((res) => {
-        setReport(res.data);
+    teacherReport({ examResults })
+      .then((data) => {
+        setReport(data);
         setLoading(false);
       })
       .catch((err) => {

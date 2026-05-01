@@ -1,3 +1,4 @@
+const { buildTopicMongoClause } = require('../constants/patternTopics');
 const Question = require('../models/Question');
 const { uploadFile, deleteStoredAsset } = require('../services/storageService');
 
@@ -65,6 +66,10 @@ function normalizeStoredImagePath(value) {
     return value;
   }
 
+  if (value.startsWith('/api/uploads/')) {
+    return `/uploads/${value.slice('/api/uploads/'.length).replace(/^\/+/, '')}`;
+  }
+
   return value.startsWith('/uploads')
     ? value
     : `/uploads/${value.replace(/^\/?uploads\/?/, '')}`;
@@ -94,18 +99,29 @@ function parseInteractionData(value) {
   return JSON.parse(value);
 }
 
+function normalizeClassLevel(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return raw;
+  // Normalize common Turkish character loss (Sınıf -> Sinif) from clients/codepages
+  const fixed = raw.replace(/Sinif/gi, 'Sınıf');
+  return fixed;
+}
+
 // --- 1. SORULARI GETİR (Filtreleme + Pagination) ---
 exports.getQuestions = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
-    const { search, subject, classLevel, difficulty } = req.query;
+    const { search, subject, classLevel, difficulty, topic, sortBy } = req.query;
+    const sortByTopic = String(sortBy || '').toLowerCase() === 'topic';
 
     const query = {};
     
     if (subject && subject !== 'Tümü') query.subject = subject;
     applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
+    const topicClause0 = buildTopicMongoClause(topic, escapeRegex);
+    if (topicClause0) query.topic = topicClause0;
     const searchMeta = buildQuestionSearch(query, search, 'text');
 
     // Eğer istek öğretmenden geliyorsa ve branşı onaylıysa, varsayılan olarak kendi branşındaki (subject) soruları göster
@@ -131,6 +147,8 @@ exports.getQuestions = async (req, res, next) => {
       if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
       applyClassLevelFilter(effectiveQuery, classLevel);
       if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
+      const topicClauseSq = buildTopicMongoClause(topic, escapeRegex);
+      if (topicClauseSq) effectiveQuery.topic = topicClauseSq;
       buildQuestionSearch(effectiveQuery, search, 'regex');
 
       try {
@@ -171,7 +189,9 @@ exports.getQuestions = async (req, res, next) => {
     };
     const sort = searchMeta?.mode === 'text' && effectiveQuery.$and?.some((clause) => clause.$text)
       ? { score: { $meta: 'textScore' }, createdAt: -1 }
-      : { createdAt: -1 };
+      : sortByTopic
+        ? { topic: 1, createdAt: -1 }
+        : { createdAt: -1 };
 
     let questions = await Question.find(effectiveQuery, {
       ...projection,
@@ -188,7 +208,7 @@ exports.getQuestions = async (req, res, next) => {
       const looseTotal = await Question.countDocuments(looseQuery);
       if (looseTotal > 0) {
         questions = await Question.find(looseQuery, projection)
-          .sort({ createdAt: -1 })
+          .sort(sort)
           .skip((page - 1) * limit)
           .limit(limit)
           .lean();
@@ -214,13 +234,16 @@ exports.getTeacherQuestions = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
-    const { search, subject, classLevel, difficulty } = req.query;
+    const { search, subject, classLevel, difficulty, topic, sortBy } = req.query;
+    const sortByTopic = String(sortBy || '').toLowerCase() === 'topic';
 
     const query = {};
     
     if (subject && subject !== 'Tümü') query.subject = subject;
     applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
+    const topicClauseT = buildTopicMongoClause(topic, escapeRegex);
+    if (topicClauseT) query.topic = topicClauseT;
     const searchMeta = buildQuestionSearch(query, search, 'text');
 
     let total = await Question.countDocuments(query);
@@ -231,6 +254,8 @@ exports.getTeacherQuestions = async (req, res, next) => {
       if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
       applyClassLevelFilter(effectiveQuery, classLevel);
       if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
+      const topicClauseT2 = buildTopicMongoClause(topic, escapeRegex);
+      if (topicClauseT2) effectiveQuery.topic = topicClauseT2;
       buildQuestionSearch(effectiveQuery, search, 'regex');
       total = await Question.countDocuments(effectiveQuery);
     }
@@ -238,7 +263,9 @@ exports.getTeacherQuestions = async (req, res, next) => {
     // Tüm alanları döndür
     const sort = searchMeta?.mode === 'text' && effectiveQuery.$and?.some((clause) => clause.$text)
       ? { score: { $meta: 'textScore' }, createdAt: -1 }
-      : { createdAt: -1 };
+      : sortByTopic
+        ? { topic: 1, createdAt: -1 }
+        : { createdAt: -1 };
     const questions = await Question.find(effectiveQuery, sort.score ? { score: { $meta: 'textScore' } } : undefined)
       .sort(sort)
       .skip((page - 1) * limit)
@@ -261,8 +288,9 @@ exports.getTeacherQuestions = async (req, res, next) => {
 };
 exports.createQuestion = async (req, res, next) => {
   try {
-    const { text, subject, classLevel, difficulty, type, correctAnswer, solution, source, topic, learningOutcome, mebReference, curriculumNote, visualPrompt, interactiveType, interactionData } = req.body;
+    const { text, subject, classLevel, difficulty, type, correctAnswer, solution, source, topic, learningOutcome, mebReference, curriculumNote, visualPrompt, interactiveType, interactionData, assessmentMeta } = req.body;
     const createdBy = req.user?.id || req.body.createdBy;
+    const normalizedClassLevel = normalizeClassLevel(classLevel);
 
     // Teacher branch enforcement: if teacher has approved branch, lock subject to branch
     let finalSubject = subject;
@@ -314,13 +342,14 @@ exports.createQuestion = async (req, res, next) => {
     }
 
     const newQuestion = await Question.create({
-      text, subject: finalSubject, classLevel, difficulty, type, correctAnswer, solution, topic,
+      text, subject: finalSubject, classLevel: normalizedClassLevel, difficulty, type, correctAnswer, solution, topic,
       learningOutcome,
       mebReference,
       curriculumNote,
       visualPrompt: visualPrompt || '',
       interactiveType: interactiveType || 'none',
       interactionData: parseInteractionData(interactionData),
+      assessmentMeta: assessmentMeta || undefined,
       image: mainImagePath,
       imageKey: mainImageKey,
       imageProvider: mainImageProvider,
@@ -386,6 +415,7 @@ exports.updateQuestion = async (req, res, next) => {
     // Temel alanları güncelle
     const fields = ['text', 'subject', 'classLevel', 'difficulty', 'type', 'correctAnswer', 'solution', 'source', 'topic', 'learningOutcome', 'mebReference', 'curriculumNote', 'visualPrompt', 'interactiveType'];
     fields.forEach(f => { if(req.body[f]) question[f] = req.body[f]; });
+    if (req.body.assessmentMeta !== undefined) question.assessmentMeta = req.body.assessmentMeta;
     if (req.body.interactionData) {
       question.interactionData = parseInteractionData(req.body.interactionData);
     }

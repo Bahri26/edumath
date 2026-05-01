@@ -1,12 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Clock, AlertCircle, CheckCircle2, ChevronUp } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import apiClient from '../../services/api';
+import QuestionVisual from '../questions/QuestionVisual.jsx';
+import { MatchingPracticeCard, SequencePracticeCard } from './InteractivePracticeCards.jsx';
+
+const optionLabel = (opt) => {
+  if (opt == null) return '';
+  if (typeof opt === 'object') return String(opt.text ?? '');
+  return String(opt);
+};
 
 const ActiveExam = ({ exam, onFinish }) => {
   const [userAnswers, setUserAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(exam.duration * 60);
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [scrollPos, setScrollPos] = useState(0);
   const timerRef = useRef(null);
 
   const formatTime = (seconds) => {
@@ -31,7 +38,7 @@ const ActiveExam = ({ exam, onFinish }) => {
         answers: currentAnswers
       });
       onFinish(res.data);
-    } catch (err) {
+    } catch {
       alert("Sınav gönderilirken hata oluştu.");
     }
   };
@@ -57,8 +64,100 @@ const ActiveExam = ({ exam, onFinish }) => {
     setUserAnswers(prev => ({...prev, [questionId]: answer}));
   };
 
-  const answeredCount = Object.keys(userAnswers).length;
+  const answeredCount = useMemo(() => {
+    if (!exam?.questions?.length) return 0;
+    let n = 0;
+    for (const q of exam.questions) {
+      const stored = userAnswers[q._id];
+      if (!stored) continue;
+      if (q.type === 'matching') {
+        try {
+          const obj = typeof stored === 'string' ? JSON.parse(stored) : stored;
+          const prompts = q.interactionData?.prompts || [];
+          if (obj && prompts.length && prompts.every((p) => obj[p.id])) n += 1;
+        } catch {
+          /* ignore */
+        }
+        continue;
+      }
+      if (q.type === 'sequence') {
+        try {
+          const obj = typeof stored === 'string' ? JSON.parse(stored) : stored;
+          if (obj && obj.locked && Array.isArray(obj.order)) n += 1;
+        } catch {
+          /* ignore */
+        }
+        continue;
+      }
+      n += 1;
+    }
+    return n;
+  }, [exam?.questions, userAnswers]);
+
   const progress = Math.round((answeredCount / exam.questions.length) * 100);
+
+  const isQuestionMarkedAnswered = (q) => {
+    const stored = userAnswers[q._id];
+    if (!stored) return false;
+    if (q.type === 'matching') {
+      try {
+        const obj = typeof stored === 'string' ? JSON.parse(stored) : stored;
+        const prompts = q.interactionData?.prompts || [];
+        return !!(obj && prompts.length && prompts.every((p) => obj[p.id]));
+      } catch {
+        return false;
+      }
+    }
+    if (q.type === 'sequence') {
+      try {
+        const obj = typeof stored === 'string' ? JSON.parse(stored) : stored;
+        return !!(obj && obj.locked && Array.isArray(obj.order));
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleMatchingExam = (questionId, promptId, selectedValue) => {
+    setUserAnswers((prev) => {
+      const prevRaw = prev[questionId];
+      let selected = {};
+      try {
+        selected = prevRaw ? (typeof prevRaw === 'string' ? JSON.parse(prevRaw) : prevRaw) : {};
+      } catch {
+        selected = {};
+      }
+      selected = { ...selected, [promptId]: selectedValue };
+      return { ...prev, [questionId]: JSON.stringify(selected) };
+    });
+  };
+
+  const handleSequenceExam = (questionId, index, direction, currentOrder, checkOnly = false) => {
+    setUserAnswers((prev) => {
+      const prevRaw = prev[questionId];
+      let parsed = null;
+      try {
+        parsed = prevRaw ? (typeof prevRaw === 'string' ? JSON.parse(prevRaw) : prevRaw) : null;
+      } catch {
+        parsed = null;
+      }
+      const baseOrder = Array.isArray(parsed?.order) ? [...parsed.order] : [...currentOrder];
+      let nextOrder = [...baseOrder];
+      if (!checkOnly) {
+        const swapIndex = index + direction;
+        if (swapIndex < 0 || swapIndex >= nextOrder.length) {
+          return prev;
+        }
+        [nextOrder[index], nextOrder[swapIndex]] = [nextOrder[swapIndex], nextOrder[index]];
+        return { ...prev, [questionId]: JSON.stringify({ order: nextOrder, locked: false }) };
+      }
+      return { ...prev, [questionId]: JSON.stringify({ order: nextOrder, locked: true }) };
+    });
+  };
+
+  const currentQ = exam.questions[currentQuestion];
+  const mcOptions = Array.isArray(currentQ?.options) ? currentQ.options : [];
 
   return (
     <div className="fixed inset-0 z-50 bg-white dark:bg-slate-900 overflow-y-auto">
@@ -106,7 +205,7 @@ const ActiveExam = ({ exam, onFinish }) => {
               className={`h-10 rounded-lg font-bold text-sm transition-all ${
                 currentQuestion === idx
                   ? 'bg-indigo-600 text-white ring-2 ring-indigo-400 dark:ring-indigo-500'
-                  : userAnswers[q._id]
+                  : isQuestionMarkedAnswered(q)
                   ? 'bg-emerald-500 text-white'
                   : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
               }`}
@@ -127,39 +226,83 @@ const ActiveExam = ({ exam, onFinish }) => {
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">{exam.questions[currentQuestion].text}</h3>
             </div>
             <span className={`px-3 py-1 rounded-lg text-xs font-bold text-white whitespace-nowrap ${
-              exam.questions[currentQuestion].difficulty === 'Zor' 
+              currentQ.difficulty === 'Zor' 
                 ? 'bg-red-500' 
-                : exam.questions[currentQuestion].difficulty === 'Orta' 
+                : currentQ.difficulty === 'Orta' 
                 ? 'bg-amber-500' 
                 : 'bg-emerald-500'
             }`}>
-              {exam.questions[currentQuestion].difficulty}
+              {currentQ.difficulty}
             </span>
           </div>
 
+          {currentQ.image && (
+            <div className="mb-6">
+              <QuestionVisual src={currentQ.image} alt="Soru görseli" className="w-full max-h-72 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950" />
+            </div>
+          )}
+
           {/* Options */}
-          <div className="space-y-3">
-            {exam.questions[currentQuestion].options.map((opt, i) => (
-              <label 
-                key={i} 
-                className={`flex items-start gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                  userAnswers[exam.questions[currentQuestion]._id] === opt 
-                    ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 dark:border-indigo-400' 
-                    : 'hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-600'
-                }`}
-              >
-                <input 
-                  type="radio" 
-                  name={`q-${exam.questions[currentQuestion]._id}`} 
-                  value={opt} 
-                  checked={userAnswers[exam.questions[currentQuestion]._id] === opt}
-                  onChange={() => handleAnswerChange(exam.questions[currentQuestion]._id, opt)} 
-                  className="w-5 h-5 text-indigo-600 mt-1 flex-shrink-0"
-                />
-                <span className="text-slate-700 dark:text-slate-200 font-medium">{opt}</span>
-              </label>
-            ))}
-          </div>
+          {currentQ.type === 'matching' ? (
+            <MatchingPracticeCard
+              examMode
+              question={currentQ}
+              state={(() => {
+                try {
+                  const raw = userAnswers[currentQ._id];
+                  const obj = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : {};
+                  return { selected: obj || {} };
+                } catch {
+                  return { selected: {} };
+                }
+              })()}
+              onChange={(promptId, value) => handleMatchingExam(currentQ._id, promptId, value)}
+            />
+          ) : currentQ.type === 'sequence' ? (
+            <SequencePracticeCard
+              examMode
+              question={currentQ}
+              state={(() => {
+                try {
+                  const raw = userAnswers[currentQ._id];
+                  const obj = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : null;
+                  if (obj && Array.isArray(obj.order)) {
+                    return { selected: obj.order, checked: !!obj.locked };
+                  }
+                } catch {
+                  /* ignore */
+                }
+                return undefined;
+              })()}
+              onMove={(index, direction, ord, checkOnly) => handleSequenceExam(currentQ._id, index, direction, ord, checkOnly)}
+            />
+          ) : (
+            <div className="space-y-3">
+              {mcOptions.map((opt, i) => {
+                const label = optionLabel(opt);
+                return (
+                  <label
+                    key={i}
+                    className={`flex items-start gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                      userAnswers[currentQ._id] === label
+                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 dark:border-indigo-400'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-600'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={`q-${currentQ._id}`}
+                      value={label}
+                      checked={userAnswers[currentQ._id] === label}
+                      onChange={() => handleAnswerChange(currentQ._id, label)}
+                      className="w-5 h-5 text-indigo-600 mt-1 flex-shrink-0"
+                    />
+                    <span className="text-slate-700 dark:text-slate-200 font-medium">{label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Navigation Buttons */}
