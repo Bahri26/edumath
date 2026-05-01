@@ -152,10 +152,17 @@ mongoose.connection.on('disconnected', () => {
 });
 
 // Hazırlık (readiness) kontrolü: DB off ise API isteklerine 503 döndür
+// Cold start sırasında istemci `Retry-After` header'ına göre otomatik tekrar dener
 app.use((req, res, next) => {
     const skipPaths = ['/', '/health', '/ready'];
     if (!dbConnected && req.path.startsWith('/api') && !skipPaths.includes(req.path)) {
-        return res.status(503).json({ success: false, message: 'Servis hazır değil. Veritabanı bağlantısı yok.' });
+        res.set('Retry-After', '5');
+        return res.status(503).json({
+            success: false,
+            code: 'DB_NOT_READY',
+            message: 'Sunucu uyanıyor, lütfen birkaç saniye sonra tekrar deneyin.',
+            retryAfterSeconds: 5,
+        });
     }
     next();
 });

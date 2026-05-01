@@ -173,17 +173,72 @@ apiClient.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// 🚨 2. YANIT INTERCEPTOR (401 Hatası Yakalama)
-// Eğer token süresi dolmuşsa veya geçersizse kullanıcıyı otomatik çıkış yaptır
+// 🚨 2. YANIT INTERCEPTOR (401 + 503 cold-start retry)
+// - 401: Oturum sonu, kullanıcıyı çıkış yaptır
+// - 503 (DB_NOT_READY): Render free-tier cold start sırasında DB henüz bağlanmamış olabilir.
+//   Retry-After değerine göre 1 kez (toplam 2 deneme) otomatik tekrar dener.
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const COLD_START_NOTICE_DELAY_MS = 1500; // toast göstermeden önce kısa gecikme
+let coldStartToastShown = false;
+let coldStartToastTimer = null;
+
+const scheduleColdStartNotice = () => {
+    if (coldStartToastShown || coldStartToastTimer) return;
+    coldStartToastTimer = setTimeout(() => {
+        if (!coldStartToastShown && apiErrorNotifier) {
+            try {
+                apiErrorNotifier(
+                    'Sunucu uyanıyor, birkaç saniye sonra otomatik olarak tekrar denenecek...',
+                    'info',
+                );
+            } catch { /* sessiz geç */ }
+            coldStartToastShown = true;
+        }
+        coldStartToastTimer = null;
+    }, COLD_START_NOTICE_DELAY_MS);
+};
+
+const clearColdStartNotice = () => {
+    if (coldStartToastTimer) {
+        clearTimeout(coldStartToastTimer);
+        coldStartToastTimer = null;
+    }
+    coldStartToastShown = false;
+};
+
 apiClient.interceptors.response.use(
     (response) => {
+        clearColdStartNotice();
         if (response?.data) {
             response.data = normalizeAssetUrls(response.data);
         }
         return response;
     },
-    (error) => {
+    async (error) => {
         const status = error?.response?.status;
+        const config = error?.config;
+
+        // --- 503 cold-start otomatik retry ---
+        if (status === 503 && config && !config.__retryDisabled) {
+            const maxRetries = Number.isFinite(config.__maxRetries) ? config.__maxRetries : 2;
+            config.__retryCount = (config.__retryCount || 0) + 1;
+
+            if (config.__retryCount <= maxRetries) {
+                scheduleColdStartNotice();
+                const headerRetry = Number(error?.response?.headers?.['retry-after']);
+                const bodyRetry = Number(error?.response?.data?.retryAfterSeconds);
+                const baseWait = Number.isFinite(headerRetry) && headerRetry > 0
+                    ? headerRetry * 1000
+                    : Number.isFinite(bodyRetry) && bodyRetry > 0
+                      ? bodyRetry * 1000
+                      : 4000;
+                // Exponential backoff: 1.deneme = baseWait, 2.deneme = baseWait * 1.5
+                const wait = Math.min(15000, baseWait * (1 + (config.__retryCount - 1) * 0.5));
+                await sleep(wait);
+                return apiClient(config);
+            }
+        }
+
         if (status === 401) {
             console.warn('Oturum süresi doldu, çıkış yapılıyor...');
             localStorage.removeItem('token');
@@ -208,6 +263,11 @@ apiClient.interceptors.response.use(
                     const wait = retryAfter ? ` ${retryAfter} sn sonra tekrar deneyin.` : ' Bir süre sonra tekrar deneyin.';
                     apiErrorNotifier(
                         `Kota/limit aşıldı.${wait}${hint ? ' ' + hint : ''}`,
+                        'error',
+                    );
+                } else if (status === 503) {
+                    apiErrorNotifier(
+                        'Sunucu hâlâ hazır değil. Birkaç saniye sonra tekrar deneyin.',
                         'error',
                     );
                 } else if (status >= 500) {

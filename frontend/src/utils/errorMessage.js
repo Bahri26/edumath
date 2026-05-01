@@ -23,6 +23,12 @@ export function describeApiError(err, fallback = 'İşlem tamamlanamadı.') {
   if (status === 401) return 'Oturum süresi doldu. Yeniden giriş yapın.';
   if (status === 403) return 'Bu işlem için yetkiniz yok.';
   if (status === 404) return 'Kaynak bulunamadı.';
+  if (status === 503) {
+    if (data?.code === 'DB_NOT_READY') {
+      return 'Sunucu uyanıyor, lütfen birkaç saniye sonra tekrar deneyin.';
+    }
+    return serverMessage || 'Sunucu şu an hazır değil. Birazdan tekrar deneyin.';
+  }
   if (status >= 500) return serverMessage || 'Sunucu hatası.';
   return serverMessage || fallback;
 }
