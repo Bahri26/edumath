@@ -14,6 +14,7 @@ import Courses from '../sections/Courses';       // İnteraktif Örüntü Modül
 import Contact from '../sections/Contact';
 import Chatbox from '../components/ui/Chatbox';
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 // Veriyi İçe Aktar
 import { translations } from '../data/translations';
@@ -21,16 +22,13 @@ import { translations } from '../data/translations';
 const LandingPage = () => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { isDarkMode, toggleTheme } = useTheme();
   const [lang, setLang] = useState('tr');
-  const [theme, setTheme] = useState('light');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const theme = isDarkMode ? 'dark' : 'light';
 
   // Çeviri dosyanda 'patterns' anahtarı altında özelleştirilmiş metinler olduğunu varsayıyoruz
   const t = translations[lang] || translations['tr'];
-
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
-  };
 
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
@@ -83,15 +81,6 @@ const LandingPage = () => {
     navigate('/research');
   };
 
-  // Tema değişikliğini body'ye uygula (Karanlık mod desteği için)
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
-
   useEffect(() => {
     const metadata = lang === 'tr'
       ? {
@@ -111,16 +100,19 @@ const LandingPage = () => {
           htmlLang: 'en',
         };
 
+    const baseUrl = (import.meta.env.VITE_PUBLIC_SITE_URL && String(import.meta.env.VITE_PUBLIC_SITE_URL).replace(/\/$/, '')) || window.location.origin;
+
     document.title = metadata.title;
     document.documentElement.lang = metadata.htmlLang;
 
     upsertMeta('meta[name="description"]', 'content', metadata.description);
     upsertMeta('meta[property="og:title"]', 'content', metadata.ogTitle);
     upsertMeta('meta[property="og:description"]', 'content', metadata.ogDescription);
+    upsertMeta('meta[property="og:url"]', 'content', `${baseUrl}/`);
     upsertMeta('meta[property="og:locale"]', 'content', metadata.locale);
     upsertMeta('meta[name="twitter:title"]', 'content', metadata.ogTitle);
     upsertMeta('meta[name="twitter:description"]', 'content', metadata.ogDescription);
-    updateCanonical(window.location.origin + '/');
+    updateCanonical(`${baseUrl}/`);
   }, [lang]);
 
   // Login Başarılı Olduğunda Yönlendirme
@@ -138,7 +130,7 @@ const LandingPage = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark' ? 'bg-surface-950 text-surface-50' : 'bg-surface-50 text-surface-900'}`}>
       
       {/* Gezinme Çubuğu */}
       <Navbar 

@@ -3,44 +3,112 @@ const Question = require('../models/Question');
 const User = require('../models/User');
 const { gradeQuestionAnswer } = require('../utils/questionGrading');
 
-// ✅ 1. EGZERSIZ OLUŞTUR (AI - Teacher)
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const MAX_EXERCISE_QUESTIONS = 30;
+
+/** Seçilen id sırasını koruyarak doğrula; sınıf + ders eşleşmesi zorunlu */
+async function resolveQuestionIdsForExercise(orderedIds, classLevel, subject) {
+  const subj = subject || 'Matematik';
+  const subjClause = { $regex: new RegExp(`^${escapeRegex(subj)}$`, 'i') };
+  const uniqueIds = [...new Set(orderedIds.map((id) => String(id)).filter(Boolean))].slice(0, MAX_EXERCISE_QUESTIONS);
+  if (uniqueIds.length === 0) return { questionIds: [], difficulties: [] };
+
+  const docs = await Question.find({
+    _id: { $in: uniqueIds },
+    classLevel,
+    subject: subjClause,
+  })
+    .select('_id difficulty')
+    .lean();
+
+  if (docs.length !== uniqueIds.length) {
+    return { error: 'Seçilen soruların bir kısmı bulunamadı veya sınıf/ders bilgisi uyuşmuyor.' };
+  }
+
+  const byId = new Map(docs.map((d) => [String(d._id), d]));
+  const questionIds = uniqueIds.map((id) => byId.get(id)._id);
+  const difficulties = [...new Set(docs.map((d) => d.difficulty).filter(Boolean))];
+  return { questionIds, difficulties };
+}
+
+// ✅ 1. EGZERSIZ OLUŞTUR (havuz otomatik veya questionIds ile manuel)
 exports.createExercise = async (req, res, next) => {
   try {
-    const { name, description, classLevel, subject, difficulty, gameMode, timeLimit, pointsPerQuestion } = req.body;
+    const {
+      name,
+      description,
+      classLevel,
+      subject,
+      difficulty,
+      gameMode,
+      timeLimit,
+      pointsPerQuestion,
+      questionIds: rawQuestionIds,
+      playTransform,
+    } = req.body;
     const teacherId = req.user.id;
 
-    if (!name || !classLevel || !Array.isArray(difficulty) || difficulty.length === 0) {
-      return res.status(400).json({ message: 'Ad, sınıf ve zorluk seviyeleri gerekli' });
+    if (!name || !classLevel) {
+      return res.status(400).json({ message: 'Ad ve sınıf gerekli' });
     }
 
-    // Sınıf ve zorluk seviyelerine göre sorular getir
-    const matchStage = {
-      classLevel,
-      subject: subject || 'Matematik',
-      difficulty: { $in: difficulty }
-    };
+    const subj = subject || 'Matematik';
+    const rawIds = Array.isArray(rawQuestionIds) ? rawQuestionIds : [];
+    const wantsManual = rawIds.length > 0;
 
-    const questions = await Question.find(matchStage);
-    
-    if (questions.length === 0) {
-      return res.status(400).json({ message: 'Belirtilen kriterlerde soru bulunamadı' });
+    let questionIds = [];
+    let difficultyFinal = Array.isArray(difficulty) ? [...difficulty] : [];
+
+    if (wantsManual) {
+      const resolved = await resolveQuestionIdsForExercise(rawIds, classLevel, subj);
+      if (resolved.error) {
+        return res.status(400).json({ message: resolved.error });
+      }
+      questionIds = resolved.questionIds;
+      if (questionIds.length === 0) {
+        return res.status(400).json({ message: 'En az bir soru seçmelisiniz' });
+      }
+      difficultyFinal = [...new Set([...difficultyFinal, ...resolved.difficulties])];
+      if (difficultyFinal.length === 0) {
+        difficultyFinal = resolved.difficulties.length ? resolved.difficulties : ['Orta'];
+      }
+    } else {
+      if (!Array.isArray(difficulty) || difficulty.length === 0) {
+        return res.status(400).json({ message: 'Otomatik oluşturma için en az bir zorluk seviyesi seçin' });
+      }
+
+      const matchStage = {
+        classLevel,
+        subject: subj,
+        difficulty: { $in: difficulty },
+      };
+
+      const questions = await Question.find(matchStage);
+
+      if (questions.length === 0) {
+        return res.status(400).json({ message: 'Belirtilen kriterlerde soru bulunamadı' });
+      }
+
+      questionIds = questions.slice(0, Math.min(questions.length, 15)).map((q) => q._id);
     }
 
-    // Sorular random olsun ama dengeli (kolay/orta/zor)
-    const questionIds = questions.slice(0, Math.min(questions.length, 15)).map(q => q._id);
+    const allowedPlay = ['classic', 'game_show'];
+    const play =
+      typeof playTransform === 'string' && allowedPlay.includes(playTransform) ? playTransform : 'classic';
 
     const newExercise = await Exercise.create({
       name,
       description: description || '',
       classLevel,
-      subject: subject || 'Matematik',
-      difficulty,
+      subject: subj,
+      difficulty: difficultyFinal,
       questions: questionIds,
       totalQuestions: questionIds.length,
       createdBy: teacherId,
       gameMode: gameMode || 'practice',
+      playTransform: play,
       timeLimit: timeLimit || null,
-      pointsPerQuestion: pointsPerQuestion || 10
+      pointsPerQuestion: pointsPerQuestion || 10,
     });
 
     res.status(201).json({ success: true, message: 'Egzersiz oluşturuldu', data: newExercise });
@@ -266,7 +334,7 @@ exports.submitExercise = async (req, res, next) => {
 exports.updateExercise = async (req, res, next) => {
   try {
     const teacherId = req.user.id;
-    const { name, description, gameMode, timeLimit, isActive } = req.body;
+    const { name, description, gameMode, timeLimit, isActive, questionIds: rawQuestionIds, playTransform } = req.body;
 
     const exercise = await Exercise.findById(req.params.id);
     if (!exercise) {
@@ -278,13 +346,38 @@ exports.updateExercise = async (req, res, next) => {
     }
 
     if (name) exercise.name = name;
-    if (description) exercise.description = description;
+    if (description !== undefined) exercise.description = description;
     if (gameMode) exercise.gameMode = gameMode;
-    if (timeLimit) exercise.timeLimit = timeLimit;
+    if (timeLimit !== undefined) exercise.timeLimit = timeLimit;
     if (isActive !== undefined) exercise.isActive = isActive;
+    if (typeof playTransform === 'string' && ['classic', 'game_show'].includes(playTransform)) {
+      exercise.playTransform = playTransform;
+    }
+
+    if (Array.isArray(rawQuestionIds)) {
+      if (rawQuestionIds.length === 0) {
+        return res.status(400).json({ message: 'Soru listesi boş olamaz' });
+      }
+      const resolved = await resolveQuestionIdsForExercise(
+        rawQuestionIds,
+        exercise.classLevel,
+        exercise.subject || 'Matematik',
+      );
+      if (resolved.error) {
+        return res.status(400).json({ message: resolved.error });
+      }
+      exercise.questions = resolved.questionIds;
+      exercise.totalQuestions = resolved.questionIds.length;
+      if (resolved.difficulties.length) {
+        exercise.difficulty = resolved.difficulties;
+      }
+    }
 
     await exercise.save();
-    res.json({ success: true, message: 'Egzersiz güncellendi', data: exercise });
+    const populated = await Exercise.findById(exercise._id)
+      .populate('questions', 'text difficulty type image classLevel subject')
+      .lean();
+    res.json({ success: true, message: 'Egzersiz güncellendi', data: populated });
   } catch (error) {
     next(error);
   }

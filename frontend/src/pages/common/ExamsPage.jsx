@@ -10,7 +10,9 @@ import Button from '../../components/ui/Button.jsx';
 import Badge from '../../components/ui/Badge.jsx';
 import Card from '../../components/ui/Card.jsx';
 import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
+import QuestionTextWithPattern from '../../components/questions/QuestionTextWithPattern.jsx';
 import { MatchingPracticeCard, SequencePracticeCard } from '../../components/exams/InteractivePracticeCards.jsx';
+import StudentPageShell from '../../components/student/StudentPageShell.jsx';
 
 const ExamsPage = ({ role }) => {
   const [exams, setExams] = useState([]);
@@ -253,9 +255,11 @@ const ExamsPage = ({ role }) => {
                 <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold px-3 py-1 rounded-lg">Soru {idx + 1}</span>
                 <span className={`px-2 py-1 rounded text-xs font-bold text-white ${q.difficulty === 'Zor' ? 'bg-red-500' : q.difficulty === 'Orta' ? 'bg-yellow-500' : 'bg-green-500'}`}>{q.difficulty}</span>
               </div>
-              <div className="text-lg font-medium text-slate-800 dark:text-white mb-4">
-                {renderWithLatex(q.text)}
-              </div>
+              <QuestionTextWithPattern
+                text={q.text}
+                mainClassName="text-lg font-medium text-slate-800 dark:text-white"
+                className="mb-4"
+              />
               <QuestionVisual src={q.image} alt={`Soru ${idx + 1} gorseli`} className="mb-4 h-56" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {(Array.isArray(q.options) ? q.options : []).map((opt, i) => {
@@ -370,7 +374,11 @@ const ExamsPage = ({ role }) => {
                       <span className="bg-purple-50 text-purple-700 font-bold px-3 py-1 rounded-lg text-sm">Soru {idx + 1}</span>
                     </div>
                     
-                    <p className="text-lg font-medium text-slate-800 dark:text-white mb-6">{q.text || q.questionText}</p>
+                    <QuestionTextWithPattern
+                      text={q.text || q.questionText}
+                      mainClassName="text-lg font-medium text-slate-800 dark:text-white"
+                      className="mb-6"
+                    />
                     <QuestionVisual src={q.image} alt={`Antrenman ${idx + 1} gorseli`} className="mb-4 h-56" />
 
                     {q.type === 'matching' ? (
@@ -429,19 +437,9 @@ const ExamsPage = ({ role }) => {
   }
 
   // --- EKRAN 3: SINAV LİSTESİ (Ana Ekran) ---
-  return (
-    <div className="animate-fade-in space-y-6">
-      <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Sınavlar</h2>
-        {role === 'teacher' && (
-          <Button variant="primary" size="md" ariaLabel="Sınav Oluştur" onClick={() => setShowCreateModal(true)} icon={Plus}>
-            Sınav Oluştur
-          </Button>
-        )}
-      </div>
-
+  const examListGrid = (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {exams.length === 0 ? <div className="col-span-full text-center py-10 text-slate-500">Henüz sınav oluşturulmamış.</div> : exams.map(exam => (
+        {exams.length === 0 ? <div className="col-span-full text-center py-10 text-slate-500 dark:text-slate-400 rounded-[1.25rem] border border-dashed border-sky-200/60 dark:border-slate-600 bg-white/40 dark:bg-slate-800/30">Henüz sınav oluşturulmamış.</div> : exams.map(exam => (
             <Card key={exam._id}>
               <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-xl"><FileText size={24} /></div>
@@ -474,6 +472,29 @@ const ExamsPage = ({ role }) => {
             </Card>
         ))}
       </div>
+  );
+
+  return (
+    <>
+      {role === 'student' ? (
+        <StudentPageShell title="Sınavlar" subtitle="Sınıfına uygun sınavları çöz; sonuçlarını ve güçlendirme önerilerini buradan takip et.">
+          {examListGrid}
+        </StudentPageShell>
+      ) : (
+    <div className="animate-fade-in space-y-6">
+      <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Sınavlar</h2>
+        {role === 'teacher' && (
+          <Button variant="primary" size="md" ariaLabel="Sınav Oluştur" onClick={() => setShowCreateModal(true)} icon={Plus}>
+            Sınav Oluştur
+          </Button>
+        )}
+      </div>
+
+      {examListGrid}
+
+    </div>
+      )}
 
       {/* --- MODAL: KENDİ SONUCUM --- */}
       {myResult && (
@@ -683,7 +704,7 @@ const ExamsPage = ({ role }) => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

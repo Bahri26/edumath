@@ -1,4 +1,6 @@
-import React, { createContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useState, useEffect, useRef, useCallback } from 'react';
+import { registerAuthFailureHandler } from '../services/api';
+import { useToast } from './ToastContext';
 
 export const AuthContext = createContext();
 
@@ -7,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [sessionTimeout] = useState(24 * 60 * 60 * 1000); // 24 saat
   const timeoutRef = useRef(null);
+  const { showToast } = useToast();
 
   // Uygulama ilk açıldığında localStorage'dan kullanıcıyı geri yükle
   useEffect(() => {
@@ -36,7 +39,7 @@ export const AuthProvider = ({ children }) => {
     
     timeoutRef.current = setTimeout(() => {
       logout();
-      alert('Oturumunuz süresi dolmuştur. Lütfen yeniden giriş yapınız.');
+      showToast?.('Oturum süreniz doldu. Lütfen yeniden giriş yapın.', 'info', 4000);
     }, sessionTimeout);
   };
 
@@ -75,7 +78,7 @@ export const AuthProvider = ({ children }) => {
     startSessionTimer();
   };
 
-  const logout = () => {
+  const logout = useCallback((reason) => {
     // Backend refresh token revoke
     const refreshToken = localStorage.getItem('refreshToken');
     if (refreshToken) {
@@ -94,11 +97,23 @@ export const AuthProvider = ({ children }) => {
     localStorage.clear();
     sessionStorage.clear();
 
+    if (reason === 'unauthorized') {
+      showToast?.('Oturumunuz sonlandı. Lütfen tekrar giriş yapın.', 'info', 4000);
+    } else if (reason === 'logout') {
+      showToast?.('Çıkış yapıldı.', 'success', 2500);
+    }
+
     // Hızlı ana sayfaya git
     setTimeout(() => {
       window.location.href = '/';
     }, 100);
-  };
+  }, [showToast]);
+
+  // API katmanından gelen 401 -> tek noktadan logout
+  useEffect(() => {
+    registerAuthFailureHandler(() => logout('unauthorized'));
+    return () => registerAuthFailureHandler(null);
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading, sessionTimeout }}>

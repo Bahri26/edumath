@@ -8,6 +8,15 @@ import { LanguageContext } from '../../context/LanguageContext';
 import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
 import { MatchingPracticeCard, SequencePracticeCard } from '../../components/exams/InteractivePracticeCards.jsx';
 import StudentHint from '../../components/StudentHint.jsx';
+import StudentPageShell from '../../components/student/StudentPageShell.jsx';
+import { getExercisePlayPresentation } from '../../utils/exercisePlayPresentation.js';
+import {
+  ExerciseNumberPad,
+  ExerciseTwoChoiceBlocks,
+  ExerciseShapeOptionRow,
+  ExerciseFillPlay,
+  ExerciseTfPlay,
+} from '../../components/exercises/ExerciseGameInputs.jsx';
 
 const optionLabel = (opt) => {
   if (opt == null) return '';
@@ -67,6 +76,11 @@ const ExerciseCard = ({ exercise, onStart, isCompleted }) => {
         {exercise.gameMode === 'challenge' && (
           <span className="px-3 py-1 text-xs font-bold flex items-center gap-1 bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg">
             <Zap size={14} /> Puanla
+          </span>
+        )}
+        {exercise.playTransform === 'game_show' && (
+          <span className="px-3 py-1 text-xs font-bold bg-fuchsia-100 dark:bg-fuchsia-900/25 text-fuchsia-700 dark:text-fuchsia-300 rounded-lg">
+            Oyun gösterimi
           </span>
         )}
       </div>
@@ -305,9 +319,18 @@ export default function StudentPracticeExercises() {
           <>
             {/* Questions */}
             <div className="space-y-4">
-              {selectedExercise.questions?.map((question, idx) => (
+              {selectedExercise.questions?.map((question, idx) => {
+                const playTransform = selectedExercise.playTransform || 'classic';
+                const pres = getExercisePlayPresentation(question, idx, playTransform);
+                const setAns = (v) =>
+                  setExerciseAnswers((prev) => ({
+                    ...prev,
+                    [question._id]: v,
+                  }));
+
+                return (
                 <div key={question._id} className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <div className="flex gap-3 mb-4">
+                  <div className="flex gap-3 mb-4 flex-wrap items-center">
                     <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold rounded-lg text-sm">
                       {idx + 1}
                     </span>
@@ -316,6 +339,11 @@ export default function StudentPracticeExercises() {
                         {question.difficulty}
                       </span>
                     )}
+                    {pres.key !== 'default' && playTransform === 'game_show' ? (
+                      <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md bg-fuchsia-100 dark:bg-fuchsia-900/30 text-fuchsia-700 dark:text-fuchsia-300">
+                        Oyun
+                      </span>
+                    ) : null}
                   </div>
 
                   <h3 className="font-bold text-slate-800 dark:text-white mb-4 text-lg">
@@ -328,7 +356,6 @@ export default function StudentPracticeExercises() {
                     </div>
                   )}
 
-                  {/* Options */}
                   {question.type === 'matching' ? (
                     <MatchingPracticeCard
                       question={question}
@@ -360,13 +387,44 @@ export default function StudentPracticeExercises() {
                       })()}
                       onMove={(index, direction, ord, checkOnly) => handleSequencePractice(question._id, index, direction, ord, checkOnly)}
                     />
+                  ) : pres.key === 'num_pad' && question.options?.length ? (
+                    <ExerciseNumberPad
+                      value={exerciseAnswers[question._id] || ''}
+                      onChange={setAns}
+                    />
+                  ) : pres.key === 'tf_big' && question.options?.length === 2 ? (
+                    <ExerciseTwoChoiceBlocks
+                      leftLabel={optionLabel(question.options[0])}
+                      rightLabel={optionLabel(question.options[1])}
+                      value={exerciseAnswers[question._id] || ''}
+                      onChange={setAns}
+                    />
+                  ) : pres.key === 'shape_row' && question.options?.length >= 3 ? (
+                    <ExerciseShapeOptionRow
+                      options={question.options}
+                      optionLabel={optionLabel}
+                      value={exerciseAnswers[question._id] || ''}
+                      onChange={setAns}
+                    />
+                  ) : pres.key === 'fill_play' ? (
+                    <ExerciseFillPlay
+                      value={exerciseAnswers[question._id] || ''}
+                      onChange={setAns}
+                    />
+                  ) : pres.key === 'tf_play' ? (
+                    <ExerciseTfPlay
+                      optionA={question.options?.[0] ? optionLabel(question.options[0]) : 'Doğru'}
+                      optionB={question.options?.[1] ? optionLabel(question.options[1]) : 'Yanlış'}
+                      value={exerciseAnswers[question._id] || ''}
+                      onChange={setAns}
+                    />
                   ) : question.options && question.options.length > 0 ? (
                     <div className="space-y-2">
-                      {question.options.map((opt, idx) => {
+                      {question.options.map((opt, oidx) => {
                         const label = optionLabel(opt);
                         return (
                           <label
-                            key={idx}
+                            key={oidx}
                             className="flex items-center gap-3 p-3 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors"
                           >
                             <input
@@ -411,7 +469,8 @@ export default function StudentPracticeExercises() {
                     compact
                   />
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Submit Button */}
@@ -497,23 +556,14 @@ export default function StudentPracticeExercises() {
 
   // ---- Main List View ----
   return (
-    <div className="flex-1 p-6 space-y-6 pb-20">
-      
-      {/* Header */}
-      <div>
-        <h1 className="text-4xl font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-3">
-          {getText('funExercises')}
-        </h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">{getText('subtitle')}</p>
-      </div>
-
+    <StudentPageShell title={getText('funExercises')} subtitle={getText('subtitle')}>
       {/* Loading */}
       {loading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="animate-spin text-indigo-600" size={40} />
         </div>
       ) : exercises.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-slate-800 p-8 rounded-xl border border-slate-200 dark:border-slate-700">
+        <div className="text-center py-12 bg-white/95 dark:bg-slate-800/95 p-8 rounded-[1.25rem] border border-sky-200/60 dark:border-slate-700">
           <Lock className="mx-auto text-slate-300 mb-3" size={48} />
           <p className="text-slate-500 dark:text-slate-400">Henüz egzersiz açılmamış</p>
           <p className="text-sm text-slate-400 dark:text-slate-500">Öğretmeninizin egzersiz oluşturması için bekleyin</p>
@@ -530,6 +580,6 @@ export default function StudentPracticeExercises() {
           ))}
         </div>
       )}
-    </div>
+    </StudentPageShell>
   );
 }

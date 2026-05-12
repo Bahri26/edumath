@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
 
 const QuestionFormModal = ({ 
   isOpen, onClose, editingId, manualForm, setManualForm, 
@@ -159,6 +160,18 @@ const QuestionFormModal = ({
               </div>
             </div>
           </div>
+
+          {form.text.trim() ? (
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50/80 dark:bg-slate-900/40 p-5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
+                Soru bankası / sınavda öğrencinin göreceği düzen
+              </p>
+              <QuestionTextWithPattern
+                text={form.text}
+                mainClassName="text-base text-slate-800 dark:text-slate-200"
+              />
+            </div>
+          ) : null}
 
           {/* 2. BÖLÜM: ŞIKLAR VE DOĞRU CEVAP */}
           <div className="space-y-4">

@@ -1,11 +1,11 @@
 import React from 'react';
 
 const variants = {
-  primary: 'bg-indigo-600 text-white hover:bg-indigo-700',
-  secondary: 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600',
+  primary: 'bg-brand-600 text-white hover:bg-brand-700',
+  secondary: 'bg-surface-100 text-surface-700 hover:bg-surface-200 dark:bg-surface-700 dark:text-surface-200 dark:hover:bg-surface-600',
   success: 'bg-green-600 text-white hover:bg-green-700',
   danger: 'bg-red-600 text-white hover:bg-red-700',
-  outline: 'border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700',
+  outline: 'border border-surface-300 text-surface-700 hover:bg-surface-50 dark:border-surface-600 dark:text-surface-200 dark:hover:bg-surface-700',
 };
 
 const sizes = {
@@ -26,7 +26,7 @@ const Button = ({
   type = 'button',
   ariaLabel,
 }) => {
-  const base = 'font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 inline-flex items-center justify-center gap-2';
+  const base = 'font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 inline-flex items-center justify-center gap-2';
   const width = fullWidth ? 'w-full' : '';
   const variantCls = variants[variant] || variants.primary;
   const sizeCls = sizes[size] || sizes.md;

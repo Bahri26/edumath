@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import apiClient from "../../services/api";
 import { useToast } from "../../context/ToastContext";
+import StudentPageShell from "../../components/student/StudentPageShell.jsx";
 
 export default function SkillTree({ classLevel = "9. Sınıf", subject = "Matematik" }) {
   const { showToast } = useToast();
@@ -32,30 +33,34 @@ export default function SkillTree({ classLevel = "9. Sınıf", subject = "Matema
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-8 space-y-4 animate-pulse">
-        <div className="h-8 w-48 bg-slate-200 dark:bg-slate-700 rounded" />
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-28 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
-        ))}
-      </div>
+      <StudentPageShell title="Konu Ağacı" subtitle={`${classLevel} · ${subject}`} maxWidthClass="max-w-4xl">
+        <div className="space-y-4 animate-pulse">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-28 bg-slate-100 dark:bg-slate-800 rounded-[1.25rem]" />
+          ))}
+        </div>
+      </StudentPageShell>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto p-8">
-        <div className="p-6 rounded-2xl bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-200 border border-rose-200 dark:border-rose-800">
+      <StudentPageShell title="Konu Ağacı" maxWidthClass="max-w-4xl">
+        <div className="p-6 rounded-[1.25rem] bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-200 border border-rose-200 dark:border-rose-800">
           {error}
         </div>
-      </div>
+      </StudentPageShell>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-8 animate-fade-in">
-      <h1 className="text-2xl font-black mb-6">Konu Ağacı</h1>
+    <StudentPageShell
+      title="Konu Ağacı"
+      subtitle={`${classLevel} · ${subject} — Konulara tıklayarak ders quizlerine git.`}
+      maxWidthClass="max-w-4xl"
+    >
       {topics.length === 0 ? (
-        <div className="p-8 text-center bg-slate-50 dark:bg-slate-800 rounded-2xl text-slate-500">
+        <div className="p-8 text-center bg-white/80 dark:bg-slate-800/80 rounded-[1.25rem] border border-sky-200/70 dark:border-slate-700 text-slate-500">
           Bu sınıf ve ders için henüz konu yok.
         </div>
       ) : (
@@ -63,9 +68,9 @@ export default function SkillTree({ classLevel = "9. Sınıf", subject = "Matema
           {topics.map((topic) => (
             <div
               key={topic._id}
-              className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm"
+              className="bg-white/95 dark:bg-slate-800/95 p-6 rounded-[1.25rem] border border-sky-200/60 dark:border-slate-700 shadow-sm"
             >
-              <h2 className="text-lg font-bold mb-2">{topic.name}</h2>
+              <h2 className="text-lg font-bold mb-3 text-slate-800 dark:text-white">{topic.name}</h2>
               <div className="flex flex-wrap gap-3">
                 {(topic.lessons || []).length === 0 ? (
                   <span className="text-xs text-slate-400">Henüz ders eklenmemiş</span>
@@ -74,7 +79,7 @@ export default function SkillTree({ classLevel = "9. Sınıf", subject = "Matema
                     <Link
                       key={lesson._id}
                       to={`/student/lesson/${lesson._id}`}
-                      className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-800 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="min-h-[44px] inline-flex items-center px-4 py-2 rounded-2xl font-semibold bg-gradient-to-r from-sky-500/15 to-teal-500/15 dark:from-sky-500/20 dark:to-teal-500/20 text-sky-800 dark:text-sky-200 border border-sky-200/80 dark:border-slate-600 hover:brightness-95 transition-all focus:outline-none focus:ring-2 focus:ring-teal-400"
                     >
                       {lesson.title}
                     </Link>
@@ -85,6 +90,6 @@ export default function SkillTree({ classLevel = "9. Sınıf", subject = "Matema
           ))}
         </div>
       )}
-    </div>
+    </StudentPageShell>
   );
 }

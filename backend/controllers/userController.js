@@ -50,12 +50,18 @@ exports.getProfile = async (req, res) => {
 // 3. PROFİLİ GÜNCELLE (PUT /api/users/profile)
 exports.updateProfile = async (req, res) => {
   try {
-    console.log('✅ updateProfile çağrıldı');
-    console.log('🔐 req.user:', req.user); // Debug: token'dan gelen user info
-    console.log('📤 req.body:', req.body); // Debug: frontend'den gelen veriler
-    
-    // Frontend'den gelen tüm olası verileri al
-    const { name, email, branch, grade, avatar, theme, language, notifications } = req.body;
+    const {
+      name,
+      email,
+      branch,
+      grade,
+      avatar,
+      theme,
+      language,
+      notifications,
+      bio,
+      phone,
+    } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı" });
 
@@ -66,6 +72,12 @@ exports.updateProfile = async (req, res) => {
     if (typeof theme !== 'undefined') user.theme = theme;
     if (typeof language !== 'undefined') user.language = language;
     if (typeof notifications !== 'undefined') user.notifications = notifications;
+    if (typeof bio === 'string') {
+      user.bio = bio.trim().slice(0, 800);
+    }
+    if (typeof phone === 'string') {
+      user.phone = phone.trim().slice(0, 32);
+    }
 
     // ROL BAZLI GÜNCELLEME
     if (user.role === 'teacher') {

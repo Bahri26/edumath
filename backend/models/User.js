@@ -52,7 +52,8 @@ UserSchema.index(
   { unique: true, sparse: true, name: 'usernameLower_1' }
 );
 
-UserSchema.pre('validate', function(next) {
+// Mongoose 8: document pre hook'larına `next` verilmez; senkron veya async/Promise kullanın.
+UserSchema.pre('validate', function() {
   if (typeof this.email === 'string') {
     this.email = this.email.trim();
     this.emailLower = this.email.toLowerCase();
@@ -67,8 +68,6 @@ UserSchema.pre('validate', function(next) {
   } else {
     this.usernameLower = undefined;
   }
-
-  next();
 });
 
 // Şifre hashleme

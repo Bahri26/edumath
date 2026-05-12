@@ -1,26 +1,27 @@
-import { AuthContext } from '../../context/AuthContext';
-import { ThemeContext } from '../../context/ThemeContext';
-import { LanguageContext } from '../../context/LanguageContext';
-const mockAuth = { user: { name: 'Demo User', role: 'student' }, logout: () => {} };
-const mockTheme = { isDarkMode: false, setIsDarkMode: () => {} };
-const mockLanguage = { language: 'TR' };
-import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
+import { MemoryRouter } from 'react-router-dom';
+import { BookOpen, FileText, CheckCircle, Trophy, Calendar, Settings, User, LayoutGrid, Users, BarChart2, ClipboardList } from 'lucide-react';
+import { AuthContext } from '../../context/AuthContext';
+import { LanguageContext } from '../../context/LanguageContext';
 import DashboardLayout from '../../pages/DashboardLayout';
-import { BookOpen, FileText, CheckCircle, Trophy, Calendar, Settings, User, LayoutGrid, Users, BarChart2 } from 'lucide-react';
+
+const mockAuth = { user: { name: 'Demo User', role: 'student' }, logout: () => {} };
+const mockLanguage = { language: 'TR' };
 
 export default {
   title: 'Layout/DashboardLayout',
   component: DashboardLayout,
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'fullscreen',
+  },
   decorators: [
     (Story) => (
       <MemoryRouter>
         <AuthContext.Provider value={mockAuth}>
-          <ThemeContext.Provider value={mockTheme}>
-            <LanguageContext.Provider value={mockLanguage}>
-              <Story />
-            </LanguageContext.Provider>
-          </ThemeContext.Provider>
+          <LanguageContext.Provider value={mockLanguage}>
+            <Story />
+          </LanguageContext.Provider>
         </AuthContext.Provider>
       </MemoryRouter>
     ),
@@ -51,9 +52,12 @@ const teacherMenu = [
   { id: 'skill-tree', label: 'Kazanım Ağacı', icon: LayoutGrid, path: '/teacher/skill-tree' },
   { id: 'student-progress', label: 'Öğrenci İlerleme', icon: Users, path: '/teacher/student-progress' },
   { id: 'reports', label: 'Raporlar', icon: BarChart2, path: '/teacher/reports' },
-  { id: 'surveys', label: 'Anketler', icon: FileText, path: '/teacher/surveys' },
   { id: 'settings', label: 'Ayarlar', icon: Settings, path: '/teacher/settings' },
   { id: 'profile', label: 'Profil', icon: User, path: '/teacher/profile' },
+];
+
+const teacherProfileExtras = [
+  { id: 'surveys', label: 'Anketler', icon: ClipboardList, path: '/teacher/surveys' },
 ];
 
 const Template = (args) => <DashboardLayout {...args} />;
@@ -68,4 +72,5 @@ export const TeacherDashboard = Template.bind({});
 TeacherDashboard.args = {
   role: 'teacher',
   navMenuItems: teacherMenu,
+  profileMenuExtras: teacherProfileExtras,
 };

@@ -5,6 +5,7 @@ import { renderWithLatex } from '../../utils/latex.jsx';
 import Button from '../ui/Button.jsx';
 import Card from '../ui/Card.jsx';
 import QuestionVisual from '../questions/QuestionVisual.jsx';
+import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
 
 const normalizeOptions = (options) => {
   if (!Array.isArray(options)) return [];
@@ -71,13 +72,18 @@ export default function ExamPreviewModal({ examId, onClose }) {
               <div className="grid grid-cols-1 gap-5">
                 {exam.questions && exam.questions.map((q, idx) => {
                   const opts = normalizeOptions(q.options);
+                  const hintText = String(q?.assessmentMeta?.hint || '').trim();
                   return (
                     <Card key={q._id || idx} className="p-5">
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded bg-indigo-50 text-indigo-700">Soru {idx + 1}</span>
                         <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded ${q.difficulty === 'Zor' ? 'bg-rose-50 text-rose-700' : q.difficulty === 'Orta' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>{q.difficulty}</span>
                       </div>
-                      <div className="text-sm text-slate-800 dark:text-slate-200 mb-4 leading-relaxed">{renderWithLatex(q.text)}</div>
+                      <QuestionTextWithPattern
+                        text={q.text}
+                        mainClassName="text-sm text-slate-800 dark:text-slate-200 leading-relaxed"
+                        className="mb-4"
+                      />
                       <QuestionVisual src={q.image} alt={`Soru ${idx + 1} gorseli`} className="mb-4 h-56" />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {opts.map((opt, i) => (
@@ -87,6 +93,12 @@ export default function ExamPreviewModal({ examId, onClose }) {
                           </div>
                         ))}
                       </div>
+                      {hintText && (
+                        <div className="mt-3 px-4 py-3 rounded-xl bg-amber-50/70 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/40 text-amber-800 dark:text-amber-200 text-sm">
+                          <span className="font-black uppercase tracking-wider text-[10px] text-amber-700/80 dark:text-amber-200/80">İpucu</span>
+                          <div className="mt-1">{renderWithLatex(hintText)}</div>
+                        </div>
+                      )}
                     </Card>
                   );
                 })}

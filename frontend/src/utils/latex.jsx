@@ -14,7 +14,7 @@ export function renderWithLatex(text) {
               <InlineMath math={part.slice(1, -1)} />
             </span>
           )
-          : <span key={index}>{part}</span>
+          : <span key={index} className="whitespace-pre-line">{part}</span>
       ))}
     </span>
   );

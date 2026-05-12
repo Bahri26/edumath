@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import apiClient from "../../services/api";
 import { useToast } from "../../context/ToastContext";
 import StudentHint from "../../components/StudentHint.jsx";
+import StudentPageShell from "../../components/student/StudentPageShell.jsx";
 
 export default function LessonQuiz() {
   const { lessonId } = useParams();
@@ -37,22 +38,24 @@ export default function LessonQuiz() {
 
   if (loading) {
     return (
-      <div className="max-w-xl mx-auto p-8 space-y-3 animate-pulse">
-        <div className="h-7 w-2/3 bg-slate-200 dark:bg-slate-700 rounded" />
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800 rounded-xl" />
-        ))}
-      </div>
+      <StudentPageShell title="Quiz yükleniyor…" subtitle="" maxWidthClass="max-w-xl">
+        <div className="space-y-3 animate-pulse">
+          <div className="h-7 w-2/3 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+          ))}
+        </div>
+      </StudentPageShell>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-xl mx-auto p-8">
-        <div className="p-6 rounded-2xl bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-200 border border-rose-200 dark:border-rose-800">
+      <StudentPageShell title="Ders Quiz" maxWidthClass="max-w-xl">
+        <div className="p-6 rounded-[1.25rem] bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-200 border border-rose-200 dark:border-rose-800">
           {error}
         </div>
-      </div>
+      </StudentPageShell>
     );
   }
 
@@ -72,13 +75,14 @@ export default function LessonQuiz() {
 
   if (result) {
     return (
-      <div className="max-w-xl mx-auto p-8 text-center animate-fade-in">
-        <h2 className="text-2xl font-bold mb-4">Quiz Sonucu</h2>
-        <div className="mb-4">
+      <StudentPageShell title="Quiz Sonucu" subtitle="Sonuçların kaydedildi. İstersen tekrar dene!" maxWidthClass="max-w-xl">
+        <div className="text-center space-y-4">
+        <div className="mb-4 text-slate-700 dark:text-slate-200">
           Doğru: <b>{result.correct}</b> • Yanlış: <b>{result.wrong}</b> • XP: <b>{result.xp}</b>
         </div>
         <button
-          className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700"
+          className="min-h-[44px] px-8 py-3 bg-gradient-to-r from-sky-500 to-teal-500 text-white rounded-2xl font-bold hover:brightness-105"
+          type="button"
           onClick={() => {
             setResult(null);
             setAnswers([]);
@@ -86,7 +90,8 @@ export default function LessonQuiz() {
         >
           Tekrar Çöz
         </button>
-      </div>
+        </div>
+      </StudentPageShell>
     );
   }
 
@@ -94,15 +99,14 @@ export default function LessonQuiz() {
 
   if (quiz.length === 0) {
     return (
-      <div className="max-w-xl mx-auto p-8 text-center text-slate-500">
-        Bu derste henüz quiz yok.
-      </div>
+      <StudentPageShell title={lesson.title} maxWidthClass="max-w-xl">
+        <p className="text-center text-slate-500 dark:text-slate-400 rounded-[1.25rem] border border-sky-200/60 dark:border-slate-700 bg-white/80 dark:bg-slate-800/60 py-12 px-6">Bu derste henüz quiz yok.</p>
+      </StudentPageShell>
     );
   }
 
   return (
-    <div className="max-w-xl mx-auto p-8 animate-fade-in">
-      <h2 className="text-xl font-bold mb-6">{lesson.title}</h2>
+    <StudentPageShell title={lesson.title} subtitle="Her soruda bir seçenek işaretle, ipucunu gerektiğinde kullan." maxWidthClass="max-w-xl">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -113,7 +117,7 @@ export default function LessonQuiz() {
         {quiz.map((q, i) => (
           <div
             key={i}
-            className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700"
+            className="bg-white/95 dark:bg-slate-800/95 p-5 rounded-[1.25rem] border border-sky-200/60 dark:border-slate-700 shadow-sm"
           >
             <div className="mb-2 font-semibold">
               {i + 1}. {q.question}
@@ -149,11 +153,11 @@ export default function LessonQuiz() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50"
+          className="w-full min-h-[48px] py-3 bg-gradient-to-r from-sky-500 to-teal-500 text-white rounded-2xl font-bold hover:brightness-105 disabled:opacity-50"
         >
           {submitting ? 'Gönderiliyor…' : 'Gönder'}
         </button>
       </form>
-    </div>
+    </StudentPageShell>
   );
 }

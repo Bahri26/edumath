@@ -5,7 +5,11 @@ const User = require('../../models/User');
 
 dotenv.config({ path: require('path').join(__dirname, '..', '..', '.env') });
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/edumathDB';
-const JWT_SECRET = process.env.JWT_SECRET || 'gizli_anahtar_123';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || !String(JWT_SECRET).trim()) {
+  console.error('Missing required env var JWT_SECRET');
+  process.exit(1);
+}
 
 (async () => {
   try {

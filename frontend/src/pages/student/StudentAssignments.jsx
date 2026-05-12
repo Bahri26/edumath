@@ -1,14 +1,15 @@
 // src/pages/student/StudentAssignments.jsx
 import React, { useState, useContext, useEffect } from 'react';
 import { Target, BookOpen, Calendar, Clock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import StudentPageShell from '../../components/student/StudentPageShell.jsx';
 import { LanguageContext } from '../../context/LanguageContext';
-import { ThemeContext } from '../../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
 const StudentAssignments = () => {
   const { language } = useContext(LanguageContext);
-  const { isDarkMode } = useContext(ThemeContext);
+  const { isDarkMode } = useTheme();
   const { showToast } = useToast();
   
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'pending', 'completed'
@@ -112,10 +113,10 @@ const StudentAssignments = () => {
   const TabButton = ({ id, label, icon: Icon }) => (
     <button
       onClick={() => setActiveTab(id)}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+      className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold transition-all min-h-[44px] ${
         activeTab === id 
-        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none' 
-        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'
+        ? 'bg-gradient-to-r from-sky-500 to-teal-500 text-white shadow-md' 
+        : 'text-slate-500 dark:text-slate-400 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'
       }`}
     >
       <Icon size={16} /> {label}
@@ -123,23 +124,13 @@ const StudentAssignments = () => {
   );
 
   return (
-    <div className="animate-fade-in space-y-6">
-       
-       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{getText("pageTitle")}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{getText("pageSubtitle")}</p>
-          </div>
-          
-          {/* Sekmeler */}
-          <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
-             <TabButton id="all" label={getText("allTasks")} icon={BookOpen} />
-             <TabButton id="pending" label={getText("pending")} icon={Clock} />
-             <TabButton id="completed" label={getText("completed")} icon={CheckCircle2} />
-          </div>
+    <StudentPageShell title={getText('pageTitle')} subtitle={getText('pageSubtitle')} headerAside={(
+       <div className="flex flex-wrap bg-white/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-sky-200/70 dark:border-slate-700 gap-1">
+          <TabButton id="all" label={getText("allTasks")} icon={BookOpen} />
+          <TabButton id="pending" label={getText("pending")} icon={Clock} />
+          <TabButton id="completed" label={getText("completed")} icon={CheckCircle2} />
        </div>
-
-       {/* Liste */}
+    )}>
        <div className="grid gap-4">
           {loading ? (
             <div className="flex justify-center py-12">
@@ -147,7 +138,7 @@ const StudentAssignments = () => {
             </div>
           ) : filteredAssignments.length > 0 ? (
             filteredAssignments.map((task) => (
-              <div key={task._id} className="group bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row gap-5 items-start md:items-center">
+              <div key={task._id} className="group bg-white/95 dark:bg-slate-800/95 rounded-[1.25rem] p-5 border border-sky-200/60 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row gap-5 items-start md:items-center">
                   
                   {/* İkon */}
                   <div className={`p-4 rounded-2xl flex-shrink-0 ${
@@ -204,7 +195,7 @@ const StudentAssignments = () => {
              </div>
           )}
        </div>
-    </div>
+    </StudentPageShell>
   );
 };
 

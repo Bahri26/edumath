@@ -30,6 +30,8 @@ const ExerciseSchema = new mongoose.Schema({
   
   isActive: { type: Boolean, default: true },
   gameMode: { type: String, enum: ['practice', 'challenge', 'timed'], default: 'practice' }, // Eğlenceli mod
+  /** Öğrenci ekranı: classic = sorunun kayıtlı tipi; game_show = aynı cevapla oyunvari UI (sayı/şekil/büyük seçenekler) */
+  playTransform: { type: String, enum: ['classic', 'game_show'], default: 'classic' },
   pointsPerQuestion: { type: Number, default: 10 }, // Gamification
   timeLimit: { type: Number, default: null }, // dakika cinsinden (null = sınırsız)
   

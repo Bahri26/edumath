@@ -7,6 +7,7 @@ import LoginModal from '../components/modals/LoginModal';
 import Chatbox from '../components/ui/Chatbox';
 import FadeIn from '../components/ui/FadeIn';
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { translations } from '../data/translations';
 
 const upsertMeta = (selector, attribute, value) => {
@@ -383,18 +384,15 @@ const audienceContent = {
 const AudienceLandingPage = ({ audience }) => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { isDarkMode, toggleTheme } = useTheme();
   const [lang, setLang] = useState('tr');
-  const [theme, setTheme] = useState('light');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const theme = isDarkMode ? 'dark' : 'light';
 
   const t = translations[lang] || translations.tr;
   const content = audienceContent[lang]?.[audience] || audienceContent.tr.student;
   const HeroIcon = content.heroIcon;
   const canonicalPath = audience === 'student' ? '/students' : audience === 'teacher' ? '/teachers' : '/research';
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
 
   const routeForAudience = () => {
     if (audience === 'student') {
@@ -419,14 +417,6 @@ const AudienceLandingPage = ({ audience }) => {
 
     setIsLoginModalOpen(true);
   };
-
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
 
   useEffect(() => {
     const pageTitle = `Edumath | ${content.title}`;

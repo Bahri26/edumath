@@ -1,24 +1,68 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
-export const ThemeContext = createContext();
+export const ThemeContext = createContext(null);
+
+function readInitialDarkMode() {
+  if (typeof window === 'undefined') return false;
+  try {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark') return true;
+    if (stored === 'light') return false;
+  } catch {
+    // storage disabled
+  }
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
 
 export const ThemeProvider = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => readInitialDarkMode());
 
-  // HTML'ye class ekle/çıkar
   useEffect(() => {
+    const root = document.documentElement;
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
+      try {
+        localStorage.setItem('theme', 'dark');
+      } catch {
+        /* ignore */
+      }
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
+      try {
+        localStorage.setItem('theme', 'light');
+      } catch {
+        /* ignore */
+      }
     }
   }, [isDarkMode]);
 
+  const toggleTheme = useCallback(() => {
+    setIsDarkMode((prev) => !prev);
+  }, []);
+
+  const value = useMemo(
+    () => ({ isDarkMode, setIsDarkMode, toggleTheme }),
+    [isDarkMode, toggleTheme],
+  );
+
   return (
-    <ThemeContext.Provider value={{ isDarkMode, setIsDarkMode }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );
 };
 
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = () => {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) {
+    throw new Error('useTheme must be used within ThemeProvider');
+  }
+  return ctx;
+};

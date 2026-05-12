@@ -36,7 +36,7 @@ const Hero = ({
       desc: t.hero.audienceResearchDesc,
       action: t.hero.audienceResearchCta,
       onClick: onResearchTrackClick,
-      accent: 'from-sky-500/15 to-indigo-500/5 dark:from-sky-400/10 dark:to-indigo-400/5',
+      accent: 'from-sky-500/15 to-brand-500/5 dark:from-sky-400/10 dark:to-brand-400/5',
       border: 'border-sky-200/80 dark:border-sky-800/80',
       badge: t.hero.audienceResearchBadge,
     },
@@ -60,10 +60,10 @@ const Hero = ({
 
       {/* 2. ROZET (BADGE) */}
       <FadeIn delay={0}>
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold text-xs sm:text-sm mb-8 border border-indigo-100 dark:border-indigo-800 animate-bounce-slow">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold text-xs sm:text-sm mb-8 border border-brand-100 dark:border-brand-800 animate-bounce-slow">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
           </span>
           {t.hero.badge}
         </div>
@@ -74,11 +74,11 @@ const Hero = ({
         <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-gray-900 dark:text-white mb-6 leading-[1.1] tracking-tight">
           {t.hero.titleStart} 
           <span className="relative inline-block mx-2">
-            <span className="relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400">
+            <span className="relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-violet-600 dark:from-brand-400 dark:to-violet-400">
               {t.hero.titleHighlight}
             </span>
             {/* Vurgu çizgisi */}
-            <span className="absolute bottom-2 left-0 w-full h-3 bg-indigo-100 dark:bg-indigo-900/40 -z-10 rounded-sm"></span>
+            <span className="absolute bottom-2 left-0 w-full h-3 bg-brand-100 dark:bg-brand-900/40 -z-10 rounded-sm"></span>
           </span>
           <br className="hidden md:block" />
           {t.hero.titleEnd}
@@ -90,7 +90,7 @@ const Hero = ({
         <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 mb-4 max-w-3xl mx-auto leading-relaxed font-medium">
           {t.hero.desc}
         </p>
-        <p className="text-base sm:text-lg text-indigo-700 dark:text-indigo-300 font-semibold mb-12 max-w-2xl mx-auto">
+        <p className="text-base sm:text-lg text-brand-700 dark:text-brand-300 font-semibold mb-12 max-w-2xl mx-auto">
           {t.hero.scope}
         </p>
       </FadeIn>
@@ -100,7 +100,7 @@ const Hero = ({
         <div className="flex flex-col sm:flex-row gap-5 justify-center items-center w-full sm:w-auto">
           <button
             onClick={onPrimaryAction}
-            className="group relative w-full sm:w-auto bg-indigo-600 dark:bg-indigo-500 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all shadow-2xl shadow-indigo-200 dark:shadow-indigo-900/20 flex items-center justify-center gap-2"
+            className="group relative w-full sm:w-auto bg-brand-600 dark:bg-brand-500 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:bg-brand-700 dark:hover:bg-brand-600 transition-all shadow-2xl shadow-brand-200 dark:shadow-brand-900/20 flex items-center justify-center gap-2"
           >
             {t.hero.btnStart}
             <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -110,7 +110,7 @@ const Hero = ({
           
           <button
             onClick={onSecondaryAction}
-            className="w-full sm:w-auto bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-10 py-4 rounded-2xl font-bold text-lg border-2 border-gray-100 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+            className="w-full sm:w-auto bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 px-10 py-4 rounded-2xl font-bold text-lg border-2 border-surface-100 dark:border-surface-700 hover:border-brand-500 dark:hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 transition-all"
           >
             {t.hero.btnMore}
           </button>
@@ -131,7 +131,7 @@ const Hero = ({
               </div>
               <h3 className="mt-4 text-2xl font-black text-gray-900 dark:text-white">{track.title}</h3>
               <p className="mt-3 text-sm sm:text-base leading-7 text-gray-600 dark:text-gray-300">{track.desc}</p>
-              <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400">
+              <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-brand-600 dark:text-brand-400">
                 {track.action}
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -147,7 +147,7 @@ const Hero = ({
         {patternDots.map((i) => (
           <div 
             key={i} 
-            className="w-4 sm:w-6 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-t-lg transition-all duration-1000 animate-pulse"
+            className="w-4 sm:w-6 bg-gradient-to-t from-brand-500 to-violet-400 rounded-t-lg transition-all duration-1000 animate-pulse"
             style={{ 
               height: `${i * 12}px`, 
               animationDelay: `${i * 150}ms`,

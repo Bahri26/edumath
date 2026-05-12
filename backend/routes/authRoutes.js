@@ -10,8 +10,14 @@ const User = require('../models/User'); // User modelini çağırıyoruz
 const RefreshToken = require('../models/RefreshToken');
 const mailer = require('../services/mailerService');
 
-const JWT_SECRET = process.env.JWT_SECRET || "gizli_anahtar_123";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "gizli_yenile_anahtar_123";
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+if (!JWT_SECRET || !String(JWT_SECRET).trim()) {
+  throw new Error('Missing required env var JWT_SECRET');
+}
+if (!JWT_REFRESH_SECRET || !String(JWT_REFRESH_SECRET).trim()) {
+  throw new Error('Missing required env var JWT_REFRESH_SECRET');
+}
 const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
 const REFRESH_TOKEN_EXPIRES_IN_DAYS = parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN_DAYS || '30');
 
@@ -87,6 +93,27 @@ const logAuthTiming = ({ identifier, totalMs, lookupMs, passwordMs, tokenMs, out
   );
 };
 
+const isProd = process.env.NODE_ENV === 'production';
+
+/** İstemciye sızmaması gereken detayları gizler; geliştirmede mesaj bırakır. */
+const sendLoginUnexpectedError = (res, err) => {
+  console.error('[auth/login] Beklenmeyen hata:', err?.message || err);
+  if (err?.stack && !isProd) {
+    console.error(err.stack);
+  }
+  const body = {
+    success: false,
+    code: 'LOGIN_INTERNAL',
+    message: isProd
+      ? 'Giriş sırasında beklenmeyen bir sorun oluştu. Lütfen tekrar deneyin.'
+      : `Giriş hatası: ${err?.message || 'bilinmeyen'}`,
+  };
+  if (!isProd && err?.stack) {
+    body.stack = err.stack;
+  }
+  return res.status(500).json(body);
+};
+
 const syncUserLoginIdentifiers = async (user) => {
   if (!user) {
     return;
@@ -152,8 +179,12 @@ router.post('/register', validate(registerSchema), async (req, res) => {
 
     return res.status(201).json({ message: "Kayıt oluşturuldu, admin onayı bekleniyor." });
   } catch (error) {
-    console.error("Register Hatası:", error); // Terminalde hatayı gösterir
-    res.status(500).json({ message: "Sunucu hatası: " + error.message });
+    console.error('Register Hatası:', error);
+    res.status(500).json({
+      success: false,
+      code: 'REGISTER_INTERNAL',
+      message: isProd ? 'Kayıt sırasında bir sorun oluştu. Lütfen tekrar deneyin.' : `Sunucu hatası: ${error.message}`,
+    });
   }
 });
 
@@ -209,8 +240,33 @@ router.post('/login', validate(loginSchema), async (req, res) => {
       return res.status(403).json({ message: 'Hesabınız devre dışı bırakılmış.' });
     }
 
+    const storedHash = user.password;
+    if (!storedHash || typeof storedHash !== 'string') {
+      outcome = 'no_password_hash';
+      statusCode = 400;
+      return res.status(400).json({
+        success: false,
+        code: 'AUTH_NO_PASSWORD',
+        message: 'Bu hesap için şifre ile giriş tanımlı değil.',
+      });
+    }
+
     const passwordStartedAt = performance.now();
-    const isMatch = await bcrypt.compare(password, user.password);
+    let isMatch = false;
+    try {
+      isMatch = await bcrypt.compare(password, storedHash);
+    } catch (compareErr) {
+      console.error('[auth/login] bcrypt.compare hatası:', compareErr?.message || compareErr);
+      outcome = 'bcrypt_error';
+      statusCode = 500;
+      return res.status(500).json({
+        success: false,
+        code: 'AUTH_VERIFY_FAILED',
+        message: isProd
+          ? 'Giriş doğrulanamadı. Lütfen tekrar deneyin.'
+          : `Şifre doğrulama hatası: ${compareErr?.message || 'bilinmeyen'}`,
+      });
+    }
     passwordMs = performance.now() - passwordStartedAt;
     if (!isMatch) {
       outcome = 'invalid_password';
@@ -226,7 +282,20 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     // Refresh token'ı DB'ye (hash'lenmiş olarak) kaydet ve expiry ayarla
     const hashed = hashToken(refreshToken);
     const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000);
-    await RefreshToken.create({ user: user._id, hashedToken: hashed, expiresAt });
+    try {
+      await RefreshToken.create({ user: user._id, hashedToken: hashed, expiresAt });
+    } catch (rtErr) {
+      console.error('[auth/login] RefreshToken kayıt hatası:', rtErr?.message || rtErr);
+      outcome = 'refresh_store_failed';
+      statusCode = 500;
+      return res.status(500).json({
+        success: false,
+        code: 'AUTH_SESSION_STORE_FAILED',
+        message: isProd
+          ? 'Oturum kaydedilemedi. Lütfen tekrar deneyin.'
+          : `Refresh token: ${rtErr?.message || 'bilinmeyen'}`,
+      });
+    }
     tokenMs = performance.now() - tokenStartedAt;
     outcome = 'success';
     statusCode = 200;
@@ -237,8 +306,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email, role: user.role, status: user.status, mustChangePassword: user.mustChangePassword } 
     });
   } catch (error) {
-    console.error("Login Hatası:", error);
-    res.status(500).json({ message: "Giriş hatası: " + error.message });
+    sendLoginUnexpectedError(res, error);
   } finally {
     const identifier = String(req.body?.email || '').trim();
     const totalMs = performance.now() - startedAt;

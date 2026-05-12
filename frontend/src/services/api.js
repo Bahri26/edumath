@@ -138,6 +138,12 @@ export const registerApiErrorNotifier = (fn) => {
     apiErrorNotifier = typeof fn === 'function' ? fn : null;
 };
 
+// Optional auth failure handler (e.g. 401 -> logout)
+let authFailureHandler = null;
+export const registerAuthFailureHandler = (fn) => {
+    authFailureHandler = typeof fn === 'function' ? fn : null;
+};
+
 const apiClient = axios.create({
     baseURL: API_BASE,
     headers: {
@@ -241,14 +247,20 @@ apiClient.interceptors.response.use(
 
         if (status === 401) {
             console.warn('Oturum süresi doldu, çıkış yapılıyor...');
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/';
+            try {
+                authFailureHandler?.(error);
+            } catch {
+                /* ignore */
+            }
         }
         // Global toast-based error handling (non-401)
         try {
-            if (apiErrorNotifier && status !== 401) {
-                const path = error?.config?.url || '';
+            const path = error?.config?.url || '';
+            // LoginModal / kayıt formu kendi hata alanında gösterir; çift uyarıyı önle
+            const suppressGlobalToast =
+                (path.includes('/auth/login') || path.includes('/auth/register')) &&
+                (status >= 400 || error?.code === 'ECONNABORTED' || !error?.response);
+            if (apiErrorNotifier && status !== 401 && !suppressGlobalToast) {
                 const msg = error?.response?.data?.message || error.message || 'Beklenmeyen hata';
                 if (error?.code === 'ECONNABORTED') {
                     const timeoutMessage = path.includes('/auth/login')

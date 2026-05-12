@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Brain, CheckCircle, X } from 'lucide-react';
 import StudentHint from '../StudentHint.jsx';
+import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
 
 // This component handles the display and interaction of AI-generated practice questions.
 const AIPractice = ({ questions }) => {
@@ -47,7 +48,11 @@ const AIPractice = ({ questions }) => {
                 <span className="bg-purple-50 text-purple-700 font-bold px-3 py-1 rounded-lg text-sm">Soru {idx + 1}</span>
               </div>
               
-              <p className="text-lg font-medium text-slate-800 dark:text-white mb-6">{q.text || q.questionText}</p>
+              <QuestionTextWithPattern
+                text={q.text || q.questionText}
+                mainClassName="text-lg font-medium text-slate-800 dark:text-white"
+                className="mb-6"
+              />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                 {optionsArray.map((opt, i) => {

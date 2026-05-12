@@ -185,7 +185,8 @@ exports.getQuestions = async (req, res, next) => {
       imageProvider: 1,
       options: 1,
       correctAnswer: 1,
-      solution: 1
+      solution: 1,
+      assessmentMeta: 1,
     };
     const sort = searchMeta?.mode === 'text' && effectiveQuery.$and?.some((clause) => clause.$text)
       ? { score: { $meta: 'textScore' }, createdAt: -1 }

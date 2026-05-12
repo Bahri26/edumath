@@ -1,14 +1,12 @@
-import React, { useEffect, useState, useCallback, Fragment, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState, useCallback, Fragment } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import QuestionFormModal from '../../components/exams/QuestionFormModal';
 import SmartPasteModal from '../../components/modals/SmartPasteModal'; // AI Yapıştır Modalı
-import AiGenerateQuizModal from '../../components/modals/AiGenerateQuizModal';
 import {
   Plus, Edit2, Trash2, Search, FileText, Layers,
   ChevronLeft, ChevronRight, Star,
   Sparkles, Hash,
   LayoutGrid,
-  Wand2,
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -19,6 +17,8 @@ import SkeletonCard from '../../components/ui/SkeletonCard';
 import { renderWithLatex } from '../../utils/latex.jsx';
 import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
 import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
+import CollapsiblePanel from '../../components/ui/CollapsiblePanel.jsx';
+import QuestionTextWithPattern from '../../components/questions/QuestionTextWithPattern.jsx';
 import {
   PATTERN_TOPIC_ORDER,
   PATTERN_TOPIC_ALL_UNDER,
@@ -31,12 +31,35 @@ const MATH_TOPIC_OPTIONS_FALLBACK = [
   ...PATTERN_TOPIC_ORDER,
 ];
 
+const extractTopicAndCode = (question) => {
+  const rawTopic = String(question?.topic || '').trim();
+  const metaCode = String(question?.assessmentMeta?.code || '').trim();
+  if (metaCode) {
+    return { topicLabel: rawTopic || 'Örüntüler', code: metaCode };
+  }
+
+  // Backward compatibility: topic like "Örüntüler — P-A1"
+  if (/^Örüntüler\s+—\s+P-[A-Z]\d$/iu.test(rawTopic)) {
+    const [left, right] = rawTopic.split('—').map((p) => p.trim());
+    return { topicLabel: left || 'Örüntüler', code: right || '' };
+  }
+
+  return { topicLabel: rawTopic, code: '' };
+};
+
+const getHintText = (question) => String(question?.assessmentMeta?.hint || '').trim();
+const getCodeText = (question) => String(question?.assessmentMeta?.code || '').trim();
+
 const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
   const difficultyStyles = {
     'Kolay': 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400',
     'Orta': 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400',
     'Zor': 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400',
   };
+
+  const { topicLabel, code: topicCode } = extractTopicAndCode(question);
+  const hintText = getHintText(question);
+  const codeText = getCodeText(question);
 
   return (
     <div className={`group relative bg-white dark:bg-slate-800 rounded-[1.5rem] border transition-all duration-300 ${
@@ -57,15 +80,18 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
               <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
                 {question.subject}
               </span>
-              {question.topic && (
+              {topicLabel && (
                 <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 border border-violet-100 dark:border-violet-800/40">
-                  {question.topic}
+                  {topicLabel}
+                </span>
+              )}
+              {topicCode && (
+                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-fuchsia-50 dark:bg-fuchsia-900/20 text-fuchsia-700 dark:text-fuchsia-300 border border-fuchsia-100 dark:border-fuchsia-800/40">
+                  {topicCode}
                 </span>
               )}
             </div>
-            <div className="text-slate-800 dark:text-slate-200 font-medium text-base md:text-lg">
-              {renderWithLatex(question.text)}
-            </div>
+            <QuestionTextWithPattern text={question.text} />
           </div>
           <div className="flex md:flex-col gap-2 opacity-60 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300" onClick={e => e.stopPropagation()}>
             <button onClick={() => onEdit(question)} className="p-2.5 bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-indigo-600 transition-all">
@@ -105,14 +131,29 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
               </div>
             ))}
           </div>
-          {question.solution && (
-            <div className="p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
-              <div className="flex items-center gap-2 mb-3 text-indigo-600 font-black text-[10px] uppercase">
-                <Sparkles size={14} /> Adım adım çözüm
-              </div>
-              <SolutionDisplay text={question.solution} className="italic" />
-            </div>
+
+          {(hintText || codeText) && (
+            <CollapsiblePanel title="İpucu" className="bg-amber-50/60 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/40">
+              {codeText && (
+                <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-amber-700/80 dark:text-amber-200/80">
+                  Kod: <span className="text-amber-900 dark:text-amber-100">{codeText}</span>
+                </div>
+              )}
+              {hintText ? (
+                <div className="text-sm text-amber-900 dark:text-amber-100">{renderWithLatex(hintText)}</div>
+              ) : (
+                <div className="text-sm text-amber-800/80 dark:text-amber-200/80">İpucu eklenmemiş.</div>
+              )}
+            </CollapsiblePanel>
           )}
+
+          <CollapsiblePanel title="Adım adım çözüm" defaultOpen={false} className="bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-800/50">
+            {question.solution ? (
+              <SolutionDisplay text={question.solution} className="italic" />
+            ) : (
+              <div className="text-sm text-slate-600 dark:text-slate-300">Çözüm eklenmemiş.</div>
+            )}
+          </CollapsiblePanel>
         </div>
       )}
     </div>
@@ -129,7 +170,6 @@ export default function QuestionBank() {
   const [expandedId, setExpandedId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSmartPasteOpen, setIsSmartPasteOpen] = useState(false);
-  const [isAiGenerateOpen, setIsAiGenerateOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [manualForm, setManualForm] = useState(null);
   const [mainImage, setMainImage] = useState({ file: null, preview: '' });
@@ -228,15 +268,7 @@ export default function QuestionBank() {
     setSearchParams(params, { replace: true });
   }, [debouncedSearch, filters, page, setSearchParams]);
 
-  const aiFilterDefaults = useMemo(
-    () => ({
-      subject: filters.subject,
-      topic: filters.topic,
-      classLevel: filters.classLevel,
-      difficulty: filters.difficulty,
-    }),
-    [filters.subject, filters.topic, filters.classLevel, filters.difficulty]
-  );
+  // (aiFilterDefaults removed along with AI generate modal)
 
   const fetchQuestions = useCallback(async () => {
     if (!profileLoaded) {
@@ -341,12 +373,6 @@ export default function QuestionBank() {
         </div>
 
         <div className="flex flex-wrap gap-3 justify-end">
-          <Link
-            to="/teacher/pattern-builder"
-            className="inline-flex items-center gap-2 px-6 py-4 rounded-2xl border-2 border-violet-500/80 text-violet-700 dark:text-violet-300 dark:border-violet-500/50 font-bold text-sm hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-colors"
-          >
-            <LayoutGrid size={20} /> Örüntü şablonu
-          </Link>
           <Button
             variant="outline"
             size="md"
@@ -356,16 +382,6 @@ export default function QuestionBank() {
             className="px-6 py-4 rounded-2xl border-2 border-indigo-600 text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Sparkles size={20} /> Akıllı Yapıştır
-          </Button>
-          <Button
-            variant="outline"
-            size="md"
-            onClick={() => setIsAiGenerateOpen(true)}
-            disabled={profile.branchApproval !== 'approved'}
-            title={profile.branchApproval !== 'approved' ? 'Branş onayından sonra kullanılabilir' : ''}
-            className="px-6 py-4 rounded-2xl border-2 border-violet-600 text-violet-700 dark:text-violet-300 dark:border-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Wand2 size={20} /> AI ile çoktan seçmeli
           </Button>
 
           <Button
@@ -566,23 +582,6 @@ export default function QuestionBank() {
           lockedSubject={profile.branchApproval === 'approved' ? profile.branch : undefined}
           onClose={() => { setIsModalOpen(false); setEditingQuestion(null); setManualForm(null); setMainImage({file:null, preview:''}); }}
           onSave={() => { fetchQuestions(); setIsModalOpen(false); setEditingQuestion(null); setManualForm(null); setMainImage({file:null, preview:''}); }}
-        />
-      )}
-
-      {isAiGenerateOpen && (
-        <AiGenerateQuizModal
-          isOpen={isAiGenerateOpen}
-          onClose={() => setIsAiGenerateOpen(false)}
-          profile={profile}
-          filterDefaults={aiFilterDefaults}
-          onSaved={fetchQuestions}
-          onRequestEditOne={(form) => {
-            setEditingQuestion(null);
-            setManualForm(form);
-            setMainImage({ file: null, preview: '' });
-            setIsAiGenerateOpen(false);
-            setIsModalOpen(true);
-          }}
         />
       )}
 

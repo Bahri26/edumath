@@ -8,7 +8,7 @@ import { ThemeContext } from '../context/ThemeContext.jsx';
 import { LanguageContext } from '../context/LanguageContext.jsx';
 
 const mockAuth = { user: { name: 'Test User', role: 'student' }, logout: () => {} };
-const mockTheme = { isDarkMode: false, setIsDarkMode: () => {} };
+const mockTheme = { isDarkMode: false, setIsDarkMode: () => {}, toggleTheme: () => {} };
 const mockLanguage = { language: 'TR' };
 
 const navMenuItems = [

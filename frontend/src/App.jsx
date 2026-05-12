@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import {
   BookOpen, FileText, CheckCircle, Trophy, LayoutGrid, Users, BarChart2,
-  Calendar, Target, MessageSquare,
+  Calendar, Target, MessageSquare, ClipboardList,
 } from 'lucide-react';
 import DashboardLayout from './pages/DashboardLayout';
 import { ThemeProvider } from './context/ThemeContext';
@@ -60,9 +60,9 @@ function App() {
     <ThemeProvider>
       <LanguageProvider>
         <Suspense fallback={(
-          <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 gap-3" role="status" aria-live="polite">
-            <div className="h-10 w-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
-            <span className="text-sm text-slate-500 dark:text-slate-300">Yükleniyor…</span>
+          <div className="min-h-screen flex flex-col items-center justify-center bg-surface-50 dark:bg-surface-900 gap-3" role="status" aria-live="polite">
+            <div className="h-10 w-10 rounded-full border-4 border-brand-200 border-t-brand-600 animate-spin" />
+            <span className="text-sm text-surface-500 dark:text-surface-300">Yükleniyor…</span>
           </div>
         )}>
           <ErrorBoundary>
@@ -91,7 +91,9 @@ function App() {
                   { id: 'skill-tree', label: 'Kazanım Ağacı', icon: LayoutGrid, path: '/teacher/skill-tree' },
                   { id: 'student-progress', label: 'Öğrenci İlerleme', icon: Users, path: '/teacher/student-progress' },
                   { id: 'reports', label: 'Raporlar', icon: BarChart2, path: '/teacher/reports' },
-                  { id: 'surveys', label: 'Anketler', icon: FileText, path: '/teacher/surveys' },
+                ]}
+                profileMenuExtras={[
+                  { id: 'surveys', label: 'Anketler', icon: ClipboardList, path: '/teacher/surveys' },
                 ]}
               />
             </ProtectedRoute>

@@ -1,8 +1,11 @@
 // src/components/modals/LoginModal.jsx
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useId } from 'react';
 import { X, Mail, Lock, User, BookOpen, Briefcase, Loader2, ArrowRight, LogIn, UserPlus, AlertCircle, CheckCircle, GraduationCap } from 'lucide-react';
-import { AuthContext } from '../../context/AuthContext'; 
-import apiClient, { withAuthRequestConfig } from '../../services/api'; 
+import { AuthContext } from '../../context/AuthContext';
+import apiClient, { withAuthRequestConfig } from '../../services/api';
+import Input from '../ui/Input.jsx';
+import Select from '../ui/Select.jsx';
+import { getFriendlyApiError } from '../../utils/apiErrorMessage.js';
 
 const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
   const [isLoginView, setIsLoginView] = useState(true); 
@@ -19,9 +22,8 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
     schoolType: 'lise' // Varsayılan kademe
   });
 
-  const { login } = useContext(AuthContext); 
-
-  if (!isOpen) return null;
+  const { login } = useContext(AuthContext);
+  const fid = useId().replace(/:/g, '');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -64,23 +66,10 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
         setFormData(prev => ({ ...prev, password: '' }));
       }
     } catch (err) {
-      console.error("İşlem hatası:", err);
-      const status = err.response?.status;
-      const details = err.response?.data?.details;
-      const rawMsg = err.response?.data?.message || err.message || "";
-      let friendly = rawMsg;
-      if (Array.isArray(details) && details.length > 0) {
-        // Joi detaylarını daha anlaşılır hale getir
-        friendly = details.map(d => (typeof d.message === 'string' ? d.message : '')).join('\n');
+      if (import.meta.env.DEV) {
+        console.warn('Giriş / kayıt isteği başarısız:', err?.response?.status, err?.response?.data ?? err?.message);
       }
-      if (!friendly) {
-        if (status === 400) friendly = 'Form verileri geçersiz. Lütfen alanları kontrol edin.';
-        else if (status >= 500) friendly = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.';
-        else friendly = 'Bir hata oluştu. Lütfen tekrar deneyin.';
-      }
-      if (err.code === 'ECONNABORTED') {
-        friendly = 'Giriş isteği zaman aşımına uğradı. Sunucu geç cevap veriyor; lütfen tekrar deneyin.';
-      }
+      const { message: friendly } = getFriendlyApiError(err);
       setError(friendly);
     } finally {
       setLoading(false);
@@ -93,6 +82,8 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
     setSuccess(null);
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden flex flex-col max-h-[90vh]">
@@ -100,7 +91,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
         <button onClick={onClose} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors z-10"><X size={24} /></button>
 
         <div className="p-8 pb-0 text-center">
-          <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+          <div className="w-16 h-16 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
             {isLoginView ? <LogIn size={28} className="ml-1" /> : <UserPlus size={28} />}
           </div>
           <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
@@ -121,11 +112,11 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
               <>
                 {/* ROL SEÇİMİ */}
                 <div className="grid grid-cols-2 gap-3 mb-2">
-                  <button type="button" onClick={() => setFormData({...formData, role: 'student'})} className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${formData.role === 'student' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 ring-1 ring-indigo-500' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                  <button type="button" onClick={() => setFormData({...formData, role: 'student'})} className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${formData.role === 'student' ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600 ring-1 ring-brand-500' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                     <BookOpen size={20} />
                     <span className="text-sm font-medium">Öğrenci</span>
                   </button>
-                  <button type="button" onClick={() => setFormData({...formData, role: 'teacher'})} className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${formData.role === 'teacher' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 ring-1 ring-indigo-500' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                  <button type="button" onClick={() => setFormData({...formData, role: 'teacher'})} className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${formData.role === 'teacher' ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600 ring-1 ring-brand-500' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                     <Briefcase size={20} />
                     <span className="text-sm font-medium">Öğretmen</span>
                   </button>
@@ -135,35 +126,37 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
                 {formData.role === 'student' && (
                   <>
                   <div className="space-y-1 animate-fade-in">
-                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Kademe</label>
+                    <label htmlFor={`${fid}-school`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Kademe</label>
                     <div className="relative">
-                      <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                      <select
+                      <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} aria-hidden />
+                      <Select
+                        id={`${fid}-school`}
                         name="schoolType"
                         value={formData.schoolType}
                         onChange={handleChange}
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors appearance-none cursor-pointer"
+                        className="pl-10 pr-4"
                       >
                         <option value="ilkokul">İlkokul</option>
                         <option value="ortaokul">Ortaokul</option>
                         <option value="lise">Lise</option>
-                      </select>
+                      </Select>
                     </div>
                   </div>
                   <div className="space-y-1 animate-fade-in">
-                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Sınıf Seviyesi</label>
+                    <label htmlFor={`${fid}-grade`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Sınıf Seviyesi</label>
                     <div className="relative">
-                      <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                      <select 
+                      <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} aria-hidden />
+                      <Select
+                        id={`${fid}-grade`}
                         name="grade"
                         value={formData.grade}
                         onChange={handleChange}
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors appearance-none cursor-pointer"
+                        className="pl-10 pr-4"
                       >
-                        {['1. Sınıf', '2. Sınıf', '3. Sınıf', '4. Sınıf', '5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf', '9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf', 'Mezun'].map(cls => (
-                           <option key={cls} value={cls}>{cls}</option>
+                        {['1. Sınıf', '2. Sınıf', '3. Sınıf', '4. Sınıf', '5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf', '9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf', 'Mezun'].map((cls) => (
+                          <option key={cls} value={cls}>{cls}</option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                   </div>
                   </>
@@ -171,35 +164,65 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
 
                 {/* AD SOYAD */}
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Ad Soyad</label>
+                  <label htmlFor={`${fid}-name`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Ad Soyad</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input type="text" name="name" required placeholder="Adınız Soyadınız" value={formData.name} onChange={handleChange} className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} aria-hidden />
+                    <Input
+                      id={`${fid}-name`}
+                      type="text"
+                      name="name"
+                      required
+                      placeholder="Adınız Soyadınız"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="pl-10 pr-4"
+                      autoComplete="name"
+                    />
                   </div>
                 </div>
               </>
             )}
 
             <div className="space-y-1">
-               <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">{isLoginView ? 'E-Posta veya Kullanıcı Adı' : 'E-Posta'}</label>
-               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input type={isLoginView ? 'text' : 'email'} name="email" required placeholder={isLoginView ? 'ornek@edumath.com veya BahadirTeacher' : 'ornek@edumath.com'} value={formData.email} onChange={handleChange} className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors" />
+              <label htmlFor={`${fid}-email`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">{isLoginView ? 'E-Posta veya Kullanıcı Adı' : 'E-Posta'}</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} aria-hidden />
+                <Input
+                  id={`${fid}-email`}
+                  type={isLoginView ? 'text' : 'email'}
+                  name="email"
+                  required
+                  placeholder={isLoginView ? 'ornek@edumath.com veya BahadirTeacher' : 'ornek@edumath.com'}
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="pl-10 pr-4"
+                  autoComplete={isLoginView ? 'username' : 'email'}
+                />
               </div>
             </div>
 
             <div className="space-y-1">
-               <label className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Şifre</label>
-               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input type="password" name="password" required placeholder="••••••••" value={formData.password} onChange={handleChange} className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors" />
+              <label htmlFor={`${fid}-password`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Şifre</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} aria-hidden />
+                <Input
+                  id={`${fid}-password`}
+                  type="password"
+                  name="password"
+                  required
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="pl-10 pr-4"
+                  autoComplete={isLoginView ? 'current-password' : 'new-password'}
+                />
               </div>
             </div>
 
             {isLoginView && (
               <div className="flex justify-between items-center text-sm">
-                <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400 cursor-pointer"><input type="checkbox" className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" /> Beni Hatırla</label>
-                <button type="button" className="text-indigo-600 font-medium hover:underline"
+                <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400 cursor-pointer"><input type="checkbox" className="rounded border-slate-300 text-brand-600 focus:ring-brand-500" /> Beni Hatırla</label>
+                <button type="button" className="text-brand-600 font-medium hover:underline"
                   onClick={async () => {
                     try {
                       if (!formData.email) {
@@ -220,14 +243,14 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
               </div>
             )}
 
-            <button type="submit" disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+            <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-200/60 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
               {loading ? <Loader2 className="animate-spin" size={20} /> : <>{isLoginView ? 'Giriş Yap' : 'Kayıt Ol'} <ArrowRight size={20} /></>}
             </button>
           </form>
 
           <div className="mt-6 text-center text-sm text-slate-500">
             {isLoginView ? 'Hesabınız yok mu? ' : 'Zaten hesabınız var mı? '}
-            <button onClick={toggleView} className="text-indigo-600 font-bold hover:underline">{isLoginView ? 'Kayıt Ol' : 'Giriş Yap'}</button>
+            <button type="button" onClick={toggleView} className="text-brand-600 font-bold hover:underline">{isLoginView ? 'Kayıt Ol' : 'Giriş Yap'}</button>
           </div>
 
         </div>

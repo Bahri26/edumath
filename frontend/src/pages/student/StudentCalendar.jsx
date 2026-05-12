@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useContext } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { LanguageContext } from '../../context/LanguageContext';
+import StudentPageShell from '../../components/student/StudentPageShell.jsx';
 
 const StudentCalendar = () => {
   const { language } = useContext(LanguageContext);
@@ -9,11 +10,15 @@ const StudentCalendar = () => {
   const t = {
     TR: {
       calendar: "Takvim",
+      calendarSubtitle: "Akademik takvimini yönet ve önemli etkinlikleri takip et.",
+      demoData: "Demo veri",
       upcomingEvents: "Yaklaşan Etkinlikler",
       noEvents: "Bu gün etkinlik yok",
     },
     EN: {
       calendar: "Calendar",
+      calendarSubtitle: "Stay on top of deadlines and exams.",
+      demoData: "Demo data",
       upcomingEvents: "Upcoming Events",
       noEvents: "No events today",
     }
@@ -97,20 +102,18 @@ const StudentCalendar = () => {
     .slice(0, 5);
 
   return (
-    <div className="animate-fade-in max-w-6xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl">
-            <Calendar size={24} className="text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Takvim</h1>
+    <StudentPageShell
+      title={getText('calendar')}
+      subtitle={getText('calendarSubtitle')}
+      headerAside={(
+        <div className="p-3 bg-sky-100 dark:bg-sky-900/30 rounded-2xl border border-sky-200/60 dark:border-slate-600">
+          <CalendarIcon size={24} className="text-teal-600 dark:text-teal-400" aria-hidden />
         </div>
-        <p className="text-slate-600 dark:text-slate-400">Akademik takvimini yönet ve önemli etkinlikleri takip et.</p>
-        <p className="text-[11px] uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold">
-          Demo veri
-        </p>
-      </div>
+      )}
+    >
+      <p className="text-[11px] uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold -mt-4 mb-2">
+        {getText('demoData')}
+      </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Calendar */}
@@ -206,7 +209,7 @@ const StudentCalendar = () => {
 
         {/* Upcoming Events Sidebar */}
         <div className="space-y-4">
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Yaklaşan Etkinlikler</h3>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{getText('upcomingEvents')}</h3>
           
           {upcomingEvents.length > 0 ? (
             <div className="space-y-3">
@@ -246,7 +249,7 @@ const StudentCalendar = () => {
           </div>
         </div>
       </div>
-    </div>
+    </StudentPageShell>
   );
 };
 

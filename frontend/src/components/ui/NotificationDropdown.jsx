@@ -12,7 +12,14 @@ const NotificationDropdown = () => {
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
     try {
       const res = await apiClient.get('/notifications');
-      const list = Array.isArray(res.data) ? res.data : [];
+      const raw = res.data;
+      const list = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.data)
+          ? raw.data
+          : Array.isArray(raw?.notifications)
+            ? raw.notifications
+            : [];
       setNotifications(list);
       setUnreadCount(list.filter(n => !n.isRead).length);
     } catch (error) {
@@ -96,7 +103,7 @@ const NotificationDropdown = () => {
           <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
             <h3 className="font-bold text-slate-800 dark:text-white">Bildirimler ({unreadCount})</h3>
             {unreadCount > 0 && (
-              <button onClick={markAllRead} className="text-xs text-indigo-600 font-medium hover:underline flex items-center gap-1">
+              <button onClick={markAllRead} className="text-xs text-brand-600 font-medium hover:underline flex items-center gap-1">
                 <Check size={14}/> Tümünü Oku
               </button>
             )}
@@ -111,7 +118,7 @@ const NotificationDropdown = () => {
                     <div 
                         key={notif._id} 
                         onClick={() => !notif.isRead && markAsRead(notif._id)}
-                        className={`p-4 border-b border-slate-50 dark:border-slate-700/50 flex gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer group ${!notif.isRead ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''}`}
+                        className={`p-4 border-b border-slate-50 dark:border-slate-700/50 flex gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer group ${!notif.isRead ? 'bg-brand-50/50 dark:bg-brand-900/10' : ''}`}
                     >
                         <div className="mt-1">{getIcon(notif.type)}</div>
                         <div className="flex-1">

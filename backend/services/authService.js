@@ -3,13 +3,19 @@ const jwt = require('jsonwebtoken');
 
 // Helper: JWT Token Oluştur
 const generateToken = (user) => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || String(secret).trim() === '') {
+    const error = new Error('Missing required env var JWT_SECRET');
+    error.statusCode = 500;
+    throw error;
+  }
   return jwt.sign(
     { 
       id: user._id, 
       email: user.email, 
       role: user.role 
     },
-    process.env.JWT_SECRET || 'gizli_anahtar_123',
+    secret,
     { expiresIn: '7d' }
   );
 };

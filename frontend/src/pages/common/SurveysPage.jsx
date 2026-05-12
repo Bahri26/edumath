@@ -4,6 +4,7 @@ import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import SkeletonCard from '../../components/ui/SkeletonCard';
 import { useSearchParams } from 'react-router-dom';
+import StudentPageShell from '../../components/student/StudentPageShell.jsx';
 
 const SurveysPage = ({ role }) => {
   const { showToast } = useToast();
@@ -235,25 +236,24 @@ const SurveysPage = ({ role }) => {
     </div>
   );
 
-  return (
-    <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
-      {/* BAŞLIK */}
+  const surveysBody = (
+    <>
+      {role === 'teacher' && (
       <div className="flex justify-between items-center">
         <div>
            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Anketler</h2>
            <p className="text-slate-500 text-sm">
-             {role === 'teacher' ? 'Öğrenciler için anket veya oylama oluştur.' : 'Aktif anketlere katıl.'}
+             Öğrenciler için anket veya oylama oluştur.
            </p>
         </div>
-        {role === 'teacher' && (
           <button 
             onClick={() => setShowForm(!showForm)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-colors"
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-colors min-h-[44px]"
           >
             <Plus size={18}/> {showForm ? 'İptal' : 'Yeni Anket'}
           </button>
-        )}
       </div>
+      )}
 
       {/* --- ÖĞRETMEN: ANKET OLUŞTURMA FORMU --- */}
       {role === 'teacher' && showForm && (
@@ -561,6 +561,20 @@ const SurveysPage = ({ role }) => {
           </div>
         )}
       </div>
+    </>
+  );
+
+  if (role === 'student') {
+    return (
+      <StudentPageShell title="Anketler" subtitle="Aktif anketlere katıl, görüşlerini paylaş." maxWidthClass="max-w-4xl">
+        <div className="space-y-6">{surveysBody}</div>
+      </StudentPageShell>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
+      {surveysBody}
     </div>
   );
 };

@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import apiClient from '../../services/api';
 import QuestionVisual from '../questions/QuestionVisual.jsx';
+import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
 import { MatchingPracticeCard, SequencePracticeCard } from './InteractivePracticeCards.jsx';
+import { useToast } from '../../context/ToastContext';
 
 const optionLabel = (opt) => {
   if (opt == null) return '';
@@ -15,6 +17,7 @@ const ActiveExam = ({ exam, onFinish }) => {
   const [timeLeft, setTimeLeft] = useState(exam.duration * 60);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const timerRef = useRef(null);
+  const { showToast } = useToast();
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -39,7 +42,7 @@ const ActiveExam = ({ exam, onFinish }) => {
       });
       onFinish(res.data);
     } catch {
-      alert("Sınav gönderilirken hata oluştu.");
+      showToast?.('Sınav gönderilirken hata oluştu.', 'error', 3500);
     }
   };
 
@@ -158,6 +161,7 @@ const ActiveExam = ({ exam, onFinish }) => {
 
   const currentQ = exam.questions[currentQuestion];
   const mcOptions = Array.isArray(currentQ?.options) ? currentQ.options : [];
+  const hintText = String(currentQ?.assessmentMeta?.hint || '').trim();
 
   return (
     <div className="fixed inset-0 z-50 bg-white dark:bg-slate-900 overflow-y-auto">
@@ -223,7 +227,10 @@ const ActiveExam = ({ exam, onFinish }) => {
               <span className="inline-block bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-bold px-3 py-1 rounded-lg mb-3">
                 Soru {currentQuestion + 1} / {exam.questions.length}
               </span>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">{exam.questions[currentQuestion].text}</h3>
+              <QuestionTextWithPattern
+                text={exam.questions[currentQuestion].text}
+                mainClassName="text-xl font-bold text-slate-900 dark:text-white"
+              />
             </div>
             <span className={`px-3 py-1 rounded-lg text-xs font-bold text-white whitespace-nowrap ${
               currentQ.difficulty === 'Zor' 
@@ -301,6 +308,12 @@ const ActiveExam = ({ exam, onFinish }) => {
                   </label>
                 );
               })}
+              {hintText && (
+                <div className="mt-3 px-4 py-3 rounded-xl bg-amber-50/70 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/40 text-amber-800 dark:text-amber-200 text-sm">
+                  <span className="font-black uppercase tracking-wider text-[10px] text-amber-700/80 dark:text-amber-200/80">İpucu</span>
+                  <div className="mt-1">{hintText}</div>
+                </div>
+              )}
             </div>
           )}
         </div>

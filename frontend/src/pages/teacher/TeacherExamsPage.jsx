@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { 
+import { Link } from 'react-router-dom';
+import {
   Plus, FileText, Trash2, Eye, Search,
-  Clock, Award, Layers, Save, Sparkles, 
+  Clock, Award, Layers, Save, Sparkles,
   ChevronLeft, ChevronRight, Calendar, ArrowLeft, GripVertical,
 } from 'lucide-react';
 import apiClient, { resolveAssetUrl } from '../../services/api';
@@ -9,9 +10,11 @@ import { useToast } from '../../context/ToastContext';
 import 'katex/dist/katex.min.css';
 import { CLASS_LEVELS } from '../../data/classLevelsAndDifficulties';
 import SkeletonCard from '../../components/ui/SkeletonCard';
+import EmptyState from '../../components/ui/EmptyState.jsx';
 import { renderWithLatex } from '../../utils/latex.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
+import Select from '../../components/ui/Select.jsx';
 import ExamPreviewModal from '../../components/exams/ExamPreviewModal.jsx';
 
 // --- Alt Bileşenler (Stüdyo için) ---
@@ -24,7 +27,7 @@ const DraggableQuestionCard = ({ question, onDragStart, onAddClick }) => {
         draggable
         title="Sürükleyip ilgili zorluk kutusuna bırakın (Kolay / Orta / Zor)"
         onDragStart={(e) => onDragStart(e)}
-        className="shrink-0 w-11 flex flex-col items-center justify-center border-r border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/50 cursor-grab active:cursor-grabbing text-slate-400 hover:text-indigo-500 py-2"
+        className="shrink-0 w-11 flex flex-col items-center justify-center border-r border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/50 cursor-grab active:cursor-grabbing text-slate-400 hover:text-brand-600 py-2"
         aria-label="Sürükleyip zorluk kutusuna bırak"
       >
         <GripVertical size={18} />
@@ -33,7 +36,7 @@ const DraggableQuestionCard = ({ question, onDragStart, onAddClick }) => {
         type="button"
         onClick={onAddClick}
         title="Tek tık: soru doğru zorluk sütununa eklenir (en fazla 7)"
-        className="flex-1 text-left p-3 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-none"
+        className="flex-1 text-left p-3 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-none"
       >
         <div className="flex items-center gap-2 mb-2">
           <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase ${
@@ -41,10 +44,10 @@ const DraggableQuestionCard = ({ question, onDragStart, onAddClick }) => {
           }`}>
             {question.difficulty}
           </span>
-          <span className="text-[9px] font-bold text-indigo-500">Tıkla → ekle</span>
+          <span className="text-[9px] font-bold text-brand-600 dark:text-brand-400">Tıkla → ekle</span>
         </div>
         {imgSrc ? (
-          <div className="mb-2 h-14 w-full flex items-center justify-center rounded-xl bg-gradient-to-br from-slate-50 to-indigo-50/40 dark:from-slate-900 dark:to-indigo-950/20 border border-slate-100 dark:border-slate-700 overflow-hidden">
+          <div className="mb-2 h-14 w-full flex items-center justify-center rounded-xl bg-gradient-to-br from-slate-50 to-brand-50/50 dark:from-slate-900 dark:to-brand-950/20 border border-slate-100 dark:border-slate-700 overflow-hidden">
             <img src={imgSrc} alt="" className="max-h-full max-w-full object-contain" />
           </div>
         ) : null}
@@ -380,23 +383,61 @@ export default function TeacherExamsPage() {
     return (
       <div className="p-6 space-y-8 animate-in slide-in-from-right duration-500">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <button type="button" onClick={() => {
-            const hasUnsaved = easyQ.length + mediumQ.length + hardQ.length > 0;
-            if (hasUnsaved && !window.confirm('Stüdyodan çıkmak üzeresin. Eklenmiş sorular kaybolacak, emin misin?')) return;
-            setView('list');
-          }} className="flex items-center gap-2 text-slate-500 font-bold hover:text-indigo-600 transition-all shrink-0">
-            <ArrowLeft size={20} /> Listeye Dön
-          </button>
+          <Button
+            type="button"
+            variant="outline"
+            size="md"
+            onClick={() => {
+              const hasUnsaved = easyQ.length + mediumQ.length + hardQ.length > 0;
+              if (hasUnsaved && !window.confirm('Stüdyodan çıkmak üzeresin. Eklenmiş sorular kaybolacak, emin misin?')) return;
+              setView('list');
+            }}
+            className="shrink-0"
+            icon={ArrowLeft}
+          >
+            Listeye dön
+          </Button>
           <input
             type="text"
             value={examName}
             onChange={(e) => setExamName(e.target.value)}
-            placeholder={`Sınav başlığı (ör. Örüntüler • ${classLevel})`}
-            className="w-full sm:flex-1 sm:max-w-md order-last sm:order-none px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-sm font-semibold outline-none focus:ring-2 focus:ring-indigo-500/30"
+            placeholder={`Sınav başlığı (ör. ${classLevel} yazılısı)`}
+            className="w-full sm:flex-1 sm:max-w-md order-last sm:order-none px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/30"
           />
-          <button type="button" onClick={handleCreate} className="px-10 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 hover:scale-105 transition-all shrink-0">
-            <Save size={20} /> Sınavı Yayınla
-          </button>
+          <div className="flex flex-wrap items-center gap-2 order-first sm:order-none">
+            <span
+              className={`text-[10px] font-black px-2 py-1 rounded-lg uppercase ${
+                easyQ.length >= 7 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+              }`}
+            >
+              Kolay {easyQ.length}/7
+            </span>
+            <span
+              className={`text-[10px] font-black px-2 py-1 rounded-lg uppercase ${
+                mediumQ.length >= 7 ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+              }`}
+            >
+              Orta {mediumQ.length}/7
+            </span>
+            <span
+              className={`text-[10px] font-black px-2 py-1 rounded-lg uppercase ${
+                hardQ.length >= 7 ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-100' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+              }`}
+            >
+              Zor {hardQ.length}/7
+            </span>
+          </div>
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            onClick={handleCreate}
+            disabled={easyQ.length !== 7 || mediumQ.length !== 7 || hardQ.length !== 7}
+            className="shrink-0 px-8 py-3 rounded-2xl font-black shadow-lg shadow-brand-200/50 dark:shadow-none"
+            icon={Save}
+          >
+            Sınavı yayınla
+          </Button>
         </div>
         {/* Üst Ayarlar: Sınıf ve Havuz filtreleri */}
         <div className="grid lg:grid-cols-4 gap-8">
@@ -405,7 +446,11 @@ export default function TeacherExamsPage() {
               <h2 className="text-xl font-black">Soru Havuzu</h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
                 Soruya <strong className="text-slate-700 dark:text-slate-300">tıklayın</strong> — otomatik olarak kendi zorluk sütununa eklenir (her sütunda en fazla <strong>7</strong> soru).
-                Görsel eklemek için <strong>Soru Bankası</strong>ndan soruyu düzenleyin veya <strong>Örüntü Oluşturucu</strong> ile üretin; bu ekranda dosya yükleme yoktur.
+                Görsel veya metin düzenlemesi için{' '}
+                <Link to="/teacher/questions" className="font-bold text-brand-600 hover:underline dark:text-brand-400">
+                  Soru Bankası
+                </Link>
+                ’na gidin; bu ekranda dosya yükleme yoktur.
               </p>
             </div>
             <div className="flex items-center gap-2 px-2">
@@ -492,77 +537,147 @@ export default function TeacherExamsPage() {
   }
 
   return (
-    <div className="p-6 space-y-10 animate-in fade-in duration-500">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
       {profile.branchApproval !== 'approved' && (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700">
-          Branş onayı bekleniyor. Onaylanınca branşınızdaki tüm sınav ve soru havuzuna erişebileceksiniz.
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100 text-sm">
+          <p className="font-medium">
+            Branş onayı bekleniyor. Onaylanınca branşınızdaki ortak sınav ve soru havuzuna da erişebilirsiniz.
+          </p>
+          <Link
+            to="/teacher/profile"
+            className="inline-block mt-2 text-sm font-bold text-amber-950 dark:text-amber-200 underline underline-offset-2 hover:no-underline"
+          >
+            Profil — branş talebi
+          </Link>
         </div>
       )}
-      <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-        <div>
-          <h1 className="text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
-            <FileText size={32} className="text-indigo-600" /> Sınav Yönetimi
+
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+            <FileText size={28} className="text-brand-600 shrink-0" aria-hidden />
+            Sınav yönetimi
           </h1>
-          <p className="text-slate-500 font-medium mt-1">Toplam {examTotal} sınavın bulunuyor.</p>
+          <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">
+            Toplam <strong className="text-slate-700 dark:text-slate-200">{examTotal}</strong> sınav.
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-xl">
+            Listede arama ve sınıf filtresi kullanın. Otomatik sınav için aşağıdaki tarih/süre alanlarını doldurup «Hızlı sınav»a basın; özel dağılım için «7-7-7 stüdyo»yu açın.
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-2 mr-4 text-xs">
-            <label className="font-bold text-slate-500">Başlangıç</label>
-            <input type="datetime-local" value={schedStart} onChange={(e)=>setSchedStart(e.target.value)} className="border rounded px-2 py-1" />
-            <label className="font-bold text-slate-500 ml-2">Bitiş</label>
-            <input type="datetime-local" value={schedEnd} onChange={(e)=>setSchedEnd(e.target.value)} className="border rounded px-2 py-1" />
-            <label className="font-bold text-slate-500 ml-2">Süre</label>
-            <input type="number" min={10} max={180} value={durationMin} onChange={(e)=>setDurationMin(parseInt(e.target.value||'60'))} className="w-20 border rounded px-2 py-1" />
+        <Card className="p-4 w-full lg:max-w-md shrink-0 border border-slate-200 dark:border-slate-600">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3">
+            Hızlı sınav (branş onayı gerekir)
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <label className="flex flex-col gap-1">
+              <span className="text-slate-500 dark:text-slate-400">Başlangıç</span>
+              <input
+                type="datetime-local"
+                value={schedStart}
+                onChange={(e) => setSchedStart(e.target.value)}
+                className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 dark:bg-slate-900 dark:text-white text-xs"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-slate-500 dark:text-slate-400">Bitiş</span>
+              <input
+                type="datetime-local"
+                value={schedEnd}
+                onChange={(e) => setSchedEnd(e.target.value)}
+                className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 dark:bg-slate-900 dark:text-white text-xs"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-slate-500 dark:text-slate-400">Süre (dk)</span>
+              <input
+                type="number"
+                min={10}
+                max={180}
+                value={durationMin}
+                onChange={(e) => setDurationMin(parseInt(e.target.value || '60', 10))}
+                className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 dark:bg-slate-900 dark:text-white text-xs"
+              />
+            </label>
           </div>
-          <Button variant="outline" size="md" onClick={async()=>{
-            try{
-              if (profile.branchApproval !== 'approved') {
-                showToast('Branş onayı sonrası hızlı sınav kullanılabilir.', 'warning');
-                return;
-              }
-              const title = `Hızlı Sınav • ${profile.branch || 'Konu'} • ${classLevel}`;
-              await apiClient.post('/exams/auto-generate', {
-                title,
-                duration: durationMin || 25,
-                classLevel,
-                subject: profile.branch || 'Matematik',
-                ...(schedStart ? { startAt: schedStart } : {}),
-                ...(schedEnd ? { endAt: schedEnd } : {})
-              });
-              showToast('Hızlı sınav oluşturuldu!', 'success');
-              fetchExams();
-            }catch(e){
-              const msg = e?.response?.data?.message || 'Hızlı sınav oluşturulamadı';
-              showToast(msg, 'error');
-            }
-          }}>
-            <Sparkles size={18}/> Hızlı Sınav
-          </Button>
-          <Button variant="primary" size="md" onClick={() => { setExamName(''); setEasyQ([]); setMediumQ([]); setHardQ([]); setView('studio'); }}>
-            <Plus size={20} /> Yeni Sınav Oluştur
-          </Button>
-        </div>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <Button
+              variant="outline"
+              size="md"
+              icon={Sparkles}
+              onClick={async () => {
+                try {
+                  if (profile.branchApproval !== 'approved') {
+                    showToast('Branş onayı sonrası hızlı sınav kullanılabilir.', 'warning');
+                    return;
+                  }
+                  const title = `Hızlı Sınav • ${profile.branch || 'Konu'} • ${classLevel}`;
+                  await apiClient.post('/exams/auto-generate', {
+                    title,
+                    duration: durationMin || 25,
+                    classLevel,
+                    subject: profile.branch || 'Matematik',
+                    ...(schedStart ? { startAt: schedStart } : {}),
+                    ...(schedEnd ? { endAt: schedEnd } : {}),
+                  });
+                  showToast('Hızlı sınav oluşturuldu!', 'success');
+                  fetchExams();
+                } catch (e) {
+                  const msg = e?.response?.data?.message || 'Hızlı sınav oluşturulamadı';
+                  showToast(msg, 'error');
+                }
+              }}
+            >
+              Hızlı sınav
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              icon={Plus}
+              onClick={() => {
+                setExamName('');
+                setEasyQ([]);
+                setMediumQ([]);
+                setHardQ([]);
+                setView('studio');
+              }}
+            >
+              7-7-7 stüdyo
+            </Button>
+          </div>
+        </Card>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-[1.75rem] shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-        <div className="relative w-full md:max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <Card className="p-4 flex flex-col md:flex-row gap-4 md:items-end md:justify-between border border-slate-200 dark:border-slate-600">
+        <div className="relative flex-1 w-full md:max-w-md">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" aria-hidden />
           <input
             type="text"
             value={examSearch}
             onChange={(e) => setExamSearch(e.target.value)}
-            placeholder="Sınav başlığında ara..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl border dark:bg-slate-900 dark:text-white"
+            placeholder="Sınav başlığında ara…"
+            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-white text-sm"
           />
         </div>
-        <div className="flex items-center gap-3">
-          <select value={examClassFilter} onChange={(e) => setExamClassFilter(e.target.value)} className="p-2 rounded-xl border text-sm dark:bg-slate-900 dark:text-white">
-            <option value="Tümü">Tüm Sınıflar</option>
-            {CLASS_LEVELS.map((level) => <option key={level} value={level}>{level}</option>)}
-          </select>
-          <span className="text-xs text-slate-500">Sayfa {examPage}/{examTotalPages}</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <Select
+            value={examClassFilter}
+            onChange={(e) => setExamClassFilter(e.target.value)}
+            className="min-w-[160px] py-2.5 text-sm"
+            aria-label="Sınıf filtresi"
+          >
+            <option value="Tümü">Tüm sınıflar</option>
+            {CLASS_LEVELS.map((level) => (
+              <option key={level} value={level}>
+                {level}
+              </option>
+            ))}
+          </Select>
+          <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+            Sayfa {examPage} / {examTotalPages}
+          </span>
         </div>
-      </div>
+      </Card>
 
       {loading ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -573,51 +688,69 @@ export default function TeacherExamsPage() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {exams.length === 0 && (
-            <div className="md:col-span-2 lg:col-span-3 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-300">
-              Henüz sınav yok. Hızlı Sınav ile otomatik oluşturabilir veya Yeni Sınav Oluştur ile 7-7-7 stüdyosunu kullanabilirsin.
+            <div className="md:col-span-2 lg:col-span-3">
+              <EmptyState
+                icon={FileText}
+                title="Henüz sınav yok"
+                description="Hızlı sınav ile otomatik üretin veya 7-7-7 stüdyoda kolay / orta / zor sorulardan oluşturun."
+                className="py-12 border border-dashed border-slate-200 dark:border-slate-600 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20"
+              />
             </div>
           )}
           {exams.map((exam) => (
-            <Card key={exam._id} className="p-6 rounded-[2rem]">
-              <div className="flex justify-between mb-4">
-                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl"><Layers size={24} /></div>
-                <div className="flex gap-2">
-                   <Button variant="outline" size="sm" onClick={() => setPreviewId(exam._id)}>
-                     <Eye size={16} />
-                   </Button>
-                   <button
-                     onClick={async () => {
-                       if (!window.confirm('Bu sınavı silmek istiyor musun?')) return;
-                       const prev = exams;
-                       // İyimser silme
-                       setExams(prev.filter(e => e._id !== exam._id));
-                       try {
-                         await apiClient.delete(`/exams/${exam._id}`);
-                         showToast('Sınav silindi', 'success');
-                       } catch {
-                         setExams(prev);
-                         showToast('Sınav silinemedi', 'error');
-                       }
-                     }}
-                     className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
-                   ><Trash2 size={20}/></button>
+            <Card key={exam._id} className="p-6 rounded-2xl border border-slate-200 dark:border-slate-600">
+              <div className="flex justify-between gap-2 mb-4">
+                <div className="p-3 bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-300 rounded-2xl shrink-0">
+                  <Layers size={24} aria-hidden />
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={() => setPreviewId(exam._id)} aria-label="Önizle">
+                    <Eye size={16} />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="!text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40"
+                    onClick={async () => {
+                      if (!window.confirm('Bu sınavı silmek istiyor musun?')) return;
+                      const prev = exams;
+                      setExams((p) => p.filter((e) => e._id !== exam._id));
+                      try {
+                        await apiClient.delete(`/exams/${exam._id}`);
+                        showToast('Sınav silindi', 'success');
+                      } catch {
+                        setExams(prev);
+                        showToast('Sınav silinemedi', 'error');
+                      }
+                    }}
+                    aria-label="Sınavı sil"
+                  >
+                    <Trash2 size={16} />
+                  </Button>
                 </div>
               </div>
-              <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2">{exam.title || exam.name}</h3>
-              <div className="flex items-center gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                <span className="flex items-center gap-1"><Calendar size={12} /> {new Date(exam.createdAt).toLocaleDateString()}</span>
-                <span className="flex items-center gap-1"><Clock size={12} />
+              <h3 className="text-lg font-black text-slate-800 dark:text-white mb-1 line-clamp-2">
+                {exam.title || exam.name}
+              </h3>
+              {exam.classLevel ? (
+                <p className="text-xs font-semibold text-brand-600 dark:text-brand-400 mb-2">{exam.classLevel}</p>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <span className="flex items-center gap-1">
+                  <Calendar size={12} aria-hidden /> {exam.createdAt ? new Date(exam.createdAt).toLocaleDateString('tr-TR') : '—'}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock size={12} aria-hidden />
                   <input
                     type="number"
                     min={10}
                     max={180}
                     defaultValue={exam.duration || 60}
                     onBlur={async (e) => {
-                      const val = parseInt(e.target.value || '60');
+                      const val = parseInt(e.target.value || '60', 10);
                       if (val === exam.duration) return;
                       const prev = exams;
-                      // iyimser güncelleme
-                      setExams(prev.map(x => x._id === exam._id ? { ...x, duration: val } : x));
+                      setExams((p) => p.map((x) => (x._id === exam._id ? { ...x, duration: val } : x)));
                       try {
                         await apiClient.put(`/exams/${exam._id}`, { duration: val });
                         showToast('Süre güncellendi', 'success');
@@ -626,26 +759,38 @@ export default function TeacherExamsPage() {
                         showToast('Süre güncellenemedi', 'error');
                       }
                     }}
-                    className="ml-1 w-16 p-1 rounded bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-200"
-                  /> DK
+                    className="ml-1 w-14 p-1 rounded bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-200 font-bold normal-case"
+                  />{' '}
+                  dk
                 </span>
-                <span className={`px-2 py-0.5 rounded ${exam.status === 'active' ? 'bg-green-600 text-white' : exam.status === 'draft' ? 'bg-amber-500 text-white' : 'bg-slate-500 text-white'}`}>{exam.status}</span>
+                <span
+                  className={`px-2 py-0.5 rounded ${
+                    exam.status === 'active'
+                      ? 'bg-green-600 text-white'
+                      : exam.status === 'draft'
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-slate-500 text-white'
+                  }`}
+                >
+                  {exam.status}
+                </span>
               </div>
             </Card>
           ))}
         </div>
       )}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
         <Button variant="outline" size="sm" disabled={examPage <= 1 || loading} onClick={() => setExamPage((prev) => Math.max(1, prev - 1))}>
           <ChevronLeft size={14} /> Önceki
         </Button>
+        <span className="text-xs text-slate-500 dark:text-slate-400">
+          {examTotal} kayıt · sayfa {examPage}/{examTotalPages}
+        </span>
         <Button variant="outline" size="sm" disabled={examPage >= examTotalPages || loading} onClick={() => setExamPage((prev) => Math.min(examTotalPages, prev + 1))}>
           Sonraki <ChevronRight size={14} />
         </Button>
       </div>
-      {previewId && (
-        <ExamPreviewModal examId={previewId} onClose={() => setPreviewId(null)} />
-      )}
+      {previewId && <ExamPreviewModal examId={previewId} onClose={() => setPreviewId(null)} />}
     </div>
   );
 }

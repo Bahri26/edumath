@@ -1,5 +1,7 @@
 import React from "react";
-import { BookOpen, Zap, Puzzle, Layers, Play, Brain } from "lucide-react";
+import { Link } from "react-router-dom";
+import { BookOpen, Puzzle, Layers, Brain } from "lucide-react";
+import StudentPageShell from "../../components/student/StudentPageShell.jsx";
 
 const studyTypes = [
   {
@@ -30,19 +32,27 @@ const studyTypes = [
 
 export default function StudentStudyHub() {
   return (
-    <div className="max-w-3xl mx-auto p-8 space-y-8 animate-fade-in">
-      <h1 className="text-3xl font-black text-slate-800 dark:text-white mb-4">Çalışma Merkezi</h1>
-      <p className="text-slate-500 mb-8">Sınıf seviyene uygun farklı çalışma türleriyle kendini geliştir!</p>
-      <div className="grid md:grid-cols-2 gap-8">
+    <StudentPageShell
+      title="Çalışma Merkezi"
+      subtitle="Sınıf seviyene uygun farklı çalışma türleriyle kendini geliştir!"
+      maxWidthClass="max-w-4xl"
+    >
+      <div className="grid md:grid-cols-2 gap-6">
         {studyTypes.map((type, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-start gap-4">
+          <div key={i} className="bg-white/90 dark:bg-slate-800/90 p-6 rounded-[1.25rem] border border-sky-200/70 dark:border-slate-700 shadow-md flex flex-col items-start gap-4">
             {type.icon}
             <h2 className="text-xl font-bold text-slate-800 dark:text-white">{type.title}</h2>
-            <p className="text-slate-500 dark:text-slate-300 flex-1">{type.desc}</p>
-            <a href={type.action.to} className={`mt-2 px-5 py-2 rounded-lg font-bold ${type.action.to === "#" ? "bg-slate-200 text-slate-500 cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}>{type.action.label}</a>
+            <p className="text-slate-600 dark:text-slate-300 flex-1 leading-relaxed">{type.desc}</p>
+            {type.action.to !== "#" ? (
+              <Link to={type.action.to} className="mt-auto min-h-[44px] inline-flex items-center px-6 py-2.5 rounded-2xl font-bold bg-gradient-to-r from-sky-500 to-teal-500 text-white hover:brightness-105 focus:outline-none focus:ring-4 focus:ring-sky-200/80 dark:focus:ring-slate-600">
+                {type.action.label}
+              </Link>
+            ) : (
+              <span className="mt-auto min-h-[44px] inline-flex items-center px-6 py-2.5 rounded-2xl font-bold bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed">{type.action.label}</span>
+            )}
           </div>
         ))}
       </div>
-    </div>
+    </StudentPageShell>
   );
 }

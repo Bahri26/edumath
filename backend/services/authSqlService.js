@@ -3,8 +3,14 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const getPrisma = require('./prismaClient');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'gizli_anahtar_123';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'gizli_yenile_anahtar_123';
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+if (!JWT_SECRET || !String(JWT_SECRET).trim()) {
+  throw new Error('Missing required env var JWT_SECRET');
+}
+if (!JWT_REFRESH_SECRET || !String(JWT_REFRESH_SECRET).trim()) {
+  throw new Error('Missing required env var JWT_REFRESH_SECRET');
+}
 const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
 const REFRESH_TOKEN_EXPIRES_IN_DAYS = parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN_DAYS || '30');
 

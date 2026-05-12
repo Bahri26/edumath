@@ -1,11 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { User, Lock, Save, Mail, Briefcase, GraduationCap, Loader2, Bell, Moon, Sun, Trash2, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  User,
+  Save,
+  Loader2,
+  Bell,
+  Moon,
+  Sun,
+  CheckCircle,
+  Settings,
+  Globe,
+  ExternalLink,
+  Lock,
+} from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { useTheme } from '../../context/ThemeContext';
+import FormField from '../../components/ui/FormField.jsx';
+import Input from '../../components/ui/Input.jsx';
+import Select from '../../components/ui/Select.jsx';
+import EmptyState from '../../components/ui/EmptyState.jsx';
+import Card from '../../components/ui/Card.jsx';
+import Button from '../../components/ui/Button.jsx';
+import { SUBJECTS, CLASS_LEVELS } from '../../data/classLevelsAndDifficulties';
+
+const GRADE_OPTIONS = [...CLASS_LEVELS, 'Mezun'];
+
+const profilePath = (r) => (r === 'teacher' ? '/teacher/profile' : '/student/profile');
+
+const SectionHeading = ({ icon: Icon, children }) => (
+  <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-1">
+    {Icon ? <Icon className="text-brand-600 dark:text-brand-400 shrink-0" size={22} aria-hidden /> : null}
+    {children}
+  </h3>
+);
 
 const SettingsPage = ({ role = 'student' }) => {
   const { showToast } = useToast();
-  // Şifre değiştirme modalı için state
+  const { setIsDarkMode } = useTheme();
   const [showPwdModal, setShowPwdModal] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -19,60 +51,86 @@ const SettingsPage = ({ role = 'student' }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    detail: '', // Sınıf veya Branş bilgisi
-    branch: '', // Öğretmen ise
-    grade: '',  // Öğrenci ise
+    branch: '',
+    grade: '',
+    schoolType: 'ilkokul',
     avatar: '',
     theme: 'light',
     notifications: true,
+    language: 'TR',
   });
 
-  // Verileri Çek
+  const syncThemeFromValue = useCallback(
+    (theme) => {
+      setIsDarkMode((theme || 'light') === 'dark');
+    },
+    [setIsDarkMode],
+  );
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await apiClient.get('/users/profile');
+        const d = res.data || {};
+        const theme = d.theme || 'light';
         setFormData({
-          name: res.data.name || '',
-          email: res.data.email || '',
-          branch: res.data.branch || '',
-          grade: res.data.grade || '',
-          avatar: res.data.avatar || '',
-          theme: res.data.theme || 'light',
-          notifications: typeof res.data.notifications === 'boolean' ? res.data.notifications : true
+          name: d.name || '',
+          email: d.email || '',
+          branch: d.branch || '',
+          grade: d.grade || '',
+          schoolType: d.schoolType || 'ilkokul',
+          avatar: d.avatar || '',
+          theme,
+          notifications: typeof d.notifications === 'boolean' ? d.notifications : true,
+          language: d.language === 'EN' ? 'EN' : 'TR',
         });
+        syncThemeFromValue(theme);
       } catch (error) {
-        console.error("Profil yüklenemedi:", error);
+        if (import.meta.env.DEV) {
+          console.warn('Profil yüklenemedi:', error?.message);
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchProfile();
+
     const fetchNotifications = async () => {
       try {
         setNotifLoading(true);
         const res = await apiClient.get('/notifications?limit=5');
-        setNotifications(res.data.data || []);
-        setUnreadCount(res.data.unreadCount || 0);
+        const list = res.data?.data ?? res.data?.notifications ?? [];
+        setNotifications(Array.isArray(list) ? list : []);
+        setUnreadCount(res.data?.unreadCount ?? 0);
       } catch (error) {
-        console.error('Bildirimler yüklenemedi:', error);
+        if (import.meta.env.DEV) {
+          console.warn('Bildirimler yüklenemedi:', error?.message);
+        }
       } finally {
         setNotifLoading(false);
       }
     };
     fetchNotifications();
-  }, []);
+  }, [syncThemeFromValue]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Tema veya bildirim değiştiğinde backend'e kaydet
   const handlePrefChange = async (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    const previous = formData[field];
+    setFormData((prev) => ({ ...prev, [field]: value }));
     try {
       await apiClient.put('/users/profile', { [field]: value });
+      if (field === 'theme') {
+        syncThemeFromValue(value);
+      }
     } catch (error) {
+      setFormData((prev) => ({ ...prev, [field]: previous }));
+      if (field === 'theme') {
+        syncThemeFromValue(previous);
+      }
       showToast('Ayar güncellenemedi: ' + (error.response?.data?.message || error.message), 'error');
     }
   };
@@ -80,10 +138,26 @@ const SettingsPage = ({ role = 'student' }) => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await apiClient.put('/users/profile', formData);
-      showToast("Bilgileriniz başarıyla güncellendi.", 'success');
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        avatar: formData.avatar,
+        theme: formData.theme,
+        notifications: formData.notifications,
+        language: formData.language,
+      };
+      if (role === 'teacher') {
+        payload.branch = formData.branch;
+      }
+      if (role === 'student') {
+        payload.grade = formData.grade;
+        payload.schoolType = formData.schoolType;
+      }
+      await apiClient.put('/users/profile', payload);
+      syncThemeFromValue(formData.theme);
+      showToast('Bilgileriniz başarıyla güncellendi.', 'success');
     } catch (error) {
-      showToast("Hata oluştu: " + (error.response?.data?.message || error.message), 'error');
+      showToast('Hata oluştu: ' + (error.response?.data?.message || error.message), 'error');
     } finally {
       setSaving(false);
     }
@@ -92,100 +166,229 @@ const SettingsPage = ({ role = 'student' }) => {
   const markAllRead = async () => {
     try {
       await apiClient.put('/notifications/mark-all-read');
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true, readAt: new Date().toISOString() })));
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, readAt: new Date().toISOString() })));
       setUnreadCount(0);
+      showToast('Tüm bildirimler okundu olarak işaretlendi.', 'success');
     } catch (error) {
-      showToast('Bildirimler okunmadı olarak işaretlenemedi: ' + (error.response?.data?.message || error.message), 'error');
+      showToast('İşlem başarısız: ' + (error.response?.data?.message || error.message), 'error');
     }
   };
 
-  if (loading) return <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin text-indigo-600" size={40} /></div>;
+  if (loading) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-[40vh] gap-3" role="status" aria-live="polite">
+        <Loader2 className="animate-spin text-brand-600" size={40} aria-hidden />
+        <span className="text-sm text-slate-500 dark:text-slate-400">Ayarlar yükleniyor…</span>
+      </div>
+    );
+  }
+
+  const isTeacher = role === 'teacher';
+  const title = isTeacher ? 'Öğretmen ayarları' : 'Öğrenci ayarları';
 
   return (
     <div className="animate-fade-in max-w-4xl mx-auto space-y-8 pb-20">
-      <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white mb-2 flex items-center gap-3">
-        <SettingsPageIcon role={role} />
-        {role === 'teacher' ? 'Öğretmen Ayarları' : 'Öğrenci Ayarları'}
-      </h2>
+      <div>
+        <h2
+          className={`text-3xl font-extrabold flex items-center gap-3 ${
+            role === 'student'
+              ? 'bg-gradient-to-r from-amber-600 to-teal-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-teal-400'
+              : 'text-slate-800 dark:text-white'
+          }`}
+        >
+          <Settings size={30} className={role === 'student' ? 'text-teal-600 dark:text-teal-400 shrink-0' : 'text-brand-600 shrink-0'} aria-hidden />
+          {title}
+        </h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">
+          {isTeacher
+            ? 'Hesap bilgileri burada; branş onayı ve detaylı profil alanları için profil sayfasını kullanın.'
+            : 'Hesap, görünüm ve bildirim tercihlerinizi buradan yönetebilirsiniz.'}
+        </p>
+        <Link
+          to={profilePath(role)}
+          className="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+        >
+          Profil sayfasına git
+          <ExternalLink size={14} aria-hidden />
+        </Link>
+      </div>
 
-      {/* --- KULLANICI BİLGİLERİ --- */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 shadow-md flex flex-col md:flex-row gap-8">
-        <div className="flex-1 space-y-4">
+      <Card className="p-6 md:p-8 space-y-6">
+        <div>
+          <SectionHeading icon={User}>Hesap bilgileri</SectionHeading>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Ad ve e-posta giriş bilgilerinizle ilişkilidir.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-1 flex items-center gap-2"><User size={16}/> Ad Soyad</label>
-              <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white outline-none" />
-            </div>
-            <div>
-              <label className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-1 flex items-center gap-2"><Mail size={16}/> E-Posta</label>
-              <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white outline-none" />
-            </div>
-            {role === 'teacher' && (
-              <div>
-                <label className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-1 flex items-center gap-2"><Briefcase size={16}/> Branş</label>
-                <input type="text" name="branch" value={formData.branch} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white outline-none" />
+            <FormField label="Ad soyad">
+              <Input type="text" name="name" value={formData.name} onChange={handleChange} autoComplete="name" />
+            </FormField>
+            <FormField label="E-posta">
+              <Input type="email" name="email" value={formData.email} onChange={handleChange} autoComplete="email" />
+            </FormField>
+            {isTeacher && (
+              <div className="md:col-span-2">
+                <FormField label="Branş">
+                  <Select name="branch" value={formData.branch} onChange={handleChange}>
+                    <option value="">Seçiniz</option>
+                    {SUBJECTS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                  Branş değişikliği yönetici onayına düşebilir. Onay durumunu profil sayfasından takip edebilirsiniz.
+                </p>
               </div>
             )}
             {role === 'student' && (
-              <div>
-                <label className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-1 flex items-center gap-2"><GraduationCap size={16}/> Sınıf</label>
-                <input type="text" name="grade" value={formData.grade} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white outline-none" />
+              <>
+                <FormField label="Kademe">
+                  <Select name="schoolType" value={formData.schoolType} onChange={handleChange}>
+                    <option value="ilkokul">İlkokul</option>
+                    <option value="ortaokul">Ortaokul</option>
+                    <option value="lise">Lise</option>
+                  </Select>
+                </FormField>
+                <FormField label="Sınıf seviyesi">
+                  <Select name="grade" value={formData.grade} onChange={handleChange}>
+                    <option value="">Seçiniz</option>
+                    {GRADE_OPTIONS.map((g) => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+              </>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6 md:p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          <div className="space-y-6">
+            <div>
+              <SectionHeading icon={Moon}>Görünüm</SectionHeading>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Tema tercihi bu cihazda anında uygulanır ve hesabınıza kaydedilir.</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  {formData.theme === 'dark' ? 'Karanlık tema açık' : 'Açık tema'}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={() => handlePrefChange('theme', formData.theme === 'dark' ? 'light' : 'dark')}
+                  icon={formData.theme === 'dark' ? Sun : Moon}
+                >
+                  {formData.theme === 'dark' ? 'Açık temaya geç' : 'Karanlık temaya geç'}
+                </Button>
+              </div>
+            </div>
+            <div>
+              <SectionHeading icon={Globe}>Dil</SectionHeading>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Arayüz dil tercihi (desteklenen içeriklerde).</p>
+              <FormField label="Dil">
+                <Select
+                  name="language"
+                  value={formData.language}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    handlePrefChange('language', v);
+                  }}
+                >
+                  <option value="TR">Türkçe</option>
+                  <option value="EN">English</option>
+                </Select>
+              </FormField>
+            </div>
+            <div>
+              <SectionHeading icon={Bell}>Anlık bildirim tercihi</SectionHeading>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Kapatırsanız yeni uyarılar için e-posta politikasına bakın.</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  {formData.notifications ? 'Bildirimler açık' : 'Bildirimler kapalı'}
+                </span>
+                <Button
+                  type="button"
+                  variant={formData.notifications ? 'outline' : 'primary'}
+                  size="md"
+                  onClick={() => handlePrefChange('notifications', !formData.notifications)}
+                  icon={CheckCircle}
+                >
+                  {formData.notifications ? 'Kapat' : 'Aç'}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <SectionHeading icon={Bell}>Son bildirimler</SectionHeading>
+              {unreadCount > 0 && (
+                <span className="text-xs font-bold bg-brand-600 text-white px-2.5 py-1 rounded-full">{unreadCount} okunmamış</span>
+              )}
+            </div>
+            <div className="rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 overflow-hidden">
+              {notifLoading ? (
+                <div className="p-4 text-sm text-slate-500">Yükleniyor…</div>
+              ) : notifications.length === 0 ? (
+                <EmptyState
+                  icon={Bell}
+                  title="Henüz bildirim yok"
+                  description="Duyurular ve sistem mesajları burada görünür."
+                  className="py-8 border-0 bg-transparent"
+                />
+              ) : (
+                notifications.map((n) => (
+                  <div
+                    key={n._id}
+                    className={`p-4 border-b border-slate-200 dark:border-slate-700 last:border-b-0 ${
+                      n.isRead ? '' : 'bg-brand-50/80 dark:bg-brand-950/30'
+                    }`}
+                  >
+                    <div className="font-semibold text-slate-800 dark:text-slate-100 flex flex-wrap items-center gap-2">
+                      {n.title}
+                      {!n.isRead && (
+                        <span className="text-[10px] uppercase font-bold bg-brand-600 text-white px-2 py-0.5 rounded-full">Yeni</span>
+                      )}
+                    </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-300 mt-1">{n.message}</div>
+                    <div className="text-xs text-slate-500 mt-2">
+                      {n.createdAt ? new Date(n.createdAt).toLocaleString('tr-TR') : ''}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            {notifications.length > 0 && (
+              <div className="flex justify-end mt-3">
+                <Button type="button" variant="outline" size="sm" onClick={markAllRead} disabled={unreadCount === 0}>
+                  Tümünü okundu işaretle
+                </Button>
               </div>
             )}
           </div>
         </div>
-      </div>
+      </Card>
 
-      {/* --- TEMA & BİLDİRİM AYARLARI --- */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 shadow-md flex flex-col md:flex-row gap-8">
-        <div className="flex-1 space-y-6">
-          <div className="flex items-center gap-4">
-            <span className="font-medium text-slate-700 dark:text-slate-200 flex items-center gap-2"><Moon size={18}/> Karanlık Mod</span>
-            <button
-              className={`ml-auto bg-slate-200 dark:bg-slate-700 rounded-full px-4 py-2 font-bold text-indigo-600 dark:text-indigo-300 ${formData.theme === 'dark' ? 'ring-2 ring-indigo-500' : ''}`}
-              onClick={() => handlePrefChange('theme', formData.theme === 'dark' ? 'light' : 'dark')}
-            >{formData.theme === 'dark' ? <Sun size={16}/> : <Moon size={16}/>} {formData.theme === 'dark' ? 'Kapat' : 'Aç'}</button>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="font-medium text-slate-700 dark:text-slate-200 flex items-center gap-2"><Bell size={18}/> Bildirimler</span>
-            <button
-              className={`ml-auto bg-slate-200 dark:bg-slate-700 rounded-full px-4 py-2 font-bold text-indigo-600 dark:text-indigo-300 ${formData.notifications ? 'ring-2 ring-indigo-500' : ''}`}
-              onClick={() => handlePrefChange('notifications', !formData.notifications)}
-            >{formData.notifications ? <CheckCircle size={16}/> : <Trash2 size={16}/>} {formData.notifications ? 'Açık' : 'Kapalı'}</button>
-          </div>
-        </div>
-        <div className="flex-1 mt-8 md:mt-0">
-          <div className="mb-2 flex items-center gap-2"><Bell size={18}/> <span className="font-bold text-slate-700 dark:text-slate-200">Son Bildirimler</span> {unreadCount > 0 && <span className="ml-2 bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">{unreadCount}</span>}</div>
-          <div className="border rounded-xl bg-slate-50 dark:bg-slate-900/40">
-            {notifLoading ? (
-              <div className="p-3 text-slate-500">Yükleniyor...</div>
-            ) : notifications.length === 0 ? (
-              <div className="p-3 text-slate-500">Bildirim yok</div>
-            ) : notifications.map(n => (
-              <div key={n._id} className={`p-3 border-b last:border-b-0 ${n.isRead ? '' : 'bg-indigo-50 dark:bg-indigo-900/30'}`}>
-                <div className="font-semibold flex items-center gap-2">{n.title} {!n.isRead && <span className="ml-2 bg-indigo-500 text-white text-xs px-2 py-0.5 rounded-full">Yeni</span>}</div>
-                <div className="text-sm text-slate-600 dark:text-slate-300">{n.message}</div>
-                <div className="text-xs text-slate-500 mt-1">{new Date(n.createdAt).toLocaleString()}</div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-end mt-2">
-            <button onClick={markAllRead} className="px-3 py-2 rounded border bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 font-semibold">Tümünü Okundu İşaretle</button>
-          </div>
-        </div>
-      </div>
-
-      {/* --- GÜVENLİK --- */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 shadow-md flex flex-col md:flex-row gap-8">
-        <div className="flex-1 space-y-4">
-          <button
-            className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline text-sm"
-            onClick={() => setShowPwdModal(true)}
-          >Şifremi Değiştir</button>
-          <button
-            className="text-red-500 font-medium hover:underline text-sm block"
+      <Card className="p-6 md:p-8">
+        <SectionHeading icon={Lock}>Güvenlik</SectionHeading>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Şifre ve hesap yaşam döngüsü.</p>
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+          <Button type="button" variant="outline" size="md" onClick={() => setShowPwdModal(true)}>
+            Şifremi değiştir
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            size="md"
             onClick={async () => {
-              if (!window.confirm('Hesabınızı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) return;
+              if (!window.confirm('Hesabınızı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+                return;
+              }
               try {
                 await apiClient.delete('/users/delete');
                 showToast('Hesabınız silindi.', 'success');
@@ -195,40 +398,68 @@ const SettingsPage = ({ role = 'student' }) => {
                 showToast('Hesap silinemedi: ' + (err.response?.data?.message || err.message), 'error');
               }
             }}
-          >Hesabımı Sil</button>
+          >
+            Hesabımı sil
+          </Button>
         </div>
-      </div>
+      </Card>
 
-      {/* --- ŞİFRE DEĞİŞTİRME MODALI --- */}
       {showPwdModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl w-full max-w-md animate-fade-in">
-            <h3 className="font-bold text-lg mb-4 dark:text-white">Şifre Değiştir</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pwd-modal-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !pwdLoading) {
+              setShowPwdModal(false);
+              setOldPassword('');
+              setNewPassword('');
+            }
+          }}
+        >
+          <div className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 dark:border-slate-600 animate-fade-in">
+            <h3 id="pwd-modal-title" className="font-bold text-lg mb-1 text-slate-900 dark:text-white">
+              Şifre değiştir
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Mevcut şifrenizi ve yeni şifrenizi girin.</p>
             <div className="space-y-4">
-              <input
-                type="password"
-                placeholder="Eski Şifre"
-                className="w-full p-3 border rounded-lg dark:bg-slate-700 dark:text-white"
-                value={oldPassword}
-                onChange={e => setOldPassword(e.target.value)}
-                autoFocus
-              />
-              <input
-                type="password"
-                placeholder="Yeni Şifre"
-                className="w-full p-3 border rounded-lg dark:bg-slate-700 dark:text-white"
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-              />
+              <FormField label="Eski şifre">
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  autoComplete="current-password"
+                  autoFocus
+                />
+              </FormField>
+              <FormField label="Yeni şifre">
+                <Input
+                  type="password"
+                  placeholder="En az 6 karakter"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </FormField>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button
-                className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-semibold"
-                onClick={() => { setShowPwdModal(false); setOldPassword(''); setNewPassword(''); }}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setShowPwdModal(false);
+                  setOldPassword('');
+                  setNewPassword('');
+                }}
                 disabled={pwdLoading}
-              >İptal</button>
-              <button
-                className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 disabled:opacity-60"
+              >
+                İptal
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
                 disabled={pwdLoading || !oldPassword || !newPassword}
                 onClick={async () => {
                   setPwdLoading(true);
@@ -244,27 +475,31 @@ const SettingsPage = ({ role = 'student' }) => {
                     setPwdLoading(false);
                   }
                 }}
-              >{pwdLoading ? 'Kaydediliyor...' : 'Kaydet'}</button>
+              >
+                {pwdLoading ? 'Kaydediliyor…' : 'Kaydet'}
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- KAYDET BUTONU --- */}
-      <div className="flex justify-end mt-8">
-        <button onClick={handleSave} disabled={saving} className="bg-indigo-600 text-white px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-xl hover:-translate-y-1 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
-            {saving ? <Loader2 className="animate-spin" size={20} /> : <><Save size={20} /> Değişiklikleri Kaydet</>}
-        </button>
+      <div className="flex justify-end">
+        <Button type="button" variant="primary" size="lg" onClick={handleSave} disabled={saving}>
+          {saving ? (
+            <>
+              <Loader2 className="animate-spin" size={18} aria-hidden />
+              Kaydediliyor…
+            </>
+          ) : (
+            <>
+              <Save size={18} aria-hidden />
+              Değişiklikleri kaydet
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );
-
-  // Rol bazlı ikon
-  function SettingsPageIcon({ role }) {
-    if (role === 'teacher') return <Briefcase size={28} className="text-indigo-600" />;
-    if (role === 'student') return <GraduationCap size={28} className="text-indigo-600" />;
-    return <User size={28} className="text-indigo-600" />;
-  }
 };
 
 export default SettingsPage;

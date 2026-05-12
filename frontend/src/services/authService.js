@@ -42,8 +42,11 @@ const login = async (email, password) => {
 // 3. Çıkış Yapma İşlemi
 // -----------------------------------------------------------------
 const logout = () => {
-    // Token'ı silerek oturumu sonlandır
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('loginTime');
+    localStorage.removeItem('lastActivity');
 };
 
 const authService = {

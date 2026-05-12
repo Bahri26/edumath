@@ -8,10 +8,21 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const compression = require('compression');
+const mongoSanitize = require('./middlewares/mongoSanitize');
+const errorHandler = require('./middlewares/errorHandler');
 
 dotenv.config();
 
 const User = require('./models/User');
+
+// --- CRITICAL ENV VALIDATION (fail-fast) ---
+const requiredEnv = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
+const missingEnv = requiredEnv.filter((key) => !process.env[key] || String(process.env[key]).trim() === '');
+if (missingEnv.length > 0) {
+    console.error(`❌ Missing required env vars: ${missingEnv.join(', ')}`);
+    console.error('Set them in backend/.env (see backend/.env.example).');
+    process.exit(1);
+}
 
 const app = express();
 
@@ -68,21 +79,42 @@ app.use(morgan(logFormat));
 // Response compression
 app.use(compression());
 
-// Rate limiting
+// Rate limiting — üretimde açık; geliştirmede (NODE_ENV !== 'production') varsayılan olarak
+// kapatılır çünkü SPA + HMR çok sayıda istek üretir ve 429 görülür.
+// Üretim dışı ortamda da limit istiyorsanız: NODE_ENV=production (staging dahil).
+const rlOff = String(process.env.RATE_LIMIT_DISABLED || '').toLowerCase();
+const rateLimitDisabled = rlOff === 'true' || rlOff === '1';
+const applyApiRateLimit = process.env.NODE_ENV === 'production' && !rateLimitDisabled;
+
 const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'); // 15dk genel API
 const maxReq = parseInt(process.env.RATE_LIMIT_MAX || '100');
-const apiLimiter = rateLimit({ windowMs, max: maxReq, standardHeaders: true, legacyHeaders: false });
+const apiLimiter = rateLimit({
+  windowMs,
+  max: maxReq,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => !applyApiRateLimit,
+});
 
 // Daha sıkı: Auth rotaları için özel limitler
 const authWindowMs = parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '900000'); // 15dk
 const authMaxReq = parseInt(process.env.AUTH_RATE_LIMIT_MAX || '20');
-const authLimiter = rateLimit({ windowMs: authWindowMs, max: authMaxReq, standardHeaders: true, legacyHeaders: false });
+const authLimiter = rateLimit({
+  windowMs: authWindowMs,
+  max: authMaxReq,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => !applyApiRateLimit,
+});
 
 // Önce spesifik auth limiter'ı uygula, sonra genel API limiter'ı
 app.use('/api/auth', authLimiter);
 app.use('/api', apiLimiter);
 
 app.use(express.json());
+
+// Prevent Mongo operator injection (NoSQL injection hardening)
+app.use(mongoSanitize);
 
 // Resimler için Uploads klasörünü dışarı aç
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -233,6 +265,9 @@ app.get('/ready', (req, res) => {
         db: dbConnected ? 'up' : 'down'
     });
 });
+
+// Global error handler (must be last middleware)
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 8000; 
 

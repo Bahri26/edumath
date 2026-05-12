@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { CheckCircle, AlertTriangle, Sparkles } from 'lucide-react';
 import { generatePracticeQuestions } from '../../services/aiService';
 import AIPractice from './AIPractice';
+import { useToast } from '../../context/ToastContext';
 
 const ExamResult = ({ result, onBack }) => {
   const [loadingAI, setLoadingAI] = useState(false);
   const [practiceQuestions, setPracticeQuestions] = useState(null);
+  const { showToast } = useToast();
 
   const handleGeneratePractice = async () => {
     if (!result?.weakTopics || result.weakTopics.length === 0) return;
@@ -21,7 +23,7 @@ const ExamResult = ({ result, onBack }) => {
       setPracticeQuestions(data.questions);
     } catch (err) {
       console.error(err);
-      alert("AI şu an meşgul, lütfen tekrar dene.");
+      showToast?.('AI şu an meşgul, lütfen tekrar dene.', 'error', 3500);
     } finally {
       setLoadingAI(false);
     }

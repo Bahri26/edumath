@@ -9,8 +9,12 @@ module.exports = (req, res, next) => {
   }
 
   try {
+    const secret = process.env.JWT_SECRET;
+    if (!secret || String(secret).trim() === '') {
+      return res.status(500).json({ message: 'Sunucu yapılandırma hatası: JWT_SECRET eksik.' });
+    }
     // 2. Token'ı çöz
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "gizli_anahtar_123");
+    const decoded = jwt.verify(token, secret);
     
     // 3. Kullanıcı bilgisini isteğe ekle (req.user artık kullanılabilir)
     req.user = decoded; 

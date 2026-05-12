@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { leaderboard } from '../../data/studentData';
 import { LanguageContext } from '../../context/LanguageContext';
+import StudentPageShell from '../../components/student/StudentPageShell.jsx';
 
 const StudentLeaderboard = () => {
   const { language } = useContext(LanguageContext);
@@ -23,15 +24,11 @@ const StudentLeaderboard = () => {
 
   const getText = (key) => t[language]?.[key] || t.TR[key];
   return (
-      <div className="animate-fade-in space-y-6 max-w-3xl mx-auto">
-          <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{getText('weeklyRanking')}</h2>
-              <p className="text-slate-500 dark:text-slate-400">{getText('subtitle')}</p>
-              <p className="mt-2 text-[11px] uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold">
-                Demo veri
-              </p>
-          </div>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <StudentPageShell title={getText('weeklyRanking')} subtitle={getText('subtitle')} maxWidthClass="max-w-3xl">
+          <p className="text-center text-[11px] uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold">
+            Demo veri
+          </p>
+          <div className="bg-white/95 dark:bg-slate-800/95 rounded-[1.25rem] shadow-lg border border-sky-200/60 dark:border-slate-700 overflow-hidden">
               {leaderboard.map((user, idx) => (
                   <div key={idx} className={`flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-700 last:border-0 ${user.active ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}>
                       <div className="flex items-center gap-4">
@@ -54,7 +51,7 @@ const StudentLeaderboard = () => {
                   </div>
               ))}
           </div>
-      </div>
+      </StudentPageShell>
   );
 };
 

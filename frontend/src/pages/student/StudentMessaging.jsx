@@ -11,12 +11,11 @@ import {
   Phone,
   Video
 } from 'lucide-react';
-import { ThemeContext } from '../../context/ThemeContext';
 import { LanguageContext } from '../../context/LanguageContext';
 import apiClient from '../../services/api';
+import StudentPageShell from '../../components/student/StudentPageShell.jsx';
 
 const StudentMessaging = () => {
-  const { isDarkMode } = useContext(ThemeContext);
   const { language } = useContext(LanguageContext);
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -161,14 +160,12 @@ const StudentMessaging = () => {
   );
 
   return (
-    <div className={`h-screen flex ${isDarkMode ? 'dark' : ''}`}>
+    <StudentPageShell title={getText('pageTitle')} subtitle={getText('inbox')}>
+    <div className="flex flex-col md:flex-row rounded-2xl border border-sky-200/70 dark:border-slate-600 overflow-hidden min-h-[22rem] md:min-h-[min(560px,calc(100vh-12rem))] max-h-[min(85vh,calc(100vh-9rem))] bg-white dark:bg-slate-800 shadow-sm">
       {/* Conversations List */}
-      <div className="w-full md:w-80 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
-        {/* Header */}
+      <div className="w-full md:w-80 shrink-0 md:border-r border-slate-200 dark:border-slate-700 flex flex-col">
+        {/* Arama */}
         <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
-            {getText('pageTitle')}
-          </h1>
           
           {/* Search */}
           <div className="relative">
@@ -340,6 +337,7 @@ const StudentMessaging = () => {
         )}
       </div>
     </div>
+    </StudentPageShell>
   );
 };
 
