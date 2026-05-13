@@ -69,16 +69,42 @@ async function up() {
     return u;
   };
 
-  // Examples from user
+  // Examples from user (bcrypt hash — şifre değişmez)
   await ensureHashedUser('bahadir26@hotmail.com', 'teacher', 'Bahadir Teacher', '$2b$10$pAPoOVB6xOuJT602euzViOfs78rW9Tn2IbEX6I5VbOIBO9NTQX45O');
-  await ensureHashedUser('bahri@hotmail.com', 'admin', 'Bahri Admin', '$2b$10$9EvweAU0UsG63OtSgQ9dNeswTaQkGsv.jLd52RKhrunonJon/hy9m');
+
+  /** Bahri Admin — düz şifre (User pre-save bcrypt) */
+  const ensureBahriAdmin = async () => {
+    const email = 'bahri@hotmail.com';
+    let u = await User.findOne({ email });
+    if (!u) {
+      u = new User({
+        name: 'Bahri Admin',
+        email,
+        password: 'admin123',
+        role: 'admin',
+        status: 'active',
+        mustChangePassword: false,
+      });
+      await u.save();
+      console.log(`Created: ${email} (admin, Bahri Admin) — admin123`);
+      return;
+    }
+    u.name = 'Bahri Admin';
+    u.role = 'admin';
+    u.password = 'admin123';
+    u.status = 'active';
+    u.mustChangePassword = false;
+    await u.save();
+    console.log(`Updated: ${email} (admin, Bahri Admin) — admin123`);
+  };
+  await ensureBahriAdmin();
 
   console.log('\nLogin credentials:');
   console.log('  Student: student@edumath.local / password123');
   console.log('  Teacher: teacher@edumath.local / password123');
   console.log('  Admin:   admin@edumath.local / password123');
   console.log('  Teacher (hashed): bahadir26@hotmail.com / (use your original password)');
-  console.log('  Admin (hashed):   bahri@hotmail.com / (use your original password)');
+  console.log('  Admin:            bahri@hotmail.com / admin123');
 }
 
 up().then(() => mongoose.disconnect()).catch((e) => {

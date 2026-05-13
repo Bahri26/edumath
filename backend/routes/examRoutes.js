@@ -7,6 +7,7 @@ const roleMiddleware = require('../middlewares/roleMiddleware');
 const User = require('../models/User');
 const Student = require('../models/Student');
 const { gradeQuestionAnswer } = require('../utils/questionGrading');
+const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
 
 // 1. TÜM SINAVLARI GETİR
 router.get('/', async (req, res) => {
@@ -244,6 +245,8 @@ router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (r
     });
     
     await exam.save();
+
+    await ensureStudentLinkedToTeacher(exam.createdBy, req.user.id);
 
     res.json({ 
       message: "Sınav tamamlandı", 

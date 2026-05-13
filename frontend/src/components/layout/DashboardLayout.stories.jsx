@@ -49,7 +49,7 @@ const teacherMenu = [
   { id: 'questions', label: 'Soru Bankası', icon: FileText, path: '/teacher/questions' },
   { id: 'exams', label: 'Sınavlar', icon: CheckCircle, path: '/teacher/exams' },
   { id: 'exercises', label: 'Egzersizler', icon: Trophy, path: '/teacher/exercises' },
-  { id: 'skill-tree', label: 'Kazanım Ağacı', icon: LayoutGrid, path: '/teacher/skill-tree' },
+  { id: 'skill-tree', label: 'Konu & ders yapısı', icon: LayoutGrid, path: '/teacher/skill-tree' },
   { id: 'student-progress', label: 'Öğrenci İlerleme', icon: Users, path: '/teacher/student-progress' },
   { id: 'reports', label: 'Raporlar', icon: BarChart2, path: '/teacher/reports' },
   { id: 'settings', label: 'Ayarlar', icon: Settings, path: '/teacher/settings' },

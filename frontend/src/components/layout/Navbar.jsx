@@ -9,17 +9,20 @@ import { AuthContext } from '../../context/AuthContext';
 import logoUrl from '../../assets/logo.png';
 import NotificationDropdown from '../ui/NotificationDropdown.jsx';
 
-const DropdownItem = ({ icon: Icon, label, onClick, variant = 'default' }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`w-full flex items-center gap-2 px-4 py-2 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-xl transition-colors ${
-      variant === 'danger' ? 'text-red-600 dark:text-red-400' : 'text-surface-700 dark:text-surface-200'
-    }`}
-  >
-    <Icon size={18} /> {label}
-  </button>
-);
+const DropdownItem = ({ icon, label, onClick, variant = 'default' }) => {
+  const IconComponent = icon;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center gap-2 px-4 py-2 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-xl transition-colors ${
+        variant === 'danger' ? 'text-red-600 dark:text-red-400' : 'text-surface-700 dark:text-surface-200'
+      }`}
+    >
+      <IconComponent size={18} /> {label}
+    </button>
+  );
+};
 
 function LogoMark({ scrolled, onNavigateHome }) {
   const [failed, setFailed] = useState(false);
@@ -87,8 +90,16 @@ const Navbar = ({ lang, setLang, theme, toggleTheme, t, onLoginClick }) => {
   const handleNavigation = (path) => {
     setProfileOpen(false);
     setIsOpen(false);
-    const rolePath = (user?.role === 'teacher' || user?.role === 'admin') ? '/teacher' : '/student';
-    navigate(`${rolePath}${path}`);
+    if (user?.role === 'admin') {
+      if (path === '/profile' || path === '/settings') {
+        navigate('/admin/settings');
+        return;
+      }
+      navigate('/admin');
+      return;
+    }
+    const roleBase = user?.role === 'teacher' ? '/teacher' : '/student';
+    navigate(`${roleBase}${path}`);
   };
 
   const goMessages = () => {
@@ -270,6 +281,18 @@ const Navbar = ({ lang, setLang, theme, toggleTheme, t, onLoginClick }) => {
                   </div>
                   <span className="font-bold dark:text-white">{user.name}</span>
                 </div>
+                {user.role === 'admin' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsOpen(false);
+                      navigate('/admin');
+                    }}
+                    className="w-full text-left p-2 text-surface-600 dark:text-surface-300 font-medium"
+                  >
+                    Admin paneli
+                  </button>
+                )}
                 <button type="button" onClick={() => handleNavigation('/profile')} className="w-full text-left p-2 text-surface-600 dark:text-surface-300">
                   Profilim
                 </button>
@@ -278,6 +301,13 @@ const Navbar = ({ lang, setLang, theme, toggleTheme, t, onLoginClick }) => {
                     Mesajlar
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={() => handleNavigation('/settings')}
+                  className="w-full text-left p-2 text-surface-600 dark:text-surface-300"
+                >
+                  Ayarlar
+                </button>
                 <button type="button" onClick={() => { setIsOpen(false); logout(); }} className="w-full text-left p-2 text-red-500 font-medium">
                   Çıkış Yap
                 </button>

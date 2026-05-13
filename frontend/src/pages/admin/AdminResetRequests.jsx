@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { KeyRound, Loader2 } from 'lucide-react';
 import adminService from '../../services/adminService';
+import AdminInternalNotesPanel from '../../components/admin/AdminInternalNotesPanel';
+import { admin as a } from '../../components/admin/adminUi';
 
 const AdminResetRequests = () => {
   const [items, setItems] = useState([]);
@@ -10,18 +13,30 @@ const AdminResetRequests = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [status, setStatus] = useState('pending');
   const [search, setSearch] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentRequestId, setCurrentRequestId] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [mustChange, setMustChange] = useState(false);
+  const [notesRequestId, setNotesRequestId] = useState(null);
 
-  const load = async () => {
-    setLoading(true); setError(null);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const data = await adminService.listResetRequests(status);
-      setItems(search ? data.filter(d=> (d.email||'').toLowerCase().includes(search.toLowerCase())) : data);
+      setItems(
+        search ? data.filter((d) => (d.email || '').toLowerCase().includes(search.toLowerCase())) : data
+      );
     } catch (err) {
       setError(err?.response?.data?.message || 'Listeleme hatası');
-    } finally { setLoading(false); }
-  };
+    } finally {
+      setLoading(false);
+    }
+  }, [status, search]);
 
-  useEffect(() => { load(); }, [status, search]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   useEffect(() => {
     if (approvedInfo?.expiresAt) {
@@ -32,15 +47,10 @@ const AdminResetRequests = () => {
       tick();
       const iv = setInterval(tick, 1000);
       return () => clearInterval(iv);
-    } else {
-      setTimeLeft(null);
     }
+    setTimeLeft(null);
+    return undefined;
   }, [approvedInfo]);
-
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [currentRequestId, setCurrentRequestId] = useState(null);
-  const [newPassword, setNewPassword] = useState('');
-  const [mustChange, setMustChange] = useState(false);
 
   const openApproveWithPassword = (id) => {
     setCurrentRequestId(id);
@@ -85,7 +95,11 @@ const AdminResetRequests = () => {
 
   const copyToken = async () => {
     if (!approvedInfo?.rawToken) return;
-    try { await navigator.clipboard.writeText(approvedInfo.rawToken); } catch {}
+    try {
+      await navigator.clipboard.writeText(approvedInfo.rawToken);
+    } catch {
+      /* ignore */
+    }
   };
 
   const deny = async (id) => {
@@ -98,89 +112,218 @@ const AdminResetRequests = () => {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Şifre Sıfırlama Talepleri</h1>
-      <div className="flex items-center gap-3 mb-3">
+    <div className={a.pageWrap}>
+      <header className="flex flex-wrap items-start gap-4">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/25">
+          <KeyRound className="h-6 w-6" />
+        </span>
         <div>
-          <label className="text-sm mr-2">Durum:</label>
-          <select className="border rounded px-2 py-1" value={status} onChange={e=>setStatus(e.target.value)}>
+          <p className={a.eyebrow}>Güvenlik</p>
+          <h1 className={a.title}>Şifre sıfırlama talepleri</h1>
+          <p className={a.subtitle}>
+            Talepleri inceleyin; doğrudan şifre atayın veya zaman sınırlı token üretin. İç notlarla ekip içi
+            iletişimi sürdürün.
+          </p>
+        </div>
+      </header>
+
+      <div className={a.filterBar}>
+        <div>
+          <label className={a.fieldLabel}>Durum</label>
+          <select className={a.select} value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="pending">Bekleyen</option>
             <option value="approved">Onaylı</option>
             <option value="denied">Reddedilen</option>
           </select>
         </div>
-        <input className="border rounded px-3 py-2" placeholder="E-posta ara" value={search} onChange={e=>setSearch(e.target.value)} />
+        <div className="min-w-[200px] flex-1">
+          <label className={a.fieldLabel}>E-posta ara</label>
+          <input
+            className={a.input}
+            placeholder="örnek@…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </div>
-      {error && <div className="text-red-600 mb-4">{error}</div>}
+
+      {error && <div className={a.alertError}>{error}</div>}
+
       {approvedInfo && (
-        <div className="mb-4 p-4 border rounded bg-green-50">
-          <div>Talep onaylandı.</div>
+        <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-md dark:border-emerald-900/40 dark:from-emerald-950/40 dark:to-slate-900">
+          <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">İşlem tamamlandı</p>
           {approvedInfo.rawToken ? (
-            <>
-              <div className="mt-2 flex items-center space-x-2">
-                <span><b>Token:</b> {approvedInfo.rawToken}</span>
-                <button className="px-2 py-1 border rounded" onClick={copyToken}>Kopyala</button>
+            <div className="mt-3 space-y-2 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <code className="max-w-full flex-1 overflow-x-auto rounded-lg bg-slate-900 px-3 py-2 font-mono text-xs text-emerald-300">
+                  {approvedInfo.rawToken}
+                </code>
+                <button type="button" className={a.btnSecondary} onClick={copyToken}>
+                  Kopyala
+                </button>
               </div>
               {approvedInfo.expiresAt && (
-                <div>
-                  <b>Son Kullanma:</b> {new Date(approvedInfo.expiresAt).toLocaleString()} {typeof timeLeft === 'number' && (<span className="text-sm text-slate-500">(≈ {timeLeft}s)</span>)}
-                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  Son kullanma: {new Date(approvedInfo.expiresAt).toLocaleString()}
+                  {typeof timeLeft === 'number' && <span className="ml-2 tabular-nums">({timeLeft}s)</span>}
+                </p>
               )}
-              <div className="text-sm text-slate-500 mt-2">Bu token'ı kullanıcı ile paylaşın. Kullanıcı /reset-password sayfasında e-posta ve token ile şifreyi güncelleyebilir.</div>
-            </>
+              <p className="text-xs text-slate-500">
+                Kullanıcıyı <span className="font-medium text-slate-700 dark:text-slate-300">/reset-password</span>{' '}
+                sayfasına yönlendirin.
+              </p>
+            </div>
           ) : (
-            <div className="text-sm text-slate-700 mt-2">Yeni şifre başarıyla atandı. Kullanıcı doğrudan bu şifreyle giriş yapabilir.</div>
+            <p className="mt-2 text-sm text-emerald-800 dark:text-emerald-200">
+              Yeni şifre atandı; kullanıcı bu şifreyle giriş yapabilir.
+            </p>
           )}
         </div>
       )}
-      {loading ? 'Yükleniyor...' : (
-        <table className="w-full border">
-          <thead>
-            <tr className="bg-slate-100">
-              <th className="p-2 border">E-posta</th>
-              <th className="p-2 border">Not</th>
-              <th className="p-2 border">Oluşturulma</th>
-              <th className="p-2 border">İşlem</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map(it => (
-              <tr key={it._id}>
-                <td className="p-2 border">{it.email}</td>
-                <td className="p-2 border">{it.note || '-'}</td>
-                <td className="p-2 border">{new Date(it.createdAt).toLocaleString()}</td>
-                <td className="p-2 border space-x-2">
-                  <button className="px-3 py-1 bg-green-600 text-white rounded" onClick={() => openApproveWithPassword(it._id)} disabled={actionLoading}>Onayla</button>
-                  <button className="px-3 py-1 bg-indigo-600 text-white rounded" onClick={() => approveTokenFlow(it._id)} disabled={actionLoading}>Token Üret</button>
-                  <button className="px-3 py-1 bg-red-600 text-white rounded" onClick={() => deny(it._id)} disabled={actionLoading}>Reddet</button>
-                </td>
+
+      {loading ? (
+        <div className={a.loadingBox}>
+          <Loader2 className="mr-2 h-5 w-5 animate-spin text-violet-600" />
+          Talepler yükleniyor…
+        </div>
+      ) : (
+        <div className={a.tableWrap}>
+          <table className={a.table}>
+            <thead>
+              <tr>
+                <th className={a.th}>E-posta</th>
+                <th className={a.th}>Kullanıcı notu</th>
+                <th className={a.th}>Tarih</th>
+                <th className={`${a.th} text-right`}>İşlemler</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((it) => (
+                <tr key={it._id} className={a.tr}>
+                  <td className={`${a.td} font-medium text-slate-900 dark:text-white`}>{it.email}</td>
+                  <td className={`${a.td} max-w-[200px] truncate text-slate-500`}>{it.note || '—'}</td>
+                  <td className={`${a.td} whitespace-nowrap text-xs text-slate-500`}>
+                    {new Date(it.createdAt).toLocaleString()}
+                  </td>
+                  <td className={`${a.td} text-right`}>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <button
+                        type="button"
+                        className={a.btnSmSuccess}
+                        onClick={() => openApproveWithPassword(it._id)}
+                        disabled={actionLoading}
+                      >
+                        Şifre ata
+                      </button>
+                      <button
+                        type="button"
+                        className={a.btnSmIndigo}
+                        onClick={() => approveTokenFlow(it._id)}
+                        disabled={actionLoading}
+                      >
+                        Token
+                      </button>
+                      <button
+                        type="button"
+                        className={a.btnSmDanger}
+                        onClick={() => deny(it._id)}
+                        disabled={actionLoading}
+                      >
+                        Reddet
+                      </button>
+                      <button type="button" className={a.btnSmOutline} onClick={() => setNotesRequestId(it._id)}>
+                        İç notlar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {items.length === 0 && (
+                <tr>
+                  <td className={`${a.td} py-12 text-center text-slate-500`} colSpan={4}>
+                    Bu filtrede talep yok.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
-      {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white rounded p-6 w-full max-w-md shadow">
-            <h2 className="text-xl font-semibold mb-3">Yeni Şifre Ata</h2>
-            <p className="text-sm text-slate-600 mb-4">Bu talep için doğrudan yeni bir şifre belirleyin. Kullanıcı bu şifreyle giriş yapabilir.</p>
-            <input
-              type="password"
-              className="w-full border rounded px-3 py-2 mb-2"
-              placeholder="Yeni şifre (min 6 karakter)"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-            <div className="text-xs text-slate-500 mb-4">En az 8 karakter, büyük/küçük harf, rakam ve sembol içermelidir.</div>
-            <label className="flex items-center gap-2 text-sm mb-4">
-              <input type="checkbox" checked={mustChange} onChange={e=>setMustChange(e.target.checked)} />
-              İlk girişte şifre değiştirilsin
-            </label>
-            <div className="flex justify-end space-x-2">
-              <button className="px-3 py-2 rounded border" type="button" onClick={() => { setShowPasswordModal(false); setCurrentRequestId(null); }}>İptal</button>
-              <button className="px-3 py-2 rounded bg-green-600 text-white" type="button" onClick={submitApproveWithPassword} disabled={actionLoading || !newPassword || newPassword.length < 6}>
-                {actionLoading ? 'İşleniyor...' : 'Onayla ve Şifre Ata'}
+
+      {notesRequestId && (
+        <div className={a.modalBackdrop}>
+          <div className={a.modalPanel} role="dialog" aria-modal="true" aria-labelledby="reset-notes-title">
+            <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-amber-500/12 to-orange-600/8 px-6 py-4 dark:border-slate-800">
+              <h2 id="reset-notes-title" className="text-lg font-bold text-slate-900 dark:text-white">
+                Talep iç notları
+              </h2>
+              <button type="button" className={a.btnGhost} onClick={() => setNotesRequestId(null)}>
+                Kapat
               </button>
+            </div>
+            <div className="px-6 py-5">
+              <AdminInternalNotesPanel refType="password_reset_request" refId={notesRequestId} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPasswordModal && (
+        <div className={a.modalBackdrop}>
+          <div className={`${a.modalPanel} max-w-md`} role="dialog" aria-modal="true">
+            <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Yeni şifre ata</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Güçlü şifre politikası geçerlidir (büyük/küçük harf, rakam, sembol, min. 8).
+              </p>
+            </div>
+            <div className="space-y-4 px-6 py-5">
+              <div>
+                <label className={a.fieldLabel}>Yeni şifre</label>
+                <input
+                  type="password"
+                  className={a.input}
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                  checked={mustChange}
+                  onChange={(e) => setMustChange(e.target.checked)}
+                />
+                İlk girişte şifre değiştirilsin
+              </label>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  className={a.btnSecondary}
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setCurrentRequestId(null);
+                  }}
+                >
+                  İptal
+                </button>
+                <button
+                  type="button"
+                  className={a.btnPrimary}
+                  onClick={submitApproveWithPassword}
+                  disabled={actionLoading || !newPassword || newPassword.length < 6}
+                >
+                  {actionLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      İşleniyor…
+                    </>
+                  ) : (
+                    'Onayla ve ata'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

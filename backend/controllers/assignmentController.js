@@ -1,5 +1,6 @@
 const Assignment = require('../models/Assignment');
 const User = require('../models/User');
+const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
 const Notification = require('../models/Notification');
 const notificationController = require('./notificationController');
 
@@ -162,6 +163,11 @@ exports.submitAssignment = async (req, res) => {
     }
 
     await assignment.save();
+
+    if (assignment.createdBy) {
+      await ensureStudentLinkedToTeacher(assignment.createdBy, studentId);
+    }
+
     res.json({ message: 'Ödev gönderildi', data: assignment });
   } catch (err) {
     res.status(500).json({ message: 'Ödev gönderilemedi', error: err.message });

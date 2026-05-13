@@ -1,11 +1,11 @@
 import React, { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { getHomePathForRole } from '../utils/roleRoutes';
 
 const ProtectedRoute = ({ children, requiredRole = null }) => {
   const { user, loading } = useContext(AuthContext);
 
-  // Yükleme sırasında loading göster
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-950">
@@ -17,14 +17,12 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     );
   }
 
-  // User olmadıysa login'e yönlendir
   if (!user) {
     return <Navigate to="/" replace />;
   }
 
-  // Role kontrolü varsa yap
   if (requiredRole && user.role !== requiredRole) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={getHomePathForRole(user.role)} replace />;
   }
 
   return children;

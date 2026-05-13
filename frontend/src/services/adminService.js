@@ -73,5 +73,22 @@ export default {
   denyBranch: async (id) => {
     const resp = await apiClient.post(`/admin/branch-requests/${id}/deny`);
     return resp.data; // { message }
-  }
+  },
+  listAudits: async ({ page = 1, limit = 25, action = '', q = '' } = {}) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (action) params.set('action', action);
+    if (q) params.set('q', q);
+    const resp = await apiClient.get(`/admin/audits?${params.toString()}`);
+    return resp.data;
+  },
+  listInternalNotes: async (refType, refId) => {
+    const resp = await apiClient.get(
+      `/admin/internal-notes?refType=${encodeURIComponent(refType)}&refId=${encodeURIComponent(refId)}`
+    );
+    return resp.data;
+  },
+  createInternalNote: async ({ refType, refId, body }) => {
+    const resp = await apiClient.post('/admin/internal-notes', { refType, refId, body });
+    return resp.data;
+  },
 };

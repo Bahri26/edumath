@@ -2,6 +2,7 @@ const Exercise = require('../models/Exercise');
 const Question = require('../models/Question');
 const User = require('../models/User');
 const { gradeQuestionAnswer } = require('../utils/questionGrading');
+const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const MAX_EXERCISE_QUESTIONS = 30;
@@ -309,6 +310,10 @@ exports.submitExercise = async (req, res, next) => {
     }
 
     await exercise.save();
+
+    if (exercise.createdBy) {
+      await ensureStudentLinkedToTeacher(exercise.createdBy, studentId);
+    }
 
     res.json({
       success: true,

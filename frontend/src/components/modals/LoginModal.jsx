@@ -1,5 +1,6 @@
 // src/components/modals/LoginModal.jsx
 import React, { useState, useContext, useId } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Mail, Lock, User, BookOpen, Briefcase, Loader2, ArrowRight, LogIn, UserPlus, AlertCircle, CheckCircle, GraduationCap } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import apiClient, { withAuthRequestConfig } from '../../services/api';
@@ -23,6 +24,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
   });
 
   const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
   const fid = useId().replace(/:/g, '');
 
   const handleChange = (e) => {
@@ -252,6 +254,21 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
             {isLoginView ? 'Hesabınız yok mu? ' : 'Zaten hesabınız var mı? '}
             <button type="button" onClick={toggleView} className="text-brand-600 font-bold hover:underline">{isLoginView ? 'Kayıt Ol' : 'Giriş Yap'}</button>
           </div>
+
+          {isLoginView && (
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                className="text-xs font-medium text-slate-500 hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400"
+                onClick={() => {
+                  onClose();
+                  navigate('/admin/login');
+                }}
+              >
+                Yönetici girişi →
+              </button>
+            </div>
+          )}
 
         </div>
       </div>

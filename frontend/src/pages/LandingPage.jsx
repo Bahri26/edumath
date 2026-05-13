@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Bileşenleri İçe Aktar
@@ -13,15 +13,14 @@ import Curriculum from '../sections/Curriculum'; // Kademeli Örüntü Müfredat
 import Courses from '../sections/Courses';       // İnteraktif Örüntü Modülleri
 import Contact from '../sections/Contact';
 import Chatbox from '../components/ui/Chatbox';
-import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { getHomePathForRole } from '../utils/roleRoutes';
 
 // Veriyi İçe Aktar
 import { translations } from '../data/translations';
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
   const { isDarkMode, toggleTheme } = useTheme();
   const [lang, setLang] = useState('tr');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -117,16 +116,8 @@ const LandingPage = () => {
 
   // Login Başarılı Olduğunda Yönlendirme
   const handleLoginSuccess = (userRole) => {
-    setIsLoginModalOpen(false); 
-
-    // Örüntü projesine özel dashboard yönlendirmeleri
-    if (userRole === 'teacher' || userRole === 'admin') {
-      navigate('/teacher/overview'); 
-    } else if (userRole === 'student') {
-      navigate('/student/home'); // Öğrenci burada kendi seviyesindeki örüntüleri görür
-    } else {
-      navigate('/'); 
-    }
+    setIsLoginModalOpen(false);
+    navigate(getHomePathForRole(userRole));
   };
 
   return (

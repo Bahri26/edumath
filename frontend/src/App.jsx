@@ -53,6 +53,8 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminAuditLog = lazy(() => import('./pages/admin/AdminAuditLog'));
+const AdminBranchRequests = lazy(() => import('./pages/admin/AdminBranchRequests'));
 // import StudentSurveys... -> ARTIK GEREK YOK (Ortak sayfayı kullanacağız)
 
 function App() {
@@ -88,7 +90,7 @@ function App() {
                   { id: 'questions', label: 'Soru Bankası', icon: FileText, path: '/teacher/questions' },
                   { id: 'exams', label: 'Sınavlar', icon: CheckCircle, path: '/teacher/exams' },
                   { id: 'exercises', label: 'Egzersizler', icon: Trophy, path: '/teacher/exercises' },
-                  { id: 'skill-tree', label: 'Kazanım Ağacı', icon: LayoutGrid, path: '/teacher/skill-tree' },
+                  { id: 'skill-tree', label: 'Konu & ders yapısı', icon: LayoutGrid, path: '/teacher/skill-tree' },
                   { id: 'student-progress', label: 'Öğrenci İlerleme', icon: Users, path: '/teacher/student-progress' },
                   { id: 'reports', label: 'Raporlar', icon: BarChart2, path: '/teacher/reports' },
                 ]}
@@ -172,7 +174,9 @@ function App() {
           }>
             <Route index element={<AdminDashboard />} />
             <Route path="reset-requests" element={<AdminResetRequests />} />
+            <Route path="branch-requests" element={<AdminBranchRequests />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="audit-log" element={<AdminAuditLog />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
 

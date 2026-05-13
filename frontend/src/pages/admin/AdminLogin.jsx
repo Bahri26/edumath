@@ -1,7 +1,9 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Loader2, Lock, Sparkles } from 'lucide-react';
 import apiClient, { withAuthRequestConfig } from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
+import { admin as a } from '../../components/admin/adminUi';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -13,7 +15,8 @@ const AdminLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null); setLoading(true);
+    setError(null);
+    setLoading(true);
     try {
       const resp = await apiClient.post('/auth/login', { email, password }, withAuthRequestConfig());
       const { token, user } = resp.data;
@@ -25,24 +28,71 @@ const AdminLogin = () => {
       }
     } catch (err) {
       if (err?.code === 'ECONNABORTED') {
-        setError('Giriş isteği zaman aşımına uğradı. Sunucu geç cevap veriyor; lütfen tekrar deneyin.');
+        setError('Giriş isteği zaman aşımına uğradı. Lütfen tekrar deneyin.');
       } else {
         setError(err?.response?.data?.message || 'Giriş hatası');
       }
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="max-w-md mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Admin Giriş</h1>
-      {error && <div className="mb-4 text-red-600">{error}</div>}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input className="w-full border p-3 rounded" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} />
-        <input className="w-full border p-3 rounded" type="password" placeholder="Şifre" value={password} onChange={e=>setPassword(e.target.value)} />
-        <button className="w-full bg-indigo-600 text-white p-3 rounded" disabled={loading}>
-          {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
-        </button>
-      </form>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 px-4 py-12">
+      <div className="relative w-full max-w-md">
+        <div className="absolute -inset-px rounded-3xl bg-gradient-to-b from-violet-500/50 to-indigo-600/30 blur-sm" />
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/90 p-8 shadow-2xl shadow-black/40 backdrop-blur-md">
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/30">
+              <Sparkles className="h-7 w-7" strokeWidth={2} />
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-violet-300/90">Yönetici</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-white">Edumath giriş</h1>
+            <p className="mt-2 text-sm text-slate-400">Yetkili hesabınızla oturum açın.</p>
+          </div>
+
+          {error && (
+            <div className="mb-6 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">{error}</div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className={a.fieldLabel}>E-posta</label>
+              <input
+                className={`${a.input} border-slate-700/80 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-violet-400`}
+                placeholder="ornek@kurum.edu.tr"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
+            <div>
+              <label className={a.fieldLabel}>Şifre</label>
+              <input
+                className={`${a.input} border-slate-700/80 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-violet-400`}
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
+            <button type="submit" disabled={loading} className={`${a.btnPrimary} w-full py-3`}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Giriş yapılıyor…
+                </>
+              ) : (
+                <>
+                  <Lock className="h-4 w-4 opacity-90" />
+                  Giriş yap
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 };

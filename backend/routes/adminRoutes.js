@@ -8,6 +8,7 @@ const PasswordResetRequest = require('../models/PasswordResetRequest');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const AdminAudit = require('../models/AdminAudit');
+const AdminInternalNote = require('../models/AdminInternalNote');
 const RefreshToken = require('../models/RefreshToken');
 
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
@@ -194,7 +195,7 @@ router.get('/users', auth, hasRole(['admin']), async (req, res) => {
     }
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [items, total] = await Promise.all([
-      User.find(filter).select('name email role status createdAt').sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)),
+      User.find(filter).select('name email role status createdAt grade branch branchApproval').sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)),
       User.countDocuments(filter)
     ]);
     res.json({ items, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
@@ -309,6 +310,100 @@ router.get('/stats', auth, hasRole(['admin']), async (req, res) => {
   } catch (error) {
     console.error('Admin stats hatası:', error);
     res.status(500).json({ message: 'İstatistik hatası: ' + error.message });
+  }
+});
+
+// --- ADMIN AUDIT LOG (read-only) ---
+router.get('/audits', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 25));
+    const skip = (page - 1) * limit;
+    const filter = {};
+    if (req.query.action && String(req.query.action).trim()) {
+      filter.action = String(req.query.action).trim();
+    }
+    const q = req.query.q && String(req.query.q).trim();
+    if (q) {
+      filter.$or = [
+        { targetEmail: { $regex: q, $options: 'i' } },
+        { action: { $regex: q, $options: 'i' } },
+      ];
+    }
+    const [items, total] = await Promise.all([
+      AdminAudit.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('actorId', 'name email')
+        .lean(),
+      AdminAudit.countDocuments(filter),
+    ]);
+    res.json({ items, pagination: { page, limit, total } });
+  } catch (error) {
+    console.error('Admin audits list error:', error);
+    res.status(500).json({ message: 'Denetim kayıtları alınamadı: ' + error.message });
+  }
+});
+
+// --- ADMIN INTERNAL NOTES (vaka / işlem notları) ---
+router.get('/internal-notes', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const refType = req.query.refType;
+    const refId = req.query.refId;
+    if (!['user', 'password_reset_request'].includes(refType) || !refId) {
+      return res.status(400).json({ message: 'Geçerli refType ve refId gerekli.' });
+    }
+    const items = await AdminInternalNote.find({ refType, refId })
+      .sort({ createdAt: -1 })
+      .populate('authorId', 'name email')
+      .lean();
+    res.json({ items });
+  } catch (error) {
+    console.error('Internal notes list error:', error);
+    res.status(500).json({ message: 'Notlar alınamadı: ' + error.message });
+  }
+});
+
+const internalNoteCreateSchema = Joi.object({
+  refType: Joi.string().valid('user', 'password_reset_request').required(),
+  refId: Joi.string().required(),
+  body: Joi.string().min(1).max(4000).required(),
+});
+
+router.post('/internal-notes', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const { error, value } = internalNoteCreateSchema.validate(req.body, { abortEarly: false, stripUnknown: true });
+    if (error) {
+      return res.status(400).json({ message: 'Geçersiz not verisi', details: error.details });
+    }
+    if (value.refType === 'user') {
+      const u = await User.findById(value.refId);
+      if (!u) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+    } else {
+      const pr = await PasswordResetRequest.findById(value.refId);
+      if (!pr) return res.status(404).json({ message: 'Talep bulunamadı.' });
+    }
+    const note = await AdminInternalNote.create({
+      refType: value.refType,
+      refId: value.refId,
+      authorId: req.user.id,
+      body: value.body.trim(),
+    });
+    try {
+      await AdminAudit.create({
+        actorId: req.user.id,
+        action: 'admin_internal_note',
+        targetUserId: value.refType === 'user' ? value.refId : undefined,
+        requestId: value.refType === 'password_reset_request' ? value.refId : undefined,
+        metadata: { refType: value.refType, noteId: note._id },
+      });
+    } catch {}
+    const item = await AdminInternalNote.findById(note._id).populate('authorId', 'name email').lean();
+    res.status(201).json({ item });
+  } catch (error) {
+    console.error('Internal note create error:', error);
+    res.status(500).json({ message: 'Not kaydedilemedi: ' + error.message });
   }
 });
 

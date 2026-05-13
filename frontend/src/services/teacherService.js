@@ -19,10 +19,10 @@ export const getTeacherStats = async () => {
   }
 };
 
-// ✅ SINIF RAPORLARINI GETİR
-export const getClassReports = async () => {
+// ✅ SINIF RAPORLARINI GETİR (?days=7|30|90…)
+export const getClassReports = async (params = {}) => {
   try {
-    const response = await apiClient.get('/teacher/reports');
+    const response = await apiClient.get('/teacher/reports', { params });
     return response.data;
   } catch (error) {
     console.error('Class reports error:', error);

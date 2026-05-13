@@ -3,6 +3,7 @@ const router = express.Router();
 const Survey = require('../models/Survey');
 const protect = require('../middlewares/authMiddleware');
 const role = require('../middlewares/roleMiddleware');
+const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
 
 // TÜM ANKETLERİ GETİR (Korumalı)
 router.get('/', protect, async (req, res) => {
@@ -163,6 +164,11 @@ router.post('/:id/respond', protect, role(['student']), async (req, res) => {
     });
     
     await survey.save();
+
+    if (survey.createdBy) {
+      await ensureStudentLinkedToTeacher(survey.createdBy, req.user.id);
+    }
+
     res.json({ message: "Cevap kaydedildi" });
   } catch (err) {
     res.status(500).json({ message: err.message });

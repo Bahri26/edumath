@@ -6,6 +6,7 @@ const Survey = require('../models/Survey');
 const Exam = require('../models/Exam');
 const UserProgress = require('../models/UserProgress');
 const mongoose = require('mongoose');
+const { syncTeacherRosterFromTeacherContent } = require('../utils/studentRosterSync');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -159,53 +160,162 @@ exports.getTeacherStats = async (req, res) => {
   }
 };
 
-// ✅ 2. SINIF RAPORLARINI GETIR (Konu Bazlı Başarı)
+// ✅ 2. SINIF RAPORLARINI GETIR (Konu havuzu, sınav sonuçları, trend)
 exports.getClassReports = async (req, res) => {
   try {
     const teacherId = req.user.id;
+    const days = Math.min(365, Math.max(1, parseInt(req.query.days, 10) || 30));
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const oid = new mongoose.Types.ObjectId(teacherId);
 
-    // Konu bazlı başarı oranları
-    const topicPerformance = await Question.aggregate([
-      { $match: { createdBy: new mongoose.Types.ObjectId(teacherId) } },
-      { $group: { 
-        _id: '$subject', 
-        total: { $sum: 1 },
-        avgDifficulty: { $avg: { 
-          $cond: [
-            { $eq: ['$difficulty', 'Kolay'] }, 1,
-            { $cond: [{ $eq: ['$difficulty', 'Orta'] }, 2, 3] }
-          ]
-        }}
-      }},
-      { $sort: { total: -1 } }
+    const teacherStudents = await Student.find({ teacherId })
+      .select('userId averageScore')
+      .lean();
+    const classUserIds = teacherStudents.map((s) => s.userId).filter(Boolean);
+    const classUserOid = classUserIds.map((id) => new mongoose.Types.ObjectId(String(id)));
+
+    const classAverage =
+      teacherStudents.length > 0
+        ? Number(
+            (
+              teacherStudents.reduce((sum, s) => sum + (s.averageScore || 0), 0) /
+              teacherStudents.length
+            ).toFixed(1)
+          )
+        : 0;
+
+    const topicAgg = await Question.aggregate([
+      { $match: { createdBy: oid } },
+      {
+        $group: {
+          _id: '$subject',
+          total: { $sum: 1 },
+          avgDifficulty: {
+            $avg: {
+              $cond: [
+                { $eq: ['$difficulty', 'Kolay'] },
+                1,
+                { $cond: [{ $eq: ['$difficulty', 'Orta'] }, 2, 3] },
+              ],
+            },
+          },
+        },
+      },
+      { $sort: { total: -1 } },
     ]);
 
-    // Öğrenci risk analizi (Düşük başarılı öğrenciler)
-    const studentRisks = await Student.find({ teacherId })
-      .select('name email averageScore grade')
-      .sort({ averageScore: 1 })
-      .limit(5);
+    const totalPool = topicAgg.reduce((sum, row) => sum + row.total, 0);
+    const topicPerformance = topicAgg.map((row) => ({
+      subject: row._id || 'Belirtilmedi',
+      total: row.total,
+      avgDifficulty: row.avgDifficulty != null ? Number(row.avgDifficulty.toFixed(2)) : null,
+      poolShare: totalPool > 0 ? Math.round((100 * row.total) / totalPool) : 0,
+    }));
 
-    // Sınıf başarı trend (Son 7 gün)
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const dailyTrend = await Exam.aggregate([
-      { $match: { 
-        createdBy: new mongoose.Types.ObjectId(teacherId),
-        createdAt: { $gte: sevenDaysAgo }
-      }},
-      { $group: {
-        _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-        avgScore: { $avg: 72 }, // Mock veri (gerçekte submissions'dan hesaplanır)
-        count: { $sum: 1 }
-      }},
-      { $sort: { _id: 1 } }
+    const studentRisks = await Student.find({ teacherId })
+      .populate('userId', 'name email')
+      .select('averageScore grade')
+      .sort({ averageScore: 1 })
+      .limit(8)
+      .lean();
+
+    const studentRisksOut = studentRisks.map((s) => ({
+      _id: s._id,
+      name: s.userId?.name || 'Öğrenci',
+      email: s.userId?.email || '',
+      averageScore: s.averageScore ?? 0,
+      grade: s.grade,
+    }));
+
+    const dailyTrendRaw = await Exam.aggregate([
+      { $match: { createdBy: oid } },
+      { $unwind: { path: '$results', preserveNullAndEmptyArrays: false } },
+      { $match: { 'results.submittedAt': { $gte: since } } },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$results.submittedAt' },
+          },
+          avgScore: { $avg: '$results.score' },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const dailyTrend = dailyTrendRaw.map((d) => ({
+      date: d._id,
+      avgScore: d.avgScore != null ? Number(Number(d.avgScore).toFixed(1)) : 0,
+      count: d.count,
+    }));
+
+    const participationAgg =
+      classUserOid.length > 0
+        ? await Exam.aggregate([
+            { $match: { createdBy: oid } },
+            { $unwind: { path: '$results', preserveNullAndEmptyArrays: false } },
+            {
+              $match: {
+                'results.submittedAt': { $gte: since },
+                'results.studentId': { $in: classUserOid },
+              },
+            },
+            { $group: { _id: '$results.studentId' } },
+          ])
+        : [];
+
+    const participationRate =
+      classUserIds.length > 0
+        ? Math.round((100 * participationAgg.length) / classUserIds.length)
+        : 0;
+
+    const periodScoreAgg =
+      classUserOid.length > 0
+        ? await Exam.aggregate([
+            { $match: { createdBy: oid } },
+            { $unwind: { path: '$results', preserveNullAndEmptyArrays: false } },
+            {
+              $match: {
+                'results.submittedAt': { $gte: since },
+                'results.studentId': { $in: classUserOid },
+              },
+            },
+            { $group: { _id: null, avg: { $avg: '$results.score' }, n: { $sum: 1 } } },
+          ])
+        : [];
+
+    const periodAverage =
+      periodScoreAgg[0]?.n > 0 && periodScoreAgg[0].avg != null
+        ? Number(Number(periodScoreAgg[0].avg).toFixed(1))
+        : null;
+
+    const weakTopicsInPeriod = await Exam.aggregate([
+      { $match: { createdBy: oid } },
+      { $unwind: { path: '$results', preserveNullAndEmptyArrays: false } },
+      { $match: { 'results.submittedAt': { $gte: since } } },
+      { $unwind: { path: '$results.weakTopics', preserveNullAndEmptyArrays: false } },
+      { $group: { _id: '$results.weakTopics', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 12 },
     ]);
 
     res.json({
+      days,
+      since,
+      summary: {
+        classAverage,
+        periodAverage,
+        participationRate,
+        submissionsInPeriod: periodScoreAgg[0]?.n || 0,
+        totalStudents: classUserIds.length,
+        topPoolSubject: topicPerformance[0]?.subject || null,
+        weakTopic: weakTopicsInPeriod[0]?._id || null,
+      },
       topicPerformance,
-      studentRisks,
+      studentRisks: studentRisksOut,
       dailyTrend,
-      generatedAt: new Date()
+      weakTopicsInPeriod: weakTopicsInPeriod.map((w) => ({ topic: w._id, count: w.count })),
+      generatedAt: new Date(),
     });
   } catch (err) {
     res.status(500).json({ message: 'Raporlar alınamadı', error: err.message });
@@ -244,7 +354,9 @@ exports.getMySurveys = async (req, res) => {
 exports.getClassStudents = async (req, res) => {
   try {
     const teacherId = req.user.id;
-    
+
+    await syncTeacherRosterFromTeacherContent(teacherId);
+
     const students = await Student.find({ teacherId })
       .select('userId grade averageScore')
       .populate('userId', 'name email status')
@@ -286,18 +398,27 @@ exports.getStudentDetails = async (req, res) => {
 
     // Öğrencinin sınav performansı
     const exams = await Exam.find({ createdBy: teacherId });
-    const studentPerformance = exams.map(exam => ({
-      examName: exam.title,
-      score: exam.submissions?.find(s => s.studentId.toString() === studentId)?.score || 0,
-      maxScore: 100
-    }));
+    const studentPerformance = exams.map((exam) => {
+      const sid = String(student.userId || '');
+      const row = (exam.results || []).find((r) => String(r.studentId) === sid);
+      return {
+        examName: exam.title,
+        score: row?.score ?? 0,
+        maxScore: 100,
+        participated: Boolean(row),
+      };
+    });
+
+    const taken = studentPerformance.filter((p) => p.participated);
+    const averageScore =
+      taken.length > 0
+        ? (taken.reduce((sum, p) => sum + p.score, 0) / taken.length).toFixed(1)
+        : 0;
 
     res.json({
       student,
       performance: studentPerformance,
-      averageScore: studentPerformance.length > 0 
-        ? (studentPerformance.reduce((sum, p) => sum + p.score, 0) / studentPerformance.length).toFixed(1)
-        : 0
+      averageScore,
     });
   } catch (err) {
     res.status(500).json({ message: 'Öğrenci detayları alınamadı', error: err.message });

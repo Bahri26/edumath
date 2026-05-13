@@ -1,5 +1,5 @@
 // Mock IntersectionObserver for jsdom
-global.IntersectionObserver = class {
+globalThis.IntersectionObserver = class {
   constructor() {}
   observe() {}
   unobserve() {}
@@ -14,6 +14,6 @@ import AdminResetRequests from './AdminResetRequests';
 describe('AdminResetRequests', () => {
   it('renders main section', () => {
     render(<AdminResetRequests />);
-    expect(screen.getByText(/şifre|reset/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /şifre sıfırlama talepleri/i })).toBeInTheDocument();
   });
 });

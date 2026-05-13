@@ -1,61 +1,559 @@
-import React, { useEffect, useState } from "react";
-import apiClient from "../../services/api";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import {
+  Users,
+  Search,
+  BookOpen,
+  Target,
+  Zap,
+  Clock,
+  GraduationCap,
+  Mail,
+  Loader2,
+  AlertCircle,
+  BarChart3,
+  Sparkles,
+  X,
+} from 'lucide-react';
+import apiClient from '../../services/api';
+import Card from '../../components/ui/Card.jsx';
+import { LanguageContext } from '../../context/LanguageContext';
+import { useToast } from '../../context/ToastContext';
+
+const formatRelativeTime = (value, lang) => {
+  if (!value) return '—';
+  const then = new Date(value).getTime();
+  if (Number.isNaN(then)) return '—';
+  const diffMs = Date.now() - then;
+  const diffMinutes = Math.max(1, Math.round(diffMs / 60000));
+  if (diffMinutes < 60) {
+    return lang === 'EN' ? `${diffMinutes} min ago` : `${diffMinutes} dk önce`;
+  }
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) {
+    return lang === 'EN' ? `${diffHours} h ago` : `${diffHours} saat önce`;
+  }
+  const diffDays = Math.round(diffHours / 24);
+  return lang === 'EN' ? `${diffDays} d ago` : `${diffDays} gün önce`;
+};
+
+const COPY = {
+  TR: {
+    title: 'Öğrenci takibi',
+    subtitle: 'Ders bazlı quiz ilerlemesi ve son deneme tarihleri.',
+    classList: 'Sınıf listesi',
+    searchPlaceholder: 'İsim veya e-posta ara…',
+    noStudents: 'Henüz kayıtlı öğrenci yok.',
+    rosterEmptyHint:
+      'Liste, sizin oluşturduğunuz sınav, egzersiz, ödev veya anketi tamamlayan öğrencilerden oluşur. Sadece müfredat ders quiz’i çözenler burada otomatik görünmez.',
+    loadError: 'Öğrenci listesi yüklenemedi.',
+    progressError: 'İlerleme verisi alınamadı.',
+    selectPrompt: 'Soldan bir öğrenci seçin',
+    selectHint: 'Quiz doğru/yanlış sayıları ve XP burada listelenir.',
+    invalidStudent: 'Bu öğrenci sınıfınızda bulunamadı.',
+    lessons: 'Dersler',
+    noProgress: 'Bu öğrenci için henüz ders ilerlemesi yok.',
+    loadingProgress: 'İlerleme yükleniyor…',
+    correctCol: 'Doğru',
+    wrongCol: 'Yanlış',
+    summaryLessons: 'Ders sayısı',
+    summaryCorrect: 'Toplam doğru',
+    summaryWrong: 'Toplam yanlış',
+    summaryXp: 'Toplam XP',
+    accuracy: 'Quiz isabeti',
+    grade: 'Sınıf',
+    avgShort: 'Ort.',
+    studentsCount: (n) => `${n} öğrenci`,
+    clearSelection: 'Seçimi kaldır',
+    classAvg: 'Sınıf ort.',
+  },
+  EN: {
+    title: 'Student progress',
+    subtitle: 'Per-lesson quiz stats and last attempt times.',
+    classList: 'Class roster',
+    searchPlaceholder: 'Search name or email…',
+    noStudents: 'No students enrolled yet.',
+    rosterEmptyHint:
+      'The roster is built from students who completed your exam, exercise, assignment, or survey. Students who only solve built-in lesson quizzes are not linked here automatically.',
+    loadError: 'Could not load the roster.',
+    progressError: 'Could not load progress.',
+    selectPrompt: 'Pick a student on the left',
+    selectHint: 'Correct/wrong counts and XP appear here.',
+    invalidStudent: 'This student is not in your class.',
+    lessons: 'Lessons',
+    noProgress: 'No lesson progress for this student yet.',
+    loadingProgress: 'Loading progress…',
+    correctCol: 'Correct',
+    wrongCol: 'Wrong',
+    summaryLessons: 'Lessons',
+    summaryCorrect: 'Total correct',
+    summaryWrong: 'Total wrong',
+    summaryXp: 'Total XP',
+    accuracy: 'Quiz accuracy',
+    grade: 'Grade',
+    avgShort: 'Avg.',
+    studentsCount: (n) => `${n} students`,
+    clearSelection: 'Clear selection',
+    classAvg: 'Class avg.',
+  },
+};
+
+function initials(name) {
+  const parts = String(name || '')
+    .trim()
+    .split(/\s+/);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 export default function StudentProgressDashboard() {
+  const { language } = useContext(LanguageContext);
+  const { showToast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryStudent = searchParams.get('student');
+  const t = COPY[language] || COPY.TR;
+
   const [students, setStudents] = useState([]);
-  const [selected, setSelected] = useState(null);
+  const [listLoading, setListLoading] = useState(true);
+  const [listError, setListError] = useState(null);
+  const [search, setSearch] = useState('');
   const [progress, setProgress] = useState([]);
+  const [progressLoading, setProgressLoading] = useState(false);
+  const [progressError, setProgressError] = useState(null);
 
   useEffect(() => {
-    apiClient.get("/teacher/students").then(res => setStudents(res.data.students || []));
-  }, []);
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setListLoading(true);
+      setListError(null);
+    });
+    apiClient
+      .get('/teacher/students')
+      .then((res) => {
+        if (!active) return;
+        setStudents(Array.isArray(res.data?.students) ? res.data.students : []);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setStudents([]);
+        const msg = err?.response?.data?.message || t.loadError;
+        setListError(msg);
+        if (err?.response?.status !== 403) showToast(msg, 'error');
+      })
+      .finally(() => {
+        if (active) setListLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [showToast, t.loadError]);
 
-  const loadProgress = (studentId) => {
-    apiClient.get(`/teacher/students/${studentId}/progress`).then(res => setProgress(res.data.progress || []));
-    setSelected(studentId);
-  };
+  const filteredStudents = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return students;
+    return students.filter(
+      (s) =>
+        String(s.name || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(s.email || '')
+          .toLowerCase()
+          .includes(q)
+    );
+  }, [students, search]);
+
+  const selectedStudent = useMemo(
+    () => students.find((s) => String(s._id) === String(queryStudent)) || null,
+    [students, queryStudent]
+  );
+
+  const classAverage = useMemo(() => {
+    if (!students.length) return null;
+    const sum = students.reduce((acc, s) => acc + (Number(s.averageScore) || 0), 0);
+    return (sum / students.length).toFixed(1);
+  }, [students]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!queryStudent) {
+      queueMicrotask(() => {
+        if (!active) return;
+        setProgress([]);
+        setProgressError(null);
+        setProgressLoading(false);
+      });
+      return () => {
+        active = false;
+      };
+    }
+
+    if (students.length === 0) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const inClass = students.some((s) => String(s._id) === String(queryStudent));
+    if (!inClass) {
+      queueMicrotask(() => {
+        if (!active) return;
+        setProgress([]);
+        setProgressError(t.invalidStudent);
+        setProgressLoading(false);
+      });
+      return () => {
+        active = false;
+      };
+    }
+
+    queueMicrotask(() => {
+      if (!active) return;
+      setProgressLoading(true);
+      setProgressError(null);
+    });
+
+    apiClient
+      .get(`/teacher/students/${queryStudent}/progress`)
+      .then((res) => {
+        if (!active) return;
+        setProgress(Array.isArray(res.data?.progress) ? res.data.progress : []);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setProgress([]);
+        const msg = err?.response?.data?.message || t.progressError;
+        setProgressError(msg);
+        if (err?.response?.status !== 403) showToast(msg, 'error');
+      })
+      .finally(() => {
+        if (active) setProgressLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [queryStudent, students, showToast, t.invalidStudent, t.progressError]);
+
+  const selectStudent = useCallback(
+    (id) => {
+      setSearchParams({ student: String(id) });
+    },
+    [setSearchParams]
+  );
+
+  const clearSelection = useCallback(() => {
+    setSearchParams({});
+  }, [setSearchParams]);
+
+  const totals = useMemo(() => {
+    const correct = progress.reduce((a, p) => a + (Number(p.correctCount) || 0), 0);
+    const wrong = progress.reduce((a, p) => a + (Number(p.wrongCount) || 0), 0);
+    const xp = progress.reduce((a, p) => a + (Number(p.xp) || 0), 0);
+    const attempts = correct + wrong;
+    const accuracy = attempts > 0 ? Math.round((100 * correct) / attempts) : null;
+    return { correct, wrong, xp, accuracy, lessons: progress.length };
+  }, [progress]);
 
   return (
-    <div className="max-w-5xl mx-auto p-8 animate-fade-in">
-      <h1 className="text-2xl font-black mb-6">Öğrenci Takibi</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="space-y-2">
-          <h2 className="font-bold mb-2">Sınıf Listesi</h2>
-          {students.map(s => (
-            <button key={s._id} onClick={() => loadProgress(s._id)} className={`block w-full text-left px-4 py-2 rounded-lg ${selected===s._id ? 'bg-indigo-600 text-white' : 'bg-slate-100 hover:bg-indigo-50'}`}>{s.name} <span className="text-xs text-slate-400">({s.grade})</span></button>
-          ))}
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 animate-fade-in space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-950/50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-3">
+            <Sparkles size={14} aria-hidden />
+            {language === 'EN' ? 'Live class data' : 'Canlı sınıf verisi'}
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+            {t.title}
+          </h1>
+          <p className="mt-1 text-slate-600 dark:text-slate-400 text-sm max-w-xl">{t.subtitle}</p>
         </div>
-        <div className="md:col-span-2">
-          {selected && (
-            <div>
-              <h2 className="font-bold mb-4">İlerleme</h2>
-              {progress.length === 0 ? <div>Henüz veri yok.</div> : (
-                <table className="w-full text-sm border">
-                  <thead>
-                    <tr className="bg-slate-100">
-                      <th className="p-2">Ders</th>
-                      <th>Quiz Doğru</th>
-                      <th>Quiz Yanlış</th>
-                      <th>XP</th>
-                      <th>Son Deneme</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {progress.map(p => (
-                      <tr key={p.lessonId} className="border-t">
-                        <td className="p-2">{p.lessonTitle}</td>
-                        <td className="text-green-600 font-bold">{p.correctCount}</td>
-                        <td className="text-rose-600 font-bold">{p.wrongCount}</td>
-                        <td className="text-indigo-700 font-bold">{p.xp}</td>
-                        <td>{p.lastAttempt ? new Date(p.lastAttempt).toLocaleString() : '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        {!listLoading && students.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+              <Users size={16} className="text-indigo-500 shrink-0" aria-hidden />
+              {t.studentsCount(students.length)}
+            </span>
+            {classAverage != null && (
+              <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+                <BarChart3 size={16} className="text-emerald-500 shrink-0" aria-hidden />
+                {t.classAvg}: <strong className="text-slate-900 dark:text-white">{classAverage}</strong>
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+        <aside className="lg:col-span-4 space-y-4">
+          <Card className="p-0 overflow-hidden">
+            <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3 flex items-center justify-between gap-2">
+              <h2 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 text-sm uppercase tracking-wide">
+                <Users size={18} className="text-indigo-500" aria-hidden />
+                {t.classList}
+              </h2>
+              {queryStudent && (
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline shrink-0"
+                >
+                  {t.clearSelection}
+                </button>
               )}
             </div>
+            <div className="p-3 border-b border-slate-100 dark:border-slate-700">
+              <label className="relative block">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  size={16}
+                  aria-hidden
+                />
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t.searchPlaceholder}
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/80 pl-9 pr-3 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+                />
+              </label>
+            </div>
+
+            <div className="max-h-[min(520px,55vh)] overflow-y-auto p-2">
+              {listLoading ? (
+                <div className="flex items-center justify-center gap-2 py-12 text-slate-500 text-sm">
+                  <Loader2 className="animate-spin" size={18} aria-hidden />
+                  …
+                </div>
+              ) : listError ? (
+                <div className="flex items-start gap-2 p-4 text-sm text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 rounded-xl m-2">
+                  <AlertCircle className="shrink-0 mt-0.5" size={18} aria-hidden />
+                  {listError}
+                </div>
+              ) : students.length === 0 ? (
+                <div className="px-4 py-8 text-center space-y-2">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">{t.noStudents}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{t.rosterEmptyHint}</p>
+                </div>
+              ) : (
+                <ul className="space-y-1">
+                  {filteredStudents.map((s) => {
+                    const active = String(queryStudent) === String(s._id);
+                    return (
+                      <li key={s._id}>
+                        <button
+                          type="button"
+                          onClick={() => selectStudent(s._id)}
+                          className={`w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-all ${
+                            active
+                              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25 ring-1 ring-indigo-500/30'
+                              : 'hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-800 dark:text-slate-100'
+                          }`}
+                        >
+                          <span
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
+                              active
+                                ? 'bg-white/20 text-white'
+                                : 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-200'
+                            }`}
+                          >
+                            {initials(s.name)}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-semibold truncate">{s.name || '—'}</span>
+                            <span
+                              className={`block text-xs truncate ${
+                                active ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'
+                              }`}
+                            >
+                              {s.grade || '—'} · {t.avgShort} {s.averageScore ?? 0}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {!listLoading && !listError && students.length > 0 && filteredStudents.length === 0 && (
+                <p className="text-sm text-slate-500 px-4 py-6 text-center">—</p>
+              )}
+            </div>
+          </Card>
+        </aside>
+
+        <section className="lg:col-span-8 space-y-4">
+          {!queryStudent ? (
+            <Card className="p-10 text-center border-dashed">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-500 mb-4">
+                <GraduationCap size={32} aria-hidden />
+              </div>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t.selectPrompt}</h2>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">{t.selectHint}</p>
+            </Card>
+          ) : progressError && !progressLoading ? (
+            <Card className="p-8">
+              <div className="flex flex-col sm:flex-row items-start gap-3 text-amber-800 dark:text-amber-200">
+                <AlertCircle className="shrink-0" size={22} aria-hidden />
+                <div>
+                  <p className="font-semibold">{progressError}</p>
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    <X size={14} aria-hidden />
+                    {t.clearSelection}
+                  </button>
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <>
+              {selectedStudent && (
+                <Card className="p-5 sm:p-6 bg-gradient-to-br from-white to-indigo-50/50 dark:from-slate-800 dark:to-indigo-950/20 border-indigo-100 dark:border-indigo-900/40">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-lg font-bold text-white shadow-lg shadow-indigo-600/30">
+                      {initials(selectedStudent.name)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+                        {selectedStudent.name}
+                      </h2>
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
+                        {selectedStudent.email && (
+                          <span className="inline-flex items-center gap-1.5 min-w-0">
+                            <Mail size={14} className="shrink-0 text-slate-400" aria-hidden />
+                            <span className="truncate">{selectedStudent.email}</span>
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1.5">
+                          <BookOpen size={14} className="text-slate-400" aria-hidden />
+                          {t.grade}: {selectedStudent.grade || '—'}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <Target size={14} className="text-slate-400" aria-hidden />
+                          {t.avgShort}{' '}
+                          <strong className="text-slate-900 dark:text-white">
+                            {selectedStudent.averageScore ?? 0}
+                          </strong>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: t.summaryLessons, value: totals.lessons, icon: BookOpen, tone: 'text-violet-600 dark:text-violet-400' },
+                  { label: t.summaryCorrect, value: totals.correct, icon: Target, tone: 'text-emerald-600 dark:text-emerald-400' },
+                  { label: t.summaryWrong, value: totals.wrong, icon: AlertCircle, tone: 'text-rose-600 dark:text-rose-400' },
+                  { label: t.summaryXp, value: totals.xp, icon: Zap, tone: 'text-amber-600 dark:text-amber-400' },
+                ].map((m) => (
+                  <Card key={m.label} className="p-4">
+                    <div className={`inline-flex rounded-lg bg-slate-100 dark:bg-slate-700/80 p-2 ${m.tone}`}>
+                      <m.icon size={18} aria-hidden />
+                    </div>
+                    <p className="mt-3 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">{m.value}</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      {m.label}
+                    </p>
+                  </Card>
+                ))}
+              </div>
+
+              {totals.accuracy != null && totals.accuracy >= 0 && (
+                <Card className="p-5">
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t.accuracy}</span>
+                    <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{totals.accuracy}%</span>
+                  </div>
+                  <div className="h-2.5 w-full rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-500"
+                      style={{ width: `${Math.min(100, totals.accuracy)}%` }}
+                    />
+                  </div>
+                </Card>
+              )}
+
+              <Card className="p-0 overflow-hidden">
+                <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3 flex items-center gap-2">
+                  <BarChart3 size={18} className="text-indigo-500" aria-hidden />
+                  <h3 className="font-bold text-slate-800 dark:text-white">{t.lessons}</h3>
+                </div>
+
+                {progressLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-16 text-slate-500 text-sm">
+                    <Loader2 className="animate-spin" size={18} aria-hidden />
+                    {t.loadingProgress}
+                  </div>
+                ) : progress.length === 0 ? (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 px-4 py-12 text-center">{t.noProgress}</p>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                    {progress.map((p) => {
+                      const c = Number(p.correctCount) || 0;
+                      const w = Number(p.wrongCount) || 0;
+                      const sum = c + w;
+                      const pct = sum > 0 ? Math.round((100 * c) / sum) : 0;
+                      return (
+                        <div
+                          key={String(p.lessonId)}
+                          className="px-4 py-4 hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-slate-900 dark:text-white truncate">
+                                {p.lessonTitle || '—'}
+                              </p>
+                              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                                  <Target size={12} aria-hidden /> {c} {t.correctCol.toLowerCase()}
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 font-medium">
+                                  <AlertCircle size={12} aria-hidden /> {w} {t.wrongCol.toLowerCase()}
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+                                  <Zap size={12} aria-hidden /> {p.xp ?? 0} XP
+                                </span>
+                                <span className="inline-flex items-center gap-1">
+                                  <Clock size={12} aria-hidden />
+                                  {formatRelativeTime(p.lastAttempt, language)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="w-full sm:w-40 shrink-0">
+                              <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden flex">
+                                {sum > 0 ? (
+                                  <>
+                                    <div
+                                      className="h-full bg-emerald-500"
+                                      style={{ width: `${pct}%` }}
+                                      title={`${pct}%`}
+                                    />
+                                    <div className="h-full flex-1 bg-rose-400/80" />
+                                  </>
+                                ) : (
+                                  <div className="h-full w-full bg-slate-200 dark:bg-slate-600" />
+                                )}
+                              </div>
+                              <p className="mt-1 text-[10px] text-center text-slate-400 uppercase tracking-wider">
+                                {sum > 0 ? `${pct}% ${language === 'EN' ? 'correct' : 'doğru'}` : '—'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+            </>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );

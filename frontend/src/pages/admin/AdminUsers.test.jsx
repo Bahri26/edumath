@@ -1,5 +1,5 @@
 // Mock IntersectionObserver for jsdom
-global.IntersectionObserver = class {
+globalThis.IntersectionObserver = class {
   constructor() {}
   observe() {}
   unobserve() {}
@@ -14,6 +14,6 @@ import AdminUsers from './AdminUsers';
 describe('AdminUsers', () => {
   it('renders main section', () => {
     render(<AdminUsers />);
-    expect(screen.getByText(/kullanıcı|user/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Kullanıcı Onayları/i })).toBeInTheDocument();
   });
 });

@@ -75,7 +75,9 @@ export default function SkillTree({ classLevel = "9. Sınıf", subject = "Matema
                 {(topic.lessons || []).length === 0 ? (
                   <span className="text-xs text-slate-400">Henüz ders eklenmemiş</span>
                 ) : (
-                  topic.lessons.map((lesson) => (
+                  [...(topic.lessons || [])]
+                    .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0))
+                    .map((lesson) => (
                     <Link
                       key={lesson._id}
                       to={`/student/lesson/${lesson._id}`}

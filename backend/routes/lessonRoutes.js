@@ -1,8 +1,37 @@
 const express = require('express');
 const router = express.Router();
 const Lesson = require('../models/Lesson');
+const Topic = require('../models/Topic');
 const UserProgress = require('../models/UserProgress');
 const auth = require('../middlewares/authMiddleware');
+const role = require('../middlewares/roleMiddleware');
+
+router.patch('/:id', auth, role(['teacher', 'admin']), async (req, res) => {
+  try {
+    const { title, order } = req.body;
+    const lesson = await Lesson.findById(req.params.id);
+    if (!lesson) return res.status(404).json({ message: 'Ders bulunamadı' });
+    if (title != null) lesson.title = String(title).trim();
+    if (order != null && Number.isFinite(Number(order))) lesson.order = Number(order);
+    await lesson.save();
+    res.json(lesson);
+  } catch (err) {
+    res.status(500).json({ message: 'Ders güncellenemedi', error: err.message });
+  }
+});
+
+router.delete('/:id', auth, role(['teacher', 'admin']), async (req, res) => {
+  try {
+    const lesson = await Lesson.findById(req.params.id);
+    if (!lesson) return res.status(404).json({ message: 'Ders bulunamadı' });
+    await UserProgress.deleteMany({ lessonId: lesson._id });
+    await Topic.updateOne({ _id: lesson.topic }, { $pull: { lessons: lesson._id } });
+    await Lesson.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: 'Ders silinemedi', error: err.message });
+  }
+});
 
 // Get lesson detail
 router.get('/:id', async (req, res) => {
