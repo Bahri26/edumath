@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
 const Notification = require('../models/Notification');
 const notificationController = require('./notificationController');
+const { recordUserActivity } = require('../services/activityLogger');
 
 // ✅ 1. ÖĞRETMENİN ÖDEV OLUŞTUR
 exports.createAssignment = async (req, res) => {
@@ -26,6 +27,17 @@ exports.createAssignment = async (req, res) => {
     });
 
     await newAssignment.save();
+
+    const teacher = await User.findById(teacherId).select('name email role').lean();
+    await recordUserActivity(req, {
+      user: teacher,
+      action: 'assignment_create',
+      category: 'content',
+      summary: `Ödev oluşturdu: ${title}`,
+      targetType: 'assignment',
+      targetId: newAssignment._id,
+      targetLabel: title,
+    });
 
     // 📢 Öğrencilere bildirim gönder
     const notifyResult = await notificationController.notifyStudentsForAssignment(newAssignment);
@@ -167,6 +179,17 @@ exports.submitAssignment = async (req, res) => {
     if (assignment.createdBy) {
       await ensureStudentLinkedToTeacher(assignment.createdBy, studentId);
     }
+
+    const student = await User.findById(studentId).select('name email role').lean();
+    await recordUserActivity(req, {
+      user: student,
+      action: 'assignment_submit',
+      category: 'learning',
+      summary: `Ödev teslim etti: ${assignment.title}`,
+      targetType: 'assignment',
+      targetId: assignment._id,
+      targetLabel: assignment.title,
+    });
 
     res.json({ message: 'Ödev gönderildi', data: assignment });
   } catch (err) {

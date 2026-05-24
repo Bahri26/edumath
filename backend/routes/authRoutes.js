@@ -66,6 +66,7 @@ const publicResetRequestSchema = Joi.object({
   note: Joi.string().max(500).optional()
 });
 const PasswordResetRequest = require('../models/PasswordResetRequest');
+const { recordUserActivity } = require('../services/activityLogger');
 
 const normalizeIdentifier = (value) => String(value || '').trim().toLowerCase();
 const authSlowLogMs = Number(process.env.AUTH_SLOW_LOG_MS || 800);
@@ -162,6 +163,14 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     const newUser = new User({ name, username, email, password, role, grade, schoolType, status: autoApprove ? 'active' : 'pending', mustChangePassword: false });
     await newUser.save();
 
+    await recordUserActivity(req, {
+      user: newUser,
+      action: 'register',
+      category: 'auth',
+      summary: `${newUser.role === 'teacher' ? 'Öğretmen' : newUser.role === 'admin' ? 'Admin' : 'Öğrenci'} hesabı oluşturdu`,
+      metadata: { status: newUser.status, autoApprove },
+    });
+
     if (autoApprove) {
       // auto-approve modunda anında giriş token'ı üret
       const accessToken = generateAccessToken(newUser);
@@ -196,10 +205,11 @@ router.post('/login', validate(loginSchema), async (req, res) => {
   let tokenMs = 0;
   let outcome = 'error';
   let statusCode = 500;
+  let loginUser = null;
+  const identifier = String(req.body?.email || '').trim();
 
   try {
     const { email, password } = req.body;
-    const identifier = String(email || '').trim();
     const normalizedIdentifier = normalizeIdentifier(identifier);
     let user = null;
     const lookupStartedAt = performance.now();
@@ -223,6 +233,8 @@ router.post('/login', validate(loginSchema), async (req, res) => {
       statusCode = 400;
       return res.status(400).json({ message: "Kullanıcı bulunamadı." });
     }
+
+    loginUser = user;
 
     if (shouldSyncLoginIdentifiers(user)) {
       await syncUserLoginIdentifiers(user);
@@ -308,9 +320,38 @@ router.post('/login', validate(loginSchema), async (req, res) => {
   } catch (error) {
     sendLoginUnexpectedError(res, error);
   } finally {
-    const identifier = String(req.body?.email || '').trim();
     const totalMs = performance.now() - startedAt;
     logAuthTiming({ identifier, totalMs, lookupMs, passwordMs, tokenMs, outcome, statusCode });
+
+    if (outcome === 'success' && loginUser) {
+      recordUserActivity(req, {
+        user: loginUser,
+        action: 'login',
+        category: 'auth',
+        summary: 'Siteye giriş yaptı',
+      });
+    } else if (outcome === 'invalid_password' && loginUser) {
+      recordUserActivity(req, {
+        user: loginUser,
+        action: 'login_failed',
+        category: 'auth',
+        summary: 'Hatalı şifre ile giriş denemesi',
+      });
+    } else if (outcome === 'user_not_found') {
+      recordUserActivity(req, {
+        userEmail: identifier,
+        action: 'login_failed',
+        category: 'auth',
+        summary: 'Bilinmeyen hesap ile giriş denemesi',
+      });
+    } else if (['pending', 'disabled'].includes(outcome) && loginUser) {
+      recordUserActivity(req, {
+        user: loginUser,
+        action: 'login_blocked',
+        category: 'auth',
+        summary: outcome === 'pending' ? 'Onay bekleyen hesap ile giriş denemesi' : 'Devre dışı hesap ile giriş denemesi',
+      });
+    }
   }
 });
 
@@ -365,8 +406,20 @@ router.post('/logout', async (req, res) => {
     const hashed = hashToken(refreshToken);
     const stored = await RefreshToken.findOne({ hashedToken: hashed });
     if (!stored) return res.status(200).json({ message: 'Zaten çıkış yapıldı.' });
+
+    const logoutUser = await User.findById(stored.user).select('name email role').lean();
     stored.revoked = true;
     await stored.save();
+
+    if (logoutUser) {
+      await recordUserActivity(req, {
+        user: logoutUser,
+        action: 'logout',
+        category: 'auth',
+        summary: 'Siteden çıkış yaptı',
+      });
+    }
+
     res.json({ message: 'Çıkış yapıldı.' });
   } catch (error) {
     console.error('Logout Hatası:', error);

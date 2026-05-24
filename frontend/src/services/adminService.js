@@ -91,4 +91,30 @@ export default {
     const resp = await apiClient.post('/admin/internal-notes', { refType, refId, body });
     return resp.data;
   },
+  listActivities: async ({ page = 1, limit = 30, category = '', action = '', userId = '', q = '', watchOnly = false } = {}) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (category) params.set('category', category);
+    if (action) params.set('action', action);
+    if (userId) params.set('userId', userId);
+    if (q) params.set('q', q);
+    if (watchOnly) params.set('watchOnly', 'true');
+    const resp = await apiClient.get(`/admin/activities?${params.toString()}`);
+    return resp.data;
+  },
+  getActivitySummary: async () => {
+    const resp = await apiClient.get('/admin/activities/summary');
+    return resp.data;
+  },
+  listWatchlist: async () => {
+    const resp = await apiClient.get('/admin/watchlist');
+    return resp.data;
+  },
+  addToWatchlist: async (userId, note = '') => {
+    const resp = await apiClient.post('/admin/watchlist', { userId, note });
+    return resp.data;
+  },
+  removeFromWatchlist: async (userId) => {
+    const resp = await apiClient.delete(`/admin/watchlist/${userId}`);
+    return resp.data;
+  },
 };

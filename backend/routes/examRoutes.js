@@ -8,6 +8,7 @@ const User = require('../models/User');
 const Student = require('../models/Student');
 const { gradeQuestionAnswer } = require('../utils/questionGrading');
 const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
+const { recordUserActivity } = require('../services/activityLogger');
 
 // 1. TÜM SINAVLARI GETİR
 router.get('/', async (req, res) => {
@@ -98,6 +99,17 @@ router.post('/', authMiddleware, roleMiddleware(['teacher']), async (req, res) =
       status: 'active',
       ...(startAt ? { startAt: new Date(startAt) } : {}),
       ...(endAt ? { endAt: new Date(endAt) } : {})
+    });
+
+    const actor = await User.findById(req.user.id).select('name email role').lean();
+    await recordUserActivity(req, {
+      user: actor,
+      action: 'exam_create',
+      category: 'content',
+      summary: `Sınav oluşturdu: ${name}`,
+      targetType: 'exam',
+      targetId: newExam._id,
+      targetLabel: name,
     });
 
     res.status(201).json({ success: true, message: 'Sınav oluşturuldu', data: newExam });
@@ -247,6 +259,18 @@ router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (r
     await exam.save();
 
     await ensureStudentLinkedToTeacher(exam.createdBy, req.user.id);
+
+    const studentUser = await User.findById(req.user.id).select('name email role').lean();
+    await recordUserActivity(req, {
+      user: studentUser,
+      action: 'exam_submit',
+      category: 'learning',
+      summary: `Sınav tamamladı: ${exam.title} (%${score})`,
+      targetType: 'exam',
+      targetId: exam._id,
+      targetLabel: exam.title,
+      metadata: { score, correctCount, wrongCount },
+    });
 
     res.json({ 
       message: "Sınav tamamlandı", 

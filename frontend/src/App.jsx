@@ -54,6 +54,7 @@ const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 const AdminAuditLog = lazy(() => import('./pages/admin/AdminAuditLog'));
+const AdminUserActivity = lazy(() => import('./pages/admin/AdminUserActivity'));
 const AdminBranchRequests = lazy(() => import('./pages/admin/AdminBranchRequests'));
 // import StudentSurveys... -> ARTIK GEREK YOK (Ortak sayfayı kullanacağız)
 
@@ -177,6 +178,7 @@ function App() {
             <Route path="branch-requests" element={<AdminBranchRequests />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="audit-log" element={<AdminAuditLog />} />
+            <Route path="user-activity" element={<AdminUserActivity />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
 

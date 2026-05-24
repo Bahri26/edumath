@@ -408,9 +408,26 @@ const AdminUsers = () => {
                     </div>
                   </td>
                   <td className={a.td}>
-                    <button type="button" className={a.btnSmOutline} onClick={() => setNotesUserId(it._id)}>
-                      Notlar
-                    </button>
+                    <div className="flex flex-wrap gap-1">
+                      <button type="button" className={a.btnSmOutline} onClick={() => setNotesUserId(it._id)}>
+                        Notlar
+                      </button>
+                      <button
+                        type="button"
+                        className={a.btnSmWarning}
+                        title="Aktivite takip listesine ekle"
+                        onClick={async () => {
+                          try {
+                            await adminService.addToWatchlist(it._id);
+                            setInfo({ message: `${it.name || it.email} takip listesine eklendi.` });
+                          } catch (e) {
+                            setError(e?.response?.data?.message || 'Takibe eklenemedi');
+                          }
+                        }}
+                      >
+                        Takip
+                      </button>
+                    </div>
                   </td>
                   <td className={a.td}>
                     {it.status !== 'disabled' ? (

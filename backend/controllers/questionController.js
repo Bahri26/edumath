@@ -1,6 +1,7 @@
 const { buildTopicMongoClause } = require('../constants/patternTopics');
 const Question = require('../models/Question');
 const { uploadFile, deleteStoredAsset } = require('../services/storageService');
+const { recordUserActivity } = require('../services/activityLogger');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -358,6 +359,22 @@ exports.createQuestion = async (req, res, next) => {
       source: source || 'Manuel',
       createdBy
     });
+
+    if (req.user?.id) {
+      const User = require('../models/User');
+      const actor = await User.findById(req.user.id).select('name email role').lean();
+      const preview = String(text || '').slice(0, 60);
+      await recordUserActivity(req, {
+        user: actor,
+        action: 'question_create',
+        category: 'content',
+        summary: `Soru ekledi: ${preview}${String(text || '').length > 60 ? '…' : ''}`,
+        targetType: 'question',
+        targetId: newQuestion._id,
+        targetLabel: preview,
+        metadata: { subject: finalSubject, classLevel: normalizedClassLevel },
+      });
+    }
 
     res.status(201).json({ success: true, data: newQuestion });
 

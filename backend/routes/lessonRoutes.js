@@ -3,8 +3,10 @@ const router = express.Router();
 const Lesson = require('../models/Lesson');
 const Topic = require('../models/Topic');
 const UserProgress = require('../models/UserProgress');
+const User = require('../models/User');
 const auth = require('../middlewares/authMiddleware');
 const role = require('../middlewares/roleMiddleware');
+const { recordUserActivity } = require('../services/activityLogger');
 
 router.patch('/:id', auth, role(['teacher', 'admin']), async (req, res) => {
   try {
@@ -55,6 +57,19 @@ router.post('/:id/submit', auth, async (req, res) => {
     { completed: true, xp: correct * 10, lastAttempt: new Date(), correctCount: correct, wrongCount: wrong },
     { upsert: true }
   );
+
+  const student = await User.findById(req.user.id).select('name email role').lean();
+  await recordUserActivity(req, {
+    user: student,
+    action: 'lesson_quiz_submit',
+    category: 'learning',
+    summary: `Ders quiz'i tamamladı: ${lesson.title}`,
+    targetType: 'lesson',
+    targetId: lesson._id,
+    targetLabel: lesson.title,
+    metadata: { correct, wrong, xp: correct * 10 },
+  });
+
   res.json({ correct, wrong, xp: correct * 10 });
 });
 

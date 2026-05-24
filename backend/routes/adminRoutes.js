@@ -9,6 +9,9 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const AdminAudit = require('../models/AdminAudit');
 const AdminInternalNote = require('../models/AdminInternalNote');
+const UserActivity = require('../models/UserActivity');
+const AdminUserWatch = require('../models/AdminUserWatch');
+const { recordAdminAudit } = require('../services/activityLogger');
 const RefreshToken = require('../models/RefreshToken');
 
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
@@ -52,7 +55,7 @@ router.post('/password-reset-requests/:id/approve', auth, hasRole(['admin']), as
     await reqDoc.save();
     // Audit log
     try {
-      await AdminAudit.create({
+      await recordAdminAudit(req, {
         actorId: req.user.id,
         action: 'approve_reset',
         targetUserId: user._id,
@@ -134,7 +137,7 @@ router.post('/password-reset-requests/:id/approve-set-password', auth, hasRole([
 
     // Audit log
     try {
-      await AdminAudit.create({
+      await recordAdminAudit(req, {
         actorId: req.user.id,
         action: 'set_password',
         targetUserId: user._id,
@@ -165,7 +168,7 @@ router.post('/password-reset-requests/:id/deny', auth, hasRole(['admin']), async
 
     // Audit log
     try {
-      await AdminAudit.create({
+      await recordAdminAudit(req, {
         actorId: req.user.id,
         action: 'deny_reset',
         targetEmail: reqDoc.email,
@@ -234,7 +237,7 @@ router.post('/users/:id/approve', auth, hasRole(['admin']), async (req, res) => 
     } catch {}
     // Audit
     try {
-      await AdminAudit.create({
+      await recordAdminAudit(req, {
         actorId: req.user.id,
         action: 'approve_user',
         targetUserId: user._id,
@@ -263,7 +266,7 @@ router.post('/users/:id/set-password', auth, hasRole(['admin']), async (req, res
     user.mustChangePassword = true;
     await user.save();
     try {
-      await AdminAudit.create({ actorId: req.user.id, action: 'admin_set_password', targetUserId: user._id, targetEmail: user.email });
+      await recordAdminAudit(req, { actorId: req.user.id, action: 'admin_set_password', targetUserId: user._id, targetEmail: user.email });
     } catch {}
     res.json({ message: 'Geçici şifre atandı. Kullanıcı ilk girişten sonra şifreyi değiştirmelidir.' });
   } catch (error) {
@@ -391,7 +394,7 @@ router.post('/internal-notes', auth, hasRole(['admin']), async (req, res) => {
       body: value.body.trim(),
     });
     try {
-      await AdminAudit.create({
+      await recordAdminAudit(req, {
         actorId: req.user.id,
         action: 'admin_internal_note',
         targetUserId: value.refType === 'user' ? value.refId : undefined,
@@ -445,7 +448,7 @@ router.post('/branch-requests/:id/approve', auth, hasRole(['admin']), async (req
     user.branchApproval = 'approved';
     await user.save();
     try {
-      await AdminAudit.create({ actorId: req.user.id, action: 'approve_branch', targetUserId: user._id, targetEmail: user.email, metadata: { branch: user.branch } });
+      await recordAdminAudit(req, { actorId: req.user.id, action: 'approve_branch', targetUserId: user._id, targetEmail: user.email, metadata: { branch: user.branch } });
     } catch {}
     try {
       await Notification.create({ recipientId: user._id, senderId: req.user.id, title: 'Branş Onayı', message: `Branşınız (${user.branch}) admin tarafından onaylandı.`, type: 'system' });
@@ -466,7 +469,7 @@ router.post('/branch-requests/:id/deny', auth, hasRole(['admin']), async (req, r
     if (user.role !== 'teacher') return res.status(400).json({ message: 'Sadece öğretmen talepleri reddedilebilir.' });
     user.branchApproval = 'none';
     await user.save();
-    try { await AdminAudit.create({ actorId: req.user.id, action: 'deny_branch', targetUserId: user._id, targetEmail: user.email, metadata: { branch: user.branch } }); } catch {}
+    try { await recordAdminAudit(req, { actorId: req.user.id, action: 'deny_branch', targetUserId: user._id, targetEmail: user.email, metadata: { branch: user.branch } }); } catch {}
     try { await Notification.create({ recipientId: user._id, senderId: req.user.id, title: 'Branş Talebi Reddedildi', message: 'Branş talebiniz reddedildi. Lütfen tekrar deneyin.', type: 'system' }); } catch {}
     res.json({ message: 'Branş talebi reddedildi.' });
   } catch (error) {
@@ -526,7 +529,7 @@ router.post('/users', auth, hasRole(['admin']), async (req, res) => {
       mustChangePassword: true,
     });
     await user.save();
-    try { await AdminAudit.create({ actorId: req.user.id, action: 'create_user', targetUserId: user._id, targetEmail: user.email, metadata: { role: user.role } }); } catch {}
+    try { await recordAdminAudit(req, { actorId: req.user.id, action: 'create_user', targetUserId: user._id, targetEmail: user.email, metadata: { role: user.role } }); } catch {}
     res.status(201).json({ message: 'Kullanıcı oluşturuldu.', user: { id: user._id, name: user.name, email: user.email, role: user.role, status: user.status } });
   } catch (err) {
     console.error('Create User Hatası:', err);
@@ -551,7 +554,7 @@ router.patch('/users/:id', auth, hasRole(['admin']), async (req, res) => {
 
     Object.assign(user, value);
     await user.save();
-    try { await AdminAudit.create({ actorId: req.user.id, action: 'update_user', targetUserId: user._id, targetEmail: user.email, metadata: value }); } catch {}
+    try { await recordAdminAudit(req, { actorId: req.user.id, action: 'update_user', targetUserId: user._id, targetEmail: user.email, metadata: value }); } catch {}
     res.json({ message: 'Kullanıcı güncellendi.', user: { id: user._id, name: user.name, email: user.email, role: user.role, status: user.status } });
   } catch (err) {
     console.error('Update User Hatası:', err);
@@ -566,7 +569,7 @@ router.delete('/users/:id', auth, hasRole(['admin']), async (req, res) => {
     if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
     await RefreshToken.deleteMany({ user: user._id });
     await User.deleteOne({ _id: user._id });
-    try { await AdminAudit.create({ actorId: req.user.id, action: 'delete_user', targetUserId: user._id, targetEmail: user.email }); } catch {}
+    try { await recordAdminAudit(req, { actorId: req.user.id, action: 'delete_user', targetUserId: user._id, targetEmail: user.email }); } catch {}
     res.json({ message: 'Kullanıcı silindi.' });
   } catch (err) {
     console.error('Delete User Hatası:', err);
@@ -581,7 +584,7 @@ router.post('/users/:id/disable', auth, hasRole(['admin']), async (req, res) => 
     if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
     user.status = 'disabled';
     await user.save();
-    try { await AdminAudit.create({ actorId: req.user.id, action: 'disable_user', targetUserId: user._id, targetEmail: user.email }); } catch {}
+    try { await recordAdminAudit(req, { actorId: req.user.id, action: 'disable_user', targetUserId: user._id, targetEmail: user.email }); } catch {}
     res.json({ message: 'Kullanıcı devre dışı bırakıldı.' });
   } catch (err) {
     console.error('Disable User Hatası:', err);
@@ -596,10 +599,133 @@ router.post('/users/:id/enable', auth, hasRole(['admin']), async (req, res) => {
     if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
     user.status = 'active';
     await user.save();
-    try { await AdminAudit.create({ actorId: req.user.id, action: 'enable_user', targetUserId: user._id, targetEmail: user.email }); } catch {}
+    try { await recordAdminAudit(req, { actorId: req.user.id, action: 'enable_user', targetUserId: user._id, targetEmail: user.email }); } catch {}
     res.json({ message: 'Kullanıcı aktif hale getirildi.' });
   } catch (err) {
     console.error('Enable User Hatası:', err);
     res.status(500).json({ message: 'Kullanıcı aktif etme hatası: ' + err.message });
+  }
+});
+
+// --- KULLANICI AKTİVİTELERİ ---
+router.get('/activities', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 30));
+    const skip = (page - 1) * limit;
+    const filter = {};
+
+    if (req.query.category && String(req.query.category).trim()) {
+      filter.category = String(req.query.category).trim();
+    }
+    if (req.query.action && String(req.query.action).trim()) {
+      filter.action = { $regex: String(req.query.action).trim(), $options: 'i' };
+    }
+    if (req.query.userId && String(req.query.userId).trim()) {
+      filter.userId = String(req.query.userId).trim();
+    }
+    if (String(req.query.watchOnly).toLowerCase() === 'true') {
+      const watched = await AdminUserWatch.find().distinct('userId');
+      if (watched.length === 0) {
+        return res.json({ items: [], pagination: { page, limit, total: 0 } });
+      }
+      if (filter.userId) {
+        const inWatch = watched.some((w) => String(w) === String(filter.userId));
+        if (!inWatch) {
+          return res.json({ items: [], pagination: { page, limit, total: 0 } });
+        }
+      } else {
+        filter.userId = { $in: watched };
+      }
+    }
+    const q = req.query.q && String(req.query.q).trim();
+    if (q) {
+      filter.$or = [
+        { userEmail: { $regex: q, $options: 'i' } },
+        { userName: { $regex: q, $options: 'i' } },
+        { summary: { $regex: q, $options: 'i' } },
+        { action: { $regex: q, $options: 'i' } },
+        { targetLabel: { $regex: q, $options: 'i' } },
+      ];
+    }
+
+    const [items, total] = await Promise.all([
+      UserActivity.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('userId', 'name email role status')
+        .lean(),
+      UserActivity.countDocuments(filter),
+    ]);
+
+    res.json({ items, pagination: { page, limit, total } });
+  } catch (error) {
+    console.error('Activities list error:', error);
+    res.status(500).json({ message: 'Aktiviteler alınamadı: ' + error.message });
+  }
+});
+
+router.get('/activities/summary', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [last24h, byCategory, watchedCount] = await Promise.all([
+      UserActivity.countDocuments({ createdAt: { $gte: since } }),
+      UserActivity.aggregate([
+        { $match: { createdAt: { $gte: since } } },
+        { $group: { _id: '$category', count: { $sum: 1 } } },
+      ]),
+      AdminUserWatch.countDocuments(),
+    ]);
+    res.json({
+      last24h,
+      watchedUsers: watchedCount,
+      byCategory: byCategory.map((r) => ({ category: r._id, count: r.count })),
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Özet alınamadı: ' + error.message });
+  }
+});
+
+router.get('/watchlist', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const items = await AdminUserWatch.find()
+      .sort({ createdAt: -1 })
+      .populate('userId', 'name email role status grade branch')
+      .populate('addedBy', 'name email')
+      .lean();
+    res.json({ items });
+  } catch (error) {
+    res.status(500).json({ message: 'Takip listesi alınamadı: ' + error.message });
+  }
+});
+
+router.post('/watchlist', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    const { userId, note = '' } = req.body;
+    if (!userId) return res.status(400).json({ message: 'userId gerekli.' });
+    const user = await User.findById(userId).select('_id name email');
+    if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+
+    const item = await AdminUserWatch.findOneAndUpdate(
+      { userId: user._id },
+      { $set: { note: String(note).slice(0, 500), addedBy: req.user.id } },
+      { upsert: true, new: true }
+    )
+      .populate('userId', 'name email role status')
+      .lean();
+
+    res.status(201).json({ item });
+  } catch (error) {
+    res.status(500).json({ message: 'Takibe eklenemedi: ' + error.message });
+  }
+});
+
+router.delete('/watchlist/:userId', auth, hasRole(['admin']), async (req, res) => {
+  try {
+    await AdminUserWatch.deleteOne({ userId: req.params.userId });
+    res.json({ message: 'Takip listesinden çıkarıldı.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Silinemedi: ' + error.message });
   }
 });

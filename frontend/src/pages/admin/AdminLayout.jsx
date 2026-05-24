@@ -6,6 +6,7 @@ import {
   GraduationCap,
   UsersRound,
   ScrollText,
+  Activity,
   Settings,
   LogOut,
   Sparkles,
@@ -59,6 +60,10 @@ const AdminLayout = () => {
             <NavLink to="/admin/audit-log" className={navClass}>
               <ScrollText className="h-4 w-4 shrink-0 opacity-80 group-hover:opacity-100" />
               Denetim günlüğü
+            </NavLink>
+            <NavLink to="/admin/user-activity" className={navClass}>
+              <Activity className="h-4 w-4 shrink-0 opacity-80 group-hover:opacity-100" />
+              Kullanıcı aktiviteleri
             </NavLink>
             <NavLink to="/admin/settings" className={navClass}>
               <Settings className="h-4 w-4 shrink-0 opacity-80 group-hover:opacity-100" />

@@ -3,6 +3,7 @@ const Question = require('../models/Question');
 const User = require('../models/User');
 const { gradeQuestionAnswer } = require('../utils/questionGrading');
 const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
+const { recordUserActivity } = require('../services/activityLogger');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const MAX_EXERCISE_QUESTIONS = 30;
@@ -110,6 +111,17 @@ exports.createExercise = async (req, res, next) => {
       playTransform: play,
       timeLimit: timeLimit || null,
       pointsPerQuestion: pointsPerQuestion || 10,
+    });
+
+    const teacher = await User.findById(teacherId).select('name email role').lean();
+    await recordUserActivity(req, {
+      user: teacher,
+      action: 'exercise_create',
+      category: 'content',
+      summary: `Egzersiz oluşturdu: ${name}`,
+      targetType: 'exercise',
+      targetId: newExercise._id,
+      targetLabel: name,
     });
 
     res.status(201).json({ success: true, message: 'Egzersiz oluşturuldu', data: newExercise });
@@ -314,6 +326,18 @@ exports.submitExercise = async (req, res, next) => {
     if (exercise.createdBy) {
       await ensureStudentLinkedToTeacher(exercise.createdBy, studentId);
     }
+
+    const student = await User.findById(studentId).select('name email role').lean();
+    await recordUserActivity(req, {
+      user: student,
+      action: 'exercise_submit',
+      category: 'learning',
+      summary: `Egzersiz tamamladı: ${exercise.name} (%${score})`,
+      targetType: 'exercise',
+      targetId: exercise._id,
+      targetLabel: exercise.name,
+      metadata: { score, correctCount },
+    });
 
     res.json({
       success: true,

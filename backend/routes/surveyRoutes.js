@@ -4,6 +4,8 @@ const Survey = require('../models/Survey');
 const protect = require('../middlewares/authMiddleware');
 const role = require('../middlewares/roleMiddleware');
 const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
+const { recordUserActivity } = require('../services/activityLogger');
+const User = require('../models/User');
 
 // TÜM ANKETLERİ GETİR (Korumalı)
 router.get('/', protect, async (req, res) => {
@@ -32,6 +34,18 @@ router.post('/', protect, role(['teacher']), async (req, res) => {
       createdBy: req.user.id
     });
     const savedSurvey = await newSurvey.save();
+
+    const teacher = await User.findById(req.user.id).select('name email role').lean();
+    await recordUserActivity(req, {
+      user: teacher,
+      action: 'survey_create',
+      category: 'content',
+      summary: `Anket oluşturdu: ${savedSurvey.title || 'Anket'}`,
+      targetType: 'survey',
+      targetId: savedSurvey._id,
+      targetLabel: savedSurvey.title || '',
+    });
+
     res.status(201).json(savedSurvey);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -168,6 +182,17 @@ router.post('/:id/respond', protect, role(['student']), async (req, res) => {
     if (survey.createdBy) {
       await ensureStudentLinkedToTeacher(survey.createdBy, req.user.id);
     }
+
+    const student = await User.findById(req.user.id).select('name email role').lean();
+    await recordUserActivity(req, {
+      user: student,
+      action: 'survey_respond',
+      category: 'learning',
+      summary: `Ankete cevap verdi: ${survey.title || 'Anket'}`,
+      targetType: 'survey',
+      targetId: survey._id,
+      targetLabel: survey.title || '',
+    });
 
     res.json({ message: "Cevap kaydedildi" });
   } catch (err) {

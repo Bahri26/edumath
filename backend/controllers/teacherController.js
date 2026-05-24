@@ -673,7 +673,7 @@ exports.requestBranchApproval = async (req, res) => {
     }
     const User = require('../models/User');
     const Notification = require('../models/Notification');
-    const AdminAudit = require('../models/AdminAudit');
+    const { recordAdminAudit } = require('../services/activityLogger');
 
     const user = await User.findById(teacherId);
     if (!user) return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
@@ -686,7 +686,7 @@ exports.requestBranchApproval = async (req, res) => {
 
     // Basit bildirim: adminlere sistem mesajı (opsiyonel, burada sadece kendine not bırakıyoruz)
     try {
-      await AdminAudit.create({ actorId: teacherId, action: 'request_branch', targetUserId: teacherId, targetEmail: user.email, metadata: { branch, changed } });
+      await recordAdminAudit(req, { actorId: teacherId, action: 'request_branch', targetUserId: teacherId, targetEmail: user.email, metadata: { branch, changed } });
     } catch {}
 
     try {
