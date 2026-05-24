@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import {
   BookOpen, FileText, CheckCircle, Trophy, Users, BarChart2,
-  Calendar, MessageSquare, ClipboardList,
+  Calendar, MessageSquare, ClipboardList, LayoutGrid,
 } from 'lucide-react';
 import DashboardLayout from './pages/DashboardLayout';
 import { ThemeProvider } from './context/ThemeContext';
