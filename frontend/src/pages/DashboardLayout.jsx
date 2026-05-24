@@ -138,7 +138,7 @@ const DashboardLayout = ({
 
       <div className="flex-1 flex flex-col">
         <header
-          className={`flex items-center justify-between px-6 py-4 border-b ${
+          className={`relative z-40 flex items-center justify-between px-6 py-4 border-b ${
             studentKid
               ? 'border-kid-rail/80 dark:border-surface-700 bg-white/90 dark:bg-surface-800/90 backdrop-blur-md'
               : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800'
@@ -191,7 +191,7 @@ const DashboardLayout = ({
               </button>
               {isProfileOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-56 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg shadow-lg z-50"
+                  className="absolute right-0 mt-2 w-60 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl shadow-xl z-[100] overflow-hidden"
                   role="menu"
                 >
                   <div className="p-4 border-b border-surface-100 dark:border-surface-700">
@@ -205,7 +205,9 @@ const DashboardLayout = ({
                   >
                     <User size={16} aria-hidden /> Profil
                   </button>
-                  {profileMenuExtras.map((item) => {
+                  {profileMenuExtras.length > 0 && (
+                    <div className="border-t border-surface-100 dark:border-surface-700 py-1">
+                      {profileMenuExtras.map((item) => {
                     const Icon = item.icon;
                     return (
                       <button
@@ -223,6 +225,8 @@ const DashboardLayout = ({
                       </button>
                     );
                   })}
+                    </div>
+                  )}
                   <button
                     onClick={() => { setIsProfileOpen(false); navigate(`/${role}/settings`); }}
                     role="menuitem"

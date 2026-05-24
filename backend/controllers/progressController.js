@@ -1,5 +1,6 @@
 const Progress = require('../models/Progress');
 const LearningEvent = require('../models/LearningEvent');
+const UserProgress = require('../models/UserProgress');
 
 exports.getMyProgress = async (req, res, next) => {
   try {
@@ -115,6 +116,19 @@ exports.getTrends = async (req, res, next) => {
     res.json({ success: true, data: { streak: p?.streak || 0, days: out } });
   } catch (e) {
     console.error('getTrends error:', e);
+    next(e);
+  }
+};
+
+// Ders quiz ilerlemesi (konu ağacı / derslerim kartları)
+exports.getLessonProgress = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const rows = await UserProgress.find({ userId })
+      .select('lessonId completed xp correctCount wrongCount lastAttempt')
+      .lean();
+    res.json({ success: true, items: rows });
+  } catch (e) {
     next(e);
   }
 };

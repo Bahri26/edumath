@@ -19,6 +19,9 @@ router.get('/skills', protect, progressController.getSkills);
 // XP trends for last N days
 router.get('/trends', protect, progressController.getTrends);
 
+// Lesson quiz progress (skill tree / courses)
+router.get('/lessons', protect, role(['student']), progressController.getLessonProgress);
+
 // Log general learning events (hint, error, session etc.)
 router.post('/event', protect, role(['student']), progressController.logEvent);
 

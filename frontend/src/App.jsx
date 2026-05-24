@@ -125,6 +125,10 @@ function App() {
             <ProtectedRoute requiredRole="student">
               <DashboardLayout
                 role="student"
+                profileMenuExtras={[
+                  { id: 'surveys', label: 'Anketler', icon: FileText, path: '/student/surveys' },
+                  { id: 'messages', label: 'Mesajlar', icon: MessageSquare, path: '/student/messages' },
+                ]}
                 navMenuItems={[
                   { id: 'home', label: 'Ana Sayfa', icon: BookOpen, path: '/student/home' },
                   { id: 'courses', label: 'Derslerim', icon: BookOpen, path: '/student/courses' },
@@ -133,8 +137,6 @@ function App() {
                   { id: 'practice', label: 'AI Antrenman', icon: Target, path: '/student/practice' },
                   { id: 'skill-tree', label: 'Konu Ağacı', icon: LayoutGrid, path: '/student/skill-tree' },
                   { id: 'quizzes', label: 'Sınavlar', icon: FileText, path: '/student/quizzes' },
-                  { id: 'surveys', label: 'Anketler', icon: FileText, path: '/student/surveys' },
-                  { id: 'messages', label: 'Mesajlar', icon: MessageSquare, path: '/student/messages' },
                   { id: 'leaderboard', label: 'Sıralama', icon: Trophy, path: '/student/leaderboard' },
                   { id: 'calendar', label: 'Takvim', icon: Calendar, path: '/student/calendar' },
                 ]}

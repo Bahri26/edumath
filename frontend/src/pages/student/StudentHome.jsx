@@ -1,12 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlayCircle, Target, CheckCircle, Clock, BookOpen, CircleHelp, Sparkles } from 'lucide-react';
-import { studentProfile as staticProfile, continueLearning as staticContinue, myCourses as staticCourses, upcomingAssignments as staticAssignments } from '../../data/studentData';
+import { studentProfile as staticProfile } from '../../data/studentData';
 import ProgressPanel from '../../components/ui/ProgressPanel';
 import CourseCard from '../../components/ui/CourseCard';
 import { LanguageContext } from '../../context/LanguageContext';
 import apiClient from '../../services/api';
 import GuideDrawer from '../../components/help/GuideDrawer.jsx';
+import { fetchStudentTopicCourses } from '../../utils/studentCourseData';
 
 function readStoredUserId() {
   try {
@@ -29,9 +30,10 @@ const StudentHome = () => {
   const navigate = useNavigate();
   const { language } = useContext(LanguageContext);
   const [profile, setProfile] = useState(staticProfile);
-  const [courses, setCourses] = useState(staticCourses);
-  const [continueLearning, setContinueLearning] = useState(staticContinue);
-  const [assignments, setAssignments] = useState(staticAssignments);
+  const [courses, setCourses] = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [continueLearning, setContinueLearning] = useState({ course: '', topic: '', lessonId: null, progress: 0 });
+  const [assignments, setAssignments] = useState([]);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [todayXpUtc, setTodayXpUtc] = useState(0);
   const [examsForClass, setExamsForClass] = useState([]);
@@ -84,7 +86,7 @@ const StudentHome = () => {
         });
         setAssignments(pending.length ? pending : []);
       } catch {
-        if (!cancelled) setAssignments(staticAssignments);
+        if (!cancelled) setAssignments([]);
       }
     };
     loadAssignments();
@@ -129,33 +131,33 @@ const StudentHome = () => {
     };
   }, []);
 
-  // Öğrenci profilini backend'den çek
+  // Öğrenci profili + sınıf konuları (gerçek veri)
   useEffect(() => {
-    const fetchProfile = async () => {
+    let cancelled = false;
+    (async () => {
+      setCoursesLoading(true);
       try {
         const res = await apiClient.get('/users/profile');
-        setProfile(res.data);
-        // Sınıfa göre ders ve ödev örüntüsü belirle
-        if (res.data.grade) {
-          // Örnek: 9. sınıf için matematik ve fen ağırlıklı, 12. sınıf için TYT/AYT ağırlıklı
-          if (res.data.grade.includes('9')) {
-            setCourses(staticCourses.filter(c => c.title.includes('Matematik') || c.title.includes('Geometri')));
-            setContinueLearning({ ...staticContinue, course: '9. Sınıf Matematik', topic: 'Çarpanlar ve Katlar' });
-          } else if (res.data.grade.includes('12')) {
-            setCourses(staticCourses.filter(c => c.title.includes('TYT') || c.title.includes('AYT')));
-            setContinueLearning({ ...staticContinue, course: 'AYT Matematik', topic: 'Türev ve İntegral' });
-          } else {
-            setCourses(staticCourses);
-            setContinueLearning(staticContinue);
-          }
-        }
+        const p = res.data || staticProfile;
+        if (cancelled) return;
+        setProfile(p);
+        const data = await fetchStudentTopicCourses(p);
+        if (cancelled) return;
+        setCourses(data.courses);
+        setContinueLearning(data.continueLearning);
       } catch {
-        setProfile(staticProfile);
-        setCourses(staticCourses);
-        setContinueLearning(staticContinue);
+        if (!cancelled) {
+          setProfile(staticProfile);
+          setCourses([]);
+          setContinueLearning({ course: '', topic: '', lessonId: null, progress: 0 });
+        }
+      } finally {
+        if (!cancelled) setCoursesLoading(false);
       }
+    })();
+    return () => {
+      cancelled = true;
     };
-    fetchProfile();
   }, []);
 
   // --- DİL ÇEVIRILERI ---
@@ -190,7 +192,10 @@ const StudentHome = () => {
       goalNavExercise: "Çalışmalara git",
       goalNavQuiz: "Sınava git",
       goalDoneBadge: "Tamam",
-      kidContinueFallback: "Çalışma merkezinde devam et",
+      kidContinueFallback: "Konu ağacından devam et",
+      coursesEmptyTitle: "Konuların hazırlanıyor",
+      coursesEmptyHint: "Öğretmenin eklediği konular burada görünecek. Şimdilik Konu Ağacına göz at!",
+      goSkillTree: "Konu Ağacına Git",
     },
     EN: {
       welcome: "Welcome Back",
@@ -222,7 +227,10 @@ const StudentHome = () => {
       goalNavExercise: "Study hub",
       goalNavQuiz: "Quizzes",
       goalDoneBadge: "Done",
-      kidContinueFallback: "Continue in the study hub",
+      kidContinueFallback: "Continue from the topic tree",
+      coursesEmptyTitle: "Topics are on the way",
+      coursesEmptyHint: "Your teacher's topics will show here. Explore the topic tree for now!",
+      goSkillTree: "Open topic tree",
     }
   };
 
@@ -274,7 +282,7 @@ const StudentHome = () => {
   const kidMissions = [
     {
       titleKey: 'continueLesson',
-      path: '/student/exercises',
+      path: continueLearning.lessonId ? `/student/lesson/${continueLearning.lessonId}` : '/student/skill-tree',
       emoji: '▶️',
       accent: 'from-amber-400 to-orange-500',
       hintFromTopic: true,
@@ -349,9 +357,11 @@ const StudentHome = () => {
             <CircleHelp size={20} aria-hidden />
             Kullanım Kılavuzu
           </button>
-          <div className="rounded-2xl min-h-[3rem] px-5 py-3 bg-white/80 dark:bg-slate-800/80 border border-teal-200/70 dark:border-slate-600 flex flex-col justify-center">
+          <div className="rounded-2xl min-h-[3rem] px-5 py-3 bg-white/80 dark:bg-slate-800/80 border border-teal-200/70 dark:border-slate-600 flex flex-col justify-center min-w-0">
             <span className="text-xs font-bold text-teal-700 dark:text-teal-300 uppercase">{getText('lastTopic')}</span>
-            <span className="font-semibold text-slate-800 dark:text-white">{continueLearning.topic}</span>
+            <span className="font-semibold text-slate-800 dark:text-white truncate">
+              {continueLearning.topic || getText('kidContinueFallback')}
+            </span>
           </div>
       </div>
 
@@ -366,9 +376,31 @@ const StudentHome = () => {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {courses.slice(0, 4).map((course) => (
-              <CourseCard key={course.id} {...course} />
-            ))}
+            {coursesLoading ? (
+              [1, 2].map((i) => (
+                <div key={i} className="h-40 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+              ))
+            ) : courses.length > 0 ? (
+              courses.slice(0, 4).map((course) => (
+                <CourseCard
+                  key={course.id}
+                  {...course}
+                  onClick={() => navigate('/student/skill-tree')}
+                />
+              ))
+            ) : (
+              <div className="sm:col-span-2 rounded-2xl border-2 border-dashed border-sky-200 dark:border-slate-600 p-8 text-center bg-white/70 dark:bg-slate-800/50">
+                <p className="font-bold text-slate-800 dark:text-white">{getText('coursesEmptyTitle')}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{getText('coursesEmptyHint')}</p>
+                <button
+                  type="button"
+                  onClick={() => navigate('/student/skill-tree')}
+                  className="mt-4 rounded-xl bg-teal-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-teal-700"
+                >
+                  {getText('goSkillTree')}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

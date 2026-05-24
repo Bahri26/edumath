@@ -32,7 +32,13 @@ const ProgressPanel = ({ days = 14 }) => {
   }, [days]);
 
   if (loading) return <div className="p-4 text-slate-500">Yükleniyor...</div>;
-  if (error) return <div className="p-4 text-red-600">{error}</div>;
+  if (error) {
+    return (
+      <div className="p-4 rounded-xl bg-sky-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 text-sm">
+        İlerleme verisi henüz yok — quiz çözdükçe burada XP ve grafikler belirecek!
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4">
