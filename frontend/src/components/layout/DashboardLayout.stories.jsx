@@ -1,6 +1,6 @@
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { BookOpen, FileText, CheckCircle, Trophy, Calendar, Settings, User, LayoutGrid, Users, BarChart2, ClipboardList } from 'lucide-react';
+import { BookOpen, FileText, CheckCircle, Trophy, Calendar, Settings, User, LayoutGrid, Users, BarChart2, ClipboardList, MessageSquare } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { LanguageContext } from '../../context/LanguageContext';
 import DashboardLayout from '../../pages/DashboardLayout';
@@ -36,12 +36,14 @@ const studentMenu = [
   { id: 'home', label: 'Ana Sayfa', icon: BookOpen, path: '/student/home' },
   { id: 'courses', label: 'Derslerim', icon: BookOpen, path: '/student/courses' },
   { id: 'assignments', label: 'Ödevler', icon: CheckCircle, path: '/student/assignments' },
+  { id: 'exercises', label: 'Çalışma Merkezi', icon: Trophy, path: '/student/exercises' },
   { id: 'quizzes', label: 'Sınavlar', icon: FileText, path: '/student/quizzes' },
-  { id: 'surveys', label: 'Anketler', icon: FileText, path: '/student/surveys' },
-  { id: 'leaderboard', label: 'Sıralama', icon: Trophy, path: '/student/leaderboard' },
   { id: 'calendar', label: 'Takvim', icon: Calendar, path: '/student/calendar' },
-  { id: 'settings', label: 'Ayarlar', icon: Settings, path: '/student/settings' },
-  { id: 'profile', label: 'Profil', icon: User, path: '/student/profile' },
+];
+
+const studentProfileExtras = [
+  { id: 'surveys', label: 'Anketler', icon: ClipboardList, path: '/student/surveys' },
+  { id: 'messages', label: 'Mesajlar', icon: MessageSquare, path: '/student/messages' },
 ];
 
 const teacherMenu = [
@@ -66,6 +68,7 @@ export const StudentDashboard = Template.bind({});
 StudentDashboard.args = {
   role: 'student',
   navMenuItems: studentMenu,
+  profileMenuExtras: studentProfileExtras,
 };
 
 export const TeacherDashboard = Template.bind({});

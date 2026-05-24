@@ -1,4 +1,4 @@
-import apiClient from './api';
+import apiClient from '../services/api';
 
 export function resolveClassLevel(profile) {
   const g = String(profile?.grade || '').trim();

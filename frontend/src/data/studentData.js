@@ -25,11 +25,3 @@ export const upcomingAssignments = [
   { id: 2, title: "İntegral Quiz", type: "Sınav", due: "3 Gün Sonra", urgent: false },
   { id: 3, title: "Olasılık Projesi", type: "Proje", due: "1 Hafta Sonra", urgent: false },
 ];
-
-export const leaderboard = [
-  { rank: 1, name: "Ali V.", xp: 2400, active: false },
-  { rank: 2, name: "Ayşe K.", xp: 2150, active: false },
-  { rank: 3, name: "Mehmet T.", xp: 1980, active: false },
-  { rank: 4, name: "Sen", xp: 1250, active: true }, // Kullanıcı
-  { rank: 5, name: "Can B.", xp: 1100, active: false },
-];

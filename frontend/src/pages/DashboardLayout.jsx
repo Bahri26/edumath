@@ -201,13 +201,11 @@ const DashboardLayout = ({
                   <button
                     onClick={() => { setIsProfileOpen(false); navigate(`/${role}/profile`); }}
                     role="menuitem"
-                    className="w-full text-left px-4 py-2 hover:bg-surface-100 dark:hover:bg-surface-700 flex items-center gap-2"
+                    className="w-full text-left px-4 py-2.5 hover:bg-surface-100 dark:hover:bg-surface-700 flex items-center gap-2"
                   >
                     <User size={16} aria-hidden /> Profil
                   </button>
-                  {profileMenuExtras.length > 0 && (
-                    <div className="border-t border-surface-100 dark:border-surface-700 py-1">
-                      {profileMenuExtras.map((item) => {
+                  {profileMenuExtras.map((item) => {
                     const Icon = item.icon;
                     return (
                       <button
@@ -218,19 +216,20 @@ const DashboardLayout = ({
                           navigate(item.path);
                         }}
                         role="menuitem"
-                        className="w-full text-left px-4 py-2 hover:bg-surface-100 dark:hover:bg-surface-700 flex items-center gap-2 text-surface-800 dark:text-surface-100"
+                        className="w-full text-left px-4 py-2.5 hover:bg-surface-100 dark:hover:bg-surface-700 flex items-center gap-2 text-surface-800 dark:text-surface-100 font-medium"
                       >
                         {Icon ? <Icon size={16} aria-hidden /> : null}
                         {item.label}
                       </button>
                     );
                   })}
-                    </div>
+                  {profileMenuExtras.length > 0 && (
+                    <div className="border-t border-surface-100 dark:border-surface-700 my-1" />
                   )}
                   <button
                     onClick={() => { setIsProfileOpen(false); navigate(`/${role}/settings`); }}
                     role="menuitem"
-                    className="w-full text-left px-4 py-2 hover:bg-surface-100 dark:hover:bg-surface-700 flex items-center gap-2"
+                    className="w-full text-left px-4 py-2.5 hover:bg-surface-100 dark:hover:bg-surface-700 flex items-center gap-2"
                   >
                     <Settings size={16} aria-hidden /> Ayarlar
                   </button>

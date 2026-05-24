@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Sparkles, Compass, LayoutGrid } from 'lucide-react';
+import { Search, Sparkles, Compass } from 'lucide-react';
 import CourseCard from '../../components/ui/CourseCard';
 import { LanguageContext } from '../../context/LanguageContext';
 import apiClient from '../../services/api';
@@ -19,11 +19,11 @@ const StudentCourses = () => {
     TR: {
       allMyCourses: 'Tüm Derslerim',
       searchCourses: 'Konu ara…',
-      discoverNewCourse: 'Konu Ağacını Keşfet',
+      discoverNewCourse: 'Çalışma Merkezine Git',
       subtitle: 'Sınıfına uygun matematik konuları — örüntüler dahil.',
       emptyTitle: 'Konular yükleniyor…',
       emptyReady: 'Henüz konu eklenmemiş',
-      emptyHint: 'Öğretmenin konuları eklediğinde burada görünecek. Şimdilik Konu Ağacına göz atabilirsin!',
+      emptyHint: 'Öğretmenin konuları eklediğinde burada görünecek. Çalışma merkezinden pratik yapabilirsin!',
       patternSection: 'Örüntü konuları',
       otherSection: 'Diğer konular',
       statsCompleted: (n) => `${n} konu tamamlandı`,
@@ -33,11 +33,11 @@ const StudentCourses = () => {
     EN: {
       allMyCourses: 'All My Courses',
       searchCourses: 'Search topics…',
-      discoverNewCourse: 'Explore topic tree',
+      discoverNewCourse: 'Go to study hub',
       subtitle: 'Math topics for your grade — patterns included.',
       emptyTitle: 'Loading topics…',
       emptyReady: 'No topics yet',
-      emptyHint: 'When your teacher adds topics they appear here. Try the topic tree!',
+      emptyHint: 'When your teacher adds topics they appear here. Try the study hub!',
       patternSection: 'Pattern topics',
       otherSection: 'Other topics',
       statsCompleted: (n) => `${n} topics completed`,
@@ -81,7 +81,7 @@ const StudentCourses = () => {
   const completedCount = courses.filter((c) => c.progress >= 100 && c.totalModules > 0).length;
   const inProgressCount = courses.filter((c) => c.progress > 0 && c.progress < 100).length;
 
-  const goSkillTree = () => navigate('/student/skill-tree');
+  const goStudyHub = () => navigate('/student/exercises');
 
   const renderGrid = (list) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -89,7 +89,7 @@ const StudentCourses = () => {
         <CourseCard
           key={course.id}
           {...course}
-          onClick={() => goSkillTree()}
+          onClick={() => goStudyHub()}
         />
       ))}
     </div>
@@ -137,10 +137,10 @@ const StudentCourses = () => {
           <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-md mx-auto">{getText('emptyHint')}</p>
           <button
             type="button"
-            onClick={goSkillTree}
+            onClick={goStudyHub}
             className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-teal-600 text-white px-6 py-3 font-bold hover:bg-teal-700 transition-colors"
           >
-            <LayoutGrid size={18} />
+            <Sparkles size={18} />
             {getText('discoverNewCourse')}
           </button>
         </div>
@@ -164,7 +164,7 @@ const StudentCourses = () => {
           )}
           <button
             type="button"
-            onClick={goSkillTree}
+            onClick={goStudyHub}
             className="w-full sm:w-auto border-2 border-dashed border-sky-300/80 dark:border-slate-600 rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-3 p-8 text-slate-600 dark:text-slate-300 hover:border-teal-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors bg-white/50 dark:bg-slate-800/40"
           >
             <div className="bg-amber-100/80 dark:bg-slate-700 p-4 rounded-full">

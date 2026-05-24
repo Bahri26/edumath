@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import {
-  BookOpen, FileText, CheckCircle, Trophy, LayoutGrid, Users, BarChart2,
-  Calendar, Target, MessageSquare, ClipboardList,
+  BookOpen, FileText, CheckCircle, Trophy, Users, BarChart2,
+  Calendar, MessageSquare, ClipboardList,
 } from 'lucide-react';
 import DashboardLayout from './pages/DashboardLayout';
 import { ThemeProvider } from './context/ThemeContext';
@@ -39,12 +39,9 @@ const StudentHome = lazy(() => import('./pages/student/StudentHome'));
 const StudentCourses = lazy(() => import('./pages/student/StudentCourses'));
 const StudentAssignments = lazy(() => import('./pages/student/StudentAssignments'));
 const StudentStudyHub = lazy(() => import('./pages/student/StudentStudyHub'));
-const SkillTree = lazy(() => import('./pages/student/SkillTree'));
 const LessonQuiz = lazy(() => import('./pages/student/LessonQuiz'));
 const StudentCalendar = lazy(() => import('./pages/student/StudentCalendar'));
-const StudentLeaderboard = lazy(() => import('./pages/student/StudentLeaderboard'));
 const StudentMessaging = lazy(() => import('./pages/student/StudentMessaging'));
-const StudentPracticeExercises = lazy(() => import('./pages/student/StudentPracticeExercises'));
 
 // --- 5. YÖNETİCİ SAYFALARI ---
 const AdminResetRequests = lazy(() => import('./pages/admin/AdminResetRequests'));
@@ -134,10 +131,7 @@ function App() {
                   { id: 'courses', label: 'Derslerim', icon: BookOpen, path: '/student/courses' },
                   { id: 'assignments', label: 'Ödevler', icon: CheckCircle, path: '/student/assignments' },
                   { id: 'exercises', label: 'Çalışma Merkezi', icon: Trophy, path: '/student/exercises' },
-                  { id: 'practice', label: 'AI Antrenman', icon: Target, path: '/student/practice' },
-                  { id: 'skill-tree', label: 'Konu Ağacı', icon: LayoutGrid, path: '/student/skill-tree' },
                   { id: 'quizzes', label: 'Sınavlar', icon: FileText, path: '/student/quizzes' },
-                  { id: 'leaderboard', label: 'Sıralama', icon: Trophy, path: '/student/leaderboard' },
                   { id: 'calendar', label: 'Takvim', icon: Calendar, path: '/student/calendar' },
                 ]}
               />
@@ -150,11 +144,8 @@ function App() {
             <Route path="courses" element={<StudentCourses />} />
             <Route path="assignments" element={<StudentAssignments />} />
             <Route path="exercises" element={<StudentStudyHub />} />
-            <Route path="skill-tree" element={<SkillTree />} />
             <Route path="lesson/:lessonId" element={<LessonQuiz />} />
-            <Route path="leaderboard" element={<StudentLeaderboard />} />
             <Route path="calendar" element={<StudentCalendar />} />
-            <Route path="practice" element={<StudentPracticeExercises />} />
             <Route path="messages" element={<StudentMessaging />} />
 
             {/* 🚨 GÜNCEL: Ortak Anket Sayfası (Rol: Student) */}

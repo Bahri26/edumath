@@ -171,13 +171,10 @@ const StudentHome = () => {
       noPendingTasks: "Henüz yaklaşan ödev yok",
       kidBuddyLine: "Birlikte matematik macerasına devam edelim!",
       kidTodayTitle: "Bugünün görevleri",
-      kidMissionAi: "AI antrenman",
-      kidMissionAiHint: "Hızlı pratik",
       kidMissionQuiz: "Sınavlar",
       kidMissionQuizHint: "Bilgini dene",
       kidMissionQuizHintOpen: "{{n}} sınav açık",
       kidPracticePendingHint: "{{n}} egzersiz bekliyor",
-      kidAiXpHint: "Bugün {{n}} XP",
       kidGoalsTitle: "Günlük Hedefler",
       goalXp: "Bugün XP topla",
       goalXpSub: "{{cur}} / {{target}} XP (UTC günlük kayıtlar)",
@@ -188,14 +185,13 @@ const StudentHome = () => {
       goalExam: "Sınav dene",
       goalExamSubDone: "Bugün bir sınav sonucun var.",
       goalExamSubTodo: "Sınıf sınavına katıl",
-      goalNavPractice: "Antrenmana git",
       goalNavExercise: "Çalışmalara git",
       goalNavQuiz: "Sınava git",
       goalDoneBadge: "Tamam",
-      kidContinueFallback: "Konu ağacından devam et",
+      kidContinueFallback: "Derslerinden devam et",
       coursesEmptyTitle: "Konuların hazırlanıyor",
-      coursesEmptyHint: "Öğretmenin eklediği konular burada görünecek. Şimdilik Konu Ağacına göz at!",
-      goSkillTree: "Konu Ağacına Git",
+      coursesEmptyHint: "Öğretmenin eklediği konular burada görünecek.",
+      goCourses: "Derslerime Git",
     },
     EN: {
       welcome: "Welcome Back",
@@ -206,13 +202,10 @@ const StudentHome = () => {
       noPendingTasks: "No pending assignments",
       kidBuddyLine: "Let’s keep the math adventure going!",
       kidTodayTitle: "Today’s missions",
-      kidMissionAi: "AI practice",
-      kidMissionAiHint: "Quick practice",
       kidMissionQuiz: "Quizzes",
       kidMissionQuizHint: "Try what you learned",
       kidMissionQuizHintOpen: "{{n}} quiz available",
       kidPracticePendingHint: "{{n}} practice(s) waiting",
-      kidAiXpHint: "{{n}} XP today",
       kidGoalsTitle: "Daily goals",
       goalXp: "Earn XP today",
       goalXpSub: "{{cur}} / {{target}} XP (daily log, UTC)",
@@ -223,14 +216,13 @@ const StudentHome = () => {
       goalExam: "Take a quiz",
       goalExamSubDone: "You submitted a quiz today.",
       goalExamSubTodo: "Try a class quiz",
-      goalNavPractice: "Go to practice",
       goalNavExercise: "Study hub",
       goalNavQuiz: "Quizzes",
       goalDoneBadge: "Done",
-      kidContinueFallback: "Continue from the topic tree",
+      kidContinueFallback: "Continue from your courses",
       coursesEmptyTitle: "Topics are on the way",
-      coursesEmptyHint: "Your teacher's topics will show here. Explore the topic tree for now!",
-      goSkillTree: "Open topic tree",
+      coursesEmptyHint: "Your teacher's topics will show here.",
+      goCourses: "Go to my courses",
     }
   };
 
@@ -282,21 +274,17 @@ const StudentHome = () => {
   const kidMissions = [
     {
       titleKey: 'continueLesson',
-      path: continueLearning.lessonId ? `/student/lesson/${continueLearning.lessonId}` : '/student/skill-tree',
+      path: continueLearning.lessonId ? `/student/lesson/${continueLearning.lessonId}` : '/student/courses',
       emoji: '▶️',
       accent: 'from-amber-400 to-orange-500',
       hintFromTopic: true,
     },
-    { titleKey: 'kidMissionAi', hintKey: 'kidMissionAiHint', path: '/student/practice', emoji: '🤖', accent: 'from-sky-400 to-indigo-500' },
     { titleKey: 'kidMissionQuiz', hintKey: 'kidMissionQuizHint', path: '/student/quizzes', emoji: '⭐', accent: 'from-teal-400 to-emerald-500' },
   ];
 
   const missionSubtitle = (m) => {
     if (m.hintFromTopic) {
       return continueCardHint || continueLearning.topic || getText('kidContinueFallback');
-    }
-    if (m.path === '/student/practice') {
-      return todayXpUtc > 0 ? fill(getText('kidAiXpHint'), { n: todayXpUtc }) : getText(m.hintKey);
     }
     if (m.path === '/student/quizzes') {
       return openExamCount > 0
@@ -332,10 +320,10 @@ const StudentHome = () => {
           <h2 className="mt-8 mb-4 text-lg sm:text-xl font-extrabold text-slate-800 dark:text-white">
             {getText('kidTodayTitle')}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {kidMissions.map((m) => (
               <button
-                key={m.path}
+                key={m.titleKey}
                 type="button"
                 onClick={() => navigate(m.path)}
                 className={`text-left rounded-2xl min-h-[5.25rem] p-5 text-white shadow-md bg-gradient-to-br ${m.accent} hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-amber-200/80 dark:focus:ring-slate-500 transition-all active:scale-[0.98]`}
@@ -385,7 +373,7 @@ const StudentHome = () => {
                 <CourseCard
                   key={course.id}
                   {...course}
-                  onClick={() => navigate('/student/skill-tree')}
+                  onClick={() => navigate('/student/courses')}
                 />
               ))
             ) : (
@@ -394,10 +382,10 @@ const StudentHome = () => {
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{getText('coursesEmptyHint')}</p>
                 <button
                   type="button"
-                  onClick={() => navigate('/student/skill-tree')}
+                  onClick={() => navigate('/student/courses')}
                   className="mt-4 rounded-xl bg-teal-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-teal-700"
                 >
-                  {getText('goSkillTree')}
+                  {getText('goCourses')}
                 </button>
               </div>
             )}
@@ -429,10 +417,10 @@ const StudentHome = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => navigate('/student/practice')}
+                  onClick={() => navigate('/student/exercises')}
                   className="shrink-0 text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-2 rounded-xl font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 min-h-[40px]"
                 >
-                  {goalXpMet ? getText('goalDoneBadge') : getText('goalNavPractice')}
+                  {goalXpMet ? getText('goalDoneBadge') : getText('goalNavExercise')}
                 </button>
               </div>
               <div className="flex items-start gap-4 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 p-3">
