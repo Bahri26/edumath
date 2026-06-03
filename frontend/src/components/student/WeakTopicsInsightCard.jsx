@@ -17,7 +17,8 @@ const copy = {
   TR: {
     title: 'Geliştirmen gereken konular',
     subtitle: 'Yerel analiz — sınav ve çalışmalarına göre',
-    empty: 'Henüz yeterli veri yok. Sınav ve çalışma merkezinden birkaç aktivite tamamladığında burada öneriler görünecek.',
+    empty: 'Henüz konu listesi yüklenemedi. Biraz sonra tekrar dene veya öğretmenin konuları eklediğinden emin ol.',
+    suggestedHint: 'Henüz yeterli sınav/çalışma verin yok. Sınıfına uygun konulardan başlaman için öneriler:',
     loading: 'Konular analiz ediliyor…',
     mastery: 'Başarı',
     attempts: '{{n}} deneme',
@@ -25,11 +26,13 @@ const copy = {
     practicing: 'Hazırlanıyor…',
     goHub: 'Çalışma merkezi',
     allGood: 'Harika! Şu an belirgin bir zayıf konu görünmüyor. Yine de tekrar için çalışabilirsin.',
+    startLabel: 'Başla',
   },
   EN: {
     title: 'Topics to improve',
     subtitle: 'Local analysis from your quizzes and practice',
-    empty: 'Not enough data yet. Complete a few quizzes or exercises to see recommendations here.',
+    empty: 'Could not load topics. Try again later or ask your teacher to add topics.',
+    suggestedHint: 'Not enough quiz data yet. Suggested topics to start with:',
     loading: 'Analyzing topics…',
     mastery: 'Mastery',
     attempts: '{{n}} attempts',
@@ -37,6 +40,7 @@ const copy = {
     practicing: 'Preparing…',
     goHub: 'Study hub',
     allGood: 'Great! No weak topics stand out right now. You can still review in the study hub.',
+    startLabel: 'Start',
   },
 };
 
@@ -54,7 +58,12 @@ export default function WeakTopicsInsightCard({
   const getText = (key) => t[key] || copy.TR[key];
 
   const [loading, setLoading] = useState(true);
-  const [insights, setInsights] = useState({ weakTopics: [], topics: [] });
+  const [insights, setInsights] = useState({
+    weakTopics: [],
+    topics: [],
+    suggested: false,
+    hasActivity: false,
+  });
   const [practiceLoading, setPracticeLoading] = useState(false);
   const [practiceQuestions, setPracticeQuestions] = useState(null);
 
@@ -68,6 +77,8 @@ export default function WeakTopicsInsightCard({
         setInsights({
           weakTopics: Array.isArray(data?.weakTopics) ? data.weakTopics : [],
           topics: Array.isArray(data?.topics) ? data.topics : [],
+          suggested: Boolean(data?.suggested),
+          hasActivity: Boolean(data?.hasActivity),
         });
       } catch {
         if (!cancelled) setInsights({ weakTopics: [], topics: [] });
@@ -122,7 +133,9 @@ export default function WeakTopicsInsightCard({
             <h3 className={`font-bold text-slate-800 dark:text-white ${compact ? 'text-base' : 'text-lg'}`}>
               {getText('title')}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{getText('subtitle')}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {insights.suggested ? getText('suggestedHint') : getText('subtitle')}
+            </p>
           </div>
         </div>
 
@@ -154,8 +167,9 @@ export default function WeakTopicsInsightCard({
                       {row.topic}
                     </span>
                     <span className="text-xs text-slate-500 shrink-0">
-                      %{mastery}
-                      {row.total > 0 ? ` · ${fill(getText('attempts'), { n: row.total })}` : ''}
+                      {row.suggested
+                        ? getText('startLabel')
+                        : `%${mastery}${row.total > 0 ? ` · ${fill(getText('attempts'), { n: row.total })}` : ''}`}
                     </span>
                   </div>
                   <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">

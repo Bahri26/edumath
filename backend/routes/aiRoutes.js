@@ -59,6 +59,8 @@ router.get('/student-insights', protect, async (req, res) => {
       provider: getAiProvider(),
       weakTopics: stats.weakTopics,
       topics: stats.entries,
+      suggested: Boolean(stats.suggested),
+      hasActivity: Boolean(stats.hasActivity),
     });
   } catch (e) {
     res.status(500).json({ message: 'İstatistikler alınamadı.', error: e.message });
