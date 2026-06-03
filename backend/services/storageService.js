@@ -159,21 +159,55 @@ async function uploadFile(file, prefix) {
   throw new Error('Yüklenecek dosya buffer veya path içermiyor.');
 }
 
+function toUploadRelativePath(input) {
+  const raw = String(input || '').trim();
+  if (!raw || raw.startsWith('blob:') || raw.startsWith('data:')) {
+    return '';
+  }
+
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const pathname = new URL(raw).pathname || '';
+      const idx = pathname.indexOf('/uploads/');
+      if (idx >= 0) return pathname.slice(idx);
+    } catch {
+      const match = raw.match(/\/uploads\/[^\s?#]+/i);
+      if (match) return match[0];
+    }
+    return '';
+  }
+
+  if (raw.startsWith('/api/uploads/')) {
+    return `/uploads/${raw.slice('/api/uploads/'.length).replace(/^\/+/, '')}`;
+  }
+  if (raw.startsWith('/uploads/')) {
+    return raw;
+  }
+  if (raw.startsWith('uploads/')) {
+    return `/${raw}`;
+  }
+  return `/uploads/${raw.replace(/^\/?uploads\/?/, '')}`;
+}
+
+function toUploadStorageKey(relativePath) {
+  return String(relativePath || '')
+    .replace(/^\/api\/uploads\//, '')
+    .replace(/^\/uploads\//, '')
+    .replace(/^\/+/, '');
+}
+
 /** Smart-parse temp görselini kalıcı questions/ altına taşır (veya S3'e yükler). */
-async function promoteLocalUpload(url, prefix = 'questions') {
-  const raw = String(url || '').trim();
-  if (!raw) {
+async function promoteLocalUpload(url, prefix = 'questions', options = {}) {
+  const { allowMissing = false } = options;
+  const relative = toUploadRelativePath(url);
+  if (!relative) {
     return { url: '', key: '', provider: getProviderName() };
   }
 
-  if (/^https?:\/\//i.test(raw) && !raw.includes('/uploads/temp/')) {
-    return { url: raw, key: '', provider: getProviderName() };
-  }
-
-  const key = raw.replace(/^\/api\/uploads\//, '').replace(/^\/uploads\//, '');
+  const key = toUploadStorageKey(relative);
   if (!key.includes('temp/')) {
     return {
-      url: raw.startsWith('/') ? raw : `/uploads/${key}`,
+      url: relative,
       key,
       provider: getProviderName(),
     };
@@ -181,7 +215,12 @@ async function promoteLocalUpload(url, prefix = 'questions') {
 
   const srcPath = path.join(LOCAL_UPLOAD_DIR, key);
   if (!fs.existsSync(srcPath)) {
-    throw new Error(`Temp görsel bulunamadı: ${key}`);
+    const message = `Temp görsel bulunamadı: ${key}`;
+    if (allowMissing) {
+      console.warn(message);
+      return { url: relative, key: '', provider: getProviderName(), missing: true };
+    }
+    throw new Error(message);
   }
 
   const buffer = fs.readFileSync(srcPath);
@@ -210,11 +249,11 @@ async function uploadSvg(svgMarkup, prefix, fileName = 'generated.svg') {
 }
 
 async function promoteUrlIfTemp(url, prefix = 'questions') {
-  const raw = String(url || '').trim();
-  if (!raw || !/\/uploads\/temp\//i.test(raw)) {
-    return { url: raw, key: '', provider: getProviderName() };
+  const relative = toUploadRelativePath(url);
+  if (!relative || !/\/uploads\/temp\//i.test(relative)) {
+    return { url: relative || String(url || '').trim(), key: '', provider: getProviderName() };
   }
-  return promoteLocalUpload(raw, prefix);
+  return promoteLocalUpload(relative, prefix, { allowMissing: true });
 }
 
 /** Smart-parse kırpılmış diyagram / şık şeridi görsellerini kalıcı depoya taşır */
@@ -282,6 +321,7 @@ module.exports = {
   promoteLocalUpload,
   promoteUrlIfTemp,
   promoteAssessmentMetaAssets,
+  toUploadRelativePath,
   deleteStoredAsset,
   isObjectStorageEnabled,
   getProviderName,

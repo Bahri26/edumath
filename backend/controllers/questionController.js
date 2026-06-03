@@ -1,6 +1,6 @@
 const { buildTopicMongoClause } = require('../constants/patternTopics');
 const Question = require('../models/Question');
-const { uploadFile, promoteLocalUpload, promoteAssessmentMetaAssets, deleteStoredAsset } = require('../services/storageService');
+const { uploadFile, promoteLocalUpload, promoteAssessmentMetaAssets, toUploadRelativePath, deleteStoredAsset } = require('../services/storageService');
 const { recordUserActivity } = require('../services/activityLogger');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -59,21 +59,7 @@ const buildQuestionSearch = (query, search, mode = 'text') => {
 };
 
 function normalizeStoredImagePath(value) {
-  if (!value || typeof value !== 'string') {
-    return '';
-  }
-
-  if (/^https?:\/\//i.test(value)) {
-    return value;
-  }
-
-  if (value.startsWith('/api/uploads/')) {
-    return `/uploads/${value.slice('/api/uploads/'.length).replace(/^\/+/, '')}`;
-  }
-
-  return value.startsWith('/uploads')
-    ? value
-    : `/uploads/${value.replace(/^\/?uploads\/?/, '')}`;
+  return toUploadRelativePath(value);
 }
 
 function normalizeOptionPayload(options) {
@@ -82,6 +68,14 @@ function normalizeOptionPayload(options) {
   }
 
   if (typeof options === 'string' && options.trim()) {
+    try {
+      const parsed = JSON.parse(options);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      /* tek metin şık */
+    }
     return [options];
   }
 
@@ -294,6 +288,15 @@ exports.createQuestion = async (req, res, next) => {
     const createdBy = req.user?.id || req.body.createdBy;
     const normalizedClassLevel = normalizeClassLevel(classLevel);
 
+    const questionText = String(text || '').trim();
+    const answerText = String(correctAnswer || '').trim();
+    if (!questionText) {
+      return res.status(400).json({ message: 'Soru metni gereklidir.' });
+    }
+    if (!answerText) {
+      return res.status(400).json({ message: 'Doğru cevap gereklidir.' });
+    }
+
     // Teacher branch enforcement: if teacher has approved branch, lock subject to branch
     let finalSubject = subject;
     try {
@@ -319,12 +322,20 @@ exports.createQuestion = async (req, res, next) => {
       mainImageProvider = uploaded.provider;
     } else if (req.body.imagePath) {
       const normalizedPath = normalizeStoredImagePath(req.body.imagePath);
-      if (/\/uploads\/temp\//i.test(normalizedPath) || normalizedPath.includes('/temp/')) {
-        const promoted = await promoteLocalUpload(normalizedPath, 'questions');
-        mainImagePath = promoted.url;
-        mainImageKey = promoted.key;
-        mainImageProvider = promoted.provider;
-      } else {
+      if (normalizedPath && (/\/uploads\/temp\//i.test(normalizedPath) || normalizedPath.includes('/temp/'))) {
+        try {
+          const promoted = await promoteLocalUpload(normalizedPath, 'questions', { allowMissing: true });
+          if (promoted.url && !promoted.missing) {
+            mainImagePath = promoted.url;
+            mainImageKey = promoted.key;
+            mainImageProvider = promoted.provider;
+          } else if (promoted.missing) {
+            console.warn('createQuestion: temp görsel bulunamadı, soru görselsiz kaydedilecek:', normalizedPath);
+          }
+        } catch (imgErr) {
+          console.warn('createQuestion image promote failed:', imgErr?.message);
+        }
+      } else if (normalizedPath) {
         mainImagePath = normalizedPath;
       }
     }
@@ -363,7 +374,7 @@ exports.createQuestion = async (req, res, next) => {
     }
 
     const newQuestion = await Question.create({
-      text, subject: finalSubject, classLevel: normalizedClassLevel, difficulty, type, correctAnswer, solution, topic,
+      text: questionText, subject: finalSubject, classLevel: normalizedClassLevel, difficulty, type, correctAnswer: answerText, solution, topic,
       learningOutcome,
       mebReference,
       curriculumNote,

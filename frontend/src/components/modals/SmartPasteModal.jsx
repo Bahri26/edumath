@@ -49,16 +49,34 @@ const buildSavePayload = (parsedData, parseLayout) => {
     stepLabels,
     stemText: buildCombinedQuestionText({ introText, questionText }),
   };
+  let imagePath = parsedData.imagePath || '';
+  if (imagePath && !imagePath.startsWith('/uploads/')) {
+    const match = String(imagePath).match(/\/uploads\/[^\s?#]+/i);
+    imagePath = match ? match[0] : '';
+  }
   return {
     ...parsedData,
     text: buildCombinedQuestionText({ introText, questionText }),
     visualPrompt: parsedData.visualPrompt || parsedData.stepLabels || stepLabels.join(' · '),
+    imagePath,
     assessmentMeta: {
       ...(parsedData.assessmentMeta || {}),
       parseLayout: parseLayoutNext,
       source: 'smart-parse',
     },
   };
+};
+
+const appendQuestionFormFields = (form, payload) => {
+  const skip = new Set(['options', 'assessmentMeta', 'introText', 'questionText', 'stepLabels']);
+  Object.entries(payload).forEach(([key, val]) => {
+    if (skip.has(key) || val == null || val === '') return;
+    form.append(key, String(val));
+  });
+  form.append('options', JSON.stringify(payload.options || []));
+  if (payload.assessmentMeta) {
+    form.append('assessmentMeta', JSON.stringify(payload.assessmentMeta));
+  }
 };
 
 export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
@@ -256,15 +274,30 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     try {
       const base = dataToSave || parsedData;
       const payload = { ...buildSavePayload(base, parseLayout), source: 'AI' };
-      const storedPath = payload.imagePath
-        || (typeof image === 'string' && image.includes('/uploads/') ? image.replace(/^.*\/uploads/, '/uploads') : '');
-      if (storedPath && storedPath.startsWith('/uploads')) {
-        payload.imagePath = storedPath;
+
+      if (!payload.text?.trim()) {
+        showToast('Soru metni boş olamaz.', 'error');
+        return;
       }
-      await apiClient.post('/questions', payload);
-      showToast("Soru başarıyla havuza kaydedildi!", "success");
-      onParsed(); // Listeyi yenile
-      onClose(); // Modalı kapat
+      if (!payload.correctAnswer?.trim()) {
+        showToast('Doğru cevabı işaretleyin.', 'error');
+        return;
+      }
+
+      if (uploadedFile) {
+        const form = new FormData();
+        appendQuestionFormFields(form, payload);
+        form.append('image', uploadedFile);
+        await apiClient.post('/questions', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        await apiClient.post('/questions', payload);
+      }
+
+      showToast('Soru başarıyla havuza kaydedildi!', 'success');
+      onParsed();
+      onClose();
     } catch (err) {
       showToast(describeApiError(err, 'Kaydedilirken bir hata oluştu.'), 'error');
     } finally {
