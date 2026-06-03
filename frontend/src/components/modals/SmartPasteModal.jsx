@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Sparkles, Loader2, Image as ImageIcon, Check, ArrowRight } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { describeApiError } from '../../utils/errorMessage';
-import apiClient from '../../services/api';
+import apiClient, { resolveAssetUrl } from '../../services/api';
 import { smartParseImage, smartParseText } from '../../services/aiService';
 import Button from '../ui/Button.jsx';
 
@@ -26,10 +26,19 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     classLevel: '9. Sınıf',
     difficulty: 'Orta'
   });
+  const [parseMode, setParseMode] = useState('');
+  const [ocrPreview, setOcrPreview] = useState('');
 
   if (!isOpen) return null;
 
-  // 1. Resimden Metne Dönüştürme (Gemini AI API)
+  const parseModeLabel = (mode) => {
+    if (mode === 'ai') return 'Bulut AI (Gemini)';
+    if (mode === 'ollama-vision') return 'Yerel Ollama görsel';
+    if (mode === 'ocr') return 'Yerel OCR + ayrıştırma';
+    if (mode === 'manual') return 'Manuel düzenleme';
+    return 'Analiz';
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -40,8 +49,10 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     try {
       const body = await smartParseImage(file);
       const data = body?.data || {};
-      const parseMode = body?.meta?.parseMode;
+      const mode = body?.meta?.parseMode || '';
       const serverMessage = body?.message;
+      setParseMode(mode);
+      setOcrPreview(body?.ocrPreview || '');
       setParsedData({
         text: data.text || '',
         options: Array.isArray(data.options) ? data.options : ['', '', '', ''],
@@ -54,13 +65,13 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       });
       // If server returned an imagePath, prefer it for preview
       if (data.imagePath) {
-        setImage(data.imagePath);
+        setImage(resolveAssetUrl(data.imagePath) || data.imagePath);
       }
-      setStep('editing'); // Düzenleme aşamasına geç
-      if (parseMode === 'manual') {
+      setStep('editing');
+      if (mode === 'manual') {
         showToast(serverMessage || 'AI ve OCR sonuç vermedi. Alanları manuel doldurun.', 'error');
-      } else if (parseMode === 'ocr') {
-        showToast(serverMessage || 'AI kullanılamadı, OCR ile alanlar dolduruldu.', 'success');
+      } else if (mode === 'ocr' || mode === 'ollama-vision') {
+        showToast(serverMessage || 'Görsel soruya dönüştürüldü. Alanları kontrol edin.', 'success');
       } else {
         showToast(serverMessage || 'Görsel analiz edildi.', 'success');
       }
@@ -217,8 +228,10 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-xl"><Sparkles className={loading ? "animate-spin" : ""} /></div>
             <div>
-              <h3 className="text-xl font-black">AI Akıllı Görsel Analiz</h3>
-              <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest">Adım: {step === 'upload' ? 'Görsel Seçimi' : 'Veri Doğrulama'}</p>
+              <h3 className="text-xl font-black">Akıllı Yapıştır</h3>
+              <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest">
+                {step === 'upload' ? 'Görsel → soru' : `${parseModeLabel(parseMode)} · doğrulama`}
+              </p>
             </div>
           </div>
           <Button variant="secondary" size="sm" onClick={onClose} ariaLabel="Kapat">
@@ -243,7 +256,10 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                     <ImageIcon className="text-indigo-600" size={48} />
                   </div>
                   <p className="mb-2 text-lg font-black text-slate-700 dark:text-slate-200">Soru Resmini Buraya Bırakın</p>
-                  <p className="text-sm text-slate-400 font-medium text-center px-10">Net bir ekran görüntüsü veya fotoğraf, yapay zekanın <br/> daha iyi sonuç vermesini sağlar.</p>
+                  <p className="text-sm text-slate-400 font-medium text-center px-10">
+                    Net ekran görüntüsü kullanın. Sistem metni okur (OCR), şıkları ve cevabı ayırır;
+                    <br /> sonra siz kontrol edip havuza kaydedersiniz.
+                  </p>
                 </div>
                 <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
               </label>
@@ -273,7 +289,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
               )}
               {loading && (
                 <div className="flex items-center justify-center gap-3 text-indigo-600 font-bold animate-pulse">
-                  <Loader2 className="animate-spin" /> Görsel analiz ediliyor ve LaTeX'e dönüştürülüyor...
+                  <Loader2 className="animate-spin" /> Görsel okunuyor, soru metni ve şıklar ayrıştırılıyor…
                 </div>
               )}
             </div>
@@ -281,6 +297,12 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
             /* ADIM 2: DÜZENLEME ALANI */
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-500">
               <div className="space-y-6">
+                {ocrPreview ? (
+                  <details className="rounded-2xl border border-amber-200/80 bg-amber-50/50 dark:bg-amber-950/20 p-3 text-xs text-amber-900 dark:text-amber-100">
+                    <summary className="font-bold cursor-pointer">OCR ham metin (düzeltme için)</summary>
+                    <pre className="mt-2 whitespace-pre-wrap font-mono text-[11px] opacity-90 max-h-32 overflow-y-auto">{ocrPreview}</pre>
+                  </details>
+                ) : null}
                 <div>
                   <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">Soru Metni (LaTeX)</label>
                   <textarea 
@@ -358,7 +380,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                 </div>
                 <div className="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-[2rem] border border-indigo-100">
                    <p className="text-[10px] font-black text-indigo-600 uppercase mb-3">Soru Önizleme (Görsel)</p>
-                   <img src={image} alt="Original" className="w-full h-32 object-contain rounded-xl opacity-60 grayscale hover:grayscale-0 transition-all cursor-zoom-in" />
+                   <img src={typeof image === 'string' ? resolveAssetUrl(image) || image : image} alt="Yüklenen soru görseli" className="w-full h-32 object-contain rounded-xl opacity-60 grayscale hover:grayscale-0 transition-all cursor-zoom-in" />
                 </div>
               </div>
             </div>

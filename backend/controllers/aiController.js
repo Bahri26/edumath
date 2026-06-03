@@ -1,4 +1,4 @@
-const { isLocalAi } = require('../config/aiProvider');
+const { isLocalAi, isOllamaAi } = require('../config/aiProvider');
 const localText = require('../services/localTextService');
 const localQuestions = require('../services/localQuestionService');
 const {
@@ -451,31 +451,25 @@ exports.smartParse = async (req, res) => {
       JSON dışında metin ekleme.
     `;
 
-    let data;
-    let parseMode = isLocalAi() ? 'ocr' : 'ai';
-
-    if (isLocalAi()) {
-      try {
-        const ocrText = await extractTextFromImageWithOcr(req.file.path);
-        data = parseStructuredQuestionText(ocrText, { imagePath: imageUrl });
-        parseMode = 'ocr';
-      } catch (ocrErr) {
-        console.warn('smartParse local OCR failed:', ocrErr?.message);
-        parseMode = 'manual';
-        data = buildDefaultParsedQuestion({ imagePath: imageUrl });
-      }
+    if (isLocalAi() || isOllamaAi()) {
+      const { parseQuestionFromImage } = require('../services/questionImageParseService');
+      const result = await parseQuestionFromImage(req.file.path, req.file.mimetype);
       return res.json({
         success: true,
-        data,
+        data: result.data,
         meta: {
-          parseMode,
-          autoFilled: Boolean(data.text.trim() || data.options.some((option) => option.trim())),
+          parseMode: result.parseMode,
+          autoFilled: Boolean(
+            result.data.text?.trim() || result.data.options?.some((option) => String(option).trim())
+          ),
         },
-        message: parseMode === 'ocr'
-          ? 'Görsel yerel OCR ile ayrıştırıldı.'
-          : 'OCR başarısız; alanları manuel doldurun.',
+        message: result.message,
+        ocrPreview: result.ocrPreview || '',
       });
     }
+
+    let data;
+    let parseMode = 'ai';
 
     try {
       const result = await model.generateContent([instruction, imagePart]);
@@ -849,9 +843,10 @@ exports.smartParseText = async (req, res) => {
       return res.status(400).json({ message: 'İçerik boş. Lütfen soruyu yapıştırın.' });
     }
 
-    const data = parseStructuredQuestionText(content);
+    const { parseStructuredQuestionText: parseText } = require('../services/questionImageParseService');
+    const data = parseText(content);
 
-    if (!isLocalAi() && process.env.GEMINI_API_KEY) {
+    if (!isLocalAi() && !isOllamaAi() && process.env.GEMINI_API_KEY) {
       try {
         const schema = {
           description: 'Tek bir soru şeması',
