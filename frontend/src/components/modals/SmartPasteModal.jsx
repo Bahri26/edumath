@@ -6,6 +6,61 @@ import apiClient, { resolveAssetUrl } from '../../services/api';
 import { smartParseImage, smartParseText } from '../../services/aiService';
 import Button from '../ui/Button.jsx';
 
+const stripDiagramPlaceholder = (text) =>
+  String(text || '').replace(/\n*\[Şekil:[^\]]+\]\s*/gi, '').trim();
+
+const buildCombinedQuestionText = ({ introText = '', questionText = '' }) =>
+  [introText, questionText].map((s) => String(s || '').trim()).filter(Boolean).join('\n\n');
+
+const mapServerParseToForm = (data = {}, layout = null) => {
+  const intro = data.introText ?? layout?.introText ?? '';
+  const question = data.questionText ?? layout?.questionLine ?? stripDiagramPlaceholder(data.text);
+  const steps = Array.isArray(data.stepLabels) ? data.stepLabels : (layout?.stepLabels || []);
+  const stepLabels = steps.join(' · ');
+  return {
+    text: buildCombinedQuestionText({ introText: intro, questionText: question }),
+    introText: intro,
+    questionText: question,
+    stepLabels,
+    visualPrompt: data.visualPrompt || stepLabels || '',
+    options: Array.isArray(data.options) ? data.options : ['', '', '', ''],
+    correctAnswer: data.correctAnswer || '',
+    solution: data.solution || data.solutionText || '',
+    topic: data.topic || '',
+    subject: data.subject || 'Matematik',
+    classLevel: data.classLevel || '9. Sınıf',
+    difficulty: data.difficulty || 'Orta',
+    imagePath: data.imagePath || '',
+    assessmentMeta: data.assessmentMeta || null,
+  };
+};
+
+const buildSavePayload = (parsedData, parseLayout) => {
+  const introText = parsedData.introText ?? '';
+  const questionText = parsedData.questionText ?? '';
+  const stepLabels = String(parsedData.stepLabels || '')
+    .split(/[·,|]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const parseLayoutNext = {
+    ...(parseLayout || parsedData.assessmentMeta?.parseLayout || {}),
+    introText,
+    questionLine: questionText,
+    stepLabels,
+    stemText: buildCombinedQuestionText({ introText, questionText }),
+  };
+  return {
+    ...parsedData,
+    text: buildCombinedQuestionText({ introText, questionText }),
+    visualPrompt: parsedData.visualPrompt || parsedData.stepLabels || stepLabels.join(' · '),
+    assessmentMeta: {
+      ...(parsedData.assessmentMeta || {}),
+      parseLayout: parseLayoutNext,
+      source: 'smart-parse',
+    },
+  };
+};
+
 export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   const { showToast } = useToast();
   const [mode, setMode] = useState('image'); // 'image' | 'text'
@@ -19,6 +74,10 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   // Düzenleme State'i
   const [parsedData, setParsedData] = useState({
     text: '',
+    introText: '',
+    questionText: '',
+    stepLabels: '',
+    visualPrompt: '',
     options: ['', '', '', ''],
     correctAnswer: '',
     solution: '',
@@ -67,20 +126,9 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       const serverMessage = body?.message;
       setParseMode(mode);
       setOcrPreview(body?.ocrPreview || '');
-      setParseLayout(body?.meta?.layout || data?.assessmentMeta?.parseLayout || null);
-      const imagePath = data.imagePath || '';
-      setParsedData({
-        text: data.text || '',
-        options: Array.isArray(data.options) ? data.options : ['', '', '', ''],
-        correctAnswer: data.correctAnswer || '',
-        solution: data.solution || data.solutionText || '',
-        topic: data.topic || '',
-        subject: data.subject || 'Matematik',
-        classLevel: data.classLevel || '9. Sınıf',
-        difficulty: data.difficulty || 'Orta',
-        imagePath,
-        assessmentMeta: data.assessmentMeta || null,
-      });
+      const layout = body?.meta?.layout || data?.assessmentMeta?.parseLayout || null;
+      setParseLayout(layout);
+      setParsedData(mapServerParseToForm(data, layout));
       // Önizleme: tarayıcıdaki blob URL korunur; sunucu yolu yalnızca kayıt için
       setStep('editing');
       if (mode === 'manual') {
@@ -206,7 +254,8 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   const handleFinalSave = async (dataToSave) => {
     setLoading(true);
     try {
-      const payload = { ...(dataToSave || parsedData), source: 'AI' };
+      const base = dataToSave || parsedData;
+      const payload = { ...buildSavePayload(base, parseLayout), source: 'AI' };
       const storedPath = payload.imagePath
         || (typeof image === 'string' && image.includes('/uploads/') ? image.replace(/^.*\/uploads/, '/uploads') : '');
       if (storedPath && storedPath.startsWith('/uploads')) {
@@ -224,10 +273,16 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   };
 
   const handleTransferToCreate = () => {
-    // Soru oluşturma formuna aktar ve modalı kapat
-    onParsed(parsedData, uploadedFile);
+    onParsed(buildSavePayload(parsedData, parseLayout), uploadedFile);
     onClose();
   };
+
+  const diagramSrc = parseLayout?.diagramImagePath
+    ? resolvePreviewSrc(parseLayout.diagramImagePath)
+    : resolvePreviewSrc(parsedData.imagePath);
+  const hasShapeSection = Boolean(
+    diagramSrc || parseLayout?.hasDiagram || parsedData.introText || parsedData.stepLabels
+  );
 
   return (
     <div
@@ -310,51 +365,81 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
               )}
             </div>
           ) : (
-            /* ADIM 2: DÜZENLEME ALANI */
+            /* ADIM 2: Şekil | Soru | Şıklar — ayrı bloklar */
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-500">
-              <div className="space-y-6">
-                {parseLayout?.hasDiagram ? (
-                  <div className="rounded-2xl border border-sky-200/80 bg-sky-50/60 dark:bg-sky-950/20 p-4 text-xs text-sky-900 dark:text-sky-100 space-y-2">
-                    <p className="font-black uppercase tracking-widest text-[10px]">Ayrıştırma</p>
-                    {parseLayout.introText ? (
-                      <p><span className="font-bold">Giriş:</span> {parseLayout.introText}</p>
+              <div className="space-y-5">
+                {hasShapeSection ? (
+                  <section className="rounded-[1.75rem] border-2 border-amber-200/90 bg-amber-50/40 dark:bg-amber-950/25 p-5 space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-800 dark:text-amber-200">1 · Şekil / diyagram</p>
+                    {diagramSrc ? (
+                      <img
+                        src={diagramSrc}
+                        alt="Soru şekli"
+                        onError={(ev) => {
+                          if (localPreviewUrl && ev.currentTarget.src !== localPreviewUrl) {
+                            ev.currentTarget.src = localPreviewUrl;
+                          }
+                        }}
+                        className="w-full max-h-44 object-contain rounded-xl border border-amber-200/80 bg-white dark:bg-slate-900"
+                      />
                     ) : null}
-                    {parseLayout.stepLabels?.length > 0 ? (
-                      <p><span className="font-bold">Şekil adımları:</span> {parseLayout.stepLabels.join(' · ')}</p>
-                    ) : null}
-                    {parseLayout.questionLine ? (
-                      <p><span className="font-bold">Soru cümlesi:</span> {parseLayout.questionLine}</p>
-                    ) : null}
-                    <p className="opacity-80 italic">{parseLayout.diagramNote || parseLayout.storageHint}</p>
-                  </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-amber-900/80 ml-1 mb-1 block">Üst açıklama (giriş)</label>
+                      <textarea
+                        value={parsedData.introText}
+                        onChange={(e) => setParsedData({ ...parsedData, introText: e.target.value })}
+                        rows={2}
+                        className="w-full p-3 bg-white/80 dark:bg-slate-900 border-none rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-amber-400"
+                        placeholder="Örn. Altıgenlerle oluşturulmuş bir örüntünün ilk üç adımı verilmiştir."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-amber-900/80 ml-1 mb-1 block">Adım etiketleri (OCR)</label>
+                      <input
+                        value={parsedData.stepLabels}
+                        onChange={(e) => setParsedData({
+                          ...parsedData,
+                          stepLabels: e.target.value,
+                          visualPrompt: e.target.value,
+                        })}
+                        className="w-full p-3 bg-white/80 dark:bg-slate-900 border-none rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-amber-400"
+                        placeholder="1. Adım · 2. Adım · 3. Adım"
+                      />
+                    </div>
+                  </section>
                 ) : null}
+
+                <section className="rounded-[1.75rem] border-2 border-indigo-200/90 bg-indigo-50/30 dark:bg-indigo-950/20 p-5 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-indigo-800 dark:text-indigo-200">2 · Soru metni</p>
+                  <textarea
+                    value={parsedData.questionText}
+                    onChange={(e) => setParsedData({ ...parsedData, questionText: e.target.value })}
+                    rows={4}
+                    className="w-full p-4 bg-white/90 dark:bg-slate-900 border-none rounded-[1.25rem] font-medium outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Buna göre örüntünün 42. adımında kaç tane altıgen vardır?"
+                  />
+                </section>
+
+                <section className="rounded-[1.75rem] border border-slate-200 dark:border-slate-700 p-5">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1 mb-2 block tracking-widest">Çözüm ve açıklama</label>
+                  <textarea
+                    value={parsedData.solution}
+                    onChange={(e) => setParsedData({ ...parsedData, solution: e.target.value })}
+                    className="w-full h-28 p-4 bg-slate-50 dark:bg-slate-900 border-none rounded-[1.25rem] text-sm italic outline-none"
+                  />
+                </section>
+
                 {ocrPreview ? (
-                  <details className="rounded-2xl border border-amber-200/80 bg-amber-50/50 dark:bg-amber-950/20 p-3 text-xs text-amber-900 dark:text-amber-100">
-                    <summary className="font-bold cursor-pointer">OCR ham metin (düzeltme için)</summary>
-                    <pre className="mt-2 whitespace-pre-wrap font-mono text-[11px] opacity-90 max-h-32 overflow-y-auto">{ocrPreview}</pre>
+                  <details className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-xs">
+                    <summary className="font-bold cursor-pointer text-slate-500">OCR ham metin</summary>
+                    <pre className="mt-2 whitespace-pre-wrap font-mono text-[11px] opacity-80 max-h-28 overflow-y-auto">{ocrPreview}</pre>
                   </details>
                 ) : null}
-                <div>
-                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">Soru gövdesi (şıklar hariç)</label>
-                  <textarea 
-                    value={parsedData.text} 
-                    onChange={e => setParsedData({...parsedData, text: e.target.value})}
-                    className="w-full h-48 p-4 bg-slate-50 dark:bg-slate-900 border-none rounded-[1.5rem] font-medium outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">💡 Çözüm ve Açıklama</label>
-                  <textarea 
-                    value={parsedData.solution} 
-                    onChange={e => setParsedData({...parsedData, solution: e.target.value})}
-                    className="w-full h-32 p-4 bg-slate-50 dark:bg-slate-900 border-none rounded-[1.5rem] text-sm italic outline-none"
-                  />
-                </div>
               </div>
 
-              <div className="space-y-6">
-                <div>
-                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">📋 Şıklar ve Doğru Cevap</label>
+              <div className="space-y-5">
+                <section className="rounded-[1.75rem] border-2 border-emerald-200/90 bg-emerald-50/25 dark:bg-emerald-950/20 p-5 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 dark:text-emerald-200">3 · Şıklar ve doğru cevap</p>
                   <div className="space-y-3">
                     {parsedData.options.map((opt, idx) => (
                       <div key={idx} className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${parsedData.correctAnswer === opt ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-100 dark:border-slate-700'}`}>
@@ -376,8 +461,8 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                       </div>
                     ))}
                   </div>
-                </div>
-                {/* Ek Alanlar: Konu, Zorluk, Sınıf */}
+                </section>
+                {/* Konu, Zorluk, Sınıf */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">Konu</label>
@@ -409,38 +494,19 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                     </select>
                   </div>
                 </div>
-                {parseLayout?.diagramImagePath ? (
-                  <div className="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-[2rem] border border-emerald-100">
-                    <p className="text-[10px] font-black text-emerald-700 uppercase mb-1">Kırpılmış diyagram (sharp)</p>
-                    <p className="text-[10px] text-emerald-600/90 mb-3">
-                      {parseLayout.cropMethod === 'sharp-row-density' ? 'Satır yoğunluğu ile otomatik bölge' : 'Oran tabanlı yedek kırpma'}
-                    </p>
-                    <img
-                      src={resolvePreviewSrc(parseLayout.diagramImagePath)}
-                      alt="Kırpılmış diyagram"
-                      onError={(ev) => {
-                        if (localPreviewUrl && ev.currentTarget.src !== localPreviewUrl) {
-                          ev.currentTarget.src = localPreviewUrl;
-                        }
-                      }}
-                      className="w-full max-h-40 object-contain rounded-xl border border-emerald-100/80 bg-white dark:bg-slate-900"
-                    />
-                  </div>
-                ) : null}
-                <div className="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-[2rem] border border-indigo-100">
-                   <p className="text-[10px] font-black text-indigo-600 uppercase mb-1">Tam ekran görüntüsü</p>
-                   <p className="text-[10px] text-indigo-500/90 mb-3">Kayıtta question.image olarak saklanır</p>
-                   <img
-                     src={resolvePreviewSrc(parsedData.imagePath)}
-                     alt="Yüklenen soru görseli"
-                     onError={(ev) => {
-                       if (localPreviewUrl && ev.currentTarget.src !== localPreviewUrl) {
-                         ev.currentTarget.src = localPreviewUrl;
-                       }
-                     }}
-                     className="w-full max-h-36 object-contain rounded-xl border border-indigo-100/80 bg-white dark:bg-slate-900 opacity-90"
-                   />
-                </div>
+                <details className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                  <summary className="text-[10px] font-black uppercase text-slate-500 cursor-pointer">Kaynak görsel (tam ekran)</summary>
+                  <img
+                    src={resolvePreviewSrc(parsedData.imagePath)}
+                    alt="Kaynak soru görseli"
+                    onError={(ev) => {
+                      if (localPreviewUrl && ev.currentTarget.src !== localPreviewUrl) {
+                        ev.currentTarget.src = localPreviewUrl;
+                      }
+                    }}
+                    className="mt-3 w-full max-h-32 object-contain rounded-lg bg-slate-50 dark:bg-slate-900"
+                  />
+                </details>
               </div>
             </div>
           )}

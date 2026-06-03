@@ -9,6 +9,7 @@ function buildDefaultParsedQuestion(overrides = {}) {
     options: ['', '', '', ''],
     correctAnswer: '',
     solution: '',
+    visualPrompt: '',
     subject: 'Matematik',
     classLevel: '9. Sınıf',
     difficulty: 'Orta',
@@ -87,55 +88,48 @@ function classifyStemLine(line) {
   return 'intro';
 }
 
-function buildStemWithDiagramNote(questionTextLines) {
+/** Giriş + soru metni (şık ve adım etiketleri hariç) */
+function buildSeparatedStemContent(questionTextLines) {
   const intro = [];
-  const steps = [];
+  const stepLabels = [];
   const question = [];
 
   for (const line of questionTextLines) {
     const kind = classifyStemLine(line);
     if (kind === 'skip') continue;
-    if (kind === 'step') steps.push(line.trim());
+    if (kind === 'step') stepLabels.push(line.trim());
     else if (kind === 'question') question.push(line.trim());
     else intro.push(line.trim());
   }
 
-  const parts = [];
-  if (intro.length) parts.push(intro.join(' '));
-  if (steps.length) {
-    parts.push(`[Şekil: ${steps.join(' · ')} — tam diyagram soru görselinde saklanır]`);
-  }
-  if (question.length) parts.push(question.join(' '));
-  return parts.filter(Boolean).join('\n\n').trim();
+  const introText = intro.join(' ').trim();
+  const questionText = question.join(' ').trim();
+  const text = [introText, questionText].filter(Boolean).join('\n\n').trim();
+  const visualPrompt = stepLabels.length > 0
+    ? stepLabels.join(' · ')
+    : (introText && /örüntü|şekil|diyagram/i.test(introText) ? introText : '');
+
+  return { introText, questionText, stepLabels, text, visualPrompt };
 }
 
-function buildParseLayout(questionTextLines, normalizedOptions, stemText) {
-  const intro = [];
-  const stepLabels = [];
-  const questionLine = [];
-
-  for (const line of questionTextLines) {
-    const kind = classifyStemLine(line);
-    if (kind === 'step') stepLabels.push(line.trim());
-    else if (kind === 'question') questionLine.push(line.trim());
-    else if (kind === 'intro') intro.push(line.trim());
-  }
-
-  const fullStem = stemText || buildStemWithDiagramNote(questionTextLines);
+function buildParseLayout(questionTextLines, normalizedOptions, separated) {
+  const introText = separated.introText || '';
+  const questionLine = separated.questionText || '';
+  const stepLabels = separated.stepLabels || [];
   const hasDiagram = stepLabels.length > 0
-    || /altıgen|altigen|şekil|diyagram|görsel|örüntü|oruntu|\[şekil:/i.test(fullStem);
+    || /altıgen|altigen|şekil|diyagram|görsel|örüntü|oruntu/i.test(introText + questionLine);
 
   return {
-    introText: intro.join(' ').trim(),
-    questionLine: questionLine.join(' ').trim(),
+    introText,
+    questionLine,
     stepLabels,
-    stemText: fullStem,
+    stemText: separated.text || '',
     optionsBlock: normalizedOptions.filter(Boolean),
     hasDiagram,
     diagramNote: hasDiagram
-      ? 'Orta bölümdeki şekil/diyagram tam görsel olarak saklanır; metin yalnızca üst ve alt yazıları içerir.'
+      ? 'Şekil ayrı görsel alanında; soru metni yalnızca yazıdır.'
       : '',
-    storageHint: 'Kayıtta tam ekran görüntüsü question.image alanında; şıklar metin olarak options[] içinde tutulur.',
+    storageHint: 'Tam görsel: question.image · Kırpılmış diyagram: assessmentMeta.parseLayout.diagramImagePath',
   };
 }
 
@@ -172,7 +166,7 @@ function parseStructuredQuestionText(content, defaults = {}) {
   const fallback = buildDefaultParsedQuestion(defaults);
   let normalized = cleanOcrText(content);
   if (!normalized) {
-    const emptyLayout = buildParseLayout([], ['', '', '', ''], '');
+    const emptyLayout = buildParseLayout([], ['', '', '', ''], { text: '', introText: '', questionText: '', stepLabels: [] });
     return {
       ...fallback,
       layout: emptyLayout,
@@ -238,24 +232,29 @@ function parseStructuredQuestionText(content, defaults = {}) {
   }
 
   const rawStem = questionTextLines.join(' ').trim() || normalized.split(/\n[A-D]\)/i)[0]?.trim() || '';
-  const text = buildStemWithDiagramNote(questionTextLines) || rawStem;
+  const separated = buildSeparatedStemContent(questionTextLines);
+  const text = separated.text || rawStem;
   const topic = defaults.topic || inferTopicFromText(text);
   const difficulty = defaults.difficulty || inferDifficulty(text, normalizedOptions.filter(Boolean).length);
   const inferredAnswer = tryInferPatternCorrectAnswer(rawStem || text, normalizedOptions);
   const finalAnswer = correctAnswer || inferredAnswer || '';
 
-  const layout = buildParseLayout(questionTextLines, normalizedOptions, text);
+  const layout = buildParseLayout(questionTextLines, normalizedOptions, separated);
 
   return {
     ...buildDefaultParsedQuestion({
       ...defaults,
       text,
+      visualPrompt: separated.visualPrompt || defaults.visualPrompt || '',
       options: normalizedOptions,
       correctAnswer: finalAnswer,
       solution: defaults.solution || buildBasicSolution(text, normalizedOptions, finalAnswer),
       topic,
       difficulty,
     }),
+    introText: separated.introText,
+    questionText: separated.questionText,
+    stepLabels: separated.stepLabels,
     layout,
     assessmentMeta: {
       parseLayout: layout,
@@ -333,7 +332,14 @@ async function parseQuestionFromImage(filePath, mimeType) {
   }
 
   const parsed = parseStructuredQuestionText(ocrText, { imagePath: imageUrl });
-  const { layout, assessmentMeta, ...questionFields } = parsed;
+  const {
+    layout,
+    assessmentMeta,
+    introText,
+    questionText,
+    stepLabels,
+    ...questionFields
+  } = parsed;
 
   const cropAssets = await extractQuestionImageRegions(filePath);
   const mergedLayout = {
@@ -347,7 +353,14 @@ async function parseQuestionFromImage(filePath, mimeType) {
     source: assessmentMeta?.source || 'smart-parse',
   };
 
-  const data = { ...questionFields, imagePath: imageUrl, assessmentMeta: mergedMeta };
+  const data = {
+    ...questionFields,
+    introText: introText || mergedLayout.introText || '',
+    questionText: questionText || mergedLayout.questionLine || '',
+    stepLabels: stepLabels || mergedLayout.stepLabels || [],
+    imagePath: imageUrl,
+    assessmentMeta: mergedMeta,
+  };
   const autoFilled = Boolean(data.text.trim() || data.options.some((o) => o.trim()));
   const cropped = Boolean(cropAssets?.diagramImagePath);
 
@@ -372,5 +385,6 @@ module.exports = {
   buildDefaultParsedQuestion,
   normalizeOptions,
   buildParseLayout,
+  buildSeparatedStemContent,
   tryInferPatternCorrectAnswer,
 };
