@@ -4,7 +4,7 @@ import StudentHint from '../StudentHint.jsx';
 import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
 
 // This component handles the display and interaction of AI-generated practice questions.
-const AIPractice = ({ questions }) => {
+const AIPractice = ({ questions, sourceLabel }) => {
   const [practiceState, setPracticeState] = useState({});
 
   const handlePracticeAnswer = (qIndex, optionKey, correctOption) => {
@@ -29,7 +29,9 @@ const AIPractice = ({ questions }) => {
         </div>
         <div>
           <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Sana Özel Antrenman</h3>
-          <p className="text-slate-500">Gemini AI tarafından eksiklerine göre hazırlandı.</p>
+          <p className="text-slate-500">
+            {sourceLabel || 'Eksiklerine göre yerel öneri motoru ile hazırlandı.'}
+          </p>
         </div>
       </div>
 

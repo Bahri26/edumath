@@ -8,6 +8,7 @@ import { LanguageContext } from '../../context/LanguageContext';
 import apiClient from '../../services/api';
 import GuideDrawer from '../../components/help/GuideDrawer.jsx';
 import { fetchStudentTopicCourses } from '../../utils/studentCourseData';
+import WeakTopicsInsightCard from '../../components/student/WeakTopicsInsightCard.jsx';
 
 function readStoredUserId() {
   try {
@@ -397,6 +398,9 @@ const StudentHome = () => {
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm transition-colors">
             <ProgressPanel days={14} />
           </div>
+          <WeakTopicsInsightCard
+            onGoHub={() => navigate('/student/exercises')}
+          />
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm transition-colors">
             <div className="flex items-center gap-3 mb-4">
                 <Target className="text-rose-500" />

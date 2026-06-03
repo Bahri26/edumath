@@ -48,10 +48,20 @@ export async function generatePatternQuestionPack(payload) {
   return res.data;
 }
 
-export async function generatePracticeQuestions({ weakTopics, difficulty = 'Orta', count = 5 }) {
+export async function fetchStudentInsights() {
+  const res = await apiClient.get('/ai/student-insights', withAiRequestConfig());
+  return res.data;
+}
+
+export async function generatePracticeQuestions({
+  weakTopics,
+  difficulty = 'Orta',
+  count = 5,
+  studentId,
+}) {
   const res = await apiClient.post(
     '/ai/practice',
-    { weakTopics, difficulty, count },
+    { weakTopics, difficulty, count, studentId },
     withAiRequestConfig()
   );
   return res.data;
