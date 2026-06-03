@@ -1,6 +1,6 @@
 import apiClient, { withAiRequestConfig } from './api';
 
-/** Tüm çıktı Gemini / backend `aiController`; istemci tarafında tek giriş noktası. */
+/** AI istekleri backend `/api/ai` — varsayılan yerel motor (MongoDB + ml-matrix + OCR). */
 
 export async function smartParseImage(file) {
   const formData = new FormData();

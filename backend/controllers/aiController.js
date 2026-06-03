@@ -1,3 +1,10 @@
+const { isLocalAi } = require('../config/aiProvider');
+const localText = require('../services/localTextService');
+const localQuestions = require('../services/localQuestionService');
+const {
+  buildInteractivePracticeQuestions,
+  buildFallbackPracticeQuestions,
+} = require('../services/practiceQuestionBank');
 
 // 7. GELİŞMİŞ SINAV SONUCU DEĞERLENDİRME & ANALİZ
 exports.examResultAnalysis = async (req, res) => {
@@ -37,14 +44,31 @@ exports.examResultAnalysis = async (req, res) => {
       total: stat.total,
       percent: Math.round((stat.correct / stat.total) * 100)
     }));
-    // Genel analiz için LLM ile özet
-    let analysis = "";
-    try {
-      const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-      const prompt = `Bir öğrencinin matematik sınavı sonuçları:\nToplam: ${correct}/${total} doğru.\nKonu bazlı: ${JSON.stringify(topicReport)}\nYavaş çözülen sorular: ${slowQuestions.join(", ")}\nKısa bir analiz ve 2 öneri ver.`;
-      const result = await model.generateContent(prompt);
-      analysis = result.response.text();
-    } catch (e) { analysis = "AI analiz başarısız."; }
+    let analysis = '';
+    if (isLocalAi()) {
+      analysis = localText.buildExamAnalysis({
+        studentName: 'Öğrenci',
+        correct,
+        total,
+        topicReport,
+        slowQuestions,
+      });
+    } else {
+      try {
+        const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+        const prompt = `Bir öğrencinin matematik sınavı sonuçları:\nToplam: ${correct}/${total} doğru.\nKonu bazlı: ${JSON.stringify(topicReport)}\nYavaş çözülen sorular: ${slowQuestions.join(", ")}\nKısa bir analiz ve 2 öneri ver.`;
+        const result = await model.generateContent(prompt);
+        analysis = result.response.text();
+      } catch (e) {
+        analysis = localText.buildExamAnalysis({
+          studentName: 'Öğrenci',
+          correct,
+          total,
+          topicReport,
+          slowQuestions,
+        });
+      }
+    }
     res.json({ score, correct, total, totalTimeMs: totalTime, feedbacks, topicReport, slowQuestions, analysis });
   } catch (error) {
     res.status(500).json({ message: "Sınav sonucu analiz edilemedi.", error: error.message });
@@ -90,14 +114,19 @@ exports.teacherReport = async (req, res) => {
       total: stat.total,
       percent: Math.round((stat.correct / stat.total) * 100)
     }));
-    // LLM ile özet
-    let summary = "";
-    try {
-      const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-      const prompt = `Bir matematik sınavında tüm öğrencilerin sonuçları:\nKonu bazlı başarı: ${JSON.stringify(topicReport)}\nÖğrenci skorları: ${JSON.stringify(allScores)}\nYavaş çözülen sorular: ${JSON.stringify(allSlow)}\nÖğretmen için kısa bir özet ve öneriler ver.`;
-      const result = await model.generateContent(prompt);
-      summary = result.response.text();
-    } catch (e) { summary = "AI özet başarısız."; }
+    let summary = '';
+    if (isLocalAi()) {
+      summary = localText.buildTeacherSummary({ topicReport, allScores, allSlow });
+    } else {
+      try {
+        const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+        const prompt = `Bir matematik sınavında tüm öğrencilerin sonuçları:\nKonu bazlı başarı: ${JSON.stringify(topicReport)}\nÖğrenci skorları: ${JSON.stringify(allScores)}\nYavaş çözülen sorular: ${JSON.stringify(allSlow)}\nÖğretmen için kısa bir özet ve öneriler ver.`;
+        const result = await model.generateContent(prompt);
+        summary = result.response.text();
+      } catch (e) {
+        summary = localText.buildTeacherSummary({ topicReport, allScores, allSlow });
+      }
+    }
     res.json({ topicReport, allScores, allSlow, summary });
   } catch (error) {
     res.status(500).json({ message: "Teacher report oluşturulamadı.", error: error.message });
@@ -130,12 +159,17 @@ exports.getHint = async (req, res) => {
       }
     }
 
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    const prompt = `Bir öğrenci şu soruyu çözüyor: ${resolvedText || '(soru metni alınamadı)'}\n` +
-      `Öğrencinin cevabı: ${studentAnswer || 'Henüz cevap yok'}\n` +
-      `Kısa, yol gösterici bir ipucu ver. Cevabı açıkça söyleme. 1-3 cümle yeterli.`;
-    const result = await model.generateContent(prompt);
-    const hintText = result.response.text();
+    let hintText;
+    if (isLocalAi()) {
+      hintText = localText.buildHint({ questionText: resolvedText, studentAnswer });
+    } else {
+      const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+      const prompt = `Bir öğrenci şu soruyu çözüyor: ${resolvedText || '(soru metni alınamadı)'}\n` +
+        `Öğrencinin cevabı: ${studentAnswer || 'Henüz cevap yok'}\n` +
+        `Kısa, yol gösterici bir ipucu ver. Cevabı açıkça söyleme. 1-3 cümle yeterli.`;
+      const result = await model.generateContent(prompt);
+      hintText = result.response.text();
+    }
 
     // Öğrenci-rol kontrolü; öğretmen test ederken de event yazma
     if (req.user && req.user.role === 'student') {
@@ -342,10 +376,14 @@ exports.solveFromImage = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "Lütfen bir resim yükleyin." });
 
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    const imagePart = fileToGenerativePart(req.file.path, req.file.mimetype);
-
-    const prompt = `
+    let solution;
+    if (isLocalAi()) {
+      const ocrText = await extractTextFromImageWithOcr(req.file.path);
+      solution = localText.buildImageSolution(ocrText);
+    } else {
+      const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+      const imagePart = fileToGenerativePart(req.file.path, req.file.mimetype);
+      const prompt = `
       Sen uzman bir matematik öğretmenisin. 
       Görevin:
       1. Bu resimdeki soruyu metne dök (OCR).
@@ -353,15 +391,12 @@ exports.solveFromImage = async (req, res) => {
       3. Matematiksel ifadeleri LaTeX formatında yaz (örn: $x^2$).
       4. Cevabı net bir şekilde belirt.
     `;
+      const result = await model.generateContent([prompt, imagePart]);
+      solution = result.response.text();
+    }
 
-    const result = await model.generateContent([prompt, imagePart]);
-    const response = await result.response;
-    
-    // Geçici dosyayı temizle
-    try { fs.unlinkSync(req.file.path); } catch(e) {}
-
-    res.json({ solution: response.text() });
-
+    try { fs.unlinkSync(req.file.path); } catch (e) { /* ignore */ }
+    res.json({ solution, provider: isLocalAi() ? 'local-ocr' : 'gemini' });
   } catch (error) {
     console.error("AI Vision Hatası:", error);
     res.status(500).json({ message: "Görsel analiz edilemedi.", error: error.message });
@@ -417,7 +452,31 @@ exports.smartParse = async (req, res) => {
     `;
 
     let data;
-    let parseMode = 'ai';
+    let parseMode = isLocalAi() ? 'ocr' : 'ai';
+
+    if (isLocalAi()) {
+      try {
+        const ocrText = await extractTextFromImageWithOcr(req.file.path);
+        data = parseStructuredQuestionText(ocrText, { imagePath: imageUrl });
+        parseMode = 'ocr';
+      } catch (ocrErr) {
+        console.warn('smartParse local OCR failed:', ocrErr?.message);
+        parseMode = 'manual';
+        data = buildDefaultParsedQuestion({ imagePath: imageUrl });
+      }
+      return res.json({
+        success: true,
+        data,
+        meta: {
+          parseMode,
+          autoFilled: Boolean(data.text.trim() || data.options.some((option) => option.trim())),
+        },
+        message: parseMode === 'ocr'
+          ? 'Görsel yerel OCR ile ayrıştırıldı.'
+          : 'OCR başarısız; alanları manuel doldurun.',
+      });
+    }
+
     try {
       const result = await model.generateContent([instruction, imagePart]);
       const raw = result.response.text();
@@ -492,6 +551,17 @@ exports.generateQuiz = async (req, res) => {
 
     if (!topic || !difficulty || !classLevel || !count) {
       return res.status(400).json({ message: 'Eksik alan: topic, difficulty, classLevel, count gerekli.' });
+    }
+
+    if (isLocalAi()) {
+      const local = await localQuestions.generateLocalQuiz({
+        topic,
+        difficulty,
+        count,
+        classLevel,
+        subject: typeof subjectRaw === 'string' && subjectRaw.trim() ? subjectRaw.trim() : 'Matematik',
+      });
+      return res.json(local.questions);
     }
 
     const subject =
@@ -622,10 +692,31 @@ GOREV:
 // ------------------------------------------------------------------
 exports.generatePracticeQuestions = async (req, res) => {
   try {
-    const { weakTopics } = req.body;
+    const { weakTopics, studentId } = req.body;
 
     if (!weakTopics || weakTopics.length === 0) {
+      if (isLocalAi() && studentId) {
+        const { getWeakTopics } = require('../services/studentAnalyticsService');
+        const inferred = await getWeakTopics(studentId);
+        if (inferred.length) {
+          const local = await localQuestions.generateLocalPractice({
+            weakTopics: inferred,
+            studentId,
+            count: 5,
+          });
+          return res.json(local);
+        }
+      }
       return res.status(200).json({ questions: [], message: "Eksik konu bulunamadı." });
+    }
+
+    if (isLocalAi()) {
+      const local = await localQuestions.generateLocalPractice({
+        weakTopics,
+        studentId: studentId || req.user?.id,
+        count: 5,
+      });
+      return res.json(local);
     }
 
     const schema = {
@@ -688,6 +779,12 @@ exports.generatePracticeQuestions = async (req, res) => {
 exports.analyzePerformance = async (req, res) => {
   try {
     const { examHistory, studentName } = req.body;
+    if (isLocalAi()) {
+      return res.json({
+        analysis: localText.buildPerformanceAnalysis({ studentName, examHistory }),
+        provider: 'local',
+      });
+    }
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
     const prompt = `
       Öğrenci Adı: ${studentName || "Öğrenci"}
@@ -707,8 +804,19 @@ exports.createStudyPlan = async (req, res) => {
   try {
     const { goal, hoursPerDay, daysLeft, weakTopics } = req.body;
 
-    const model = genAI.getGenerativeModel({ model: COMPLEX_MODEL_NAME });
+    if (isLocalAi()) {
+      let topics = weakTopics;
+      if ((!topics || !topics.length) && req.user?.id) {
+        const { getWeakTopics } = require('../services/studentAnalyticsService');
+        topics = await getWeakTopics(req.user.id);
+      }
+      return res.json({
+        plan: localText.buildStudyPlan({ goal, hoursPerDay, daysLeft, weakTopics: topics }),
+        provider: 'local',
+      });
+    }
 
+    const model = genAI.getGenerativeModel({ model: COMPLEX_MODEL_NAME });
     const prompt = `
       Öğrenci Hedefi: ${goal}
       Sınava Kalan Gün: ${daysLeft}
@@ -722,7 +830,6 @@ exports.createStudyPlan = async (req, res) => {
 
     const result = await model.generateContent(prompt);
     res.json({ plan: result.response.text() });
-
   } catch (error) {
     console.error("Plan Oluşturma Hatası:", error);
     res.status(500).json({ message: "Plan oluşturulamadı." });
@@ -744,8 +851,7 @@ exports.smartParseText = async (req, res) => {
 
     const data = parseStructuredQuestionText(content);
 
-    // Eğer GEMINI_API_KEY varsa, daha iyi ayrıştırma için LLM kullanmayı dene
-    if (process.env.GEMINI_API_KEY) {
+    if (!isLocalAi() && process.env.GEMINI_API_KEY) {
       try {
         const schema = {
           description: 'Tek bir soru şeması',
@@ -828,73 +934,3 @@ exports.generatePatternQuestionPack = async (req, res) => {
     res.status(500).json({ message: 'AI soru paketi uretilemedi.', error: error.message });
   }
 };
-
-function buildInteractivePracticeQuestions(weakTopics = []) {
-  const primaryTopic = weakTopics[0] || 'Oruntuler';
-  return [
-    {
-      id: 'interactive-matching',
-      type: 'matching',
-      text: `${primaryTopic} konusunda kurallari dogru oruntulerle eslestir.`,
-      explanation: 'Her oruntuyu artis veya tekrar turune gore eslestirmen gerekir.',
-      interactionData: {
-        prompts: [
-          { id: 'repeat', label: '2, 4, 2, 4, ...' },
-          { id: 'step', label: '5, 8, 11, 14, ...' },
-          { id: 'square', label: '1, 4, 9, 16, ...' },
-        ],
-        options: ['Tekrarlayan oruntu', '+3 artan oruntu', 'Kare sayi oruntusu'],
-        correctPairs: {
-          repeat: 'Tekrarlayan oruntu',
-          step: '+3 artan oruntu',
-          square: 'Kare sayi oruntusu',
-        },
-      },
-    },
-    {
-      id: 'interactive-sequence',
-      type: 'sequence',
-      text: 'Bir oruntuyu cozerken izlenecek adimlari dogru siraya koy.',
-      explanation: 'Once kural bulunur, sonra artis tipi kontrol edilir, ardindan eksik terim hesaplanir.',
-      interactionData: {
-        items: [
-          { id: 'find-rule', label: 'Oruntudeki kuralı bul' },
-          { id: 'check-delta', label: 'Artis veya azalis farkini kontrol et' },
-          { id: 'apply-rule', label: 'Kurali eksik terime uygula' },
-          { id: 'verify', label: 'Buldugun sonucun oruntuye uydugunu dogrula' },
-        ],
-        correctOrder: ['find-rule', 'check-delta', 'apply-rule', 'verify'],
-      },
-    },
-  ];
-}
-
-function buildFallbackPracticeQuestions(weakTopics = []) {
-  const primaryTopic = weakTopics[0] || 'Oruntuler';
-  return [
-    {
-      id: 'fallback-practice-1',
-      type: 'multiple-choice',
-      text: `${primaryTopic} konusunda 6, 9, 12, 15, ... oruntusunun sonraki terimi nedir?`,
-      options: ['18', '17', '21', '16'],
-      correctAnswer: '18',
-      explanation: 'Oruntu her adimda 3 artiyor. 15 sayisindan sonra 18 gelir.',
-    },
-    {
-      id: 'fallback-practice-2',
-      type: 'multiple-choice',
-      text: `${primaryTopic} icin 20, 18, 16, 14, ... dizisinde eksik kural hangisidir?`,
-      options: ['Her adimda 2 azalir', 'Her adimda 2 artar', 'Tekrarli oruntu vardir', 'Kare sayilar ilerler'],
-      correctAnswer: 'Her adimda 2 azalir',
-      explanation: 'Ardisik terimler arasindaki fark -2 oldugu icin kural her adimda 2 azalma seklindedir.',
-    },
-    {
-      id: 'fallback-practice-3',
-      type: 'multiple-choice',
-      text: `${primaryTopic} icin 3, 6, 12, 24, ... oruntusunda sonraki terim hangisidir?`,
-      options: ['48', '30', '36', '42'],
-      correctAnswer: '48',
-      explanation: 'Her terim bir oncekinin 2 kati oldugu icin 24 sonrasinda 48 gelir.',
-    },
-  ];
-}

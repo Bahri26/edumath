@@ -368,6 +368,19 @@ async function generatePatternQuestions({
   subject = 'Matematik',
   googleGrounding,
 } = {}) {
+  const { isLocalAi } = require('../config/aiProvider');
+  if (isLocalAi()) {
+    const { generateLocalPatternPack } = require('./localQuestionService');
+    return generateLocalPatternPack({
+      classLevel,
+      difficulty,
+      count,
+      topic,
+      subject,
+      googleGrounding,
+    });
+  }
+
   const client = getClient();
   if (!client) {
     const fb = await generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject });
@@ -451,4 +464,6 @@ async function generatePatternQuestions({
 
 module.exports = {
   generatePatternQuestions,
+  generateFallbackPatternQuestions,
+  buildFallbackQuestionBank,
 };

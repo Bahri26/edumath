@@ -1,23 +1,43 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { DEFAULT_GEMINI_FLASH } = require('../constants/geminiDefaults');
-
-// API Anahtarını al
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const localText = require('../services/localTextService');
+const { isLocalAi, isOllamaAi } = require('../config/aiProvider');
 
 exports.chatWithAI = async (req, res) => {
   try {
-    const { message } = req.body; // Frontend'den gelen mesaj
+    const { message } = req.body;
 
     if (!message) {
-      return res.status(400).json({ message: "Mesaj boş olamaz." });
+      return res.status(400).json({ message: 'Mesaj boş olamaz.' });
     }
 
-    // Modeli seç (Gemini 1.5 Flash hızlı ve ekonomiktir)
+    if (isLocalAi()) {
+      return res.json({
+        reply: localText.chatReply(message),
+        provider: 'local',
+      });
+    }
+
+    if (isOllamaAi()) {
+      try {
+        const ollama = require('../services/ollamaService');
+        const reply = await ollama.generateText(
+          `Sen EduMath eğitim asistanısın. Kısa ve Türkçe yanıt ver.\n\nSoru: ${message}`
+        );
+        return res.json({ reply, provider: 'ollama' });
+      } catch (e) {
+        return res.json({
+          reply: localText.chatReply(message),
+          provider: 'local-fallback',
+        });
+      }
+    }
+
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const { DEFAULT_GEMINI_FLASH } = require('../constants/geminiDefaults');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
       model: process.env.GEMINI_MODEL || DEFAULT_GEMINI_FLASH,
     });
 
-    // AI'ya kimlik kazandır (System Prompt)
     const prompt = `
       Sen "Edumath" adında bir eğitim platformunun yardımsever ve neşeli yapay zeka asistanısın.
       Görevin öğrencilere matematik konularında rehberlik etmek, siteyi tanıtmak ve motive etmek.
@@ -26,16 +46,14 @@ exports.chatWithAI = async (req, res) => {
       Öğrencinin sorusu: ${message}
     `;
 
-    // AI'dan cevap iste
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    // Cevabı Frontend'e gönder
-    res.json({ reply: text });
-
+    const text = result.response.text();
+    res.json({ reply: text, provider: 'gemini' });
   } catch (error) {
-    console.error("AI Hatası:", error);
-    res.status(500).json({ reply: "Üzgünüm, şu an bağlantımda bir sorun var. Biraz sonra tekrar dener misin? 🤖" });
+    console.error('AI Hatası:', error);
+    res.json({
+      reply: localText.chatReply(req.body?.message || ''),
+      provider: 'local-fallback',
+    });
   }
 };

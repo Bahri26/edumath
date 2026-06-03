@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 const aiController = require('../controllers/aiController');
 const protect = require('../middlewares/authMiddleware');
+const { collectTopicStats } = require('../services/studentAnalyticsService');
+const { getAiProvider } = require('../config/aiProvider');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -48,5 +50,19 @@ router.post('/analyze', aiController.analyzePerformance);
 
 // 5. Alıştırma (Öğrenci - Practice)
 router.post('/practice', aiController.generatePracticeQuestions);
+
+// Yerel ML: öğrenci konu istatistikleri (AI_PROVIDER=local)
+router.get('/student-insights', protect, async (req, res) => {
+  try {
+    const stats = await collectTopicStats(req.user.id);
+    res.json({
+      provider: getAiProvider(),
+      weakTopics: stats.weakTopics,
+      topics: stats.entries,
+    });
+  } catch (e) {
+    res.status(500).json({ message: 'İstatistikler alınamadı.', error: e.message });
+  }
+});
 
 module.exports = router;

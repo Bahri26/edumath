@@ -49,12 +49,20 @@ Do not manually create `User`, `Question`, or other PascalCase collections in At
 
 Collections are created automatically on first write. If you created `User` manually in Atlas, it can remain unused; the application writes to `users`.
 
-## AI (Gemini)
-- Add `GEMINI_API_KEY` to `.env` for local.
-- Endpoints:
-  - `POST /api/ai/smart-parse` (form-data: `image`)
-  - `POST /api/ai/smart-parse-text` (JSON body: `{ content }`)
-- Without a key, image mode falls back to manual edit and returns `imagePath`.
+## AI (yerel varsayılan)
+
+`AI_PROVIDER=local` (varsayılan) — harici API yok:
+- Soru seçimi: MongoDB soru bankası + yerel şablon paketi
+- Öğrenci analizi: `ml-matrix` ile konu özellik vektörleri
+- Görsel: Tesseract OCR + metin ayrıştırma
+- Sohbet / ipucu / rapor: Türkçe şablon motoru
+
+İsteğe bağlı: `AI_PROVIDER=gemini` + `GEMINI_API_KEY`, veya `AI_PROVIDER=ollama` + çalışan Ollama.
+
+Endpoints:
+- `POST /api/ai/smart-parse` (form-data: `image`)
+- `POST /api/ai/smart-parse-text` (JSON body: `{ content }`)
+- `GET /api/ai/student-insights` (giriş gerekli — zayıf konular)
 
 ## Object Storage (R2/S3 Compatible)
 
