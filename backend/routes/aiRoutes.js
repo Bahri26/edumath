@@ -8,6 +8,7 @@ const { getAiProvider } = require('../config/aiProvider');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 // 9. Teacher Report (Detaylı öğretmen raporu)
 router.post('/teacher-report', aiController.teacherReport);
@@ -18,14 +19,27 @@ router.post('/get-hint', protect, aiController.getHint);
 // 6. Öğrenci Cevabı Analiz & Soru Önerisi
 router.post('/analyze-and-suggest', aiController.analyzeAndSuggest);
 
-// Klasör yoksa oluştur (Otomatik kontrol - Güvenlik önlemi)
-const uploadDir = 'uploads/temp/';
-if (!fs.existsSync(uploadDir)){
+const uploadDir = path.join(__dirname, '..', 'uploads', 'temp');
+if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Multer Ayarı
-const upload = multer({ dest: uploadDir });
+const allowedImageExt = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
+
+const upload = multer({
+    storage: multer.diskStorage({
+        destination: (_req, _file, cb) => {
+            fs.mkdirSync(uploadDir, { recursive: true });
+            cb(null, uploadDir);
+        },
+        filename: (_req, file, cb) => {
+            const ext = path.extname(file.originalname || '').toLowerCase();
+            const safeExt = allowedImageExt.has(ext) ? ext : '.png';
+            cb(null, `smart-${Date.now()}-${crypto.randomUUID()}${safeExt}`);
+        },
+    }),
+    limits: { fileSize: 12 * 1024 * 1024 },
+});
 
 // 1. Fotoğraftan Çözüm
 router.post('/solve-image', upload.single('image'), aiController.solveFromImage);

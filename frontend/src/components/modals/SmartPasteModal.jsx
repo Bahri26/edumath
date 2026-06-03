@@ -12,6 +12,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   const [step, setStep] = useState('upload'); // 'upload' | 'editing'
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState('');
   const [uploadedFile, setUploadedFile] = useState(null);
   const [pastedContent, setPastedContent] = useState('');
   
@@ -43,10 +44,19 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     return 'Analiz';
   };
 
+  const resolvePreviewSrc = (serverPath) => {
+    if (localPreviewUrl) return localPreviewUrl;
+    if (serverPath) return resolveAssetUrl(serverPath) || serverPath;
+    if (typeof image === 'string' && image) return resolveAssetUrl(image) || image;
+    return image || '';
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setImage(URL.createObjectURL(file));
+    const blobUrl = URL.createObjectURL(file);
+    setLocalPreviewUrl(blobUrl);
+    setImage(blobUrl);
     setUploadedFile(file);
     setLoading(true);
 
@@ -71,9 +81,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         imagePath,
         assessmentMeta: data.assessmentMeta || null,
       });
-      if (imagePath) {
-        setImage(resolveAssetUrl(imagePath) || imagePath);
-      }
+      // Önizleme: tarayıcıdaki blob URL korunur; sunucu yolu yalnızca kayıt için
       setStep('editing');
       if (mode === 'manual') {
         showToast(serverMessage || 'AI ve OCR sonuç vermedi. Alanları manuel doldurun.', 'error');
@@ -408,8 +416,13 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                       {parseLayout.cropMethod === 'sharp-row-density' ? 'Satır yoğunluğu ile otomatik bölge' : 'Oran tabanlı yedek kırpma'}
                     </p>
                     <img
-                      src={resolveAssetUrl(parseLayout.diagramImagePath) || parseLayout.diagramImagePath}
+                      src={resolvePreviewSrc(parseLayout.diagramImagePath)}
                       alt="Kırpılmış diyagram"
+                      onError={(ev) => {
+                        if (localPreviewUrl && ev.currentTarget.src !== localPreviewUrl) {
+                          ev.currentTarget.src = localPreviewUrl;
+                        }
+                      }}
                       className="w-full max-h-40 object-contain rounded-xl border border-emerald-100/80 bg-white dark:bg-slate-900"
                     />
                   </div>
@@ -417,7 +430,16 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                 <div className="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-[2rem] border border-indigo-100">
                    <p className="text-[10px] font-black text-indigo-600 uppercase mb-1">Tam ekran görüntüsü</p>
                    <p className="text-[10px] text-indigo-500/90 mb-3">Kayıtta question.image olarak saklanır</p>
-                   <img src={typeof image === 'string' ? resolveAssetUrl(image) || image : image} alt="Yüklenen soru görseli" className="w-full max-h-36 object-contain rounded-xl border border-indigo-100/80 bg-white dark:bg-slate-900 opacity-90" />
+                   <img
+                     src={resolvePreviewSrc(parsedData.imagePath)}
+                     alt="Yüklenen soru görseli"
+                     onError={(ev) => {
+                       if (localPreviewUrl && ev.currentTarget.src !== localPreviewUrl) {
+                         ev.currentTarget.src = localPreviewUrl;
+                       }
+                     }}
+                     className="w-full max-h-36 object-contain rounded-xl border border-indigo-100/80 bg-white dark:bg-slate-900 opacity-90"
+                   />
                 </div>
               </div>
             </div>

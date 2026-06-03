@@ -32,31 +32,34 @@ const getAssetBaseUrl = () => {
         return explicitAssetBase;
     }
 
-    // Geliştirme: ön yüz :5173, API :8000 — görselleri kökten /uploads ile iste (Vite proxy).
-    // Aksi halde http://localhost:8000/uploads... kullanılır; ortamda engellenebiliyor.
+    const apiOrigin = getBackendOrigin();
+    if (apiOrigin) {
+        return apiOrigin;
+    }
+
+    // Build zamanında tam API adresi verilmişse (https://…/api)
+    if (/^https?:\/\//i.test(API_BASE)) {
+        const stripped = trimTrailingSlash(API_BASE.replace(/\/api\/?$/i, ''));
+        return stripped || API_BASE;
+    }
+
+    // Geliştirme: Vite proxy ile aynı origin — göreli /uploads yeterli
     if (import.meta.env.DEV && typeof window !== 'undefined') {
         const apiRoot = getBackendOrigin();
         if (apiRoot) {
             try {
                 const apiHost = new URL(apiRoot).host;
                 if (apiHost && apiHost !== window.location.host) {
-                    return '';
+                    return apiRoot;
                 }
             } catch {
                 /* ignore */
             }
         }
+        return '';
     }
 
-    const origin = getBackendOrigin();
-    if (origin) {
-        return origin;
-    }
-
-    if (typeof window !== 'undefined' && window.location?.origin) {
-        return trimTrailingSlash(window.location.origin);
-    }
-
+    // Statik site + ayrı API: frontend origin /uploads yok — göreli path bırak (proxy yok)
     return '';
 };
 
@@ -99,6 +102,11 @@ export const resolveAssetUrl = (value) => {
         }
     }
 
+    // temp/crops/... göreli yol
+    if (v.startsWith('temp/crops/')) {
+        v = `/uploads/${v}`;
+    }
+
     const path = v.startsWith('/uploads/')
         ? v
         : v.startsWith('uploads/')
@@ -123,7 +131,8 @@ const normalizeAssetUrls = (payload) => {
 
     return Object.fromEntries(
         Object.entries(payload).map(([key, value]) => {
-            if (typeof value === 'string' && (key === 'image' || key === 'imagePath')) {
+            // imagePath göreli kalsın (kayıt için); yalnızca görüntüleme alanı çözümlensin
+            if (typeof value === 'string' && key === 'image') {
                 return [key, resolveAssetUrl(value)];
             }
 

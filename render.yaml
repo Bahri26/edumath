@@ -55,6 +55,7 @@ services:
         sync: false
       - key: VITE_ASSET_BASE_URL
         sync: false
+        # Render: API servis kökü (örn. https://edumath-api.onrender.com) — /api olmadan
       - key: VITE_API_TIMEOUT_MS
         value: 15000
       - key: VITE_AUTH_TIMEOUT_MS
