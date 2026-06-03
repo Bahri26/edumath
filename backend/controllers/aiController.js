@@ -459,6 +459,7 @@ exports.smartParse = async (req, res) => {
         data: result.data,
         meta: {
           parseMode: result.parseMode,
+          layout: result.layout || result.data?.assessmentMeta?.parseLayout || {},
           autoFilled: Boolean(
             result.data.text?.trim() || result.data.options?.some((option) => String(option).trim())
           ),
@@ -496,8 +497,21 @@ exports.smartParse = async (req, res) => {
       parseMode = 'ocr';
       try {
         const ocrText = await extractTextFromImageWithOcr(req.file.path);
-        data = parseStructuredQuestionText(ocrText, {
-          imagePath: imageUrl,
+        const { parseStructuredQuestionText: parseFromImageService } = require('../services/questionImageParseService');
+        const parsed = parseFromImageService(ocrText, { imagePath: imageUrl });
+        const { layout: ocrLayout, assessmentMeta, ...fields } = parsed;
+        data = { ...fields, imagePath: imageUrl, assessmentMeta };
+        parseMode = 'ocr';
+        return res.json({
+          success: true,
+          data,
+          meta: {
+            parseMode,
+            layout: ocrLayout || assessmentMeta?.parseLayout || {},
+            autoFilled: Boolean(data.text?.trim() || data.options?.some((o) => String(o).trim())),
+          },
+          message: 'AI kullanılamadı, OCR ile alanlar dolduruldu.',
+          ocrPreview: ocrText.slice(0, 2000),
         });
       } catch (ocrErr) {
         console.warn('smartParse OCR fallback failed, fallback to manual:', ocrErr?.message);
@@ -886,7 +900,12 @@ exports.smartParseText = async (req, res) => {
       }
     }
 
-    return res.json({ success: true, data });
+    const { layout, assessmentMeta, ...questionFields } = data;
+    return res.json({
+      success: true,
+      data: { ...questionFields, assessmentMeta },
+      meta: { layout: layout || assessmentMeta?.parseLayout || {} },
+    });
   } catch (error) {
     console.error('smartParseText Hatası:', error);
     res.status(500).json({ message: 'Metin akıllı parse edilemedi.', error: error.message });

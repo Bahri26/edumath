@@ -24,16 +24,20 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     topic: '',
     subject: 'Matematik',
     classLevel: '9. Sınıf',
-    difficulty: 'Orta'
+    difficulty: 'Orta',
+    imagePath: '',
+    assessmentMeta: null,
   });
   const [parseMode, setParseMode] = useState('');
   const [ocrPreview, setOcrPreview] = useState('');
+  const [parseLayout, setParseLayout] = useState(null);
 
   if (!isOpen) return null;
 
   const parseModeLabel = (mode) => {
     if (mode === 'ai') return 'Bulut AI (Gemini)';
     if (mode === 'ollama-vision') return 'Yerel Ollama görsel';
+    if (mode === 'ocr+crop') return 'Yerel OCR + diyagram kırpma';
     if (mode === 'ocr') return 'Yerel OCR + ayrıştırma';
     if (mode === 'manual') return 'Manuel düzenleme';
     return 'Analiz';
@@ -53,6 +57,8 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       const serverMessage = body?.message;
       setParseMode(mode);
       setOcrPreview(body?.ocrPreview || '');
+      setParseLayout(body?.meta?.layout || data?.assessmentMeta?.parseLayout || null);
+      const imagePath = data.imagePath || '';
       setParsedData({
         text: data.text || '',
         options: Array.isArray(data.options) ? data.options : ['', '', '', ''],
@@ -61,16 +67,17 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         topic: data.topic || '',
         subject: data.subject || 'Matematik',
         classLevel: data.classLevel || '9. Sınıf',
-        difficulty: data.difficulty || 'Orta'
+        difficulty: data.difficulty || 'Orta',
+        imagePath,
+        assessmentMeta: data.assessmentMeta || null,
       });
-      // If server returned an imagePath, prefer it for preview
-      if (data.imagePath) {
-        setImage(resolveAssetUrl(data.imagePath) || data.imagePath);
+      if (imagePath) {
+        setImage(resolveAssetUrl(imagePath) || imagePath);
       }
       setStep('editing');
       if (mode === 'manual') {
         showToast(serverMessage || 'AI ve OCR sonuç vermedi. Alanları manuel doldurun.', 'error');
-      } else if (mode === 'ocr' || mode === 'ollama-vision') {
+      } else if (mode === 'ocr+crop' || mode === 'ocr' || mode === 'ollama-vision') {
         showToast(serverMessage || 'Görsel soruya dönüştürüldü. Alanları kontrol edin.', 'success');
       } else {
         showToast(serverMessage || 'Görsel analiz edildi.', 'success');
@@ -192,9 +199,10 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     setLoading(true);
     try {
       const payload = { ...(dataToSave || parsedData), source: 'AI' };
-      // If backend provided a temp image path and user didn't reupload a file, pass it through
-      if (typeof image === 'string' && (image.startsWith('/uploads/') || /^https?:\/\//i.test(image))) {
-        payload.imagePath = image;
+      const storedPath = payload.imagePath
+        || (typeof image === 'string' && image.includes('/uploads/') ? image.replace(/^.*\/uploads/, '/uploads') : '');
+      if (storedPath && storedPath.startsWith('/uploads')) {
+        payload.imagePath = storedPath;
       }
       await apiClient.post('/questions', payload);
       showToast("Soru başarıyla havuza kaydedildi!", "success");
@@ -289,7 +297,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
               )}
               {loading && (
                 <div className="flex items-center justify-center gap-3 text-indigo-600 font-bold animate-pulse">
-                  <Loader2 className="animate-spin" /> Görsel okunuyor, soru metni ve şıklar ayrıştırılıyor…
+                  <Loader2 className="animate-spin" /> OCR, diyagram kırpma ve şık ayrıştırması…
                 </div>
               )}
             </div>
@@ -297,6 +305,21 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
             /* ADIM 2: DÜZENLEME ALANI */
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-500">
               <div className="space-y-6">
+                {parseLayout?.hasDiagram ? (
+                  <div className="rounded-2xl border border-sky-200/80 bg-sky-50/60 dark:bg-sky-950/20 p-4 text-xs text-sky-900 dark:text-sky-100 space-y-2">
+                    <p className="font-black uppercase tracking-widest text-[10px]">Ayrıştırma</p>
+                    {parseLayout.introText ? (
+                      <p><span className="font-bold">Giriş:</span> {parseLayout.introText}</p>
+                    ) : null}
+                    {parseLayout.stepLabels?.length > 0 ? (
+                      <p><span className="font-bold">Şekil adımları:</span> {parseLayout.stepLabels.join(' · ')}</p>
+                    ) : null}
+                    {parseLayout.questionLine ? (
+                      <p><span className="font-bold">Soru cümlesi:</span> {parseLayout.questionLine}</p>
+                    ) : null}
+                    <p className="opacity-80 italic">{parseLayout.diagramNote || parseLayout.storageHint}</p>
+                  </div>
+                ) : null}
                 {ocrPreview ? (
                   <details className="rounded-2xl border border-amber-200/80 bg-amber-50/50 dark:bg-amber-950/20 p-3 text-xs text-amber-900 dark:text-amber-100">
                     <summary className="font-bold cursor-pointer">OCR ham metin (düzeltme için)</summary>
@@ -304,7 +327,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                   </details>
                 ) : null}
                 <div>
-                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">Soru Metni (LaTeX)</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">Soru gövdesi (şıklar hariç)</label>
                   <textarea 
                     value={parsedData.text} 
                     onChange={e => setParsedData({...parsedData, text: e.target.value})}
@@ -378,9 +401,23 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                     </select>
                   </div>
                 </div>
+                {parseLayout?.diagramImagePath ? (
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-[2rem] border border-emerald-100">
+                    <p className="text-[10px] font-black text-emerald-700 uppercase mb-1">Kırpılmış diyagram (sharp)</p>
+                    <p className="text-[10px] text-emerald-600/90 mb-3">
+                      {parseLayout.cropMethod === 'sharp-row-density' ? 'Satır yoğunluğu ile otomatik bölge' : 'Oran tabanlı yedek kırpma'}
+                    </p>
+                    <img
+                      src={resolveAssetUrl(parseLayout.diagramImagePath) || parseLayout.diagramImagePath}
+                      alt="Kırpılmış diyagram"
+                      className="w-full max-h-40 object-contain rounded-xl border border-emerald-100/80 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+                ) : null}
                 <div className="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-[2rem] border border-indigo-100">
-                   <p className="text-[10px] font-black text-indigo-600 uppercase mb-3">Soru Önizleme (Görsel)</p>
-                   <img src={typeof image === 'string' ? resolveAssetUrl(image) || image : image} alt="Yüklenen soru görseli" className="w-full h-32 object-contain rounded-xl opacity-60 grayscale hover:grayscale-0 transition-all cursor-zoom-in" />
+                   <p className="text-[10px] font-black text-indigo-600 uppercase mb-1">Tam ekran görüntüsü</p>
+                   <p className="text-[10px] text-indigo-500/90 mb-3">Kayıtta question.image olarak saklanır</p>
+                   <img src={typeof image === 'string' ? resolveAssetUrl(image) || image : image} alt="Yüklenen soru görseli" className="w-full max-h-36 object-contain rounded-xl border border-indigo-100/80 bg-white dark:bg-slate-900 opacity-90" />
                 </div>
               </div>
             </div>

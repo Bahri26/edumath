@@ -1,6 +1,6 @@
 const { buildTopicMongoClause } = require('../constants/patternTopics');
 const Question = require('../models/Question');
-const { uploadFile, deleteStoredAsset } = require('../services/storageService');
+const { uploadFile, promoteLocalUpload, promoteAssessmentMetaAssets, deleteStoredAsset } = require('../services/storageService');
 const { recordUserActivity } = require('../services/activityLogger');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -318,7 +318,15 @@ exports.createQuestion = async (req, res, next) => {
       mainImageKey = uploaded.key;
       mainImageProvider = uploaded.provider;
     } else if (req.body.imagePath) {
-      mainImagePath = normalizeStoredImagePath(req.body.imagePath);
+      const normalizedPath = normalizeStoredImagePath(req.body.imagePath);
+      if (/\/uploads\/temp\//i.test(normalizedPath) || normalizedPath.includes('/temp/')) {
+        const promoted = await promoteLocalUpload(normalizedPath, 'questions');
+        mainImagePath = promoted.url;
+        mainImageKey = promoted.key;
+        mainImageProvider = promoted.provider;
+      } else {
+        mainImagePath = normalizedPath;
+      }
     }
 
     // 2. Şıkları İşle
@@ -343,6 +351,17 @@ exports.createQuestion = async (req, res, next) => {
       }
     }
 
+    let resolvedAssessmentMeta;
+    if (assessmentMeta) {
+      try {
+        const rawMeta = typeof assessmentMeta === 'string' ? JSON.parse(assessmentMeta) : assessmentMeta;
+        resolvedAssessmentMeta = await promoteAssessmentMetaAssets(rawMeta);
+      } catch (metaErr) {
+        console.warn('assessmentMeta parse/promote skipped:', metaErr?.message);
+        resolvedAssessmentMeta = typeof assessmentMeta === 'object' ? assessmentMeta : undefined;
+      }
+    }
+
     const newQuestion = await Question.create({
       text, subject: finalSubject, classLevel: normalizedClassLevel, difficulty, type, correctAnswer, solution, topic,
       learningOutcome,
@@ -351,7 +370,7 @@ exports.createQuestion = async (req, res, next) => {
       visualPrompt: visualPrompt || '',
       interactiveType: interactiveType || 'none',
       interactionData: parseInteractionData(interactionData),
-      assessmentMeta: assessmentMeta || undefined,
+      assessmentMeta: resolvedAssessmentMeta || undefined,
       image: mainImagePath,
       imageKey: mainImageKey,
       imageProvider: mainImageProvider,

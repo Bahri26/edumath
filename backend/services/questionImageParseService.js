@@ -1,6 +1,7 @@
 const Tesseract = require('tesseract.js');
 const pathLib = require('path');
 const { isLocalAi, isOllamaAi } = require('../config/aiProvider');
+const { extractQuestionImageRegions } = require('./questionImageCropService');
 
 function buildDefaultParsedQuestion(overrides = {}) {
   return {
@@ -33,6 +34,8 @@ function cleanOcrText(raw) {
     .replace(/\r/g, '\n')
     .replace(/[|¦]/g, 'I')
     .replace(/(\d)\s+(\d)/g, '$1$2')
+    .replace(/al-\s*tigen/gi, 'altıgen')
+    .replace(/(\p{L})-\s*\n\s*(\p{L})/giu, '$1$2')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
@@ -56,8 +59,17 @@ function inferDifficulty(text, optionCount) {
 
 function buildBasicSolution(text, options, correctAnswer) {
   if (!correctAnswer) return '';
+  const lower = String(text || '').toLowerCase().replace(/al-\s*tigen/g, 'altıgen');
+  const ask = lower.match(/(\d+)\s*\.\s*adım[ıi]nda/);
+  if (ask && /altıgen|altigen|örüntü|oruntu/.test(lower)) {
+    const n = parseInt(ask[1], 10);
+    const optNums = options.map((o) => parseInt(String(o).replace(/\s/g, ''), 10)).filter((x) => !Number.isNaN(x));
+    if (optNums.length >= 2 && optNums[1] === optNums[0] * 2) {
+      return `${n}. adımda altıgen sayısı: her adımda 2 katı → ${n} × 2 = ${n * 2}. Şıklarda ${correctAnswer} seçeneğini işaretleyin.`;
+    }
+  }
   const nums = String(text || '').match(/-?\d+(?:[.,]\d+)?/g) || [];
-  if (nums.length >= 3 && /örüntü|oruntu|dizi|,/.test(String(text).toLowerCase())) {
+  if (nums.length >= 3 && /örüntü|oruntu|dizi|,/.test(lower)) {
     return 'Önce terimler arasındaki farkı veya tekrar kuralını bulun. Bulduğunuz kuralı son boş terime uygulayın ve sonucu şıklarla karşılaştırın.';
   }
   const idx = options.findIndex((o) => String(o).trim() === String(correctAnswer).trim());
@@ -67,13 +79,106 @@ function buildBasicSolution(text, options, correctAnswer) {
   return `Doğru cevap: ${correctAnswer}. İşlemi adım adım kontrol ederek doğrulayın.`;
 }
 
+function classifyStemLine(line) {
+  const trimmed = String(line || '').trim();
+  if (!trimmed) return 'skip';
+  if (/buna göre|kaç tane|bulunuz|hesaplay|vardır\?|var\s*mı\?/i.test(trimmed)) return 'question';
+  if (/(?:^|\s)\d+\s*\.?\s*adım(?:\s|$)/i.test(trimmed) && !/buna göre|kaç tane|\?\s*$/.test(trimmed)) return 'step';
+  return 'intro';
+}
+
+function buildStemWithDiagramNote(questionTextLines) {
+  const intro = [];
+  const steps = [];
+  const question = [];
+
+  for (const line of questionTextLines) {
+    const kind = classifyStemLine(line);
+    if (kind === 'skip') continue;
+    if (kind === 'step') steps.push(line.trim());
+    else if (kind === 'question') question.push(line.trim());
+    else intro.push(line.trim());
+  }
+
+  const parts = [];
+  if (intro.length) parts.push(intro.join(' '));
+  if (steps.length) {
+    parts.push(`[Şekil: ${steps.join(' · ')} — tam diyagram soru görselinde saklanır]`);
+  }
+  if (question.length) parts.push(question.join(' '));
+  return parts.filter(Boolean).join('\n\n').trim();
+}
+
+function buildParseLayout(questionTextLines, normalizedOptions, stemText) {
+  const intro = [];
+  const stepLabels = [];
+  const questionLine = [];
+
+  for (const line of questionTextLines) {
+    const kind = classifyStemLine(line);
+    if (kind === 'step') stepLabels.push(line.trim());
+    else if (kind === 'question') questionLine.push(line.trim());
+    else if (kind === 'intro') intro.push(line.trim());
+  }
+
+  const fullStem = stemText || buildStemWithDiagramNote(questionTextLines);
+  const hasDiagram = stepLabels.length > 0
+    || /altıgen|altigen|şekil|diyagram|görsel|örüntü|oruntu|\[şekil:/i.test(fullStem);
+
+  return {
+    introText: intro.join(' ').trim(),
+    questionLine: questionLine.join(' ').trim(),
+    stepLabels,
+    stemText: fullStem,
+    optionsBlock: normalizedOptions.filter(Boolean),
+    hasDiagram,
+    diagramNote: hasDiagram
+      ? 'Orta bölümdeki şekil/diyagram tam görsel olarak saklanır; metin yalnızca üst ve alt yazıları içerir.'
+      : '',
+    storageHint: 'Kayıtta tam ekran görüntüsü question.image alanında; şıklar metin olarak options[] içinde tutulur.',
+  };
+}
+
+function tryInferPatternCorrectAnswer(text, options) {
+  const lower = String(text || '').toLowerCase().replace(/al-\s*tigen/g, 'altıgen');
+  const ask = lower.match(/(\d+)\s*\.\s*adım[ıi]nda/);
+  if (!ask) return '';
+
+  const n = parseInt(ask[1], 10);
+  const compactOpts = options.map((o) => String(o || '').replace(/\s/g, '').trim()).filter(Boolean);
+  if (!compactOpts.length) return '';
+
+  if (/altıgen|altigen|hexagon/i.test(lower) || (/örüntü|oruntu/.test(lower) && /adım/.test(lower))) {
+    const doubled = String(n * 2);
+    if (compactOpts.includes(doubled)) return doubled;
+  }
+
+  const nums = compactOpts.map((o) => parseInt(o, 10)).filter((x) => !Number.isNaN(x));
+  if (nums.length >= 2) {
+    const ratio = nums[1] / nums[0];
+    if (Math.abs(ratio - 2) < 0.05 || Math.abs(ratio - 3) < 0.05) {
+      const predicted = String(Math.round(n * ratio));
+      if (compactOpts.includes(predicted)) return predicted;
+    }
+  }
+
+  return '';
+}
+
 /**
  * Metinden yapılandırılmış soru — satır içi A) B) C) D) ve Türkçe cevap satırı destekli
  */
 function parseStructuredQuestionText(content, defaults = {}) {
   const fallback = buildDefaultParsedQuestion(defaults);
   let normalized = cleanOcrText(content);
-  if (!normalized) return fallback;
+  if (!normalized) {
+    const emptyLayout = buildParseLayout([], ['', '', '', ''], '');
+    return {
+      ...fallback,
+      layout: emptyLayout,
+      assessmentMeta: { parseLayout: emptyLayout, source: 'smart-parse' },
+    };
+  }
 
   normalized = normalized.replace(/([A-Da-d])\s*[\)\.\:]\s*/g, (m, letter) => `\n${letter.toUpperCase()}) `);
 
@@ -132,19 +237,31 @@ function parseStructuredQuestionText(content, defaults = {}) {
     }
   }
 
-  const text = questionTextLines.join(' ').trim() || normalized.split(/\n[A-D]\)/i)[0]?.trim() || '';
+  const rawStem = questionTextLines.join(' ').trim() || normalized.split(/\n[A-D]\)/i)[0]?.trim() || '';
+  const text = buildStemWithDiagramNote(questionTextLines) || rawStem;
   const topic = defaults.topic || inferTopicFromText(text);
   const difficulty = defaults.difficulty || inferDifficulty(text, normalizedOptions.filter(Boolean).length);
+  const inferredAnswer = tryInferPatternCorrectAnswer(rawStem || text, normalizedOptions);
+  const finalAnswer = correctAnswer || inferredAnswer || '';
 
-  return buildDefaultParsedQuestion({
-    ...defaults,
-    text,
-    options: normalizedOptions,
-    correctAnswer: correctAnswer || normalizedOptions.find(Boolean) || '',
-    solution: defaults.solution || buildBasicSolution(text, normalizedOptions, correctAnswer),
-    topic,
-    difficulty,
-  });
+  const layout = buildParseLayout(questionTextLines, normalizedOptions, text);
+
+  return {
+    ...buildDefaultParsedQuestion({
+      ...defaults,
+      text,
+      options: normalizedOptions,
+      correctAnswer: finalAnswer,
+      solution: defaults.solution || buildBasicSolution(text, normalizedOptions, finalAnswer),
+      topic,
+      difficulty,
+    }),
+    layout,
+    assessmentMeta: {
+      parseLayout: layout,
+      source: 'smart-parse',
+    },
+  };
 }
 
 async function extractTextFromImageWithOcr(filePath) {
@@ -215,14 +332,33 @@ async function parseQuestionFromImage(filePath, mimeType) {
     };
   }
 
-  const data = parseStructuredQuestionText(ocrText, { imagePath: imageUrl });
+  const parsed = parseStructuredQuestionText(ocrText, { imagePath: imageUrl });
+  const { layout, assessmentMeta, ...questionFields } = parsed;
+
+  const cropAssets = await extractQuestionImageRegions(filePath);
+  const mergedLayout = {
+    ...(layout || {}),
+    ...(cropAssets || {}),
+    hasDiagram: Boolean(layout?.hasDiagram || cropAssets?.diagramImagePath),
+  };
+  const mergedMeta = {
+    ...(assessmentMeta || {}),
+    parseLayout: mergedLayout,
+    source: assessmentMeta?.source || 'smart-parse',
+  };
+
+  const data = { ...questionFields, imagePath: imageUrl, assessmentMeta: mergedMeta };
   const autoFilled = Boolean(data.text.trim() || data.options.some((o) => o.trim()));
+  const cropped = Boolean(cropAssets?.diagramImagePath);
 
   return {
     data,
-    parseMode: 'ocr',
+    layout: mergedLayout,
+    parseMode: cropped ? 'ocr+crop' : 'ocr',
     message: autoFilled
-      ? 'Görsel metne çevrildi ve soru alanları dolduruldu. Lütfen kontrol edin.'
+      ? cropped
+        ? 'Metin ve diyagram bölgesi ayrıldı (OCR + sharp). Alanları kontrol edin.'
+        : 'Görsel metne çevrildi: soru gövdesi, şıklar ve diyagram notu ayrıldı. Lütfen kontrol edin.'
       : 'Metin okundu ancak şıklar net değil; alanları düzenleyin.',
     ocrPreview: ocrText.slice(0, 2000),
   };
@@ -235,4 +371,6 @@ module.exports = {
   cleanOcrText,
   buildDefaultParsedQuestion,
   normalizeOptions,
+  buildParseLayout,
+  tryInferPatternCorrectAnswer,
 };

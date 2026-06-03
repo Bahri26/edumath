@@ -60,8 +60,10 @@ Collections are created automatically on first write. If you created `User` manu
 İsteğe bağlı: `AI_PROVIDER=gemini` + `GEMINI_API_KEY`, veya `AI_PROVIDER=ollama` + çalışan Ollama.
 
 Endpoints:
-- `POST /api/ai/smart-parse` (form-data: `image`)
+- `POST /api/ai/smart-parse` (form-data: `image`) — OCR + **sharp** ile diyagram/şık şeridi kırpma; `assessmentMeta.parseLayout.diagramImagePath`
 - `POST /api/ai/smart-parse-text` (JSON body: `{ content }`)
+
+Akıllı yapıştır kırpma ayarları (opsiyonel): `CROP_GAP_THRESHOLD`, `CROP_GAP_MIN_ROWS`, `CROP_MIN_BAND_ROWS`, `CROP_PADDING_PX`
 - `GET /api/ai/student-insights` (giriş gerekli — zayıf konular)
 
 ## Object Storage (R2/S3 Compatible)
