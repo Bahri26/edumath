@@ -599,7 +599,7 @@ exports.generateQuiz = async (req, res) => {
       classLevel,
       limit: 8,
     });
-    const poolBlock = formatSamplesForPrompt(poolSamples);
+    const poolBlock = formatSamplesForPrompt(poolSamples, { textOnly: true });
     const mebBlock = buildMebPromptBlock({ subject, topic, classLevel });
     const outcomeHint = LEARNING_OUTCOME_BY_LABEL[topic]
       ? `Oruntu alt konusunda MEB ile hizalı ilgili kazanım özeti: ${LEARNING_OUTCOME_BY_LABEL[topic]}`
@@ -660,11 +660,12 @@ Zorluk: ${difficulty}
 Uretilecek soru sayisi: ${Math.min(15, Math.max(1, Number(count) || 1))}
 ${outcomeHint ? `\n${outcomeHint}\n` : ''}
 
-SORU BANKASINDAN (${subject}${classLevel !== 'Tümü' ? `, ${classLevel}` : ''} — bağlam icin anonimlestirildi; TELIF/LITERAL KOPYA ETME — yalnizca seviye, dil ve yazim tarzına uy):
+SORU BANKASINDAN (${subject}${classLevel !== 'Tümü' ? `, ${classLevel}` : ''} — yalnizca METIN tabanli sorular; gorsel/diyagramli sorular ornek degildir; TELIF/LITERAL KOPYA ETME):
 ${poolBlock}
 
 GOREV:
-- Yukaridaki havuzdan SADECE yapı ve bilissel düzey fikir al; soru koklerini yeniden yaz, farkli baglam ve rakamlar kullan.
+- Yukaridaki metin tabanli havuzdan SADECE yapı ve bilissel düzey fikir al; soru koklerini yeniden yaz, farkli baglam ve rakamlar kullan.
+- Gorsel/diyagram gerektiren soru uretme; tum sorular metin + 4 sik ile cozulebilir olsun.
 - ${useGrounding ? 'Google Search zeminlemesi kullaniliyorsa; tanimları ve güncel egitim uyumunu güvenilir acik kaynak ozetinden dogrula. Uydurma kesin yil veya madda numarasi yazma.' : 'Kaynak gerektiren tanimlari genel akademik doğruluga sadik kalerek yaz.'}
 - Her soru icin tam 4 secenek ve "correctAnswer" alanını secenklerden biri olarak doldur.
 - JSON olarak sadece dizi don.
@@ -695,8 +696,8 @@ GOREV:
     res.json({
       questions: formattedData,
       hint: poolSamples.length
-        ? `Havuzdaki ${poolSamples.length} örneğe benzer ${formattedData.length} yeni soru üretildi (Gemini).`
-        : `${formattedData.length} yeni soru üretildi (havuzda eşleşen örnek yok).`,
+        ? `Metin tabanlı havuzdaki ${poolSamples.length} örneğe benzer ${formattedData.length} yeni soru üretildi${useGrounding ? ' (Google arama ile müfredat doğrulandı)' : ''}.`
+        : `${formattedData.length} yeni soru üretildi (metin tabanlı havuz örneği yok; görselli sorular örnek alınmadı).`,
       generator: 'gemini',
       poolSampleCount: poolSamples.length,
     });

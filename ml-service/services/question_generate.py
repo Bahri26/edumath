@@ -334,9 +334,9 @@ def generate_questions_from_pool(payload: dict[str, Any]) -> dict[str, Any]:
 
     pool_used = len(samples)
     hint = (
-        f"Havuzdaki {pool_used} örnekten esinlenilerek {len(questions)} yeni soru üretildi."
+        f"Metin tabanlı havuzdaki {pool_used} örnekten esinlenilerek {len(questions)} yeni soru üretildi (görselli sorular örnek alınmadı)."
         if pool_used
-        else f"Havuzda örnek yok; {len(questions)} soru yerel şablonlarla üretildi."
+        else f"Metin tabanlı havuz örneği yok; {len(questions)} soru yerel şablonlarla üretildi."
     )
 
     return {

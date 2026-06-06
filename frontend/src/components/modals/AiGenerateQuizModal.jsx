@@ -193,7 +193,7 @@ export default function AiGenerateQuizModal({
                 />
                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   Ders: <span className="font-bold text-slate-700 dark:text-slate-200">{resolvedSubject}</span> — üretilen sorular bu branşa kaydedilir.
-                  Soru havuzunuzdaki örneklerden esinlenilir; birebir kopya yapılmaz.
+                  Örnek alınırken yalnızca metin tabanlı sorular kullanılır; görselli sorular havuz örneği sayılmaz.
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

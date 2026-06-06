@@ -264,8 +264,8 @@ function generateLocalFromPool({ poolSamples, topic, difficulty, count, classLev
     generator: 'local-pool',
     poolSampleCount: samples.length,
     hint: samples.length
-      ? `Havuzdaki ${samples.length} örnekten esinlenilerek ${questions.length} yeni soru üretildi.`
-      : `Havuzda örnek yok; ${questions.length} soru yerel şablonlarla üretildi.`,
+      ? `Havuzdaki ${samples.length} metin tabanlı örnekten esinlenilerek ${questions.length} yeni soru üretildi (görselli sorular örnek alınmadı).`
+      : `Metin tabanlı havuz örneği yok; ${questions.length} soru yerel şablonlarla üretildi.`,
   };
 }
 
@@ -299,13 +299,14 @@ async function generateQuestionsFromPool({
           questions: data.questions,
           generator: data.generator || 'ml-service',
           poolSampleCount: data.poolSampleCount ?? poolSamples.length,
-          hint: data.hint || `Havuz tabanlı ${data.questions.length} soru üretildi.`,
+          hint: data.hint || `Metin tabanlı havuz örneklerinden ${data.questions.length} soru üretildi.`,
           poolBlock: formatSamplesForPrompt(
             poolSamples.map((q) => ({
               summary: String(q.text || '').slice(0, 220),
               topic: q.topic,
               difficulty: q.difficulty,
-            }))
+            })),
+            { textOnly: true }
           ),
         };
       }
