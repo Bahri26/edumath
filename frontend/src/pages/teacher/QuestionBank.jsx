@@ -1,12 +1,13 @@
-import React, { useEffect, useState, useCallback, Fragment } from 'react';
+import React, { useEffect, useState, useCallback, Fragment, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import QuestionFormModal from '../../components/exams/QuestionFormModal';
-import SmartPasteModal from '../../components/modals/SmartPasteModal'; // AI Yapıştır Modalı
+import SmartPasteModal from '../../components/modals/SmartPasteModal';
+import AiGenerateQuizModal from '../../components/modals/AiGenerateQuizModal';
 import {
   Plus, Edit2, Trash2, Search, FileText, Layers,
   ChevronLeft, ChevronRight, Star,
   Sparkles, Hash,
-  LayoutGrid,
+  LayoutGrid, Wand2,
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -171,6 +172,7 @@ export default function QuestionBank() {
   const [expandedId, setExpandedId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSmartPasteOpen, setIsSmartPasteOpen] = useState(false);
+  const [isAiGenerateOpen, setIsAiGenerateOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [manualForm, setManualForm] = useState(null);
   const [mainImage, setMainImage] = useState({ file: null, preview: '' });
@@ -257,8 +259,31 @@ export default function QuestionBank() {
     setSearchQuery(s);
     setFilters({ subject, classLevel, difficulty, topic });
     setPage(Number.isNaN(p) ? 1 : p);
+    if (searchParams.get('aiGenerate') === '1') {
+      setIsAiGenerateOpen(true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const aiFilterDefaults = useMemo(() => {
+    const subject =
+      profile.branch && profile.branchApproval === 'approved'
+        ? profile.branch
+        : filters.subject !== 'Tümü'
+          ? filters.subject
+          : 'Matematik';
+    const isMath = subject === 'Matematik';
+    let topic = filters.topic;
+    if (!topic || topic === 'Tümü' || topic === PATTERN_TOPIC_ALL_UNDER) {
+      topic = isMath ? PATTERN_TOPIC_ORDER[0] : '';
+    }
+    return {
+      subject,
+      classLevel: filters.classLevel !== 'Tümü' ? filters.classLevel : '9. Sınıf',
+      difficulty: filters.difficulty !== 'Tümü' ? filters.difficulty : 'Orta',
+      topic,
+    };
+  }, [filters, profile.branch, profile.branchApproval]);
 
   // Durumu URL'e yaz
   useEffect(() => {
@@ -266,10 +291,9 @@ export default function QuestionBank() {
     if (debouncedSearch) params.search = debouncedSearch;
     Object.entries(filters).forEach(([k, v]) => { if (v !== 'Tümü') params[k] = v; });
     if (page !== 1) params.page = String(page);
+    if (isAiGenerateOpen) params.aiGenerate = '1';
     setSearchParams(params, { replace: true });
-  }, [debouncedSearch, filters, page, setSearchParams]);
-
-  // (aiFilterDefaults removed along with AI generate modal)
+  }, [debouncedSearch, filters, page, isAiGenerateOpen, setSearchParams]);
 
   const fetchQuestions = useCallback(async () => {
     if (!profileLoaded) {
@@ -374,6 +398,17 @@ export default function QuestionBank() {
         </div>
 
         <div className="flex flex-wrap gap-3 justify-end">
+          <Button
+            variant="outline"
+            size="md"
+            onClick={() => setIsAiGenerateOpen(true)}
+            disabled={profile.branchApproval !== 'approved'}
+            title={profile.branchApproval !== 'approved' ? 'Branş onayından sonra kullanılabilir' : 'Havuzdaki sorulardan esinlenerek yeni sorular üretir'}
+            className="px-6 py-4 rounded-2xl border-2 border-violet-600 text-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Wand2 size={20} /> AI ile Üret
+          </Button>
+
           <Button
             variant="outline"
             size="md"
@@ -614,6 +649,26 @@ export default function QuestionBank() {
               setMainImage({ file: null, preview: '' });
             }
             setIsSmartPasteOpen(false);
+            setIsModalOpen(true);
+          }}
+        />
+      )}
+
+      {isAiGenerateOpen && (
+        <AiGenerateQuizModal
+          isOpen={isAiGenerateOpen}
+          onClose={() => setIsAiGenerateOpen(false)}
+          profile={profile}
+          filterDefaults={aiFilterDefaults}
+          onSaved={() => {
+            fetchQuestions();
+            setIsAiGenerateOpen(false);
+          }}
+          onRequestEditOne={(form) => {
+            setEditingQuestion(null);
+            setManualForm(form);
+            setMainImage({ file: null, preview: '' });
+            setIsAiGenerateOpen(false);
             setIsModalOpen(true);
           }}
         />

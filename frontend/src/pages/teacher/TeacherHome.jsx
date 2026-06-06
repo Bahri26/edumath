@@ -406,12 +406,24 @@ const TeacherHome = () => {
                 variant="secondary"
                 size="md"
                 className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 mt-3"
+                onClick={() => navigate('/teacher/questions?aiGenerate=1')}
+              >
+                <div className="bg-white p-2 rounded text-violet-600">
+                  <Wand2 size={16} />
+                </div>
+                <span>AI ile soru üret</span>
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="md"
+                className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 mt-3"
                 onClick={() => navigate('/teacher/pattern-builder')}
               >
                 <div className="bg-white p-2 rounded text-violet-600">
                   <Wand2 size={16} />
                 </div>
-                <span>Örüntü oluştur</span>
+                <span>Örüntü şablonu</span>
               </Button>
               <Button
                 type="button"
