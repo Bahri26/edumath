@@ -12,11 +12,22 @@ const S3_PUBLIC_BASE_URL = (process.env.S3_PUBLIC_BASE_URL || '').replace(/\/+$/
 const S3_ACCESS_KEY_ID = process.env.S3_ACCESS_KEY_ID || '';
 const S3_SECRET_ACCESS_KEY = process.env.S3_SECRET_ACCESS_KEY || '';
 const S3_FORCE_PATH_STYLE = String(process.env.S3_FORCE_PATH_STYLE || '').toLowerCase() === 'true';
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
 
 let s3Client = null;
+let cloudinaryClient = null;
 
 function ensureLocalDir(targetPath) {
   fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+}
+
+function isCloudinaryEnabled() {
+  return STORAGE_PROVIDER === 'cloudinary'
+    && !!CLOUDINARY_CLOUD_NAME
+    && !!CLOUDINARY_API_KEY
+    && !!CLOUDINARY_API_SECRET;
 }
 
 function isObjectStorageEnabled() {
@@ -27,12 +38,18 @@ function isObjectStorageEnabled() {
     && (STORAGE_PROVIDER !== 'r2' || !!S3_ENDPOINT);
 }
 
+function isRemoteStorageEnabled() {
+  return isCloudinaryEnabled() || isObjectStorageEnabled();
+}
+
 function getProviderName() {
-  return isObjectStorageEnabled() ? STORAGE_PROVIDER : 'local';
+  if (isCloudinaryEnabled()) return 'cloudinary';
+  if (isObjectStorageEnabled()) return STORAGE_PROVIDER;
+  return 'local';
 }
 
 function ensureLocalUploadDirs() {
-  if (isObjectStorageEnabled()) {
+  if (isRemoteStorageEnabled()) {
     return;
   }
   const subdirs = ['temp', 'temp/crops', 'questions', 'questions/diagrams', 'question-options', 'generated', 'pattern-templates'];
@@ -43,17 +60,52 @@ function ensureLocalUploadDirs() {
 }
 
 function getStorageStatus() {
+  const cloudinary = isCloudinaryEnabled();
   const objectEnabled = isObjectStorageEnabled();
   return {
     provider: getProviderName(),
     objectStorageEnabled: objectEnabled,
-    localUploadDir: objectEnabled ? null : LOCAL_UPLOAD_DIR,
-    publicBaseUrl: objectEnabled ? (S3_PUBLIC_BASE_URL || '(S3_PUBLIC_BASE_URL gerekli)') : '/uploads',
+    cloudinaryEnabled: cloudinary,
+    remoteStorageEnabled: isRemoteStorageEnabled(),
+    localUploadDir: isRemoteStorageEnabled() ? null : LOCAL_UPLOAD_DIR,
+    publicBaseUrl: cloudinary
+      ? `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}`
+      : objectEnabled
+        ? (S3_PUBLIC_BASE_URL || '(S3_PUBLIC_BASE_URL gerekli)')
+        : '/uploads',
     bucket: objectEnabled ? S3_BUCKET_NAME : null,
-    productionHint: process.env.NODE_ENV === 'production' && !objectEnabled
-      ? 'Render üretiminde kalıcı görsel için STORAGE_PROVIDER=r2 (Cloudflare R2) önerilir.'
+    cloudName: cloudinary ? CLOUDINARY_CLOUD_NAME : null,
+    productionHint: process.env.NODE_ENV === 'production' && !isRemoteStorageEnabled()
+      ? 'Render üretiminde STORAGE_PROVIDER=cloudinary veya r2 ayarlayın.'
       : null,
   };
+}
+
+function getCloudinary() {
+  if (!isCloudinaryEnabled()) {
+    return null;
+  }
+  if (!cloudinaryClient) {
+    // eslint-disable-next-line global-require
+    const cloudinary = require('cloudinary').v2;
+    cloudinary.config({
+      cloud_name: CLOUDINARY_CLOUD_NAME,
+      api_key: CLOUDINARY_API_KEY,
+      api_secret: CLOUDINARY_API_SECRET,
+      secure: true,
+    });
+    cloudinaryClient = cloudinary;
+  }
+  return cloudinaryClient;
+}
+
+function toCloudinaryFolder(prefix) {
+  return String(prefix || 'edumath')
+    .replace(/^\/+|\/+$/g, '')
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter(Boolean)
+    .join('/');
 }
 
 function getS3Client() {
@@ -136,6 +188,29 @@ async function uploadBuffer(buffer, options = {}) {
   } = options;
 
   const key = buildObjectKey(prefix, originalName, extension);
+
+  if (isCloudinaryEnabled()) {
+    const cloudinary = getCloudinary();
+    const folder = toCloudinaryFolder(prefix);
+    const resourceType = mimeType === 'image/svg+xml' ? 'raw' : 'auto';
+    const result = await new Promise((resolve, reject) => {
+      const uploadOptions = {
+        folder,
+        resource_type: resourceType,
+        public_id: `${sanitizeSegment(path.parse(originalName).name, 'file')}-${crypto.randomUUID()}`,
+      };
+      const stream = cloudinary.uploader.upload_stream(uploadOptions, (error, uploadResult) => {
+        if (error) reject(error);
+        else resolve(uploadResult);
+      });
+      stream.end(buffer);
+    });
+    return {
+      url: result.secure_url,
+      key: result.public_id,
+      provider: 'cloudinary',
+    };
+  }
 
   if (!isObjectStorageEnabled()) {
     const targetPath = path.join(LOCAL_UPLOAD_DIR, key);
@@ -316,7 +391,9 @@ async function deleteStoredAsset({ key, provider, url } = {}) {
   const normalizedKey = String(key || '').replace(/^\/+/, '');
 
   if (!normalizedKey && (!url || !String(url).startsWith('/uploads/'))) {
-    return;
+    if (!normalizedKey || normalizedProvider !== 'cloudinary') {
+      return;
+    }
   }
 
   if ((normalizedProvider === 'local' || (!normalizedProvider && String(url || '').startsWith('/uploads/'))) && (normalizedKey || url)) {
@@ -324,6 +401,22 @@ async function deleteStoredAsset({ key, provider, url } = {}) {
     const targetPath = path.join(LOCAL_UPLOAD_DIR, localKey);
     if (fs.existsSync(targetPath)) {
       fs.unlinkSync(targetPath);
+    }
+    return;
+  }
+
+  if (normalizedProvider === 'cloudinary' && normalizedKey) {
+    const cloudinary = getCloudinary();
+    if (cloudinary) {
+      try {
+        await cloudinary.uploader.destroy(normalizedKey, { resource_type: 'image' });
+      } catch (_) {
+        try {
+          await cloudinary.uploader.destroy(normalizedKey, { resource_type: 'raw' });
+        } catch (err) {
+          console.warn('cloudinary delete failed:', err?.message);
+        }
+      }
     }
     return;
   }
@@ -349,6 +442,8 @@ module.exports = {
   toUploadRelativePath,
   deleteStoredAsset,
   isObjectStorageEnabled,
+  isCloudinaryEnabled,
+  isRemoteStorageEnabled,
   getProviderName,
   ensureLocalUploadDirs,
   getStorageStatus,

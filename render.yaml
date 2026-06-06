@@ -43,8 +43,14 @@ services:
         value: gemini-1.5-flash
       - key: GEMINI_COMPLEX_MODEL
         value: gemini-1.5-pro
-      # Kalıcı görsel depolama (Render üretim — Cloudflare R2 önerilir)
+      # Kalıcı görsel: cloudinary (kolay) veya R2
       - key: STORAGE_PROVIDER
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
         sync: false
       - key: S3_BUCKET_NAME
         sync: false

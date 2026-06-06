@@ -326,7 +326,7 @@ exports.createQuestion = async (req, res, next) => {
         const isProd = process.env.NODE_ENV === 'production';
         return res.status(isProd ? 503 : 500).json({
           message: isProd
-            ? 'Görsel depolama yapılandırılmamış veya erişilemiyor. Render’da Cloudflare R2 (STORAGE_PROVIDER=r2) ayarlayın.'
+            ? 'Görsel depolama yapılandırılmamış. Render’da STORAGE_PROVIDER=cloudinary veya r2 ayarlayın.'
             : 'Görsel yüklenemedi.',
           error: uploadErr?.message,
         });
