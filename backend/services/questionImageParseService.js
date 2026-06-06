@@ -2,7 +2,8 @@ const Tesseract = require('tesseract.js');
 const pathLib = require('path');
 const { isLocalAi, isOllamaAi } = require('../config/aiProvider');
 const { extractQuestionImageRegions } = require('./questionImageCropService');
-const { enrichParsedQuestion } = require('./patternQuestionSolver');
+const { enrichParsedQuestionAsync } = require('./patternQuestionSolver');
+const mlServiceClient = require('./mlServiceClient');
 
 function buildDefaultParsedQuestion(overrides = {}) {
   return {
@@ -163,7 +164,7 @@ function tryInferPatternCorrectAnswer(text, options) {
 /**
  * Metinden yapılandırılmış soru — satır içi A) B) C) D) ve Türkçe cevap satırı destekli
  */
-function parseStructuredQuestionText(content, defaults = {}) {
+async function parseStructuredQuestionText(content, defaults = {}) {
   const fallback = buildDefaultParsedQuestion(defaults);
   let normalized = cleanOcrText(content);
   if (!normalized) {
@@ -263,7 +264,27 @@ function parseStructuredQuestionText(content, defaults = {}) {
     },
   };
 
-  return enrichParsedQuestion(base);
+  if (mlServiceClient.isConfigured()) {
+    try {
+      const mlParsed = await mlServiceClient.parseQuestionText(normalized, defaults);
+      if (mlParsed?.text || mlParsed?.options?.some((o) => String(o).trim())) {
+        const merged = {
+          ...base,
+          ...mlParsed,
+          layout: base.layout,
+          assessmentMeta: base.assessmentMeta,
+          introText: mlParsed.introText || base.introText,
+          questionText: mlParsed.questionText || base.questionText,
+          stepLabels: mlParsed.stepLabels || base.stepLabels,
+        };
+        return enrichParsedQuestionAsync(merged);
+      }
+    } catch (err) {
+      console.warn('ML parse-text fallback to local:', err?.message);
+    }
+  }
+
+  return enrichParsedQuestionAsync(base);
 }
 
 async function extractTextFromImageWithOcr(filePath) {
@@ -334,7 +355,7 @@ async function parseQuestionFromImage(filePath, mimeType) {
     };
   }
 
-  const parsed = parseStructuredQuestionText(ocrText, { imagePath: imageUrl });
+  const parsed = await parseStructuredQuestionText(ocrText, { imagePath: imageUrl });
   const {
     layout,
     assessmentMeta,

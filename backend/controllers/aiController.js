@@ -498,7 +498,7 @@ exports.smartParse = async (req, res) => {
       try {
         const ocrText = await extractTextFromImageWithOcr(req.file.path);
         const { parseStructuredQuestionText: parseFromImageService } = require('../services/questionImageParseService');
-        const parsed = parseFromImageService(ocrText, { imagePath: imageUrl });
+        const parsed = await parseFromImageService(ocrText, { imagePath: imageUrl });
         const { layout: ocrLayout, assessmentMeta, ...fields } = parsed;
         data = { ...fields, imagePath: imageUrl, assessmentMeta };
         parseMode = 'ocr';
@@ -858,7 +858,7 @@ exports.smartParseText = async (req, res) => {
     }
 
     const { parseStructuredQuestionText: parseText } = require('../services/questionImageParseService');
-    const data = parseText(content);
+    const data = await parseText(content);
 
     if (!isLocalAi() && !isOllamaAi() && process.env.GEMINI_API_KEY) {
       try {

@@ -155,6 +155,41 @@ async function analyzeTopics(entries, { limit = 5, weakThreshold } = {}) {
   };
 }
 
+async function enrichQuestion(payload = {}) {
+  const data = await request('/questions/enrich', {
+    text: payload.text || '',
+    questionText: payload.questionText || '',
+    introText: payload.introText || '',
+    stepLabels: payload.stepLabels || '',
+    ocrText: payload.ocrText || '',
+    ocrPreview: payload.ocrPreview || '',
+    topic: payload.topic || '',
+    difficulty: payload.difficulty || '',
+    correctAnswer: payload.correctAnswer || '',
+    solution: payload.solution || '',
+    options: Array.isArray(payload.options) ? payload.options : [],
+  }, { timeoutMs: Number(process.env.ML_SERVICE_TIMEOUT_MS || 12000) });
+
+  return data?.data || null;
+}
+
+async function solveQuestion(payload = {}) {
+  const data = await request('/questions/solve', {
+    text: payload.text || '',
+    questionText: payload.questionText || '',
+    introText: payload.introText || '',
+    stepLabels: payload.stepLabels || '',
+    ocrPreview: payload.ocrPreview || payload.ocrText || '',
+    options: Array.isArray(payload.options) ? payload.options : [],
+  });
+  return data?.data || null;
+}
+
+async function parseQuestionText(ocrText, defaults = {}) {
+  const data = await request('/questions/parse-text', { ocrText, defaults });
+  return data?.data || null;
+}
+
 function getStatusSync() {
   return {
     configured: isConfigured(),
@@ -168,6 +203,9 @@ module.exports = {
   getBaseUrl,
   checkHealth,
   analyzeTopics,
+  enrichQuestion,
+  solveQuestion,
+  parseQuestionText,
   getStatusSync,
   toMlTopicEntry,
   fromMlTopicRow,

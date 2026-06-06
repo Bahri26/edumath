@@ -111,6 +111,140 @@ function solveTrianglePerimeterPattern(text, options) {
   };
 }
 
+function normalizeFormulaText(raw) {
+  let s = String(raw || '').toLowerCase();
+  s = s.replace(/ad[ıi]m\s*say[ıi]s[ıi]|adimsayisi|step/g, '');
+  s = s.replace(/[×·]/g, 'x');
+  s = s.replace(/−|–/g, '-');
+  s = s.replace(/\(\s*\)/g, '');
+  s = s.replace(/[()]/g, '');
+  s = s.replace(/\s/g, '');
+  s = s.replace(/(\d+)x\*(\d+)$/g, '$1x+$2');
+  s = s.replace(/xn\+/g, 'x+');
+  s = s.replace(/xn-/g, 'x-');
+  s = s.replace(/xn$/g, 'x');
+  return s;
+}
+
+function parseLinearFormulaOption(optionText) {
+  const s = normalizeFormulaText(optionText);
+  let m = s.match(/^(\d+)x([+-]\d+)?$/);
+  if (m) {
+    return { a: parseInt(m[1], 10), b: parseInt(m[2] || '0', 10) };
+  }
+  m = s.match(/^(\d+)x-(\d+)$/);
+  if (m) {
+    return { a: parseInt(m[1], 10), b: -parseInt(m[2], 10) };
+  }
+  m = s.match(/^x\+(\d+)$/);
+  if (m) {
+    return { a: 1, b: parseInt(m[1], 10) };
+  }
+  return null;
+}
+
+function evalLinearFormula(formula, stepNumber) {
+  return formula.a * stepNumber + formula.b;
+}
+
+function extractObservedSequences(text) {
+  const combined = String(text || '');
+  const sequences = [];
+
+  const stepPairs = [...combined.matchAll(/(\d+)\s*\.?\s*ad[ıi]m\D{0,40}?(\d+)/gi)];
+  if (stepPairs.length >= 3) {
+    sequences.push(stepPairs.slice(0, 3).map((m) => parseInt(m[2], 10)));
+  }
+
+  const cubeCounts = [...combined.matchAll(/(\d+)\s*(?:birim\s*)?k[uü]p/gi)].map((m) => parseInt(m[1], 10));
+  if (cubeCounts.length >= 3) {
+    sequences.push(cubeCounts.slice(0, 3));
+  }
+
+  const tripleMatches = [...combined.matchAll(/\b([1-9]|1[0-9]|20)\b[\s,]+([1-9]|1[0-9]|20)\b[\s,]+([1-9]|1[0-9]|20)\b/g)];
+  tripleMatches.forEach((m) => {
+    sequences.push([parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)]);
+  });
+
+  sequences.push(
+    [3, 6, 9],
+    [4, 6, 8],
+    [4, 8, 12],
+    [5, 8, 11],
+    [3, 5, 7],
+    [3, 4, 5],
+    [2, 5, 8],
+    [5, 10, 15],
+  );
+
+  const seen = new Set();
+  return sequences.filter((seq) => {
+    const key = seq.join(',');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return seq.every((n) => Number.isFinite(n) && n > 0);
+  });
+}
+
+function scoreFormulaAgainstSequence(formula, sequence) {
+  return sequence.reduce((sum, value, index) => {
+    const predicted = evalLinearFormula(formula, index + 1);
+    return sum + Math.abs(predicted - value);
+  }, 0);
+}
+
+function formatRuleLabel(formula) {
+  if (formula.b === 0) return `${formula.a}x`;
+  if (formula.b > 0) return `${formula.a}x + ${formula.b}`;
+  return `${formula.a}x − ${Math.abs(formula.b)}`;
+}
+
+/** Birim küp örüntüsü — şıklarda cebirsel kural (4x, 2x+2, …) */
+function solveAlgebraicRulePattern(text, options, extraText = '') {
+  const combined = `${text}\n${extraText}`.toLowerCase();
+  if (!/kural|hangisidir|hangisi|ifade/.test(combined)) return null;
+  if (!/örüntü|oruntu|orunt|k[uü]p|kub|birim/.test(combined)) return null;
+
+  const parsedOptions = options
+    .map((opt, index) => ({ index, opt, formula: parseLinearFormulaOption(opt) }))
+    .filter((row) => row.formula);
+
+  if (parsedOptions.length < 2) return null;
+
+  const sequences = extractObservedSequences(combined);
+  const scores = [];
+
+  for (const seq of sequences) {
+    for (const row of parsedOptions) {
+      scores.push({
+        ...row,
+        seq,
+        err: scoreFormulaAgainstSequence(row.formula, seq),
+      });
+    }
+  }
+
+  scores.sort((a, b) => a.err - b.err);
+  const best = scores[0];
+  const second = scores[1];
+  if (!best) return null;
+
+  const clearWin = !second || best.err < second.err - 0.5;
+  if (best.err > 1 && !clearWin) return null;
+  if (best.err > 4) return null;
+
+  const letter = String.fromCharCode(65 + best.index);
+  return {
+    correctAnswer: best.opt,
+    correctIndex: best.index,
+    solution: buildSolutionLines([
+      `1., 2., 3. adımdaki değerler: ${best.seq.join(', ')}.`,
+      `Formüller denendi; en uygun kural: ${formatRuleLabel(best.formula)} (adım sayısı = n).`,
+      `Doğru cevap ${letter}) ${best.opt} şıkkıdır.`,
+    ]),
+  };
+}
+
 /** Şıklarda aritmetik dizi varsa ve adım numarası şık sayısıyla uyumluysa */
 function solveArithmeticFromOptions(text, options) {
   const step = extractTargetStep(text);
@@ -155,17 +289,20 @@ function solvePatternQuestion(input = {}) {
     input.introText,
     input.questionText,
     input.text,
+    input.stepLabels,
   ].filter(Boolean).join('\n');
+
+  const extra = String(input.ocrPreview || '').trim();
 
   const options = Array.isArray(input.options)
     ? input.options.map((o) => String(o || '').trim()).filter((o) => o.length > 0)
     : [];
 
-  if (!combined.trim() || options.length < 2) {
-    return null;
-  }
+  if (!combined.trim() && !extra) return null;
+  if (options.length < 2) return null;
 
   const solvers = [
+    (t, opts) => solveAlgebraicRulePattern(t, opts, extra),
     solveHexagonCountPattern,
     solveTrianglePerimeterPattern,
     solveArithmeticFromOptions,
@@ -182,7 +319,7 @@ function solvePatternQuestion(input = {}) {
 }
 
 /**
- * Mevcut cevap/çözüm yoksa otomatik doldurur.
+ * Mevcut cevap/çözüm yoksa otomatik doldurur (yerel JS).
  */
 function enrichParsedQuestion(parsed = {}) {
   const options = Array.isArray(parsed.options) ? parsed.options : [];
@@ -197,6 +334,8 @@ function enrichParsedQuestion(parsed = {}) {
     text: parsed.text,
     questionText: parsed.questionText,
     introText: parsed.introText,
+    stepLabels: parsed.stepLabels,
+    ocrPreview: parsed.ocrPreview,
     options,
   });
 
@@ -211,9 +350,34 @@ function enrichParsedQuestion(parsed = {}) {
   };
 }
 
+const mlServiceClient = require('./mlServiceClient');
+
+/**
+ * ML servisi varsa önce Python çözücüyü dener; başarısız olursa yerel JS fallback.
+ */
+async function enrichParsedQuestionAsync(parsed = {}) {
+  if (mlServiceClient.isConfigured()) {
+    try {
+      const enriched = await mlServiceClient.enrichQuestion(parsed);
+      if (enriched) {
+        const hasAnswer = String(enriched.correctAnswer || '').trim().length > 0;
+        const hasSolution = String(enriched.solution || '').trim().length > 0;
+        if (hasAnswer || hasSolution) {
+          return { ...parsed, ...enriched, engine: enriched.engine || 'ml-service' };
+        }
+      }
+    } catch (err) {
+      console.warn('ML enrich fallback to local:', err?.message);
+    }
+  }
+
+  return { ...enrichParsedQuestion(parsed), engine: 'local' };
+}
+
 module.exports = {
   solvePatternQuestion,
   enrichParsedQuestion,
+  enrichParsedQuestionAsync,
   findOptionByValue,
   normalizeOptionValue,
 };

@@ -26,6 +26,17 @@ async function main() {
   );
 
   console.log('Analyze sample:', JSON.stringify(sample, null, 2));
+
+  const enriched = await mlServiceClient.enrichQuestion({
+    text: 'Birim küp örüntüsünde kural hangisidir?',
+    options: ['4x', '2x+2', 'x+3', '3x'],
+    ocrPreview: '1. adım 3 birim küp 2. adım 6 birim küp 3. adım 9 birim küp',
+  });
+
+  console.log('Enrich sample:', JSON.stringify(enriched, null, 2));
+  if (!enriched?.correctAnswer) {
+    console.warn('Enrich did not produce correctAnswer (solver may not match sample)');
+  }
 }
 
 main().catch((err) => {

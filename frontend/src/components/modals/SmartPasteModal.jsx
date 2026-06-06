@@ -146,7 +146,11 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       const layout = body?.meta?.layout || data?.assessmentMeta?.parseLayout || null;
       setParseLayout(layout);
 
-      const form = mapServerParseToForm(data, layout);
+      const base = mapServerParseToForm(data, layout);
+      const form = enrichQuestionForm({
+        ...base,
+        ocrPreview: body?.ocrPreview || '',
+      });
       setParsedData(form);
       setStep('editing');
 
@@ -265,6 +269,8 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         introText: parsedData.introText,
         questionText: parsedData.questionText || parsedData.text,
       }),
+      stepLabels: parsedData.stepLabels,
+      ocrPreview,
     });
     setParsedData(enriched);
     if (enriched.correctAnswer?.trim()) {

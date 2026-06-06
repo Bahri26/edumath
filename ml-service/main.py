@@ -1,6 +1,6 @@
 """
 Edumath ML Service — bağımsız Python mikroservis.
-Backend (Node) ile HTTP üzerinden konuşur; backend/ içinde değildir.
+Yerel algoritmalar: soru ayrıştırma, çözüm, analiz, zayıf konu skorlama.
 """
 
 from __future__ import annotations
@@ -13,6 +13,9 @@ from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from services.health import health_payload
+from services.question_analyze import analyze_question
+from services.question_parse import enrich_question, parse_structured_question_text
+from services.question_solver import solve_pattern_question
 from services.weak_topics import rank_weak_topics, score_topic_entries
 
 load_dotenv()
@@ -23,8 +26,8 @@ API_KEY = os.getenv("ML_SERVICE_API_KEY", "").strip()
 
 app = FastAPI(
     title="Edumath ML Service",
-    description="Öğrenci konu analizi ve zayıf alan skorlama",
-    version="0.1.0",
+    description="Yerel soru çözümü, ayrıştırma ve öğrenci konu analizi (dış AI yok)",
+    version="0.2.0",
 )
 
 
@@ -44,6 +47,25 @@ class AnalyzeTopicsRequest(BaseModel):
     weakThreshold: float | None = Field(default=None, ge=0, le=1)
 
 
+class QuestionPayload(BaseModel):
+    text: str = ""
+    questionText: str = ""
+    introText: str = ""
+    stepLabels: str = ""
+    ocrText: str = ""
+    ocrPreview: str = ""
+    topic: str = ""
+    difficulty: str = ""
+    correctAnswer: str = ""
+    solution: str = ""
+    options: list[str] = Field(default_factory=list)
+
+
+class ParseTextRequest(BaseModel):
+    ocrText: str = Field(min_length=1)
+    defaults: dict[str, Any] = Field(default_factory=dict)
+
+
 def _check_api_key(x_api_key: str | None) -> None:
     if not API_KEY:
         return
@@ -53,7 +75,17 @@ def _check_api_key(x_api_key: str | None) -> None:
 
 @app.get("/health")
 def health() -> dict[str, Any]:
-    return health_payload()
+    payload = health_payload()
+    payload["version"] = "0.2.0"
+    payload["capabilities"] = [
+        "weak-topics",
+        "question-solve",
+        "question-parse",
+        "question-analyze",
+        "question-enrich",
+    ]
+    payload["engine"] = "edumath-local"
+    return payload
 
 
 @app.post("/analyze/topics")
@@ -79,6 +111,48 @@ def score_topics(
     payload = [entry.model_dump() for entry in body.entries]
     scored = score_topic_entries(payload, weak_threshold=body.weakThreshold)
     return {"topics": scored}
+
+
+@app.post("/questions/solve")
+def questions_solve(
+    body: QuestionPayload,
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+) -> dict[str, Any]:
+    _check_api_key(x_api_key)
+    result = solve_pattern_question(body.model_dump())
+    if not result:
+        return {"success": False, "message": "Bu soru tipi için yerel çözücü eşleşmedi.", "data": None}
+    return {"success": True, "data": result, "engine": "edumath-local"}
+
+
+@app.post("/questions/analyze")
+def questions_analyze(
+    body: QuestionPayload,
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+) -> dict[str, Any]:
+    _check_api_key(x_api_key)
+    return {"success": True, "data": analyze_question(body.model_dump()), "engine": "edumath-local"}
+
+
+@app.post("/questions/parse-text")
+def questions_parse_text(
+    body: ParseTextRequest,
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+) -> dict[str, Any]:
+    _check_api_key(x_api_key)
+    data = parse_structured_question_text(body.ocrText, body.defaults)
+    return {"success": True, "data": data, "engine": "edumath-local"}
+
+
+@app.post("/questions/enrich")
+def questions_enrich(
+    body: QuestionPayload,
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+) -> dict[str, Any]:
+    """OCR/metin + şıklar → konu, zorluk, doğru cevap, çözüm (tek çağrı)."""
+    _check_api_key(x_api_key)
+    data = enrich_question(body.model_dump())
+    return {"success": True, "data": data, "engine": "edumath-local"}
 
 
 if __name__ == "__main__":
