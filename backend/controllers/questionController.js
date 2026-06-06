@@ -316,10 +316,21 @@ exports.createQuestion = async (req, res, next) => {
     let mainImageKey = '';
     let mainImageProvider = '';
     if (mainImgFile) {
-      const uploaded = await uploadFile(mainImgFile, 'questions');
-      mainImagePath = uploaded.url;
-      mainImageKey = uploaded.key;
-      mainImageProvider = uploaded.provider;
+      try {
+        const uploaded = await uploadFile(mainImgFile, 'questions');
+        mainImagePath = uploaded.url;
+        mainImageKey = uploaded.key;
+        mainImageProvider = uploaded.provider;
+      } catch (uploadErr) {
+        console.error('createQuestion image upload failed:', uploadErr?.message);
+        const isProd = process.env.NODE_ENV === 'production';
+        return res.status(isProd ? 503 : 500).json({
+          message: isProd
+            ? 'Görsel depolama yapılandırılmamış veya erişilemiyor. Render’da Cloudflare R2 (STORAGE_PROVIDER=r2) ayarlayın.'
+            : 'Görsel yüklenemedi.',
+          error: uploadErr?.message,
+        });
+      }
     } else if (req.body.imagePath) {
       const normalizedPath = normalizeStoredImagePath(req.body.imagePath);
       if (normalizedPath && (/\/uploads\/temp\//i.test(normalizedPath) || normalizedPath.includes('/temp/'))) {

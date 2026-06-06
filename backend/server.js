@@ -117,6 +117,8 @@ app.use(express.json());
 app.use(mongoSanitize);
 
 // Resimler için Uploads klasörünü dışarı aç
+const { ensureLocalUploadDirs, getStorageStatus } = require('./services/storageService');
+ensureLocalUploadDirs();
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Geriye dönük uyumluluk: eski kayıtlar /api/uploads ile gelebilir
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -255,6 +257,7 @@ app.get('/health', (req, res) => {
         db: dbConnected ? 'up' : 'down',
         port: process.env.PORT || 8000,
         env: process.env.NODE_ENV || 'development',
+        storage: getStorageStatus(),
     });
 });
 

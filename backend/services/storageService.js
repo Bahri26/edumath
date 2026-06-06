@@ -31,6 +31,31 @@ function getProviderName() {
   return isObjectStorageEnabled() ? STORAGE_PROVIDER : 'local';
 }
 
+function ensureLocalUploadDirs() {
+  if (isObjectStorageEnabled()) {
+    return;
+  }
+  const subdirs = ['temp', 'temp/crops', 'questions', 'questions/diagrams', 'question-options', 'generated', 'pattern-templates'];
+  fs.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
+  subdirs.forEach((dir) => {
+    fs.mkdirSync(path.join(LOCAL_UPLOAD_DIR, dir), { recursive: true });
+  });
+}
+
+function getStorageStatus() {
+  const objectEnabled = isObjectStorageEnabled();
+  return {
+    provider: getProviderName(),
+    objectStorageEnabled: objectEnabled,
+    localUploadDir: objectEnabled ? null : LOCAL_UPLOAD_DIR,
+    publicBaseUrl: objectEnabled ? (S3_PUBLIC_BASE_URL || '(S3_PUBLIC_BASE_URL gerekli)') : '/uploads',
+    bucket: objectEnabled ? S3_BUCKET_NAME : null,
+    productionHint: process.env.NODE_ENV === 'production' && !objectEnabled
+      ? 'Render üretiminde kalıcı görsel için STORAGE_PROVIDER=r2 (Cloudflare R2) önerilir.'
+      : null,
+  };
+}
+
 function getS3Client() {
   if (!isObjectStorageEnabled()) {
     return null;
@@ -325,4 +350,6 @@ module.exports = {
   deleteStoredAsset,
   isObjectStorageEnabled,
   getProviderName,
+  ensureLocalUploadDirs,
+  getStorageStatus,
 };
