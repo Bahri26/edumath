@@ -24,7 +24,141 @@ CONTEXT_THEMES = [
     ("blok", "ahşap bloklar", "blok kulesi"),
 ]
 
-MEB_REF = "MEB Matematik Öğretim Programı (2018) — öğretmen havuzu stiline uyumlu yerel üretim"
+MEB_REF = "MEB Matematik Öğretim Programı (2018) — sınıf düzeyine uygun yerel üretim"
+
+ELEMENTARY_THEMES = [
+    (["kırmızı", "mavi"], "renkli boncuklar", "boncuk"),
+    (["elma", "armut"], "meyve tabağı", "meyve"),
+    (["2", "4"], "oyun alanı", "sayı"),
+    (["5", "10"], "sayı doğrusu", "sayı"),
+]
+
+
+def _parse_grade(class_level: str) -> int:
+    m = re.search(r"(\d+)", class_level or "")
+    if not m:
+        return 5
+    return max(1, min(12, int(m.group(1))))
+
+
+def _is_sample_too_advanced(text: str, class_level: str) -> bool:
+    grade = _parse_grade(class_level)
+    t = (text or "").lower()
+    if grade <= 4:
+        if re.search(r"\b\d+\s*x\b|2x|3x|4x|cebir|kural hangisi|birim k[uü]p|k[uü]p say", t):
+            return True
+        if re.search(r"cm|çevre|cevre|eşkenar|eskenar|altıgen|altigen|üçgen|ucgen", t):
+            return True
+        if re.search(r"terim|\. terim|genel terim|formül", t):
+            return True
+        if re.search(r"hangisi daha hızlı|daha hızlı artar|azalan örüntü", t):
+            return True
+        if re.search(r"▲|●|◆|■|şekil dizisi", t):
+            return True
+    if grade <= 6 and re.search(r"\b\d+\s*x\b|2x\+|3x|4x", t):
+        return True
+    return False
+
+
+def _filter_pool_samples(samples: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
+    class_level = str(params.get("classLevel") or "")
+    difficulty = str(params.get("difficulty") or "")
+    rows = [s for s in samples if str(s.get("text") or "").strip()]
+    filtered = [s for s in rows if not _is_sample_too_advanced(str(s.get("text") or ""), class_level)]
+    if difficulty and difficulty != "Tümü":
+        by_diff = [s for s in filtered if str(s.get("difficulty") or "").strip() == difficulty]
+        if by_diff:
+            filtered = by_diff
+    if class_level and class_level != "Tümü":
+        by_class = [s for s in filtered if str(s.get("classLevel") or "").strip() == class_level]
+        if by_class:
+            filtered = by_class
+    if _parse_grade(class_level) <= 4:
+        filtered = [s for s in filtered if not s.get("classLevel") or _parse_grade(str(s.get("classLevel"))) <= 4]
+    return filtered if filtered else [s for s in rows if not _is_sample_too_advanced(str(s.get("text") or ""), class_level)]
+
+
+def _resolve_template_kind(kind: str, class_level: str) -> str:
+    grade = _parse_grade(class_level)
+    if grade <= 4:
+        return "elementary"
+    if grade <= 6 and kind in ("algebraic_rule", "triangle_perimeter", "hexagon"):
+        return "arithmetic"
+    if grade <= 8 and kind == "algebraic_rule":
+        return "arithmetic"
+    return kind if kind != "generic" else "arithmetic"
+
+
+def _generate_elementary_pattern(class_level: str, difficulty: str, seed: str) -> dict[str, Any]:
+    rng = _seed_for(seed)
+    grade = _parse_grade(class_level)
+    theme_items, theme_label, unit = rng.choice(ELEMENTARY_THEMES)
+    diff = (difficulty or "Kolay").lower()
+
+    if diff.startswith("zor"):
+        start = 10 + rng.randint(0, 6)
+        seq = [start, start - 2, start - 4, start - 6]
+        nxt = start - 8
+        opts = list(dict.fromkeys([str(nxt), str(nxt + 2), str(nxt - 2), str(start)]))[:4]
+        return {
+            "text": f"{theme_label.capitalize()} tablosunda {', '.join(str(x) for x in seq)}, ... örüntüsü azalmaktadır. Sıradaki sayı hangisidir?",
+            "options": opts,
+            "correctAnswer": str(nxt),
+            "solution": _build_solution_lines([
+                "Her adımda 2 azalıyor.",
+                f"{seq[-1]} − 2 = {nxt}.",
+                f"Doğru cevap {nxt} şıkkıdır.",
+            ]),
+            "learningOutcome": "Azalan basit sayı örüntüsünü devam ettirir.",
+            "templateKey": "elementary-decreasing",
+        }
+
+    if diff.startswith("kol") or grade <= 2:
+        a, b = theme_items
+        if unit == "sayı":
+            return {
+                "text": f"{theme_label.capitalize()} üzerinde {a}, {b}, {a}, {b}, {a}, ... sayı örüntüsü var. Boşluğa hangi sayı gelmelidir?",
+                "options": [str(b), str(a), str(int(a) + int(b)), str(int(b) + 1)],
+                "correctAnswer": str(b),
+                "solution": _build_solution_lines([
+                    f"Sayılar {a} ve {b} olarak sırayla tekrar ediyor.",
+                    f"{a} sayısından sonra {b} gelir.",
+                    f"Doğru cevap {b} şıkkıdır.",
+                ]),
+                "learningOutcome": "Tekrar eden sayı örüntüsünde sıradaki terimi bulur.",
+                "templateKey": "elementary-repeat",
+            }
+        opts = list(dict.fromkeys([a, b, "sarı", "yeşil"]))[:4]
+        return {
+            "text": f"{theme_label.capitalize()} dizisinde {a}, {b}, {a}, {b}, ... örüntüsü var. Sıradaki {unit} hangisidir?",
+            "options": opts,
+            "correctAnswer": a,
+            "solution": _build_solution_lines([
+                f"Örüntü {a} ve {b} ile tekrar ediyor.",
+                f"{b} öğesinden sonra yine {a} gelir.",
+                f"Doğru cevap {a} şıkkıdır.",
+            ]),
+            "learningOutcome": "Tekrarlayan nesne örüntülerini sürdürür.",
+            "templateKey": "elementary-repeat",
+        }
+
+    increment = 2 if grade <= 2 else rng.choice([2, 5])
+    first = increment * rng.randint(1, 4)
+    seq = [first + increment * i for i in range(4)]
+    nxt = first + increment * 4
+    opts = list(dict.fromkeys([str(nxt), str(nxt + increment), str(nxt - increment), str(first)]))[:4]
+    return {
+        "text": f"{theme_label.capitalize()} üzerinde {', '.join(str(x) for x in seq)}, ... örüntüsü her adımda {increment} artmaktadır. Sıradaki sayı hangisidir?",
+        "options": opts,
+        "correctAnswer": str(nxt),
+        "solution": _build_solution_lines([
+            f"Her adımda {increment} ekleniyor.",
+            f"Son terim {seq[-1]}; devamı {nxt}.",
+            f"Doğru cevap {nxt} şıkkıdır.",
+        ]),
+        "learningOutcome": "Artan sayı örüntüsünde kuralı bulup devam ettirir.",
+        "templateKey": "elementary-increasing",
+    }
 
 
 def _seed_for(key: str) -> random.Random:
@@ -250,20 +384,37 @@ def _template_question(
     params: dict[str, Any],
     index: int,
 ) -> dict[str, Any]:
-    rng = _seed_for(f"tpl-{kind}-{params.get('topic')}-{index}")
+    class_level = str(params.get("classLevel") or "")
+    resolved = _resolve_template_kind(kind, class_level)
+    if resolved == "elementary":
+        base = _generate_elementary_pattern(class_level, str(params.get("difficulty") or "Orta"), f"el-{index}-{class_level}")
+        topic = str(params.get("topic") or "Örüntüler")
+        return {
+            **base,
+            "topic": topic,
+            "difficulty": params.get("difficulty") or "Orta",
+            "classLevel": class_level,
+            "subject": params.get("subject") or "Matematik",
+            "mebReference": MEB_REF,
+            "source": "AI",
+            "type": "multiple-choice",
+            "generatorMethod": "elementary-template",
+        }
+
+    rng = _seed_for(f"tpl-{resolved}-{params.get('topic')}-{index}")
     theme = _pick_theme(rng)
     difficulty = str(params.get("difficulty") or "Orta")
     lo, hi = _difficulty_params(difficulty)
     step = rng.randint(max(3, lo), hi)
 
-    if kind == "hexagon":
+    if resolved == "hexagon":
         base = _generate_hexagon(step, theme, difficulty)
-    elif kind == "triangle_perimeter":
+    elif resolved == "triangle_perimeter":
         side = rng.randint(2, 6)
         base = _generate_triangle_perimeter(step, side, theme)
-    elif kind == "algebraic_rule":
+    elif resolved == "algebraic_rule":
         base = _generate_algebraic_rule(theme, rng)
-    elif kind == "arithmetic":
+    elif resolved == "arithmetic":
         base = _generate_arithmetic(difficulty, theme, rng)
     else:
         base = _generate_arithmetic(difficulty, theme, rng)
@@ -294,14 +445,10 @@ def generate_questions_from_pool(payload: dict[str, Any]) -> dict[str, Any]:
         "classLevel": str(payload.get("classLevel") or "").strip(),
         "subject": str(payload.get("subject") or "Matematik").strip(),
     }
-    samples = [s for s in (payload.get("poolSamples") or []) if str(s.get("text") or "").strip()]
-    topic_lower = params["topic"].lower()
-
-    default_kind = "arithmetic"
-    if "örüntü" in topic_lower or "oruntu" in topic_lower:
-        default_kind = "arithmetic"
-    elif "geometri" in topic_lower:
-        default_kind = "triangle_perimeter"
+    raw_samples = [s for s in (payload.get("poolSamples") or []) if str(s.get("text") or "").strip()]
+    samples = _filter_pool_samples(raw_samples, params)
+    grade = _parse_grade(params["classLevel"])
+    default_kind = "elementary" if grade <= 4 else "arithmetic"
 
     questions: list[dict[str, Any]] = []
     seen_text: set[str] = set()
@@ -310,11 +457,15 @@ def generate_questions_from_pool(payload: dict[str, Any]) -> dict[str, Any]:
         q: dict[str, Any] | None = None
         if samples:
             sample = samples[i % len(samples)]
-            kind = _classify_sample(str(sample.get("text") or ""))
-            if kind in ("hexagon", "triangle_perimeter", "algebraic_rule", "arithmetic"):
-                q = _template_question(kind, params, i)
-            else:
+            if not _is_sample_too_advanced(str(sample.get("text") or ""), params["classLevel"]):
                 q = _variant_from_sample(sample, params, i)
+                if q and _is_sample_too_advanced(str(q.get("text") or ""), params["classLevel"]):
+                    q = None
+
+        if not q:
+            sample = samples[i % len(samples)] if samples else {}
+            kind = _classify_sample(str(sample.get("text") or "")) if samples else "generic"
+            q = _template_question(kind, params, i)
 
         if not q:
             q = _template_question(default_kind, params, i)
@@ -327,16 +478,19 @@ def generate_questions_from_pool(payload: dict[str, Any]) -> dict[str, Any]:
 
         q["subject"] = params["subject"]
         q["classLevel"] = params["classLevel"]
+        q["difficulty"] = params["difficulty"]
         q["type"] = "multiple-choice"
         if not q.get("learningOutcome"):
-            q["learningOutcome"] = "Havuz stiline uygun yeni soruyu çözer."
+            q["learningOutcome"] = "Sınıf düzeyine uygun örüntü sorusunu çözer."
         questions.append(q)
 
     pool_used = len(samples)
+    cls = params["classLevel"] or "sınıf"
+    diff = params["difficulty"] or "Orta"
     hint = (
-        f"Metin tabanlı havuzdaki {pool_used} örnekten esinlenilerek {len(questions)} yeni soru üretildi (görselli sorular örnek alınmadı)."
+        f"{cls} / {diff}: metin tabanlı havuzdaki {pool_used} uygun örnekten {len(questions)} soru üretildi."
         if pool_used
-        else f"Metin tabanlı havuz örneği yok; {len(questions)} soru yerel şablonlarla üretildi."
+        else f"{cls} / {diff}: uygun havuz örneği yok; sınıf düzeyine uygun şablonlar kullanıldı."
     )
 
     return {

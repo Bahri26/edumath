@@ -554,152 +554,39 @@ exports.generateQuiz = async (req, res) => {
       count,
       classLevel,
       subject: subjectRaw,
-      googleGrounding,
     } = req.body;
 
     if (!topic || !difficulty || !classLevel || !count) {
       return res.status(400).json({ message: 'Eksik alan: topic, difficulty, classLevel, count gerekli.' });
     }
 
-    if (isLocalAi()) {
-      const { generateQuestionsFromPool } = require('../services/poolBasedQuestionGeneratorService');
-      const subject =
-        typeof subjectRaw === 'string' && subjectRaw.trim() ? subjectRaw.trim() : 'Matematik';
-      const result = await generateQuestionsFromPool({
-        topic,
-        difficulty,
-        count,
-        classLevel,
-        subject,
-      });
-      return res.json({
-        questions: result.questions.map((q) => ({
-          ...q,
-          explanation: q.explanation || q.solution || '',
-          type: 'multiple-choice',
-          subject,
-          topic,
-          classLevel,
-          difficulty,
-        })),
-        hint: result.hint,
-        generator: result.generator,
-        poolSampleCount: result.poolSampleCount,
-      });
-    }
-
+    const { generateQuestionsFromPool } = require('../services/poolBasedQuestionGeneratorService');
     const subject =
-      typeof subjectRaw === 'string' && subjectRaw.trim()
-        ? subjectRaw.trim()
-        : 'Matematik';
+      typeof subjectRaw === 'string' && subjectRaw.trim() ? subjectRaw.trim() : 'Matematik';
 
-    const poolSamples = await fetchQuestionPoolSamples({
-      subject,
+    // Yerel motor: MongoDB havuz → ml-service → JS şablon (dış AI yok)
+    const result = await generateQuestionsFromPool({
       topic,
+      difficulty,
+      count,
       classLevel,
-      limit: 8,
-    });
-    const poolBlock = formatSamplesForPrompt(poolSamples, { textOnly: true });
-    const mebBlock = buildMebPromptBlock({ subject, topic, classLevel });
-    const outcomeHint = LEARNING_OUTCOME_BY_LABEL[topic]
-      ? `Oruntu alt konusunda MEB ile hizalı ilgili kazanım özeti: ${LEARNING_OUTCOME_BY_LABEL[topic]}`
-      : '';
-
-    const useGrounding =
-      googleGrounding !== false &&
-      String(process.env.GEMINI_GOOGLE_GROUNDING || '1').trim() !== '0';
-
-    const schema = {
-      description:
-        `MEB programi ve havuz uyumlu ${subject} coktan secmeli sorular (Google zeminlemesi kullanilirsa güvenilir web özetinden yararlan)`,
-      type: SchemaType.ARRAY,
-      items: {
-        type: SchemaType.OBJECT,
-        properties: {
-          text: {
-            type: SchemaType.STRING,
-            description:
-              'Soru metni; gerekli ise LaTeX $...$. Havuzdan birebir kopya yapma; yeni guvenilir taslak yaz.',
-          },
-          options: {
-            type: SchemaType.ARRAY,
-            items: { type: SchemaType.STRING },
-            description: 'Tam 4 secenek; yalnizca bir dogru',
-          },
-          correctAnswer: {
-            type: SchemaType.STRING,
-            description: 'Dogru sirada secenegin tam metni (options ile birebir ayni)',
-          },
-          explanation: {
-            type: SchemaType.STRING,
-            description:
-              'Kisa pedagogik cozum; gereksiz tekrardan kacin.',
-          },
-          mebReference: {
-            type: SchemaType.STRING,
-            description:
-              'MEB ogretim programi ile uyumlu kisa referans cumlesi (Alan/kazanım turu ile ilgili dus yapıcı ifade)',
-          },
-          learningOutcome: {
-            type: SchemaType.STRING,
-            description: 'Bu sorunun hedefledigi kazanima yakin tek cumle.',
-          },
-        },
-        required: ['text', 'options', 'correctAnswer', 'explanation'],
-      },
-    };
-
-    const prompt = `
-${mebBlock}
-
-GORUNTU / HAZIRLAYICI BILGI:
-Sinif: ${classLevel}
-Ders: ${subject}
-Unite/Konu: ${topic}
-Zorluk: ${difficulty}
-Uretilecek soru sayisi: ${Math.min(15, Math.max(1, Number(count) || 1))}
-${outcomeHint ? `\n${outcomeHint}\n` : ''}
-
-SORU BANKASINDAN (${subject}${classLevel !== 'Tümü' ? `, ${classLevel}` : ''} — yalnizca METIN tabanli sorular; gorsel/diyagramli sorular ornek degildir; TELIF/LITERAL KOPYA ETME):
-${poolBlock}
-
-GOREV:
-- Yukaridaki metin tabanli havuzdan SADECE yapı ve bilissel düzey fikir al; soru koklerini yeniden yaz, farkli baglam ve rakamlar kullan.
-- Gorsel/diyagram gerektiren soru uretme; tum sorular metin + 4 sik ile cozulebilir olsun.
-- ${useGrounding ? 'Google Search zeminlemesi kullaniliyorsa; tanimları ve güncel egitim uyumunu güvenilir acik kaynak ozetinden dogrula. Uydurma kesin yil veya madda numarasi yazma.' : 'Kaynak gerektiren tanimlari genel akademik doğruluga sadik kalerek yaz.'}
-- Her soru icin tam 4 secenek ve "correctAnswer" alanını secenklerden biri olarak doldur.
-- JSON olarak sadece dizi don.
-
-`.trim();
-
-    const parsedData = await generateContentAsJson({
-      genAI,
-      modelName: COMPLEX_MODEL_NAME,
-      prompt,
-      responseSchema: schema,
-      temperature: 0.28,
-      enableGoogleGrounding: useGrounding && Boolean(process.env.GEMINI_API_KEY),
+      subject,
     });
 
-    if (!Array.isArray(parsedData)) {
-      return res.status(502).json({ message: 'Gecersiz model ciktisi.' });
-    }
-
-    const formattedData = parsedData.map((q) => ({
-      ...q,
-      type: 'multiple-choice',
-      subject,
-      topic,
-      classLevel,
-    }));
-
-    res.json({
-      questions: formattedData,
-      hint: poolSamples.length
-        ? `Metin tabanlı havuzdaki ${poolSamples.length} örneğe benzer ${formattedData.length} yeni soru üretildi${useGrounding ? ' (Google arama ile müfredat doğrulandı)' : ''}.`
-        : `${formattedData.length} yeni soru üretildi (metin tabanlı havuz örneği yok; görselli sorular örnek alınmadı).`,
-      generator: 'gemini',
-      poolSampleCount: poolSamples.length,
+    return res.json({
+      questions: result.questions.map((q) => ({
+        ...q,
+        explanation: q.explanation || q.solution || '',
+        type: 'multiple-choice',
+        subject,
+        topic,
+        classLevel,
+        difficulty,
+      })),
+      hint: result.hint,
+      generator: result.generator,
+      pipeline: result.pipeline || 'db-ml-js',
+      poolSampleCount: result.poolSampleCount,
     });
   } catch (error) {
     console.error('Soru Üretme Hatası:', error);

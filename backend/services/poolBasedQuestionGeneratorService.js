@@ -7,6 +7,13 @@ const {
   fetchQuestionPoolRows,
   formatSamplesForPrompt,
 } = require('./questionPoolSamplesService');
+const {
+  filterPoolSamplesForGeneration,
+  resolveTemplateKind,
+  templateElementaryPattern,
+  isSampleTooAdvancedForGrade,
+  parseGradeFromClassLevel,
+} = require('./gradeAwareQuestionTemplates');
 const mlServiceClient = require('./mlServiceClient');
 const { solvePatternQuestion } = require('./patternQuestionSolver');
 const { generateFallbackPatternQuestions } = require('./aiQuestionGeneratorService');
@@ -209,7 +216,20 @@ function templateAlgebraicRule(seed, themeIdx) {
 }
 
 function templateQuestion(kind, params, index) {
-  const seed = `tpl-${kind}-${params.topic}-${index}`;
+  const resolvedKind = resolveTemplateKind(kind, params.classLevel);
+  if (resolvedKind === 'elementary') {
+    const seed = `el-${index}-${params.classLevel}-${params.difficulty}`;
+    return {
+      ...templateElementaryPattern(params.classLevel, params.difficulty, seed),
+      ...params,
+      mebReference: MEB_REF,
+      source: 'AI',
+      type: 'multiple-choice',
+      generatorMethod: 'elementary-template',
+    };
+  }
+
+  const seed = `tpl-${resolvedKind}-${params.topic}-${index}`;
   const themeIdx = seededIndex(seed, CONTEXT_THEMES.length);
   const [lo, hi] = difficultyRange(params.difficulty);
   const step = Math.max(3, lo + seededIndex(`${seed}-step`, hi - lo + 1));
@@ -218,11 +238,11 @@ function templateQuestion(kind, params, index) {
   if (kind === 'hexagon') {
     return { ...templateHexagon(step, themeIdx, params.difficulty), ...baseParams };
   }
-  if (kind === 'triangle_perimeter') {
+  if (resolvedKind === 'triangle_perimeter') {
     const side = 2 + seededIndex(`${seed}-side`, 5);
     return { ...templateTrianglePerimeter(step, side, themeIdx), ...baseParams };
   }
-  if (kind === 'algebraic_rule') {
+  if (resolvedKind === 'algebraic_rule') {
     return { ...templateAlgebraicRule(seed, themeIdx), ...baseParams };
   }
   return { ...templateArithmetic(params.difficulty, themeIdx, seed), ...baseParams };
@@ -231,9 +251,9 @@ function templateQuestion(kind, params, index) {
 function generateLocalFromPool({ poolSamples, topic, difficulty, count, classLevel, subject }) {
   const desired = Math.min(20, Math.max(1, Number(count) || 5));
   const params = { topic, difficulty, classLevel, subject: subject || 'Matematik' };
-  const samples = (poolSamples || []).filter((s) => String(s.text || '').trim());
-  const topicLower = String(topic || '').toLowerCase();
-  const defaultKind = /geometri/.test(topicLower) ? 'triangle_perimeter' : 'arithmetic';
+  const samples = filterPoolSamplesForGeneration(poolSamples, { classLevel, difficulty });
+  const grade = parseGradeFromClassLevel(classLevel);
+  const defaultKind = grade <= 4 ? 'elementary' : (/geometri/.test(String(topic || '').toLowerCase()) ? 'triangle_perimeter' : 'arithmetic');
 
   const questions = [];
   const seen = new Set();
@@ -242,12 +262,17 @@ function generateLocalFromPool({ poolSamples, topic, difficulty, count, classLev
     let q = null;
     if (samples.length) {
       const sample = samples[i % samples.length];
-      const kind = classifySample(sample.text);
-      if (kind !== 'generic') {
-        q = templateQuestion(kind, params, i);
-      } else {
+      if (!isSampleTooAdvancedForGrade(sample.text, classLevel)) {
         q = variantFromSample(sample, params, i);
+        if (q && isSampleTooAdvancedForGrade(q.text, classLevel)) {
+          q = null;
+        }
       }
+    }
+    if (!q) {
+      const sampleForKind = samples[i % Math.max(samples.length, 1)];
+      const rawKind = samples.length ? classifySample(sampleForKind?.text) : 'generic';
+      q = templateQuestion(rawKind, params, i);
     }
     if (!q) q = templateQuestion(defaultKind, params, i);
 
@@ -256,6 +281,8 @@ function generateLocalFromPool({ poolSamples, topic, difficulty, count, classLev
       q = templateQuestion(defaultKind, params, i + desired);
     }
     seen.add(key);
+    q.classLevel = classLevel;
+    q.difficulty = difficulty;
     questions.push(q);
   }
 
@@ -264,8 +291,8 @@ function generateLocalFromPool({ poolSamples, topic, difficulty, count, classLev
     generator: 'local-pool',
     poolSampleCount: samples.length,
     hint: samples.length
-      ? `Havuzdaki ${samples.length} metin tabanlı örnekten esinlenilerek ${questions.length} yeni soru üretildi (görselli sorular örnek alınmadı).`
-      : `Metin tabanlı havuz örneği yok; ${questions.length} soru yerel şablonlarla üretildi.`,
+      ? `${classLevel} / ${difficulty}: havuzdaki ${samples.length} uygun metin örneğinden ${questions.length} soru üretildi.`
+      : `${classLevel} / ${difficulty}: uygun havuz örneği yok; sınıf düzeyine uygun şablonlar kullanıldı.`,
   };
 }
 
@@ -281,6 +308,7 @@ async function generateQuestionsFromPool({
     subject,
     topic,
     classLevel,
+    difficulty,
     limit: poolLimit,
   });
 
@@ -298,8 +326,9 @@ async function generateQuestionsFromPool({
         return {
           questions: data.questions,
           generator: data.generator || 'ml-service',
+          pipeline: 'db-ml-js',
           poolSampleCount: data.poolSampleCount ?? poolSamples.length,
-          hint: data.hint || `Metin tabanlı havuz örneklerinden ${data.questions.length} soru üretildi.`,
+          hint: data.hint || `Metin tabanlı havuz örneklerinden ${data.questions.length} soru üretildi (ml-service).`,
           poolBlock: formatSamplesForPrompt(
             poolSamples.map((q) => ({
               summary: String(q.text || '').slice(0, 220),
@@ -346,6 +375,8 @@ async function generateQuestionsFromPool({
 
   return {
     ...local,
+    pipeline: 'db-js',
+    generator: local.generator || 'local-pool',
     questions: local.questions.map((q) => ({
       ...q,
       explanation: q.solution,

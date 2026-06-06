@@ -43,6 +43,8 @@ services:
         value: gemini-1.5-flash
       - key: GEMINI_COMPLEX_MODEL
         value: gemini-1.5-pro
+      - key: AI_PROVIDER
+        value: local
       # Kalıcı görsel: cloudinary (kolay) veya R2
       - key: STORAGE_PROVIDER
         sync: false
@@ -76,7 +78,7 @@ services:
       - key: ML_WEAK_TOPIC_THRESHOLD
         value: 0.55
       - key: ML_SERVICE_TIMEOUT_MS
-        value: 8000
+        value: 15000
 
   - type: web
     name: edumath-ml

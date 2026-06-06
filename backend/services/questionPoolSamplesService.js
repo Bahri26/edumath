@@ -35,7 +35,7 @@ function applyTextOnlyPoolClause(query) {
   });
 }
 
-function buildPoolBaseQuery({ subject, topic, classLevel, textOnly = true }) {
+function buildPoolBaseQuery({ subject, topic, classLevel, difficulty, textOnly = true }) {
   const query = {};
   const subj = String(subject || '').trim();
   if (subj && subj !== 'Tümü') {
@@ -43,6 +43,7 @@ function buildPoolBaseQuery({ subject, topic, classLevel, textOnly = true }) {
   }
   applyTopicClause(query, topic);
   applyClassLevelSafe(query, classLevel);
+  applyDifficultySafe(query, difficulty);
   if (textOnly) applyTextOnlyPoolClause(query);
   return query;
 }
@@ -51,6 +52,7 @@ async function fetchPoolQuestionDocs({
   subject,
   topic,
   classLevel,
+  difficulty,
   limit,
   textOnly = true,
 }) {
@@ -60,7 +62,7 @@ async function fetchPoolQuestionDocs({
   const selectFields =
     'text options correctAnswer solution topic difficulty learningOutcome subject classLevel image imageKey visualPrompt assessmentMeta';
 
-  let rows = await Question.find(buildPoolBaseQuery({ subject, topic, classLevel, textOnly }))
+  let rows = await Question.find(buildPoolBaseQuery({ subject, topic, classLevel, difficulty, textOnly }))
     .sort({ updatedAt: -1 })
     .limit(fetchLimit)
     .select(selectFields)
@@ -70,15 +72,34 @@ async function fetchPoolQuestionDocs({
     rows = rows.filter(isTextOnlyPoolQuestion);
   }
 
-  if (textOnly && rows.length < desired && classLevel && classLevel !== 'Tümü') {
-    const relaxed = buildPoolBaseQuery({ subject, topic, classLevel: null, textOnly });
-    const extra = await Question.find(relaxed)
+  const relaxSteps = [];
+  if (rows.length < desired && difficulty && difficulty !== 'Tümü') {
+    relaxSteps.push({ classLevel, difficulty: null });
+  }
+  if (rows.length < desired && classLevel && classLevel !== 'Tümü') {
+    relaxSteps.push({ classLevel: null, difficulty });
+  }
+  if (rows.length < desired) {
+    relaxSteps.push({ classLevel: null, difficulty: null });
+  }
+
+  const seen = new Set(rows.map((r) => String(r._id)));
+  for (const step of relaxSteps) {
+    if (rows.length >= desired) break;
+    const extra = await Question.find(
+      buildPoolBaseQuery({
+        subject,
+        topic,
+        classLevel: step.classLevel ?? classLevel,
+        difficulty: step.difficulty ?? difficulty,
+        textOnly,
+      })
+    )
       .sort({ updatedAt: -1 })
       .limit(fetchLimit)
       .select(selectFields)
       .lean();
-    const seen = new Set(rows.map((r) => String(r._id)));
-    for (const row of extra.filter(isTextOnlyPoolQuestion)) {
+    for (const row of (textOnly ? extra.filter(isTextOnlyPoolQuestion) : extra)) {
       if (!seen.has(String(row._id))) {
         rows.push(row);
         seen.add(String(row._id));
@@ -95,6 +116,13 @@ function applyClassLevelSafe(query, classLevel) {
     return;
   }
   query.classLevel = String(classLevel).trim();
+}
+
+function applyDifficultySafe(query, difficulty) {
+  if (!difficulty || difficulty === 'Tümü') {
+    return;
+  }
+  query.difficulty = String(difficulty).trim();
 }
 
 /** Konu filtresi: önce örüntü özel clause, yoksa konu için alt dize arama */
@@ -119,6 +147,7 @@ async function fetchQuestionPoolSamples({
   subject = 'Matematik',
   topic = '',
   classLevel,
+  difficulty,
   limit = 8,
   textOnly = true,
 } = {}) {
@@ -126,6 +155,7 @@ async function fetchQuestionPoolSamples({
     subject,
     topic,
     classLevel,
+    difficulty,
     limit: Math.min(20, Math.max(1, limit)),
     textOnly,
   });
@@ -158,6 +188,7 @@ async function fetchQuestionPoolRows({
   subject = 'Matematik',
   topic = '',
   classLevel,
+  difficulty,
   limit = 12,
   textOnly = true,
 } = {}) {
@@ -165,6 +196,7 @@ async function fetchQuestionPoolRows({
     subject,
     topic,
     classLevel,
+    difficulty,
     limit: Math.min(24, Math.max(1, limit)),
     textOnly,
   });

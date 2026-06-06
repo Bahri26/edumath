@@ -366,100 +366,15 @@ async function generatePatternQuestions({
   count = 5,
   topic = 'Örüntüler',
   subject = 'Matematik',
-  googleGrounding,
 } = {}) {
-  const { isLocalAi } = require('../config/aiProvider');
-  if (isLocalAi()) {
-    const { generateQuestionsFromPool } = require('./poolBasedQuestionGeneratorService');
-    return generateQuestionsFromPool({
-      classLevel,
-      difficulty,
-      count,
-      topic,
-      subject,
-      googleGrounding,
-    });
-  }
-
-  const client = getClient();
-  if (!client) {
-    const fb = await generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject });
-    return {
-      ...fb,
-      ...(fb.questions?.length ? { hint: 'GEMINI_API_KEY tanımlı değil; yerel paket kullanıldı.' } : {}),
-    };
-  }
-
-  let poolSamples = [];
-  try {
-    poolSamples = await fetchQuestionPoolSamples({
-      subject,
-      topic,
-      classLevel,
-      limit: 8,
-    });
-  } catch (e) {
-    console.warn('Havuz ornekleri alinamadi:', e.message);
-  }
-  const poolBlock = formatSamplesForPrompt(poolSamples);
-
-  const useGrounding =
-    googleGrounding !== false &&
-    String(process.env.GEMINI_GOOGLE_GROUNDING || '1').trim() !== '0';
-
-  const groundingLine = useGrounding
-    ? 'Google Search zemini kullaniliyorsa; MEB matematik öruntu kazanımları ve yaygın eğim tanımlarını güvenilir web özetlerinden doğrula; uydurma madde kodu yazma.'
-    : 'Genel akademik doğruluğa ve MEB bağlam blokuna uy.';
-
-  const prompt = buildPrompt({
+  const { generateQuestionsFromPool } = require('./poolBasedQuestionGeneratorService');
+  return generateQuestionsFromPool({
     classLevel,
     difficulty,
     count,
     topic,
     subject,
-    poolBlock,
-    groundingLine,
   });
-
-  let rawQuestions;
-  try {
-    rawQuestions = await generateContentAsJson({
-      genAI: client,
-      modelName: MODEL_NAME,
-      prompt,
-      responseSchema: getQuestionSchema(),
-      temperature: 0.22,
-      enableGoogleGrounding: useGrounding,
-    });
-  } catch (e) {
-    console.warn('Gemini üretimi basarisiz, yerel pakete dönülüyor:', e.message);
-    const fb = await generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject });
-    return { ...fb, ...(fb.questions?.length ? { hint: buildGeminiFallbackHint(e) } : {}) };
-  }
-
-  if (!Array.isArray(rawQuestions)) {
-    const fb = await generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject });
-    return {
-      ...fb,
-      ...(fb.questions?.length ? { hint: 'Geçersiz model çıktısı — yerel paket kullanıldı.' } : {}),
-    };
-  }
-
-  const questions = (await Promise.all(
-    rawQuestions.map((question) =>
-      sanitizeQuestion(question, { classLevel, difficulty, topic, subject })
-    )
-  )).filter(Boolean);
-
-  const out = { generator: 'gemini', questions };
-  if (!questions.length) {
-    const fb = await generateFallbackPatternQuestions({ classLevel, difficulty, count, topic, subject });
-    return {
-      ...fb,
-      ...(fb.questions?.length ? { hint: 'Üretilen sorular doğrulanamadı — yerel paket kullanıldı.' } : {}),
-    };
-  }
-  return out;
 }
 
 module.exports = {
