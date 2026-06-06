@@ -65,12 +65,13 @@ router.post('/analyze', aiController.analyzePerformance);
 // 5. Alıştırma (Öğrenci - Practice)
 router.post('/practice', aiController.generatePracticeQuestions);
 
-// Yerel ML: öğrenci konu istatistikleri (AI_PROVIDER=local)
+// Yerel ML: öğrenci konu istatistikleri (ml-service veya ml-matrix fallback)
 router.get('/student-insights', protect, async (req, res) => {
   try {
     const stats = await collectTopicStats(req.user.id);
     res.json({
       provider: getAiProvider(),
+      scoringProvider: stats.scoringProvider || 'local-matrix',
       weakTopics: stats.weakTopics,
       topics: stats.entries,
       suggested: Boolean(stats.suggested),

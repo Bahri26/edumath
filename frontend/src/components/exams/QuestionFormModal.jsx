@@ -2,11 +2,13 @@ import React, { useRef, useEffect, useState } from 'react';
 import { 
   X, Save, Loader2, Image as ImageIcon, 
   PlusCircle, Trash2, CheckCircle, Layers, 
-  Target, BookOpen, HelpCircle, Sparkles 
+  Target, BookOpen, HelpCircle, Sparkles, Wand2
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
+import SolutionDisplay from '../questions/SolutionDisplay.jsx';
+import { enrichQuestionForm, optionMatchesCorrect } from '../../utils/patternQuestionSolver';
 
 const QuestionFormModal = ({ 
   isOpen, onClose, editingId, manualForm, setManualForm, 
@@ -60,20 +62,61 @@ const QuestionFormModal = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lockedSubject]);
+
+  const applyAutoSolve = (showNotice = false) => {
+    const filledOptions = (form.options || []).filter((o) => String(o || '').trim());
+    if (!form.text?.trim() || filledOptions.length < 2) return false;
+
+    const enriched = enrichQuestionForm(form);
+    const changed = enriched.correctAnswer !== form.correctAnswer
+      || enriched.solution !== form.solution;
+    if (!changed) return false;
+
+    effectiveSetForm((prev) => ({
+      ...(prev || {}),
+      correctAnswer: enriched.correctAnswer,
+      solution: enriched.solution,
+    }));
+    if (showNotice) {
+      showToast('Doğru şık işaretlendi ve çözüm adımları eklendi.', 'success');
+    }
+    return true;
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const hasAnswer = String(form.correctAnswer || '').trim().length > 0;
+    const hasSolution = String(form.solution || '').trim().length > 0;
+    if (hasAnswer && hasSolution) return;
+
+    const timer = setTimeout(() => {
+      applyAutoSolve(false);
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, form.text, form.options, form.correctAnswer, form.solution]);
   
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!form.text?.trim() && !(effectiveMainImage && effectiveMainImage.file)) return showToast('Soru metni veya bir görsel gereklidir', 'error');
-    if (!form.correctAnswer?.trim()) return showToast('Lütfen doğru cevabı işaretleyin', 'error');
+
+    let submitForm = form;
+    if (!form.correctAnswer?.trim()) {
+      submitForm = enrichQuestionForm(form);
+      if (submitForm.correctAnswer !== form.correctAnswer || submitForm.solution !== form.solution) {
+        effectiveSetForm((prev) => ({ ...(prev || {}), ...submitForm }));
+      }
+    }
+    if (!submitForm.correctAnswer?.trim()) return showToast('Lütfen doğru cevabı işaretleyin', 'error');
 
     setIsSaving(true);
     try {
       const formData = new FormData();
-      Object.keys(form).forEach(key => {
+      Object.keys(submitForm).forEach(key => {
         if (key === 'options') {
-          form.options.forEach(opt => formData.append('options', opt));
+          submitForm.options.forEach(opt => formData.append('options', opt));
         } else {
-          formData.append(key, form[key]);
+          formData.append(key, submitForm[key]);
         }
       });
       if (effectiveMainImage && effectiveMainImage.file) formData.append('image', effectiveMainImage.file);
@@ -175,18 +218,37 @@ const QuestionFormModal = ({
 
           {/* 2. BÖLÜM: ŞIKLAR VE DOĞRU CEVAP */}
           <div className="space-y-4">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 ml-2">
-              <CheckCircle size={14} /> Şıklar ve Doğru Cevabı Belirleyin
-            </h4>
+            <div className="flex flex-wrap items-center justify-between gap-3 ml-2">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                <CheckCircle size={14} /> Şıklar ve Doğru Cevabı Belirleyin
+              </h4>
+              <button
+                type="button"
+                onClick={() => applyAutoSolve(true)}
+                className="text-[10px] font-black uppercase tracking-wider text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/30"
+              >
+                <Wand2 size={12} /> Çöz ve işaretle
+              </button>
+            </div>
+            {form.correctAnswer?.trim() ? (
+              <p className="text-xs font-bold text-emerald-600 ml-2">
+                Doğru şık işaretlendi: {form.options.findIndex((o) => optionMatchesCorrect(o, form.correctAnswer)) >= 0
+                  ? `${String.fromCharCode(65 + form.options.findIndex((o) => optionMatchesCorrect(o, form.correctAnswer)))}) ${form.correctAnswer}`
+                  : form.correctAnswer}
+              </p>
+            ) : null}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {form.options.map((opt, i) => (
-                <div key={i} className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${form.correctAnswer === opt && opt !== '' ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-100 dark:border-slate-700'}`}>
+              {form.options.map((opt, i) => {
+                const isCorrect = optionMatchesCorrect(opt, form.correctAnswer);
+                return (
+                <div key={i} className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${isCorrect ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-100 dark:border-slate-700'}`}>
                   <button 
                     type="button"
                     onClick={() => setField('correctAnswer', opt)}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs transition-all ${form.correctAnswer === opt && opt !== '' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-100 text-slate-400 dark:bg-slate-700'}`}
+                    title="Doğru cevap olarak işaretle"
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs transition-all ${isCorrect ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-100 text-slate-400 dark:bg-slate-700'}`}
                   >
-                    {String.fromCharCode(65 + i)}
+                    {isCorrect ? <CheckCircle size={14} /> : String.fromCharCode(65 + i)}
                   </button>
                   <input 
                     type="text"
@@ -194,13 +256,18 @@ const QuestionFormModal = ({
                     value={opt}
                     onChange={e => {
                       const newOpts = [...form.options];
+                      const prevVal = newOpts[i];
                       newOpts[i] = e.target.value;
-                      setField('options', newOpts);
+                      const updates = { options: newOpts };
+                      if (optionMatchesCorrect(prevVal, form.correctAnswer)) {
+                        updates.correctAnswer = e.target.value;
+                      }
+                      effectiveSetForm((prev) => ({ ...(prev || {}), ...updates }));
                     }}
                     placeholder={`Şık ${i+1}...`}
                   />
                 </div>
-              ))}
+              );})}
             </div>
           </div>
 
@@ -243,15 +310,21 @@ const QuestionFormModal = ({
 
              <div className="lg:col-span-3 space-y-3">
                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 ml-2">
-                 <Target size={14} /> Çözüm ve Açıklama (İsteğe bağlı)
+                 <Target size={14} /> Çözüm adımları (isteğe bağlı)
                </label>
                <textarea
-                 rows={4}
-                 className="w-full p-5 bg-slate-50 dark:bg-slate-900 rounded-[2rem] border-none outline-none font-medium italic text-sm text-slate-600 dark:text-slate-300"
+                 rows={5}
+                 className="w-full p-5 bg-slate-50 dark:bg-slate-900 rounded-[2rem] border-none outline-none font-medium text-sm text-slate-600 dark:text-slate-300"
                  value={form.solution}
                  onChange={e => setField('solution', e.target.value)}
-                 placeholder="Öğrenciler için sorunun nasıl çözüldüğünü buraya ekleyebilirsiniz..."
+                 placeholder="Her satıra bir adım yazın. Örn:&#10;1. Örüntüde 5. adımda 5 üçgen vardır.&#10;2. Çevre = 12 + 4×(5−1) = 28 cm.&#10;3. Doğru cevap D) 28."
                />
+               {form.solution?.trim() ? (
+                 <div className="rounded-2xl border border-slate-200 dark:border-slate-600 bg-white/80 dark:bg-slate-900/40 p-4">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Önizleme</p>
+                   <SolutionDisplay text={form.solution} />
+                 </div>
+               ) : null}
              </div>
           </div>
         </form>

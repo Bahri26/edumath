@@ -2,6 +2,7 @@ const Tesseract = require('tesseract.js');
 const pathLib = require('path');
 const { isLocalAi, isOllamaAi } = require('../config/aiProvider');
 const { extractQuestionImageRegions } = require('./questionImageCropService');
+const { enrichParsedQuestion } = require('./patternQuestionSolver');
 
 function buildDefaultParsedQuestion(overrides = {}) {
   return {
@@ -241,7 +242,7 @@ function parseStructuredQuestionText(content, defaults = {}) {
 
   const layout = buildParseLayout(questionTextLines, normalizedOptions, separated);
 
-  return {
+  const base = {
     ...buildDefaultParsedQuestion({
       ...defaults,
       text,
@@ -261,6 +262,8 @@ function parseStructuredQuestionText(content, defaults = {}) {
       source: 'smart-parse',
     },
   };
+
+  return enrichParsedQuestion(base);
 }
 
 async function extractTextFromImageWithOcr(filePath) {

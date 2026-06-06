@@ -8,6 +8,7 @@ const Lesson = require('../models/Lesson');
 const Topic = require('../models/Topic');
 const User = require('../models/User');
 const { Matrix } = require('ml-matrix');
+const mlServiceClient = require('./mlServiceClient');
 
 const WEAK_THRESHOLD = Number(process.env.ML_WEAK_TOPIC_THRESHOLD || 0.55);
 
@@ -63,9 +64,87 @@ function pushTopicStat(map, topic, isCorrect, timeMs = 0) {
   if (timeMs > 0) map[key].timeMs += timeMs;
 }
 
+function buildRawTopicEntries(topicMap) {
+  return Object.entries(topicMap).map(([topic, s]) => {
+    const accuracy = s.total > 0 ? s.correct / s.total : 0.5;
+    const avgTime = s.total > 0 ? s.timeMs / s.total : 0;
+    return {
+      topic,
+      total: s.total,
+      correct: s.correct,
+      accuracy,
+      avgTimeMs: avgTime,
+      mastery: Math.round(accuracy * 100),
+    };
+  });
+}
+
+function scoreEntriesWithLocalMatrix(entries) {
+  const maxAttempts = Math.max(1, ...entries.map((e) => e.total));
+  const maxTime = Math.max(1, ...entries.map((e) => e.avgTimeMs));
+
+  const rows = entries.map((e) => [
+    e.accuracy,
+    1 - Math.min(1, e.avgTimeMs / maxTime),
+    e.total / maxAttempts,
+  ]);
+
+  const matrix = new Matrix(rows);
+  const ideal = new Matrix([[1, 1, 1]]);
+
+  const scored = entries.map((entry, i) => {
+    const row = matrix.getRow(i);
+    const dist = Math.sqrt(
+      row.reduce((sum, v, j) => sum + (v - ideal.get(0, j)) ** 2, 0)
+    );
+    const priority = Math.min(1, dist / Math.sqrt(3));
+    return {
+      ...entry,
+      distanceFromIdeal: Number(dist.toFixed(3)),
+      priorityScore: Number(priority.toFixed(3)),
+      isWeak: entry.accuracy < WEAK_THRESHOLD,
+    };
+  });
+
+  scored.sort((a, b) => b.priorityScore - a.priorityScore);
+  const weakTopics = scored.filter((s) => s.isWeak).map((s) => s.topic);
+
+  return {
+    entries: scored,
+    matrix,
+    weakTopics: weakTopics.length ? weakTopics : scored.slice(0, 2).map((s) => s.topic),
+    scoringProvider: 'local-matrix',
+  };
+}
+
+async function scoreEntries(entries, { limit = 5 } = {}) {
+  if (mlServiceClient.isConfigured()) {
+    try {
+      const result = await mlServiceClient.analyzeTopics(entries, {
+        limit,
+        weakThreshold: WEAK_THRESHOLD,
+      });
+      const scored = result.topics || [];
+      const weakTopics = result.weakTopics?.length
+        ? result.weakTopics
+        : scored.filter((s) => s.isWeak).map((s) => s.topic);
+
+      return {
+        entries: scored,
+        matrix: null,
+        weakTopics: weakTopics.length ? weakTopics : scored.slice(0, 2).map((s) => s.topic),
+        scoringProvider: 'ml-service',
+      };
+    } catch (err) {
+      console.warn('ML service scoring failed, using local matrix:', err.message);
+    }
+  }
+
+  return scoreEntriesWithLocalMatrix(entries);
+}
+
 /**
- * Öğrenci cevaplarından konu bazlı özellik matrisi (ml-matrix).
- * Sütunlar: doğruluk oranı, ortalama süre (normalize), deneme sayısı (normalize)
+ * Öğrenci cevaplarından konu bazlı istatistik toplar; skorlama ml-service veya ml-matrix ile yapılır.
  */
 async function collectTopicStats(studentId) {
   const oid = toObjectId(studentId);
@@ -154,18 +233,7 @@ async function collectTopicStats(studentId) {
     }
   }
 
-  let entries = Object.entries(topicMap).map(([topic, s]) => {
-    const accuracy = s.total > 0 ? s.correct / s.total : 0.5;
-    const avgTime = s.total > 0 ? s.timeMs / s.total : 0;
-    return {
-      topic,
-      total: s.total,
-      correct: s.correct,
-      accuracy,
-      avgTimeMs: avgTime,
-      mastery: Math.round(accuracy * 100),
-    };
-  });
+  let entries = buildRawTopicEntries(topicMap);
 
   let suggested = false;
   if (entries.length === 0 && oid) {
@@ -174,7 +242,14 @@ async function collectTopicStats(studentId) {
   }
 
   if (entries.length === 0) {
-    return { entries: [], matrix: null, weakTopics: [], suggested: false, hasActivity: false };
+    return {
+      entries: [],
+      matrix: null,
+      weakTopics: [],
+      suggested: false,
+      hasActivity: false,
+      scoringProvider: mlServiceClient.isConfigured() ? 'ml-service' : 'local-matrix',
+    };
   }
 
   if (suggested) {
@@ -185,42 +260,13 @@ async function collectTopicStats(studentId) {
       weakTopics,
       suggested: true,
       hasActivity: false,
+      scoringProvider: 'curriculum-suggestion',
     };
   }
 
-  const maxAttempts = Math.max(1, ...entries.map((e) => e.total));
-  const maxTime = Math.max(1, ...entries.map((e) => e.avgTimeMs));
-
-  const rows = entries.map((e) => [
-    e.accuracy,
-    1 - Math.min(1, e.avgTimeMs / maxTime),
-    e.total / maxAttempts,
-  ]);
-
-  const matrix = new Matrix(rows);
-  const ideal = new Matrix([[1, 1, 1]]);
-
-  const scored = entries.map((entry, i) => {
-    const row = matrix.getRow(i);
-    const dist = Math.sqrt(
-      row.reduce((sum, v, j) => sum + (v - ideal.get(0, j)) ** 2, 0)
-    );
-    const priority = Math.min(1, dist / Math.sqrt(3));
-    return {
-      ...entry,
-      distanceFromIdeal: Number(dist.toFixed(3)),
-      priorityScore: Number(priority.toFixed(3)),
-      isWeak: entry.accuracy < WEAK_THRESHOLD,
-    };
-  });
-
-  scored.sort((a, b) => b.priorityScore - a.priorityScore);
-  const weakTopics = scored.filter((s) => s.isWeak).map((s) => s.topic);
-
+  const scored = await scoreEntries(entries);
   return {
-    entries: scored,
-    matrix,
-    weakTopics: weakTopics.length ? weakTopics : scored.slice(0, 2).map((s) => s.topic),
+    ...scored,
     suggested: false,
     hasActivity: true,
   };
@@ -234,5 +280,7 @@ async function getWeakTopics(studentId) {
 module.exports = {
   collectTopicStats,
   getWeakTopics,
+  scoreEntries,
+  scoreEntriesWithLocalMatrix,
   WEAK_THRESHOLD,
 };

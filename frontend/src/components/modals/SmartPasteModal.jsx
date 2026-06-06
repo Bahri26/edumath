@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { X, Sparkles, Loader2, Image as ImageIcon, Check, ArrowRight } from 'lucide-react';
+import { X, Sparkles, Loader2, Image as ImageIcon, Check, ArrowRight, Wand2, CheckCircle } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { describeApiError } from '../../utils/errorMessage';
 import apiClient, { resolveAssetUrl } from '../../services/api';
 import { smartParseImage, smartParseText } from '../../services/aiService';
 import Button from '../ui/Button.jsx';
+import { enrichQuestionForm, optionMatchesCorrect } from '../../utils/patternQuestionSolver';
 
 const stripDiagramPlaceholder = (text) =>
   String(text || '').replace(/\n*\[Şekil:[^\]]+\]\s*/gi, '').trim();
@@ -17,7 +18,7 @@ const mapServerParseToForm = (data = {}, layout = null) => {
   const question = data.questionText ?? layout?.questionLine ?? stripDiagramPlaceholder(data.text);
   const steps = Array.isArray(data.stepLabels) ? data.stepLabels : (layout?.stepLabels || []);
   const stepLabels = steps.join(' · ');
-  return {
+  return enrichQuestionForm({
     text: buildCombinedQuestionText({ introText: intro, questionText: question }),
     introText: intro,
     questionText: question,
@@ -32,7 +33,7 @@ const mapServerParseToForm = (data = {}, layout = null) => {
     difficulty: data.difficulty || 'Orta',
     imagePath: data.imagePath || '',
     assessmentMeta: data.assessmentMeta || null,
-  };
+  });
 };
 
 const buildSavePayload = (parsedData, parseLayout) => {
@@ -233,7 +234,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         options = options.concat(Array(2 - options.length).fill(''));
       }
 
-      const parsed = {
+      const parsed = enrichQuestionForm({
         text: questionText,
         options,
         correctAnswer,
@@ -242,7 +243,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         subject: parsedData.subject || 'Matematik',
         classLevel: parsedData.classLevel || '9. Sınıf',
         difficulty: parsedData.difficulty || 'Orta'
-      };
+      });
 
       setParsedData(parsed);
       setStep('editing');
@@ -472,27 +473,51 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
 
               <div className="space-y-5">
                 <section className="rounded-[1.75rem] border-2 border-emerald-200/90 bg-emerald-50/25 dark:bg-emerald-950/20 p-5 space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 dark:text-emerald-200">3 · Şıklar ve doğru cevap</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 dark:text-emerald-200">3 · Şıklar ve doğru cevap</p>
+                    <button
+                      type="button"
+                      onClick={() => setParsedData(enrichQuestionForm(parsedData))}
+                      className="text-[10px] font-black uppercase text-emerald-700 flex items-center gap-1 px-2 py-1 rounded-lg bg-white/70 dark:bg-slate-900/50"
+                    >
+                      <Wand2 size={12} /> Çöz ve işaretle
+                    </button>
+                  </div>
+                  {parsedData.correctAnswer?.trim() ? (
+                    <p className="text-xs font-bold text-emerald-700">
+                      Doğru şık: {parsedData.options.findIndex((o) => optionMatchesCorrect(o, parsedData.correctAnswer)) >= 0
+                        ? `${String.fromCharCode(65 + parsedData.options.findIndex((o) => optionMatchesCorrect(o, parsedData.correctAnswer)))}) ${parsedData.correctAnswer}`
+                        : parsedData.correctAnswer}
+                    </p>
+                  ) : null}
                   <div className="space-y-3">
-                    {parsedData.options.map((opt, idx) => (
-                      <div key={idx} className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${parsedData.correctAnswer === opt ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-100 dark:border-slate-700'}`}>
+                    {parsedData.options.map((opt, idx) => {
+                      const isCorrect = optionMatchesCorrect(opt, parsedData.correctAnswer);
+                      return (
+                      <div key={idx} className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${isCorrect ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-100 dark:border-slate-700'}`}>
                         <button 
+                          type="button"
                           onClick={() => setParsedData({...parsedData, correctAnswer: opt})}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${parsedData.correctAnswer === opt ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'}`}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'}`}
                         >
-                          {String.fromCharCode(65 + idx)}
+                          {isCorrect ? <CheckCircle size={14} /> : String.fromCharCode(65 + idx)}
                         </button>
                         <input 
                           value={opt} 
                           onChange={e => {
                             const newOpts = [...parsedData.options];
+                            const prevVal = newOpts[idx];
                             newOpts[idx] = e.target.value;
-                            setParsedData({...parsedData, options: newOpts});
+                            const next = { ...parsedData, options: newOpts };
+                            if (optionMatchesCorrect(prevVal, parsedData.correctAnswer)) {
+                              next.correctAnswer = e.target.value;
+                            }
+                            setParsedData(next);
                           }}
                           className="bg-transparent border-none outline-none text-sm font-bold flex-1"
                         />
                       </div>
-                    ))}
+                    );})}
                   </div>
                 </section>
                 {/* Konu, Zorluk, Sınıf */}

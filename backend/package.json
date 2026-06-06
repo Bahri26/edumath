@@ -12,6 +12,7 @@
     "seed:sample-questions": "node scripts/seed/seedSampleQuestions.js",
     "verify:pattern-images": "node scripts/tools/verifyPatternImageMappings.js",
     "verify:gemini": "node scripts/tools/verifyGeminiKey.js",
+    "verify:ml-service": "node scripts/tools/verifyMlService.js",
     "generate:ai-pattern-pack": "node scripts/tools/generateAIPatternQuestionPack.js",
     "tool:approve-branch": "node scripts/tools/approveBranch.js",
     "tool:make-token": "node scripts/tools/makeToken.js",

@@ -118,6 +118,7 @@ app.use(mongoSanitize);
 
 // Resimler için Uploads klasörünü dışarı aç
 const { ensureLocalUploadDirs, getStorageStatus } = require('./services/storageService');
+const mlServiceClient = require('./services/mlServiceClient');
 ensureLocalUploadDirs();
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Geriye dönük uyumluluk: eski kayıtlar /api/uploads ile gelebilir
@@ -250,7 +251,17 @@ app.get('/', (req, res) => {
 });
 
 // Sağlık kontrolü (Health Check)
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
+    const ml = mlServiceClient.getStatusSync();
+    let mlHealth = { ...ml, status: ml.configured ? 'unknown' : 'disabled' };
+    if (ml.configured) {
+        try {
+            mlHealth = await mlServiceClient.checkHealth({ timeoutMs: 2500 });
+        } catch {
+            mlHealth = { ...ml, reachable: false, status: 'down' };
+        }
+    }
+
     res.json({
         status: 'ok',
         uptime: process.uptime(),
@@ -258,6 +269,7 @@ app.get('/health', (req, res) => {
         port: process.env.PORT || 8000,
         env: process.env.NODE_ENV || 'development',
         storage: getStorageStatus(),
+        mlService: mlHealth,
     });
 });
 

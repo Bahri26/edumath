@@ -24,6 +24,7 @@ import {
   PATTERN_TOPIC_ALL_UNDER,
   sortPatternTopicsUi,
 } from '../../constants/patternTopicsUi';
+import { enrichQuestionForm } from '../../utils/patternQuestionSolver';
 
 const MATH_TOPIC_OPTIONS_FALLBACK = [
   'Tümü',
@@ -594,7 +595,7 @@ export default function QuestionBank() {
               profile.branchApproval === 'approved'
                 ? (profile.branch || 'Matematik')
                 : (parsed.subject || 'Matematik');
-            setManualForm({
+            const enriched = enrichQuestionForm({
               text: parsed.text || '',
               subject: resolvedSubject,
               topic: resolvedSubject === 'Matematik' ? (parsed.topic || PATTERN_TOPIC_ORDER[0]) : (parsed.topic || ''),
@@ -605,6 +606,7 @@ export default function QuestionBank() {
               solution: parsed.solution || '',
               options: Array.isArray(parsed.options) ? parsed.options.concat(Array(5).fill('')).slice(0,5) : ['', '', '', '', '']
             });
+            setManualForm(enriched);
             if (imageFile) {
               const preview = URL.createObjectURL(imageFile);
               setMainImage({ file: imageFile, preview });

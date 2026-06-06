@@ -17,6 +17,7 @@ const copy = {
   TR: {
     title: 'Geliştirmen gereken konular',
     subtitle: 'Yerel analiz — sınav ve çalışmalarına göre',
+    subtitleMl: 'ML analizi — sınav ve çalışmalarına göre',
     empty: 'Henüz konu listesi yüklenemedi. Biraz sonra tekrar dene veya öğretmenin konuları eklediğinden emin ol.',
     suggestedHint: 'Henüz yeterli sınav/çalışma verin yok. Sınıfına uygun konulardan başlaman için öneriler:',
     loading: 'Konular analiz ediliyor…',
@@ -31,6 +32,7 @@ const copy = {
   EN: {
     title: 'Topics to improve',
     subtitle: 'Local analysis from your quizzes and practice',
+    subtitleMl: 'ML analysis from your quizzes and practice',
     empty: 'Could not load topics. Try again later or ask your teacher to add topics.',
     suggestedHint: 'Not enough quiz data yet. Suggested topics to start with:',
     loading: 'Analyzing topics…',
@@ -63,6 +65,7 @@ export default function WeakTopicsInsightCard({
     topics: [],
     suggested: false,
     hasActivity: false,
+    scoringProvider: 'local-matrix',
   });
   const [practiceLoading, setPracticeLoading] = useState(false);
   const [practiceQuestions, setPracticeQuestions] = useState(null);
@@ -79,6 +82,7 @@ export default function WeakTopicsInsightCard({
           topics: Array.isArray(data?.topics) ? data.topics : [],
           suggested: Boolean(data?.suggested),
           hasActivity: Boolean(data?.hasActivity),
+          scoringProvider: data?.scoringProvider || 'local-matrix',
         });
       } catch {
         if (!cancelled) setInsights({ weakTopics: [], topics: [] });
@@ -134,7 +138,9 @@ export default function WeakTopicsInsightCard({
               {getText('title')}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {insights.suggested ? getText('suggestedHint') : getText('subtitle')}
+              {insights.suggested
+                ? getText('suggestedHint')
+                : getText(insights.scoringProvider === 'ml-service' ? 'subtitleMl' : 'subtitle')}
             </p>
           </div>
         </div>
