@@ -190,6 +190,18 @@ async function parseQuestionText(ocrText, defaults = {}) {
   return data?.data || null;
 }
 
+async function generateQuestionsFromPool(payload = {}) {
+  const data = await request('/questions/generate-from-pool', {
+    topic: payload.topic || '',
+    difficulty: payload.difficulty || 'Orta',
+    count: Number(payload.count) || 5,
+    classLevel: payload.classLevel || '',
+    subject: payload.subject || 'Matematik',
+    poolSamples: Array.isArray(payload.poolSamples) ? payload.poolSamples : [],
+  }, { timeoutMs: Number(process.env.ML_SERVICE_TIMEOUT_MS || 15000) });
+  return data?.data || data || null;
+}
+
 function getStatusSync() {
   return {
     configured: isConfigured(),
@@ -206,6 +218,7 @@ module.exports = {
   enrichQuestion,
   solveQuestion,
   parseQuestionText,
+  generateQuestionsFromPool,
   getStatusSync,
   toMlTopicEntry,
   fromMlTopicRow,

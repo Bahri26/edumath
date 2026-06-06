@@ -370,8 +370,8 @@ async function generatePatternQuestions({
 } = {}) {
   const { isLocalAi } = require('../config/aiProvider');
   if (isLocalAi()) {
-    const { generateLocalPatternPack } = require('./localQuestionService');
-    return generateLocalPatternPack({
+    const { generateQuestionsFromPool } = require('./poolBasedQuestionGeneratorService');
+    return generateQuestionsFromPool({
       classLevel,
       difficulty,
       count,

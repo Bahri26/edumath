@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from services.health import health_payload
 from services.question_analyze import analyze_question
+from services.question_generate import generate_questions_from_pool
 from services.question_parse import enrich_question, parse_structured_question_text
 from services.question_solver import solve_pattern_question
 from services.weak_topics import rank_weak_topics, score_topic_entries
@@ -66,6 +67,27 @@ class ParseTextRequest(BaseModel):
     defaults: dict[str, Any] = Field(default_factory=dict)
 
 
+class PoolSample(BaseModel):
+    text: str = ""
+    options: list[str] = Field(default_factory=list)
+    correctAnswer: str = ""
+    solution: str = ""
+    topic: str = ""
+    difficulty: str = ""
+    learningOutcome: str = ""
+    subject: str = ""
+    classLevel: str = ""
+
+
+class GenerateFromPoolRequest(BaseModel):
+    topic: str = ""
+    difficulty: str = "Orta"
+    count: int = Field(default=5, ge=1, le=20)
+    classLevel: str = ""
+    subject: str = "Matematik"
+    poolSamples: list[PoolSample] = Field(default_factory=list)
+
+
 def _check_api_key(x_api_key: str | None) -> None:
     if not API_KEY:
         return
@@ -83,6 +105,7 @@ def health() -> dict[str, Any]:
         "question-parse",
         "question-analyze",
         "question-enrich",
+        "question-generate-from-pool",
     ]
     payload["engine"] = "edumath-local"
     return payload
@@ -153,6 +176,18 @@ def questions_enrich(
     _check_api_key(x_api_key)
     data = enrich_question(body.model_dump())
     return {"success": True, "data": data, "engine": "edumath-local"}
+
+
+@app.post("/questions/generate-from-pool")
+def questions_generate_from_pool(
+    body: GenerateFromPoolRequest,
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+) -> dict[str, Any]:
+    """Soru havuzundan esinlenerek yeni sorular üret (birebir kopya yok)."""
+    _check_api_key(x_api_key)
+    payload = body.model_dump()
+    result = generate_questions_from_pool(payload)
+    return {"success": True, "data": result, "engine": "edumath-local"}
 
 
 if __name__ == "__main__":

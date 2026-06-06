@@ -70,6 +70,45 @@ async function fetchQuestionPoolSamples({
   });
 }
 
+/**
+ * Üretim için tam soru satırları (metin + şıklar + cevap).
+ */
+async function fetchQuestionPoolRows({
+  subject = 'Matematik',
+  topic = '',
+  classLevel,
+  limit = 12,
+} = {}) {
+  const query = {};
+  const subj = String(subject || '').trim();
+  if (subj && subj !== 'Tümü') {
+    query.subject = { $regex: `^${escapeRegex(subj)}$`, $options: 'i' };
+  }
+  applyTopicClause(query, topic);
+  applyClassLevelSafe(query, classLevel);
+
+  const rows = await Question.find(query)
+    .sort({ updatedAt: -1 })
+    .limit(Math.min(24, Math.max(1, limit)))
+    .select('text options correctAnswer solution topic difficulty learningOutcome subject classLevel')
+    .lean();
+
+  return rows.map((q) => ({
+    text: String(q.text || '').trim(),
+    options: (q.options || [])
+      .map((o) => (typeof o === 'string' ? o : o?.text))
+      .filter(Boolean)
+      .slice(0, 4),
+    correctAnswer: String(q.correctAnswer || '').trim(),
+    solution: String(q.solution || '').trim(),
+    topic: q.topic || '',
+    difficulty: q.difficulty || '',
+    learningOutcome: q.learningOutcome || '',
+    subject: q.subject || subject,
+    classLevel: q.classLevel || classLevel || '',
+  }));
+}
+
 function formatSamplesForPrompt(samples) {
   if (!samples?.length) {
     return 'Havuzda bu filtrelerle ornek bulunamadi; yalnizca MEB programi ve genel pedagojik kurallara gore uret.';
@@ -81,5 +120,6 @@ function formatSamplesForPrompt(samples) {
 
 module.exports = {
   fetchQuestionPoolSamples,
+  fetchQuestionPoolRows,
   formatSamplesForPrompt,
 };

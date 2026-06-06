@@ -37,6 +37,25 @@ async function main() {
   if (!enriched?.correctAnswer) {
     console.warn('Enrich did not produce correctAnswer (solver may not match sample)');
   }
+
+  const generated = await mlServiceClient.generateQuestionsFromPool({
+    topic: 'Örüntüler',
+    difficulty: 'Orta',
+    count: 2,
+    classLevel: '5. Sınıf',
+    subject: 'Matematik',
+    poolSamples: [
+      {
+        text: 'Mozaik tablosunda 8, 13, 18, 23 örüntüsünün 9. terimi kaçtır?',
+        options: ['48', '43', '53', '38'],
+        correctAnswer: '48',
+        topic: 'Örüntüler',
+        difficulty: 'Orta',
+      },
+    ],
+  });
+
+  console.log('Generate from pool:', JSON.stringify(generated, null, 2));
 }
 
 main().catch((err) => {

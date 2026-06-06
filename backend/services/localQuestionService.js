@@ -1,9 +1,5 @@
 const Question = require('../models/Question');
 const { buildTopicMongoClause } = require('../constants/patternTopics');
-const {
-  generateFallbackPatternQuestions,
-} = require('./aiQuestionGeneratorService');
-
 const escapeRegex = (value = '') =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -86,52 +82,22 @@ async function sampleQuestionsFromPool({
   return rows.map((q, i) => formatQuestionDoc(q, i));
 }
 
+const {
+  generateQuestionsFromPool,
+} = require('./poolBasedQuestionGeneratorService');
+
 async function generateLocalQuiz({ topic, difficulty, count, classLevel, subject }) {
-  const fromDb = await sampleQuestionsFromPool({
-    subject,
+  return generateQuestionsFromPool({
     topic,
-    classLevel,
     difficulty,
     count,
-  });
-
-  if (fromDb.length >= Math.min(3, Number(count) || 5)) {
-    return {
-      questions: fromDb.slice(0, count),
-      generator: 'local-db',
-      hint: 'Sorular yerel soru bankasından seçildi.',
-    };
-  }
-
-  const fb = await generateFallbackPatternQuestions({
     classLevel,
-    difficulty,
-    count,
-    topic,
     subject,
   });
-
-  return {
-    questions: (fb.questions || []).map((q, i) => formatQuestionDoc(q, i)),
-    generator: fb.generator || 'local-fallback',
-    hint: 'Soru bankası yetersiz; yerel şablon paketi kullanıldı.',
-  };
 }
 
 async function generateLocalPatternPack(params) {
-  const fromDb = await sampleQuestionsFromPool(params);
-  if (fromDb.length >= Math.min(3, Number(params.count) || 5)) {
-    return {
-      generator: 'local-db',
-      questions: fromDb,
-      hint: 'Örüntü soruları yerel bankadan seçildi.',
-    };
-  }
-  const fb = await generateFallbackPatternQuestions(params);
-  return {
-    ...fb,
-    hint: fb.hint || 'Yerel örüntü şablon paketi kullanıldı.',
-  };
+  return generateQuestionsFromPool(params);
 }
 
 async function generateLocalPractice({ weakTopics, count = 5, studentId }) {

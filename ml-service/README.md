@@ -53,6 +53,7 @@ Servis varsayılan olarak `http://localhost:8100` adresinde açılır.
 | POST | `/questions/parse-text` | OCR metnini ayrıştır |
 | POST | `/questions/analyze` | Konu / zorluk / etiket |
 | POST | `/questions/enrich` | Ayrıştır + analiz + çözüm (tek çağrı) |
+| POST | `/questions/generate-from-pool` | Havuz stiline göre yeni soru üret |
 
 ### Örnek: soru zenginleştirme
 

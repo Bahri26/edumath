@@ -37,11 +37,13 @@ export default function AiGenerateQuizModal({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generated, setGenerated] = useState([]);
+  const [generateHint, setGenerateHint] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
     setStep('form');
     setGenerated([]);
+    setGenerateHint('');
     const fd = filterDefaults || {};
     setTopic(resolveDefaultTopic(fd));
     setClassLevel(fd.classLevel && fd.classLevel !== 'Tümü' ? fd.classLevel : '9. Sınıf');
@@ -79,14 +81,16 @@ export default function AiGenerateQuizModal({
         subject: resolvedSubject,
         googleGrounding: useGoogleGrounding,
       });
-      const list = Array.isArray(raw) ? raw : [];
+      const list = Array.isArray(raw?.questions) ? raw.questions : Array.isArray(raw) ? raw : [];
+      const hint = raw?.hint || raw?.meta?.hint || '';
       if (!list.length) {
         showToast('Üretilen soru bulunamadı.', 'error');
         return;
       }
       setGenerated(list);
+      setGenerateHint(hint);
       setStep('preview');
-      showToast(`${list.length} soru üretildi.`, 'success');
+      showToast(hint || `${list.length} soru üretildi.`, 'success');
     } catch (err) {
       showToast(describeApiError(err, 'Soru üretilemedi.'), 'error');
     } finally {
@@ -189,6 +193,7 @@ export default function AiGenerateQuizModal({
                 />
                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   Ders: <span className="font-bold text-slate-700 dark:text-slate-200">{resolvedSubject}</span> — üretilen sorular bu branşa kaydedilir.
+                  Soru havuzunuzdaki örneklerden esinlenilir; birebir kopya yapılmaz.
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -249,6 +254,12 @@ export default function AiGenerateQuizModal({
               </label>
             </>
           ) : (
+            <>
+              {generateHint && (
+                <p className="text-xs font-medium text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/40 border border-violet-100 dark:border-violet-800 rounded-xl px-4 py-3">
+                  {generateHint}
+                </p>
+              )}
             <ul className="space-y-3">
               {generated.map((q, i) => (
                 <li
@@ -269,6 +280,7 @@ export default function AiGenerateQuizModal({
                 </li>
               ))}
             </ul>
+            </>
           )}
         </div>
 

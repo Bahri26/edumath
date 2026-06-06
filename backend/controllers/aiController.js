@@ -562,14 +562,30 @@ exports.generateQuiz = async (req, res) => {
     }
 
     if (isLocalAi()) {
-      const local = await localQuestions.generateLocalQuiz({
+      const { generateQuestionsFromPool } = require('../services/poolBasedQuestionGeneratorService');
+      const subject =
+        typeof subjectRaw === 'string' && subjectRaw.trim() ? subjectRaw.trim() : 'Matematik';
+      const result = await generateQuestionsFromPool({
         topic,
         difficulty,
         count,
         classLevel,
-        subject: typeof subjectRaw === 'string' && subjectRaw.trim() ? subjectRaw.trim() : 'Matematik',
+        subject,
       });
-      return res.json(local.questions);
+      return res.json({
+        questions: result.questions.map((q) => ({
+          ...q,
+          explanation: q.explanation || q.solution || '',
+          type: 'multiple-choice',
+          subject,
+          topic,
+          classLevel,
+          difficulty,
+        })),
+        hint: result.hint,
+        generator: result.generator,
+        poolSampleCount: result.poolSampleCount,
+      });
     }
 
     const subject =
@@ -676,7 +692,14 @@ GOREV:
       classLevel,
     }));
 
-    res.json(formattedData);
+    res.json({
+      questions: formattedData,
+      hint: poolSamples.length
+        ? `Havuzdaki ${poolSamples.length} örneğe benzer ${formattedData.length} yeni soru üretildi (Gemini).`
+        : `${formattedData.length} yeni soru üretildi (havuzda eşleşen örnek yok).`,
+      generator: 'gemini',
+      poolSampleCount: poolSamples.length,
+    });
   } catch (error) {
     console.error('Soru Üretme Hatası:', error);
     const msg = String(error?.message || '');
