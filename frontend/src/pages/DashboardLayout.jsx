@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { LanguageContext } from '../context/LanguageContext';
@@ -15,6 +15,7 @@ const DashboardLayout = ({
   profileMenuExtras = [],
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const studentKid = role === 'student';
   const { user, logout } = useContext(AuthContext);
   const { isDarkMode, toggleTheme } = useTheme();
@@ -33,8 +34,33 @@ const DashboardLayout = ({
 
   const closeSidebar = useCallback(() => {
     setIsNavMenuOpen(false);
-    sidebarToggleRef.current?.focus();
+    requestAnimationFrame(() => sidebarToggleRef.current?.focus());
   }, []);
+
+  const toggleSidebar = useCallback(() => {
+    setIsNavMenuOpen((open) => {
+      const next = !open;
+      if (!next) {
+        requestAnimationFrame(() => sidebarToggleRef.current?.focus());
+      }
+      return next;
+    });
+  }, []);
+
+  // Sayfa değişince menüyü kapat (mobilde açık kalıp takılmasın)
+  useEffect(() => {
+    setIsNavMenuOpen(false);
+  }, [location.pathname]);
+
+  // Menü açıkken arka plan kaydırmasını kilitle
+  useEffect(() => {
+    if (!isNavMenuOpen) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isNavMenuOpen]);
 
   // Escape ile menüleri kapat
   useEffect(() => {
@@ -76,21 +102,25 @@ const DashboardLayout = ({
     >
       {isNavMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-30 z-20"
-          onClick={closeSidebar}
+          className="fixed inset-0 z-20 bg-black/40"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeSidebar();
+            }
+          }}
           aria-hidden="true"
         />
       )}
       <aside
         ref={sidebarRef}
-        className={`fixed top-0 left-0 h-full w-64 shadow-lg z-30 transition-transform duration-300 ${
+        className={`fixed top-0 left-0 z-30 h-full w-64 max-w-[85vw] shadow-lg transition-transform duration-300 ease-out ${
           studentKid
             ? 'bg-white/95 dark:bg-surface-800/95 backdrop-blur-md border-r border-kid-rail/80 dark:border-surface-700'
             : 'bg-white dark:bg-surface-800'
-        } ${isNavMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{ willChange: 'transform' }}
+        } ${isNavMenuOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none'}`}
         aria-label="Yan menü"
         aria-hidden={!isNavMenuOpen}
+        inert={isNavMenuOpen ? undefined : ''}
       >
         <div
           className={`flex items-center justify-between p-6 border-b ${
@@ -116,7 +146,11 @@ const DashboardLayout = ({
             <X size={20} />
           </button>
         </div>
-        <nav className="mt-6 space-y-2" aria-label={`${role === 'teacher' ? 'Öğretmen' : 'Öğrenci'} navigasyonu`}>
+        <nav
+          id="primary-nav"
+          className="mt-6 space-y-2 overflow-y-auto overscroll-contain pb-8"
+          aria-label={`${role === 'teacher' ? 'Öğretmen' : 'Öğrenci'} navigasyonu`}
+        >
           {navMenuItems.map((item) => (
             <button
               key={item.id}
@@ -147,13 +181,14 @@ const DashboardLayout = ({
           <div className="flex items-center gap-3">
             <button
               ref={sidebarToggleRef}
-              onClick={() => setIsNavMenuOpen(true)}
+              type="button"
+              onClick={toggleSidebar}
               className="p-2 rounded-md hover:bg-surface-200 dark:hover:bg-surface-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              aria-label="Menüyü aç"
+              aria-label={isNavMenuOpen ? 'Menüyü kapat' : 'Menüyü aç'}
               aria-expanded={isNavMenuOpen}
               aria-controls="primary-nav"
             >
-              <Menu size={22} />
+              {isNavMenuOpen ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
             </button>
             <span
               className={`font-bold text-lg ${

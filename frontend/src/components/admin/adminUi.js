@@ -4,6 +4,9 @@
 export const admin = {
   input:
     'w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 transition focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/25 dark:border-slate-600 dark:bg-slate-900/90 dark:text-slate-100 dark:placeholder:text-slate-500',
+  /** Koyu zemin üzerinde (admin giriş vb.) — tema bağımsız, her zaman koyu kutu + açık metin */
+  inputOnDark:
+    'w-full rounded-xl border border-slate-600 bg-slate-800/90 px-3.5 py-2.5 text-sm text-white caret-violet-300 shadow-sm placeholder:text-slate-500 transition [color-scheme:dark] focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/25 autofill:shadow-[inset_0_0_0px_1000px_#1e293b] autofill:[-webkit-text-fill-color:#fff]',
   select:
     'rounded-xl border border-slate-200/90 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/25 dark:border-slate-600 dark:bg-slate-900/90 dark:text-slate-100',
   inputCompact:

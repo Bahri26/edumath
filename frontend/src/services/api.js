@@ -23,7 +23,7 @@ const parseTimeout = (value, fallback) => {
 };
 
 const DEFAULT_TIMEOUT = parseTimeout(import.meta.env?.VITE_API_TIMEOUT_MS, 15000);
-const AUTH_TIMEOUT = parseTimeout(import.meta.env?.VITE_AUTH_TIMEOUT_MS, 30000);
+const AUTH_TIMEOUT = parseTimeout(import.meta.env?.VITE_AUTH_TIMEOUT_MS, 60000);
 const AI_TIMEOUT = parseTimeout(import.meta.env?.VITE_AI_TIMEOUT_MS, 45000);
 
 const getAssetBaseUrl = () => {

@@ -154,20 +154,23 @@ const connectDB = async () => {
         });
         dbConnected = true;
 
-        if (!loginIdentifiersPrepared) {
-            try {
-                const syncResult = await User.syncLoginIdentifiers();
-                await User.createIndexes();
-                loginIdentifiersPrepared = true;
-                console.log(`✅ Login alanlari hazir: ${syncResult.modifiedCount} kayit guncellendi.`);
-            } catch (indexError) {
-                console.error(`⚠️ Login alanlari hazirlanamadi: ${indexError.message}`);
-            }
-        }
-
         const hostInfo = conn?.connection?.host || 'unknown';
         const activeDbName = conn?.connection?.name || configuredDbName;
         console.log(`✅ MongoDB Bağlandı: ${hostInfo} / DB: ${activeDbName}`);
+
+        // İndeks senkronu giriş isteklerini bloklamasın (arka planda)
+        if (!loginIdentifiersPrepared) {
+            setImmediate(async () => {
+                try {
+                    const syncResult = await User.syncLoginIdentifiers();
+                    await User.createIndexes();
+                    loginIdentifiersPrepared = true;
+                    console.log(`✅ Login alanlari hazir: ${syncResult.modifiedCount} kayit guncellendi.`);
+                } catch (indexError) {
+                    console.error(`⚠️ Login alanlari hazirlanamadi: ${indexError.message}`);
+                }
+            });
+        }
     } catch (error) {
         dbConnected = false;
         console.error(`❌ Bağlantı Hatası: ${error.message}`);
@@ -250,27 +253,28 @@ app.get('/', (req, res) => {
     res.send('Backend Sunucusu Çalışıyor...');
 });
 
-// Sağlık kontrolü (Health Check)
+// Sağlık kontrolü (Health Check) — hızlı yanıt; ML kontrolü opsiyonel
 app.get('/health', async (req, res) => {
     const ml = mlServiceClient.getStatusSync();
-    let mlHealth = { ...ml, status: ml.configured ? 'unknown' : 'disabled' };
-    if (ml.configured) {
-        try {
-            mlHealth = await mlServiceClient.checkHealth({ timeoutMs: 2500 });
-        } catch {
-            mlHealth = { ...ml, reachable: false, status: 'down' };
-        }
-    }
-
-    res.json({
+    const payload = {
         status: 'ok',
         uptime: process.uptime(),
         db: dbConnected ? 'up' : 'down',
         port: process.env.PORT || 8000,
         env: process.env.NODE_ENV || 'development',
         storage: getStorageStatus(),
-        mlService: mlHealth,
-    });
+        mlService: { ...ml, status: ml.configured ? 'unknown' : 'disabled' },
+    };
+
+    if (req.query.full === '1' && ml.configured) {
+        try {
+            payload.mlService = await mlServiceClient.checkHealth({ timeoutMs: 2500 });
+        } catch {
+            payload.mlService = { ...ml, reachable: false, status: 'down' };
+        }
+    }
+
+    res.json(payload);
 });
 
 // Readiness endpoint (hazır mı?)

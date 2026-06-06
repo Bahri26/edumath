@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Loader2, Plus, X } from 'lucide-react';
 import apiClient, { resolveAssetUrl } from '../../services/api';
 import { renderWithLatex } from '../../utils/latex.jsx';
-import Select from '../ui/Select.jsx';
 import Button from '../ui/Button.jsx';
+import { questionTypeLabel } from '../../constants/questionTypesUi';
 
 const MAX_DEFAULT = 25;
 
@@ -13,6 +13,8 @@ const MAX_DEFAULT = 25;
 export default function ExerciseQuestionPicker({
   classLevel,
   subject,
+  topic,
+  questionTypes = [],
   branchApproved,
   selectedIds,
   onSelectedIdsChange,
@@ -20,7 +22,6 @@ export default function ExerciseQuestionPicker({
 }) {
   const [poolSearch, setPoolSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [poolDifficulty, setPoolDifficulty] = useState('Tümü');
   const [poolPage, setPoolPage] = useState(1);
   const [poolQuestions, setPoolQuestions] = useState([]);
   const [poolTotalPages, setPoolTotalPages] = useState(1);
@@ -41,7 +42,8 @@ export default function ExerciseQuestionPicker({
         classLevel,
         ...(debouncedSearch ? { search: debouncedSearch } : {}),
       };
-      if (poolDifficulty !== 'Tümü') params.difficulty = poolDifficulty;
+      if (topic && topic !== 'Tümü') params.topic = topic;
+      if (questionTypes?.length) params.types = questionTypes.join(',');
 
       let res;
       if (branchApproved) {
@@ -62,7 +64,7 @@ export default function ExerciseQuestionPicker({
     } finally {
       setPoolLoading(false);
     }
-  }, [branchApproved, classLevel, subject, poolPage, debouncedSearch, poolDifficulty]);
+  }, [branchApproved, classLevel, subject, topic, questionTypes, poolPage, debouncedSearch]);
 
   useEffect(() => {
     fetchPool();
@@ -70,7 +72,7 @@ export default function ExerciseQuestionPicker({
 
   useEffect(() => {
     setPoolPage(1);
-  }, [classLevel, subject, poolDifficulty, debouncedSearch, branchApproved]);
+  }, [classLevel, subject, topic, questionTypes, debouncedSearch, branchApproved]);
 
   const addId = (id) => {
     const sid = String(id);
@@ -110,16 +112,6 @@ export default function ExerciseQuestionPicker({
           onChange={(e) => setPoolSearch(e.target.value)}
           className="w-full px-3 py-2 rounded-xl border border-surface-200 dark:border-surface-600 bg-white dark:bg-surface-900 text-sm"
         />
-        <Select
-          value={poolDifficulty}
-          onChange={(e) => setPoolDifficulty(e.target.value)}
-          className="text-sm py-2"
-        >
-          <option value="Tümü">Tüm zorluklar</option>
-          <option value="Kolay">Kolay</option>
-          <option value="Orta">Orta</option>
-          <option value="Zor">Zor</option>
-        </Select>
         <div className="min-h-[200px] max-h-[320px] overflow-y-auto space-y-2 pr-1">
           {poolLoading ? (
             <div className="flex justify-center py-8">
@@ -143,16 +135,8 @@ export default function ExerciseQuestionPicker({
                     <div className="w-12 h-12 rounded-lg bg-surface-100 dark:bg-surface-800 shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        q.difficulty === 'Zor'
-                          ? 'bg-rose-100 text-rose-700'
-                          : q.difficulty === 'Orta'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-emerald-100 text-emerald-700'
-                      }`}
-                    >
-                      {q.difficulty}
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-100 text-brand-800 dark:bg-brand-950/50 dark:text-brand-200">
+                      {questionTypeLabel(q.type)}
                     </span>
                     <div className="text-xs text-surface-800 dark:text-surface-100 mt-1 line-clamp-2">
                       {renderWithLatex(q.text || '—')}

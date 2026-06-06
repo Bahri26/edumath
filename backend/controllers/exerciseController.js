@@ -4,9 +4,32 @@ const User = require('../models/User');
 const { gradeQuestionAnswer } = require('../utils/questionGrading');
 const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
 const { recordUserActivity } = require('../services/activityLogger');
+const { buildTopicMongoClause } = require('../constants/patternTopics');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const MAX_EXERCISE_QUESTIONS = 30;
+const AUTO_POOL_LIMIT = 15;
+
+function shuffleInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function buildPoolMatchQuery({ classLevel, subject, topic, questionTypes }) {
+  const subj = subject || 'Matematik';
+  const matchStage = {
+    classLevel,
+    subject: { $regex: new RegExp(`^${escapeRegex(subj)}$`, 'i') },
+  };
+  const topicClause = buildTopicMongoClause(topic, escapeRegex);
+  if (topicClause) matchStage.topic = topicClause;
+  const types = Array.isArray(questionTypes) ? questionTypes.filter(Boolean) : [];
+  if (types.length > 0) matchStage.type = { $in: types };
+  return matchStage;
+}
 
 /** Seçilen id sırasını koruyarak doğrula; sınıf + ders eşleşmesi zorunlu */
 async function resolveQuestionIdsForExercise(orderedIds, classLevel, subject) {
@@ -41,6 +64,8 @@ exports.createExercise = async (req, res, next) => {
       description,
       classLevel,
       subject,
+      topic,
+      questionTypes,
       difficulty,
       gameMode,
       timeLimit,
@@ -75,24 +100,30 @@ exports.createExercise = async (req, res, next) => {
         difficultyFinal = resolved.difficulties.length ? resolved.difficulties : ['Orta'];
       }
     } else {
-      if (!Array.isArray(difficulty) || difficulty.length === 0) {
-        return res.status(400).json({ message: 'Otomatik oluşturma için en az bir zorluk seviyesi seçin' });
-      }
-
-      const matchStage = {
+      const matchStage = buildPoolMatchQuery({
         classLevel,
         subject: subj,
-        difficulty: { $in: difficulty },
-      };
+        topic,
+        questionTypes,
+      });
 
-      const questions = await Question.find(matchStage);
+      const questions = await Question.find(matchStage).select('_id difficulty').lean();
 
       if (questions.length === 0) {
-        return res.status(400).json({ message: 'Belirtilen kriterlerde soru bulunamadı' });
+        return res.status(400).json({
+          message: 'Seçilen sınıf, konu ve soru çeşidine uygun soru bulunamadı.',
+        });
       }
 
-      questionIds = questions.slice(0, Math.min(questions.length, 15)).map((q) => q._id);
+      shuffleInPlace(questions);
+      const picked = questions.slice(0, Math.min(questions.length, AUTO_POOL_LIMIT));
+      questionIds = picked.map((q) => q._id);
+      difficultyFinal = [...new Set(picked.map((d) => d.difficulty).filter(Boolean))];
+      if (difficultyFinal.length === 0) difficultyFinal = ['Orta'];
     }
+
+    const topicLabel =
+      typeof topic === 'string' && topic.trim() && topic.trim() !== 'Tümü' ? topic.trim() : '';
 
     const allowedPlay = ['classic', 'game_show'];
     const play =
@@ -103,6 +134,7 @@ exports.createExercise = async (req, res, next) => {
       description: description || '',
       classLevel,
       subject: subj,
+      topic: topicLabel,
       difficulty: difficultyFinal,
       questions: questionIds,
       totalQuestions: questionIds.length,

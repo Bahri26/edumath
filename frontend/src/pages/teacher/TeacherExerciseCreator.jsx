@@ -18,6 +18,8 @@ import {
 import apiClient, { resolveAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { CLASS_LEVELS, SUBJECTS } from '../../data/classLevelsAndDifficulties';
+import { PATTERN_TOPIC_ALL_UNDER, PATTERN_TOPIC_ORDER, sortPatternTopicsUi } from '../../constants/patternTopicsUi';
+import { QUESTION_TYPE_OPTIONS } from '../../constants/questionTypesUi';
 import SkeletonCard from '../../components/ui/SkeletonCard';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -36,36 +38,31 @@ import 'katex/dist/katex.min.css';
  * - Sonraki iterasyonlar (API gerekir): arama, düzenleme, öğrenci paylaşım linki, istatistik.
  */
 
-const getDifficultyColor = (level) => {
-  const colors = {
-    Kolay: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/20 dark:text-emerald-400',
-    Orta: 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/20 dark:text-amber-400',
-    Zor: 'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/20 dark:text-rose-400',
-  };
-  return colors[level] || colors.Orta;
-};
+const QuestionTypeToggle = ({ typeValue, label, selected, onToggle }) => (
+  <button
+    type="button"
+    onClick={() => onToggle(typeValue)}
+    className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+      selected.includes(typeValue)
+        ? 'bg-brand-600 text-white shadow-md'
+        : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:shadow'
+    }`}
+  >
+    {label}
+  </button>
+);
 
-const DifficultyToggle = ({ difficulty, selected, onToggle }) => {
-  const bgColor = {
-    Kolay: 'bg-emerald-500',
-    Orta: 'bg-amber-500',
-    Zor: 'bg-rose-500',
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={() => onToggle(difficulty)}
-      className={`px-4 py-2 rounded-lg font-bold transition-all ${
-        selected.includes(difficulty)
-          ? `${bgColor[difficulty]} text-white shadow-lg`
-          : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:shadow'
-      }`}
-    >
-      {difficulty}
-    </button>
-  );
-};
+const FormSection = ({ step, title, children }) => (
+  <section className="space-y-3">
+    <div className="flex items-center gap-2">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-black text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">
+        {step}
+      </span>
+      <h3 className="text-sm font-bold text-surface-800 dark:text-surface-100">{title}</h3>
+    </div>
+    {children}
+  </section>
+);
 
 const ExerciseCard = ({ exercise, onView, onEditQuestions, onDelete }) => (
   <Card className="p-5 flex flex-col h-full hover:border-brand-200 dark:hover:border-brand-800">
@@ -110,11 +107,11 @@ const ExerciseCard = ({ exercise, onView, onEditQuestions, onDelete }) => (
       <span className="px-2 py-0.5 bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs font-bold rounded-lg">
         {exercise.totalQuestions} soru
       </span>
-      {(exercise.difficulty || []).map((d) => (
-        <span key={d} className={`px-2 py-0.5 text-xs font-bold rounded-lg border ${getDifficultyColor(d)}`}>
-          {d}
+      {exercise.topic ? (
+        <span className="px-2 py-0.5 bg-violet-100 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 text-xs font-bold rounded-lg truncate max-w-[180px]">
+          {exercise.topic}
         </span>
-      ))}
+      ) : null}
       {exercise.gameMode === 'timed' && exercise.timeLimit ? (
         <span className="px-2 py-0.5 bg-violet-100 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 text-xs font-bold rounded-lg inline-flex items-center gap-1">
           <Clock size={12} /> {exercise.timeLimit} dk
@@ -391,7 +388,9 @@ export default function TeacherExerciseCreator() {
   /** Yeni egzersiz formu — her zaman somut sınıf */
   const [formClass, setFormClass] = useState('9. Sınıf');
   const [formSubject, setFormSubject] = useState('Matematik');
-  const [selectedDifficulties, setSelectedDifficulties] = useState(['Kolay', 'Orta']);
+  const [formTopic, setFormTopic] = useState(PATTERN_TOPIC_ALL_UNDER);
+  const [topicOptions, setTopicOptions] = useState([PATTERN_TOPIC_ALL_UNDER, ...PATTERN_TOPIC_ORDER]);
+  const [selectedQuestionTypes, setSelectedQuestionTypes] = useState(['multiple-choice']);
   const [gameMode, setGameMode] = useState('practice');
   const [playTransform, setPlayTransform] = useState('classic');
   const [timeLimit, setTimeLimit] = useState(null);
@@ -454,7 +453,46 @@ export default function TeacherExerciseCreator() {
 
   useEffect(() => {
     setSelectedQuestionIds([]);
-  }, [formClass, formSubject]);
+  }, [formClass, formSubject, formTopic, selectedQuestionTypes]);
+
+  useEffect(() => {
+    if (!createMode) return undefined;
+    let active = true;
+    (async () => {
+      try {
+        if (branchApproved) {
+          const res = await apiClient.get('/teacher/subject/topics', {
+            params: { classLevel: formClass },
+          });
+          const list = sortPatternTopicsUi(res.data?.topics || []);
+          if (active) {
+            setTopicOptions(['Tümü', PATTERN_TOPIC_ALL_UNDER, ...list]);
+          }
+        } else {
+          const res = await apiClient.get('/teacher/questions', {
+            params: { page: 1, limit: 1, classLevel: formClass, subject: formSubject },
+          });
+          const fromApi = sortPatternTopicsUi(
+            (res.data?.data || []).map((q) => q.topic).filter(Boolean),
+          );
+          const merged = sortPatternTopicsUi([
+            ...PATTERN_TOPIC_ORDER,
+            ...fromApi,
+          ]);
+          if (active) {
+            setTopicOptions(['Tümü', PATTERN_TOPIC_ALL_UNDER, ...merged]);
+          }
+        }
+      } catch {
+        if (active) {
+          setTopicOptions(['Tümü', PATTERN_TOPIC_ALL_UNDER, ...PATTERN_TOPIC_ORDER]);
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [createMode, formClass, formSubject, branchApproved]);
 
   const handleCreateExercise = async () => {
     if (!exerciseName.trim()) {
@@ -466,9 +504,6 @@ export default function TeacherExerciseCreator() {
         showToast('Manuel modda havuzdan en az bir soru ekleyin', 'error');
         return;
       }
-    } else if (selectedDifficulties.length === 0) {
-      showToast('Otomatik mod için en az bir zorluk seviyesi seçin', 'error');
-      return;
     }
 
     setIsCreating(true);
@@ -478,7 +513,8 @@ export default function TeacherExerciseCreator() {
         description: exerciseDescription,
         classLevel: formClass,
         subject: formSubject,
-        difficulty: buildMode === 'manual' ? [] : selectedDifficulties,
+        topic: formTopic,
+        questionTypes: selectedQuestionTypes,
         gameMode,
         playTransform,
         timeLimit: timeLimit ? parseInt(String(timeLimit), 10) : null,
@@ -489,7 +525,8 @@ export default function TeacherExerciseCreator() {
       showToast('Egzersiz oluşturuldu', 'success');
       setExerciseName('');
       setExerciseDescription('');
-      setSelectedDifficulties(['Kolay', 'Orta']);
+      setFormTopic(PATTERN_TOPIC_ALL_UNDER);
+      setSelectedQuestionTypes(['multiple-choice']);
       setGameMode('practice');
       setPlayTransform('classic');
       setTimeLimit(null);
@@ -519,14 +556,20 @@ export default function TeacherExerciseCreator() {
     }
   };
 
-  const handleToggleDifficulty = (difficulty) => {
-    setSelectedDifficulties((prev) =>
-      prev.includes(difficulty) ? prev.filter((d) => d !== difficulty) : [...prev, difficulty],
-    );
+  const handleToggleQuestionType = (typeValue) => {
+    setSelectedQuestionTypes((prev) => {
+      if (prev.includes(typeValue)) {
+        const next = prev.filter((t) => t !== typeValue);
+        return next.length > 0 ? next : prev;
+      }
+      return [...prev, typeValue];
+    });
   };
 
   const openCreate = () => {
     if (filterClass !== 'Tümü') setFormClass(filterClass);
+    setFormTopic(PATTERN_TOPIC_ALL_UNDER);
+    setSelectedQuestionTypes(['multiple-choice']);
     setBuildMode('auto');
     setSelectedQuestionIds([]);
     setCreateMode(true);
@@ -553,7 +596,7 @@ export default function TeacherExerciseCreator() {
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-surface-900 dark:text-white tracking-tight">Egzersizler</h1>
           <p className="text-sm text-surface-600 dark:text-surface-400 mt-1 max-w-xl">
-            Havuzdaki sorulardan sınıf ve zorluk seçerek AI ile paket oluşturun; öğrenciler sınıfına uygun egzersizleri görür.
+            Havuzdan sınıf ve konuya göre paket oluşturun — AI ile otomatik veya soruları elle seçin.
           </p>
         </div>
         <Button
@@ -597,31 +640,8 @@ export default function TeacherExerciseCreator() {
             rows={2}
             className="w-full px-4 py-3 rounded-xl border border-surface-200 dark:border-surface-600 bg-surface-50 dark:bg-surface-900 text-surface-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500"
           />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-surface-600 dark:text-surface-400 block mb-1">Sınıf</label>
-              <Select value={formClass} onChange={(e) => setFormClass(e.target.value)}>
-                {CLASS_LEVELS.map((lv) => (
-                  <option key={lv} value={lv}>
-                    {lv}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-surface-600 dark:text-surface-400 block mb-1">Ders</label>
-              <Select value={formSubject} onChange={(e) => setFormSubject(e.target.value)}>
-                {SUBJECTS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
 
-          <div>
-            <p className="text-xs font-bold text-surface-700 dark:text-surface-300 mb-2">Nasıl oluşturulsun?</p>
+          <FormSection step="1" title="Oluşturma yöntemi">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
@@ -637,10 +657,10 @@ export default function TeacherExerciseCreator() {
               >
                 <div className="flex items-center gap-2 font-bold text-surface-900 dark:text-white">
                   <Wand2 size={20} className="text-brand-600 shrink-0" />
-                  Otomatik paket
+                  AI ile oluştur
                 </div>
                 <p className="text-xs text-surface-600 dark:text-surface-400 mt-2 leading-relaxed">
-                  Zorluk seçilir; havuzdan en fazla 15 soru rastgele seçilir.
+                  Seçtiğiniz sınıf, konu ve soru çeşidine göre havuzdan en fazla 15 soru otomatik seçilir.
                 </p>
               </button>
               <button
@@ -654,30 +674,68 @@ export default function TeacherExerciseCreator() {
               >
                 <div className="flex items-center gap-2 font-bold text-surface-900 dark:text-white">
                   <MousePointerClick size={20} className="text-brand-600 shrink-0" />
-                  Sorularımı seçerek
+                  Manuel seç
                 </div>
                 <p className="text-xs text-surface-600 dark:text-surface-400 mt-2 leading-relaxed">
                   Havuzdan tıklayarak ekleyin; sırayı değiştirin (en fazla 30 soru).
                 </p>
               </button>
             </div>
-          </div>
+          </FormSection>
 
-          {buildMode === 'auto' ? (
-            <div>
-              <p className="text-xs font-bold text-surface-700 dark:text-surface-300 mb-2">Zorluk (havuzdan seçilir)</p>
-              <div className="flex flex-wrap gap-2">
-                {['Kolay', 'Orta', 'Zor'].map((diff) => (
-                  <DifficultyToggle
-                    key={diff}
-                    difficulty={diff}
-                    selected={selectedDifficulties}
-                    onToggle={handleToggleDifficulty}
-                  />
-                ))}
+          <FormSection step="2" title="Sınıf ve konu">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-surface-600 dark:text-surface-400 block mb-1">Sınıf</label>
+                <Select value={formClass} onChange={(e) => setFormClass(e.target.value)}>
+                  {CLASS_LEVELS.map((lv) => (
+                    <option key={lv} value={lv}>
+                      {lv}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-surface-600 dark:text-surface-400 block mb-1">Ders</label>
+                <Select value={formSubject} onChange={(e) => setFormSubject(e.target.value)}>
+                  {SUBJECTS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </Select>
               </div>
             </div>
-          ) : (
+            <div>
+              <label className="text-xs font-bold text-surface-600 dark:text-surface-400 block mb-1">Konu</label>
+              <Select value={formTopic} onChange={(e) => setFormTopic(e.target.value)}>
+                {topicOptions.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </FormSection>
+
+          <FormSection step="3" title="Soru çeşidi">
+            <p className="text-xs text-surface-500 dark:text-surface-400 -mt-1">
+              En az bir çeşit seçin. Havuz ve AI paketi bu tiplerle filtrelenir.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {QUESTION_TYPE_OPTIONS.map(({ value, label }) => (
+                <QuestionTypeToggle
+                  key={value}
+                  typeValue={value}
+                  label={label}
+                  selected={selectedQuestionTypes}
+                  onToggle={handleToggleQuestionType}
+                />
+              ))}
+            </div>
+          </FormSection>
+
+          {buildMode === 'manual' ? (
             <div className="space-y-2">
               <p className="text-xs font-bold text-surface-700 dark:text-surface-300">
                 Soru havuzu · {branchApproved ? 'Onaylı branş havuzu' : 'Kendi sorularınız'}
@@ -685,14 +743,17 @@ export default function TeacherExerciseCreator() {
               <ExerciseQuestionPicker
                 classLevel={formClass}
                 subject={formSubject}
+                topic={formTopic}
+                questionTypes={selectedQuestionTypes}
                 branchApproved={branchApproved}
                 selectedIds={selectedQuestionIds}
                 onSelectedIdsChange={setSelectedQuestionIds}
                 maxSelected={30}
               />
             </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          ) : null}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-surface-100 dark:border-surface-700">
             <div>
               <label className="text-xs font-bold text-surface-600 dark:text-surface-400 block mb-1">Oyun modu</label>
               <Select value={gameMode} onChange={(e) => setGameMode(e.target.value)}>
@@ -803,7 +864,7 @@ export default function TeacherExerciseCreator() {
         <EmptyState
           icon={Trophy}
           title="Henüz egzersiz yok"
-          description="Öğrenci havuzunda eşleşen soru bulunan bir sınıf ve zorluk seçerek ilk paketinizi oluşturun."
+          description="Sınıf, konu ve soru çeşidine göre ilk paketinizi oluşturun."
           action={
             <Button icon={Plus} onClick={openCreate}>
               Yeni egzersiz

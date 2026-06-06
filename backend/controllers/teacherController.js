@@ -10,6 +10,16 @@ const { syncTeacherRosterFromTeacherContent } = require('../utils/studentRosterS
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+function applyQuestionTypeFilter(query, typesRaw) {
+  if (!typesRaw) return;
+  const types = String(typesRaw)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (types.length === 1) query.type = types[0];
+  else if (types.length > 1) query.type = { $in: types };
+}
+
 const addAndClause = (query, clause) => {
   if (!clause) {
     return;
@@ -464,7 +474,7 @@ exports.getMyQuestions = async (req, res) => {
 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
-    const { search, subject, classLevel, difficulty, topic, sortBy } = req.query;
+    const { search, subject, classLevel, difficulty, topic, sortBy, types } = req.query;
     const sortByTopic = String(sortBy || '').toLowerCase() === 'topic';
 
     const query = { createdBy: teacherId };
@@ -473,6 +483,7 @@ exports.getMyQuestions = async (req, res) => {
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
     const topicClause = buildTopicMongoClause(topic, escapeRegex);
     if (topicClause) query.topic = topicClause;
+    applyQuestionTypeFilter(query, types);
     applyClassLevelFilter(query, classLevel);
     const searchMeta = buildQuestionSearch(query, search, 'text');
 
@@ -485,6 +496,7 @@ exports.getMyQuestions = async (req, res) => {
       if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
       const fc = buildTopicMongoClause(topic, escapeRegex);
       if (fc) effectiveQuery.topic = fc;
+      applyQuestionTypeFilter(effectiveQuery, types);
       applyClassLevelFilter(effectiveQuery, classLevel);
       buildQuestionSearch(effectiveQuery, search, 'regex');
       total = await Question.countDocuments(effectiveQuery);
@@ -706,13 +718,14 @@ exports.getSubjectQuestions = async (req, res) => {
     const subject = req.userBranch; // branchApprovalMiddleware set eder
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
-    const { search, classLevel, difficulty, topic, sortBy } = req.query;
+    const { search, classLevel, difficulty, topic, sortBy, types } = req.query;
     const sortByTopic = String(sortBy || '').toLowerCase() === 'topic';
 
     // Önce branş (subject) eşleşmesini zorunlu tut
     const query = { subject: { $regex: `^${escapeRegex(subject)}$`, $options: 'i' } };
     const topicClause = buildTopicMongoClause(topic, escapeRegex);
     if (topicClause) query.topic = topicClause;
+    applyQuestionTypeFilter(query, types);
     applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
     const searchMeta = buildQuestionSearch(query, search, 'text');
@@ -724,6 +737,7 @@ exports.getSubjectQuestions = async (req, res) => {
       effectiveQuery = { subject: { $regex: `^${escapeRegex(subject)}$`, $options: 'i' } };
       const fc2 = buildTopicMongoClause(topic, escapeRegex);
       if (fc2) effectiveQuery.topic = fc2;
+      applyQuestionTypeFilter(effectiveQuery, types);
       applyClassLevelFilter(effectiveQuery, classLevel);
       if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
       buildQuestionSearch(effectiveQuery, search, 'regex');

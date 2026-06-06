@@ -1,9 +1,10 @@
 // src/components/modals/LoginModal.jsx
-import React, { useState, useContext, useId } from 'react';
+import React, { useState, useContext, useId, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Mail, Lock, User, BookOpen, Briefcase, Loader2, ArrowRight, LogIn, UserPlus, AlertCircle, CheckCircle, GraduationCap } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
-import apiClient, { withAuthRequestConfig } from '../../services/api';
+import apiClient, { withAuthRequestConfig, AUTH_TIMEOUT } from '../../services/api';
+import { wakeBackend } from '../../services/backendWake';
 import Input from '../ui/Input.jsx';
 import Select from '../ui/Select.jsx';
 import { getFriendlyApiError } from '../../utils/apiErrorMessage.js';
@@ -11,6 +12,7 @@ import { getFriendlyApiError } from '../../utils/apiErrorMessage.js';
 const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
   const [isLoginView, setIsLoginView] = useState(true); 
   const [loading, setLoading] = useState(false);
+  const [loadingHint, setLoadingHint] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
@@ -27,6 +29,22 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
   const navigate = useNavigate();
   const fid = useId().replace(/:/g, '');
 
+  useEffect(() => {
+    if (!isOpen || !isLoginView) {
+      setLoadingHint(null);
+      return undefined;
+    }
+    let cancelled = false;
+    wakeBackend().then((result) => {
+      if (!cancelled && !result.ready) {
+        setLoadingHint('Sunucu hazırlanıyor; giriş biraz sürebilir.');
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, isLoginView]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError(null); 
@@ -36,16 +54,59 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setLoadingHint(null);
     setError(null);
     setSuccess(null);
+
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    const postAuthWithRetry = async (path, payload) => {
+      const maxAttempts = 3;
+      let lastError = null;
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+          if (attempt === 1) {
+            const wake = await wakeBackend({
+              onProgress: (msg) => setLoadingHint(msg),
+            });
+            if (!wake.ready) {
+              setLoadingHint('Sunucu henüz hazır değil; yine de giriş deneniyor…');
+            }
+          } else {
+            setLoadingHint(`Bağlantı yavaş, tekrar deneniyor (${attempt}/${maxAttempts})…`);
+            await sleep(2500 * attempt);
+          }
+
+          return await apiClient.post(
+            path,
+            payload,
+            withAuthRequestConfig({
+              timeout: attempt > 1 ? AUTH_TIMEOUT + 15000 : AUTH_TIMEOUT,
+            }),
+          );
+        } catch (err) {
+          lastError = err;
+          const retryable =
+            err?.code === 'ECONNABORTED' ||
+            err?.response?.status === 503 ||
+            err?.response?.data?.code === 'DB_NOT_READY';
+          if (!retryable || attempt >= maxAttempts) {
+            throw err;
+          }
+        }
+      }
+
+      throw lastError;
+    };
 
     try {
       if (isLoginView) {
         // --- GİRİŞ YAP ---
-        const response = await apiClient.post('/auth/login', {
+        const response = await postAuthWithRetry('/auth/login', {
           email: formData.email,
-          password: formData.password
-        }, withAuthRequestConfig());
+          password: formData.password,
+        });
         const { token, user, refreshToken } = response.data;
         login(user, token);
         if (refreshToken) {
@@ -75,6 +136,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
       setError(friendly);
     } finally {
       setLoading(false);
+      setLoadingHint(null);
     }
   };
 
@@ -248,6 +310,9 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
             <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-200/60 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
               {loading ? <Loader2 className="animate-spin" size={20} /> : <>{isLoginView ? 'Giriş Yap' : 'Kayıt Ol'} <ArrowRight size={20} /></>}
             </button>
+            {loading && loadingHint && (
+              <p className="text-center text-xs text-slate-500 dark:text-slate-400">{loadingHint}</p>
+            )}
           </form>
 
           <div className="mt-6 text-center text-sm text-slate-500">

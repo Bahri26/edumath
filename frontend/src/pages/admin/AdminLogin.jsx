@@ -1,7 +1,8 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Lock, Sparkles } from 'lucide-react';
-import apiClient, { withAuthRequestConfig } from '../../services/api';
+import apiClient, { withAuthRequestConfig, AUTH_TIMEOUT } from '../../services/api';
+import { wakeBackend } from '../../services/backendWake';
 import { AuthContext } from '../../context/AuthContext';
 import { admin as a } from '../../components/admin/adminUi';
 
@@ -18,7 +19,10 @@ const AdminLogin = () => {
     setError(null);
     setLoading(true);
     try {
-      const resp = await apiClient.post('/auth/login', { email, password }, withAuthRequestConfig());
+      await wakeBackend();
+      const resp = await apiClient.post('/auth/login', { email, password }, withAuthRequestConfig({
+        timeout: AUTH_TIMEOUT,
+      }));
       const { token, user } = resp.data;
       if (!user || user.role !== 'admin') {
         setError('Admin yetkisi yok veya hatalı kullanıcı.');
@@ -57,9 +61,10 @@ const AdminLogin = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className={a.fieldLabel}>E-posta</label>
+              <label className={`${a.fieldLabel} text-slate-400`}>E-posta</label>
               <input
-                className={`${a.input} border-slate-700/80 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-violet-400`}
+                type="email"
+                className={a.inputOnDark}
                 placeholder="ornek@kurum.edu.tr"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -67,9 +72,9 @@ const AdminLogin = () => {
               />
             </div>
             <div>
-              <label className={a.fieldLabel}>Şifre</label>
+              <label className={`${a.fieldLabel} text-slate-400`}>Şifre</label>
               <input
-                className={`${a.input} border-slate-700/80 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-violet-400`}
+                className={a.inputOnDark}
                 type="password"
                 placeholder="••••••••"
                 value={password}

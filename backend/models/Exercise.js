@@ -5,7 +5,9 @@ const ExerciseSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   classLevel: { type: String, required: true }, // Örn: "9. Sınıf"
   subject: { type: String, default: 'Matematik' },
-  difficulty: [String], // ['Kolay', 'Orta', 'Zor'] - mix yapılabilir
+  /** Egzersiz oluşturulurken seçilen konu filtresi (gösterim) */
+  topic: { type: String, default: '' },
+  difficulty: [String], // havuzdan türetilir; artık formda seçilmez
   questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }],
   totalQuestions: { type: Number, default: 0 },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Öğretmen
