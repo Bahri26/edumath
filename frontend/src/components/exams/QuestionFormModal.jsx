@@ -2,13 +2,14 @@ import React, { useRef, useEffect, useState } from 'react';
 import { 
   X, Save, Loader2, Image as ImageIcon, 
   PlusCircle, Trash2, CheckCircle, Layers, 
-  Target, BookOpen, HelpCircle, Sparkles, Wand2
+  Target, BookOpen, HelpCircle, Sparkles, Wand2, ClipboardPaste, ArrowRight
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
 import SolutionDisplay from '../questions/SolutionDisplay.jsx';
 import { enrichQuestionForm, optionMatchesCorrect } from '../../utils/patternQuestionSolver';
+import { parsePastedQuestionText } from '../../utils/parsePastedQuestionText';
 
 const QuestionFormModal = ({ 
   isOpen, onClose, editingId, manualForm, setManualForm, 
@@ -17,6 +18,9 @@ const QuestionFormModal = ({
   const firstInputRef = useRef(null);
   const { showToast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [pasteOpen, setPasteOpen] = useState(true);
+  const [pasteText, setPasteText] = useState('');
+  const [pasteLoading, setPasteLoading] = useState(false);
 
   // Fallback internal state when parent does not provide controlled props
   const [fallbackForm, setFallbackForm] = useState({
@@ -52,7 +56,48 @@ const QuestionFormModal = ({
 
   useEffect(() => {
     if (isOpen && firstInputRef.current) firstInputRef.current.focus();
+    if (!isOpen) {
+      setPasteText('');
+      setPasteOpen(true);
+    }
   }, [isOpen]);
+
+  const applyParsedPaste = (rawContent, { showNotice = true } = {}) => {
+    const parsed = parsePastedQuestionText(rawContent, form);
+    if (!parsed?.text?.trim() && !parsed?.options?.some((o) => String(o || '').trim())) {
+      if (showNotice) showToast('Metin ayrıştırılamadı. A) B) C) D) formatında yapıştırın.', 'error');
+      return false;
+    }
+
+    effectiveSetForm((prev) => ({
+      ...(prev || {}),
+      text: parsed.text,
+      options: parsed.options,
+      correctAnswer: parsed.correctAnswer || '',
+      solution: parsed.solution || prev?.solution || '',
+      topic: parsed.topic || prev?.topic || '',
+    }));
+
+    if (showNotice) {
+      showToast('Soru metni, şıklar ve çözüm alanları dolduruldu.', 'success');
+    }
+    setPasteOpen(false);
+    return true;
+  };
+
+  const handlePasteParse = async (contentOverride) => {
+    const content = (contentOverride ?? pasteText).trim();
+    if (!content) {
+      showToast('Lütfen soruyu yapıştırın', 'error');
+      return;
+    }
+    setPasteLoading(true);
+    try {
+      applyParsedPaste(content);
+    } finally {
+      setPasteLoading(false);
+    }
+  };
 
   const setField = (k, v) => effectiveSetForm(prev => ({ ...(prev || {}), [k]: v }));
   // Ensure subject stays locked if provided
@@ -159,6 +204,57 @@ const QuestionFormModal = ({
         </div>
 
         <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+
+          {/* Kopyala-yapıştır */}
+          {!editingId ? (
+            <section className="rounded-[1.75rem] border-2 border-dashed border-indigo-200 dark:border-indigo-800/50 bg-indigo-50/40 dark:bg-indigo-950/20 p-5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+                  <ClipboardPaste size={14} /> Kopyala-yapıştır
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setPasteOpen((v) => !v)}
+                  className="text-[10px] font-bold uppercase text-indigo-600"
+                >
+                  {pasteOpen ? 'Gizle' : 'Göster'}
+                </button>
+              </div>
+              {pasteOpen ? (
+                <>
+                  <p className="text-xs text-indigo-900/70 dark:text-indigo-200/70 ml-1">
+                    PDF, Word veya ekrandan soruyu kopyalayıp buraya yapıştırın. Sistem metni, şıkları (A) B) C) D)) ve varsa cevabı ayırır.
+                  </p>
+                  <textarea
+                    rows={5}
+                    value={pasteText}
+                    onChange={(e) => setPasteText(e.target.value)}
+                    onPaste={(e) => {
+                      const pasted = e.clipboardData.getData('text');
+                      if (!pasted?.trim()) return;
+                      setTimeout(() => {
+                        setPasteText(pasted);
+                        applyParsedPaste(pasted);
+                      }, 0);
+                    }}
+                    className="w-full p-4 bg-white/90 dark:bg-slate-900 rounded-[1.25rem] border-none outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium"
+                    placeholder={'Örn:\nKenar uzunlukları 2 cm olan...\nA) 11  B) 17  C) 22  D) 28\nCevap: D'}
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      disabled={pasteLoading}
+                      onClick={() => handlePasteParse()}
+                      className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {pasteLoading ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
+                      Ayrıştır ve forma aktar
+                    </button>
+                  </div>
+                </>
+              ) : null}
+            </section>
+          ) : null}
           
           {/* 1. BÖLÜM: SORU GİRİŞİ (TEXT + IMAGE) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

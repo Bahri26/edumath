@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { X, Sparkles, Loader2, Image as ImageIcon, Check, ArrowRight, Wand2, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Sparkles, Loader2, Image as ImageIcon, Check, ArrowRight, Wand2, CheckCircle, ClipboardPaste } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { describeApiError } from '../../utils/errorMessage';
 import apiClient, { resolveAssetUrl } from '../../services/api';
-import { smartParseImage, smartParseText } from '../../services/aiService';
+import { smartParseImage } from '../../services/aiService';
 import Button from '../ui/Button.jsx';
 import { enrichQuestionForm, optionMatchesCorrect } from '../../utils/patternQuestionSolver';
 
@@ -13,18 +13,24 @@ const stripDiagramPlaceholder = (text) =>
 const buildCombinedQuestionText = ({ introText = '', questionText = '' }) =>
   [introText, questionText].map((s) => String(s || '').trim()).filter(Boolean).join('\n\n');
 
+const padOptions = (options, size = 5) => {
+  const list = Array.isArray(options) ? options.map((o) => String(o || '').trim()) : [];
+  while (list.length < size) list.push('');
+  return list.slice(0, size);
+};
+
 const mapServerParseToForm = (data = {}, layout = null) => {
   const intro = data.introText ?? layout?.introText ?? '';
   const question = data.questionText ?? layout?.questionLine ?? stripDiagramPlaceholder(data.text);
   const steps = Array.isArray(data.stepLabels) ? data.stepLabels : (layout?.stepLabels || []);
   const stepLabels = steps.join(' · ');
-  return enrichQuestionForm({
+  const base = {
     text: buildCombinedQuestionText({ introText: intro, questionText: question }),
     introText: intro,
     questionText: question,
     stepLabels,
     visualPrompt: data.visualPrompt || stepLabels || '',
-    options: Array.isArray(data.options) ? data.options : ['', '', '', ''],
+    options: padOptions(data.options),
     correctAnswer: data.correctAnswer || '',
     solution: data.solution || data.solutionText || '',
     topic: data.topic || '',
@@ -33,7 +39,8 @@ const mapServerParseToForm = (data = {}, layout = null) => {
     difficulty: data.difficulty || 'Orta',
     imagePath: data.imagePath || '',
     assessmentMeta: data.assessmentMeta || null,
-  });
+  };
+  return enrichQuestionForm(base);
 };
 
 const buildSavePayload = (parsedData, parseLayout) => {
@@ -80,24 +87,30 @@ const appendQuestionFormFields = (form, payload) => {
   }
 };
 
+const correctOptionLabel = (options, correctAnswer) => {
+  const idx = options.findIndex((o) => optionMatchesCorrect(o, correctAnswer));
+  if (idx < 0) return correctAnswer;
+  return `${String.fromCharCode(65 + idx)}) ${options[idx]}`;
+};
+
 export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   const { showToast } = useToast();
-  const [mode, setMode] = useState('image'); // 'image' | 'text'
-  const [step, setStep] = useState('upload'); // 'upload' | 'editing'
+  const dropRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [step, setStep] = useState('upload');
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
   const [localPreviewUrl, setLocalPreviewUrl] = useState('');
   const [uploadedFile, setUploadedFile] = useState(null);
-  const [pastedContent, setPastedContent] = useState('');
-  
-  // Düzenleme State'i
+  const [dragOver, setDragOver] = useState(false);
+
   const [parsedData, setParsedData] = useState({
     text: '',
     introText: '',
     questionText: '',
     stepLabels: '',
     visualPrompt: '',
-    options: ['', '', '', ''],
+    options: ['', '', '', '', ''],
     correctAnswer: '',
     solution: '',
     topic: '',
@@ -110,6 +123,109 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   const [parseMode, setParseMode] = useState('');
   const [ocrPreview, setOcrPreview] = useState('');
   const [parseLayout, setParseLayout] = useState(null);
+
+  const processImageFile = useCallback(async (file) => {
+    if (!file || !String(file.type || '').startsWith('image/')) {
+      showToast('Lütfen bir görsel dosyası seçin.', 'error');
+      return;
+    }
+
+    const blobUrl = URL.createObjectURL(file);
+    setLocalPreviewUrl(blobUrl);
+    setImage(blobUrl);
+    setUploadedFile(file);
+    setLoading(true);
+
+    try {
+      const body = await smartParseImage(file);
+      const data = body?.data || {};
+      const mode = body?.meta?.parseMode || '';
+      const serverMessage = body?.message;
+      setParseMode(mode);
+      setOcrPreview(body?.ocrPreview || '');
+      const layout = body?.meta?.layout || data?.assessmentMeta?.parseLayout || null;
+      setParseLayout(layout);
+
+      const form = mapServerParseToForm(data, layout);
+      setParsedData(form);
+      setStep('editing');
+
+      if (form.correctAnswer?.trim()) {
+        showToast(
+          `Soru analiz edildi ve çözüldü. Doğru şık: ${correctOptionLabel(form.options, form.correctAnswer)}`,
+          'success'
+        );
+      } else if (mode === 'manual') {
+        showToast(serverMessage || 'OCR sonuç vermedi. Alanları manuel doldurun.', 'error');
+      } else {
+        showToast(
+          serverMessage || 'Görsel okundu; doğru şık bulunamadı — «Çöz ve işaretle» deneyin.',
+          'error'
+        );
+      }
+    } catch (err) {
+      setParsedData((prev) => ({
+        ...prev,
+        options: prev.options?.length ? padOptions(prev.options) : ['', '', '', '', ''],
+        subject: prev.subject || 'Matematik',
+        classLevel: prev.classLevel || '9. Sınıf',
+        difficulty: prev.difficulty || 'Orta',
+      }));
+      setStep('editing');
+      const status = err?.response?.status;
+      if (status === 429) {
+        showToast(describeApiError(err, 'AI kotası dolu. Birazdan tekrar deneyin.'), 'error');
+      } else if (status === 401 || status === 403) {
+        showToast('AI yetki sorunu. Yöneticiye anahtar/izin için bildirin.', 'error');
+      } else if (err?.code === 'ECONNABORTED') {
+        showToast('Analiz zaman aşımına uğradı. Tekrar deneyin.', 'error');
+      } else {
+        showToast(describeApiError(err, 'Görsel analiz edilemedi. Alanları elle doldurun.'), 'error');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const onPaste = (e) => {
+      if (step !== 'upload' || loading) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of items) {
+        if (item.type?.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) processImageFile(file);
+          return;
+        }
+      }
+    };
+
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, [isOpen, step, loading, processImageFile]);
+
+  const resetUploadState = useCallback(() => {
+    setLoading(false);
+    setImage(null);
+    setLocalPreviewUrl('');
+    setUploadedFile(null);
+    setDragOver(false);
+    setParseMode('');
+    setOcrPreview('');
+    setParseLayout(null);
+    setStep('upload');
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetUploadState();
+    }
+  }, [isOpen, resetUploadState]);
 
   if (!isOpen) return null;
 
@@ -129,151 +245,43 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     return image || '';
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const blobUrl = URL.createObjectURL(file);
-    setLocalPreviewUrl(blobUrl);
-    setImage(blobUrl);
-    setUploadedFile(file);
-    setLoading(true);
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) processImageFile(file);
+    e.target.value = '';
+  };
 
-    try {
-      const body = await smartParseImage(file);
-      const data = body?.data || {};
-      const mode = body?.meta?.parseMode || '';
-      const serverMessage = body?.message;
-      setParseMode(mode);
-      setOcrPreview(body?.ocrPreview || '');
-      const layout = body?.meta?.layout || data?.assessmentMeta?.parseLayout || null;
-      setParseLayout(layout);
-      setParsedData(mapServerParseToForm(data, layout));
-      // Önizleme: tarayıcıdaki blob URL korunur; sunucu yolu yalnızca kayıt için
-      setStep('editing');
-      if (mode === 'manual') {
-        showToast(serverMessage || 'AI ve OCR sonuç vermedi. Alanları manuel doldurun.', 'error');
-      } else if (mode === 'ocr+crop' || mode === 'ocr' || mode === 'ollama-vision') {
-        showToast(serverMessage || 'Görsel soruya dönüştürüldü. Alanları kontrol edin.', 'success');
-      } else {
-        showToast(serverMessage || 'Görsel analiz edildi.', 'success');
-      }
-    } catch (err) {
-      // Fallback to manual: keep local preview and open editing with blanks
-      setParsedData(prev => ({
-        text: prev.text || '',
-        options: prev.options?.length ? prev.options : ['', '', '', ''],
-        correctAnswer: prev.correctAnswer || '',
-        solution: prev.solution || '',
-        subject: prev.subject || 'Matematik',
-        classLevel: prev.classLevel || '9. Sınıf',
-        difficulty: prev.difficulty || 'Orta'
-      }));
-      setStep('editing');
-      const status = err?.response?.status;
-      if (status === 429) {
-        showToast(describeApiError(err, 'AI kotası dolu. Birazdan tekrar deneyin.'), 'error');
-      } else if (status === 401 || status === 403) {
-        showToast('AI yetki sorunu. Yöneticiye anahtar/izin için bildirin.', 'error');
-      } else if (err?.code === 'ECONNABORTED') {
-        showToast('AI yanıt zaman aşımına uğradı. Tekrar deneyin.', 'error');
-      } else {
-        showToast(describeApiError(err, 'Görsel analiz edilemedi. Alanları elle doldurun.'), 'error');
-      }
-    } finally {
-      setLoading(false);
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) processImageFile(file);
+  };
+
+  const handleAutoSolve = () => {
+    const enriched = enrichQuestionForm({
+      ...parsedData,
+      text: buildCombinedQuestionText({
+        introText: parsedData.introText,
+        questionText: parsedData.questionText || parsedData.text,
+      }),
+    });
+    setParsedData(enriched);
+    if (enriched.correctAnswer?.trim()) {
+      showToast(`Doğru şık: ${correctOptionLabel(enriched.options, enriched.correctAnswer)}`, 'success');
+    } else {
+      showToast('Otomatik çözüm bulunamadı. Şıkları kontrol edin.', 'error');
     }
   };
 
-  // 1.b Metinden Ayrıştırma (Copy-Paste)
-  const handleTextParse = async (contentToParse) => {
-    const content = (contentToParse ?? pastedContent).replace(/\r/g, '').trim();
-    if (!content) {
-      showToast('Lütfen metni yapıştırın', 'error');
-      return false;
-    }
-    setLoading(true);
-    try {
-      // 1) Soru metnini, 2) Şıkları ve 3) Cevabı ayrıştır
-      const firstOptionIndex = content.search(/[A-Ha-h]\)/);
-      const questionText = firstOptionIndex > -1 ? content.slice(0, firstOptionIndex).trim() : content.trim();
-
-      // Şıklar: "A) ... B) ... C) ... D) ..." tek satır veya çok satır
-      // Önce cevap satırını ayıkla ki şık olarak yakalanmasın
-      const contentNoAnswer = content.replace(/(^|\n)\s*C(e|ı|i)vap\s*:.*/i, '').trim();
-      const optionPattern = /([A-Ha-h])\)\s*([\s\S]*?)(?=\s+[A-Ha-h]\)|\s*$)/g;
-      const optionMatches = [...contentNoAnswer.matchAll(optionPattern)];
-      let options = optionMatches.map(m => m[2].replace(/\s+/g, ' ').trim());
-
-      // Çok satırlı format için ek deneme
-      if (options.length === 0) {
-        const linePattern = /^\s*([A-Ha-h])\)\s*(.+)$/gm;
-        options = [...content.matchAll(linePattern)].map(m => m[2].trim());
-      }
-
-      // Cevap satırı: "Cevap: C) 28" veya "Cevap: C" veya "Cevap: 28"
-      const answerLine = content.match(/Cevap\s*:?\s*(.+)$/im);
-      let correctAnswer = '';
-      if (answerLine) {
-        const ansStr = (answerLine[1] || '').trim();
-        const letterMatch = ansStr.match(/^([A-Ha-h])\)/);
-        const bareLetter = ansStr.match(/^([A-Ha-h])$/);
-        const valueMatch = ansStr.replace(/^([A-Ha-h])\)\s*/, '').trim();
-        if (letterMatch || bareLetter) {
-          const letter = (letterMatch ? letterMatch[1] : bareLetter[1]).toUpperCase();
-          const idx = letter.charCodeAt(0) - 65;
-          correctAnswer = options[idx] || valueMatch || '';
-        } else if (valueMatch) {
-          // Değer verilmişse, şıklar içinde eşleşeni işaretle
-          const found = options.find(o => String(o).trim().toLowerCase() === valueMatch.trim().toLowerCase());
-          correctAnswer = found || valueMatch;
-        }
-      }
-
-      // Min 2 şık olacak şekilde doldur, fazla şıklar olduğu kadar bırak (A-H destek)
-      if (options.length < 2) {
-        options = options.concat(Array(2 - options.length).fill(''));
-      }
-
-      const parsed = enrichQuestionForm({
-        text: questionText,
-        options,
-        correctAnswer,
-        solution: parsedData.solution || '',
-        topic: parsedData.topic || '',
-        subject: parsedData.subject || 'Matematik',
-        classLevel: parsedData.classLevel || '9. Sınıf',
-        difficulty: parsedData.difficulty || 'Orta'
-      });
-
-      setParsedData(parsed);
-      setStep('editing');
-      showToast('Metin ayrıştırıldı. Şıklar ve doğru cevap işaretlendi.', 'success');
-      // Otomatik havuza kaydet
-      await handleFinalSave(parsed);
-      return true;
-    } catch (err) {
-      // Backend'e fallback (opsiyonel)
-      try {
-        const body = await smartParseText(content);
-        setParsedData(body.data);
-        setStep('editing');
-        showToast('Metin ayrıştırıldı (AI).', 'success');
-        await handleFinalSave(body.data);
-        return true;
-      } catch {
-        showToast('Metin ayrıştırılamadı', 'error');
-        return false;
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 2. Havuza Kaydetme
   const handleFinalSave = async (dataToSave) => {
     setLoading(true);
     try {
-      const base = dataToSave || parsedData;
+      let base = dataToSave || parsedData;
+      if (!base.correctAnswer?.trim()) {
+        base = enrichQuestionForm(base);
+        setParsedData(base);
+      }
       const payload = { ...buildSavePayload(base, parseLayout), source: 'AI' };
 
       if (!payload.text?.trim()) {
@@ -281,7 +289,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         return;
       }
       if (!payload.correctAnswer?.trim()) {
-        showToast('Doğru cevabı işaretleyin.', 'error');
+        showToast('Doğru cevap bulunamadı. «Çöz ve işaretle» veya manuel işaretleyin.', 'error');
         return;
       }
 
@@ -307,7 +315,8 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   };
 
   const handleTransferToCreate = () => {
-    onParsed(buildSavePayload(parsedData, parseLayout), uploadedFile);
+    const enriched = enrichQuestionForm(parsedData);
+    onParsed(buildSavePayload(enriched, parseLayout), uploadedFile);
     onClose();
   };
 
@@ -323,19 +332,18 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Akıllı görsel/metin analiz"
+      aria-label="Akıllı görsel analiz"
       onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
     >
       <div className="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95">
-        
-        {/* Header */}
+
         <div className="p-6 bg-indigo-600 text-white flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-xl"><Sparkles className={loading ? "animate-spin" : ""} /></div>
+            <div className="p-2 bg-white/20 rounded-xl"><Sparkles className={loading ? 'animate-spin' : ''} /></div>
             <div>
               <h3 className="text-xl font-black">Akıllı Yapıştır</h3>
               <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest">
-                {step === 'upload' ? 'Görsel → soru' : `${parseModeLabel(parseMode)} · doğrulama`}
+                {step === 'upload' ? 'Görsel → analiz → çözüm' : `${parseModeLabel(parseMode)} · doğrulama`}
               </p>
             </div>
           </div>
@@ -346,60 +354,50 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
 
         <div className="p-8 flex-1 overflow-y-auto max-h-[70vh] custom-scrollbar">
           {step === 'upload' ? (
-            /* ADIM 1: YÜKLEME ALANI */
             <div className="space-y-6">
-              {/* Mode Toggle */}
-              <div className="flex gap-2 mb-4">
-                <Button variant={mode==='image'?'primary':'outline'} size="sm" onClick={()=>setMode('image')}>Görselden Analiz</Button>
-                <Button variant={mode==='text'?'primary':'outline'} size="sm" onClick={()=>setMode('text')}>Kopyala-Yapıştır</Button>
-              </div>
-
-              {mode === 'image' ? (
-              <label className="flex flex-col items-center justify-center w-full h-80 border-4 border-dashed border-slate-100 dark:border-slate-700 rounded-[3rem] cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all group">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+              <div
+                ref={dropRef}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                className={`relative flex flex-col items-center justify-center w-full h-80 border-4 border-dashed rounded-[3rem] cursor-pointer transition-all group ${
+                  dragOver
+                    ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30'
+                    : 'border-slate-100 dark:border-slate-700 hover:border-indigo-300 hover:bg-indigo-50/30'
+                }`}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <div className="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
                   <div className="p-5 bg-indigo-50 dark:bg-indigo-900/30 rounded-full mb-4 group-hover:scale-110 transition-transform">
-                    <ImageIcon className="text-indigo-600" size={48} />
+                    {dragOver ? <ClipboardPaste className="text-indigo-600" size={48} /> : <ImageIcon className="text-indigo-600" size={48} />}
                   </div>
-                  <p className="mb-2 text-lg font-black text-slate-700 dark:text-slate-200">Soru Resmini Buraya Bırakın</p>
+                  <p className="mb-2 text-lg font-black text-slate-700 dark:text-slate-200">
+                    Soru görselini buraya bırakın veya yapıştırın
+                  </p>
                   <p className="text-sm text-slate-400 font-medium text-center px-10">
-                    Net ekran görüntüsü kullanın. Sistem metni okur (OCR), şıkları ve cevabı ayırır;
-                    <br /> sonra siz kontrol edip havuza kaydedersiniz.
+                    Ekran görüntüsü alın (Win+Shift+S), sonra <strong>Ctrl+V</strong> ile yapıştırın.
+                    <br />
+                    Sistem OCR ile okur, soruyu çözer ve doğru şıkkı işaretler.
+                  </p>
+                  <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-indigo-500">
+                    Ctrl+V · sürükle-bırak · dosya seç
                   </p>
                 </div>
-                <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
-              </label>
-              ) : (
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Soruyu Buraya Yapıştırın</label>
-                  <textarea 
-                    value={pastedContent}
-                    onChange={e=>setPastedContent(e.target.value)}
-                    onPaste={async (e) => {
-                      // Klasik yapıştırma işlemini bekle, sonra ayrıştır
-                      setTimeout(async () => {
-                        const pasted = e.clipboardData.getData('text');
-                        setPastedContent(pasted);
-                        await handleTextParse(pasted);
-                      }, 0);
-                    }}
-                    className="w-full h-64 p-4 bg-slate-50 dark:bg-slate-900 border-none rounded-[1.5rem] font-medium outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder={"Örn. soru metni ve A) B) C) D) şeklinde şıklar..."}
-                  />
-                  <div className="flex justify-end">
-                    <Button variant="primary" size="md" onClick={()=>handleTextParse()} disabled={loading}>
-                      {loading ? <Loader2 className="animate-spin" size={18} /> : <ArrowRight size={18} />} Ayrıştır
-                    </Button>
-                  </div>
-                </div>
-              )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
+              </div>
               {loading && (
                 <div className="flex items-center justify-center gap-3 text-indigo-600 font-bold animate-pulse">
-                  <Loader2 className="animate-spin" /> OCR, diyagram kırpma ve şık ayrıştırması…
+                  <Loader2 className="animate-spin" /> OCR, çözüm ve şık işaretleme…
                 </div>
               )}
             </div>
           ) : (
-            /* ADIM 2: Şekil | Soru | Şıklar — ayrı bloklar */
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-500">
               <div className="space-y-5">
                 {hasShapeSection ? (
@@ -455,11 +453,12 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                 </section>
 
                 <section className="rounded-[1.75rem] border border-slate-200 dark:border-slate-700 p-5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1 mb-2 block tracking-widest">Çözüm ve açıklama</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1 mb-2 block tracking-widest">Çözüm adımları</label>
                   <textarea
                     value={parsedData.solution}
                     onChange={(e) => setParsedData({ ...parsedData, solution: e.target.value })}
-                    className="w-full h-28 p-4 bg-slate-50 dark:bg-slate-900 border-none rounded-[1.25rem] text-sm italic outline-none"
+                    className="w-full h-28 p-4 bg-slate-50 dark:bg-slate-900 border-none rounded-[1.25rem] text-sm outline-none"
+                    placeholder="Otomatik doldurulur; gerekirse düzenleyin."
                   />
                 </section>
 
@@ -477,7 +476,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                     <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 dark:text-emerald-200">3 · Şıklar ve doğru cevap</p>
                     <button
                       type="button"
-                      onClick={() => setParsedData(enrichQuestionForm(parsedData))}
+                      onClick={handleAutoSolve}
                       className="text-[10px] font-black uppercase text-emerald-700 flex items-center gap-1 px-2 py-1 rounded-lg bg-white/70 dark:bg-slate-900/50"
                     >
                       <Wand2 size={12} /> Çöz ve işaretle
@@ -485,70 +484,71 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                   </div>
                   {parsedData.correctAnswer?.trim() ? (
                     <p className="text-xs font-bold text-emerald-700">
-                      Doğru şık: {parsedData.options.findIndex((o) => optionMatchesCorrect(o, parsedData.correctAnswer)) >= 0
-                        ? `${String.fromCharCode(65 + parsedData.options.findIndex((o) => optionMatchesCorrect(o, parsedData.correctAnswer)))}) ${parsedData.correctAnswer}`
-                        : parsedData.correctAnswer}
+                      Doğru şık: {correctOptionLabel(parsedData.options, parsedData.correctAnswer)}
                     </p>
-                  ) : null}
+                  ) : (
+                    <p className="text-xs font-bold text-amber-600">Doğru şık henüz işaretlenmedi.</p>
+                  )}
                   <div className="space-y-3">
                     {parsedData.options.map((opt, idx) => {
                       const isCorrect = optionMatchesCorrect(opt, parsedData.correctAnswer);
                       return (
-                      <div key={idx} className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${isCorrect ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-100 dark:border-slate-700'}`}>
-                        <button 
-                          type="button"
-                          onClick={() => setParsedData({...parsedData, correctAnswer: opt})}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'}`}
-                        >
-                          {isCorrect ? <CheckCircle size={14} /> : String.fromCharCode(65 + idx)}
-                        </button>
-                        <input 
-                          value={opt} 
-                          onChange={e => {
-                            const newOpts = [...parsedData.options];
-                            const prevVal = newOpts[idx];
-                            newOpts[idx] = e.target.value;
-                            const next = { ...parsedData, options: newOpts };
-                            if (optionMatchesCorrect(prevVal, parsedData.correctAnswer)) {
-                              next.correctAnswer = e.target.value;
-                            }
-                            setParsedData(next);
-                          }}
-                          className="bg-transparent border-none outline-none text-sm font-bold flex-1"
-                        />
-                      </div>
-                    );})}
+                        <div key={idx} className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${isCorrect ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-100 dark:border-slate-700'}`}>
+                          <button
+                            type="button"
+                            onClick={() => setParsedData({ ...parsedData, correctAnswer: opt })}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'}`}
+                          >
+                            {isCorrect ? <CheckCircle size={14} /> : String.fromCharCode(65 + idx)}
+                          </button>
+                          <input
+                            value={opt}
+                            onChange={(e) => {
+                              const newOpts = [...parsedData.options];
+                              const prevVal = newOpts[idx];
+                              newOpts[idx] = e.target.value;
+                              const next = { ...parsedData, options: newOpts };
+                              if (optionMatchesCorrect(prevVal, parsedData.correctAnswer)) {
+                                next.correctAnswer = e.target.value;
+                              }
+                              setParsedData(next);
+                            }}
+                            className="bg-transparent border-none outline-none text-sm font-bold flex-1"
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </section>
-                {/* Konu, Zorluk, Sınıf */}
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">Konu</label>
-                    <input 
+                    <input
                       value={parsedData.topic}
-                      onChange={e => setParsedData({ ...parsedData, topic: e.target.value })}
+                      onChange={(e) => setParsedData({ ...parsedData, topic: e.target.value })}
                       className="w-full p-3 bg-slate-50 dark:bg-slate-900 border-none rounded-xl text-sm font-medium outline-none"
                       placeholder="Örn. Örüntüler"
                     />
                   </div>
                   <div>
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">Zorluk</label>
-                    <select 
+                    <select
                       value={parsedData.difficulty}
-                      onChange={e => setParsedData({ ...parsedData, difficulty: e.target.value })}
+                      onChange={(e) => setParsedData({ ...parsedData, difficulty: e.target.value })}
                       className="w-full p-3 bg-white dark:bg-slate-800 rounded-xl border-none text-xs font-bold shadow-sm outline-none"
                     >
-                      {['Kolay','Orta','Zor'].map(lv => <option key={lv}>{lv}</option>)}
+                      {['Kolay', 'Orta', 'Zor'].map((lv) => <option key={lv}>{lv}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">Sınıf</label>
-                    <select 
+                    <select
                       value={parsedData.classLevel}
-                      onChange={e => setParsedData({ ...parsedData, classLevel: e.target.value })}
+                      onChange={(e) => setParsedData({ ...parsedData, classLevel: e.target.value })}
                       className="w-full p-3 bg-white dark:bg-slate-800 rounded-xl border-none text-xs font-bold shadow-sm outline-none"
                     >
-                      {['1. Sınıf','2. Sınıf','3. Sınıf','4. Sınıf','5. Sınıf','6. Sınıf','7. Sınıf','8. Sınıf','9. Sınıf','10. Sınıf','11. Sınıf','12. Sınıf'].map(cl => <option key={cl}>{cl}</option>)}
+                      {['1. Sınıf', '2. Sınıf', '3. Sınıf', '4. Sınıf', '5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf', '9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf'].map((cl) => <option key={cl}>{cl}</option>)}
                     </select>
                   </div>
                 </div>
@@ -570,23 +570,22 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
           )}
         </div>
 
-        {/* Footer */}
         <div className="p-8 pt-0 flex gap-4 justify-end">
           <Button variant="outline" size="md" onClick={onClose}>İptal</Button>
           {step === 'editing' && (
             <div className="flex gap-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="md"
                 onClick={handleTransferToCreate}
                 disabled={loading}
               >
                 <ArrowRight size={18} /> Soru Oluşturmaya Aktar
               </Button>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 size="md"
-                onClick={handleFinalSave}
+                onClick={() => handleFinalSave()}
                 disabled={loading}
               >
                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />} Havuza Kaydet
