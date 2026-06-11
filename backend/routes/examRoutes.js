@@ -9,6 +9,7 @@ const Student = require('../models/Student');
 const { gradeQuestionAnswer } = require('../utils/questionGrading');
 const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
 const { recordUserActivity } = require('../services/activityLogger');
+const { canManageExam } = require('../utils/examAccess');
 
 // 1. TÜM SINAVLARI GETİR
 router.get('/', async (req, res) => {
@@ -172,11 +173,12 @@ router.post('/auto-generate', authMiddleware, roleMiddleware(['teacher']), async
 });
 
 // 4. SINAVI SİL
-router.delete('/:id', authMiddleware, roleMiddleware(['teacher']), async (req, res) => {
+router.delete('/:id', authMiddleware, roleMiddleware(['teacher', 'admin']), async (req, res) => {
   try {
     const exam = await Exam.findById(req.params.id);
     if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı' });
-    if (String(exam.createdBy) !== String(req.user.id)) {
+    const actor = await User.findById(req.user.id).select('role branch branchApproval').lean();
+    if (!canManageExam({ ...actor, id: req.user.id }, exam)) {
       return res.status(403).json({ message: 'Bu sınavı silme yetkiniz yok' });
     }
     await exam.deleteOne();
@@ -187,7 +189,7 @@ router.delete('/:id', authMiddleware, roleMiddleware(['teacher']), async (req, r
 });
 
 // 4.5. SINAV GÜNCELLE (Süre, başlık, açıklama, durum)
-router.put('/:id', authMiddleware, roleMiddleware(['teacher']), async (req, res) => {
+router.put('/:id', authMiddleware, roleMiddleware(['teacher', 'admin']), async (req, res) => {
   try {
     const allowed = ['title', 'description', 'duration', 'status'];
     const update = {};
@@ -196,7 +198,8 @@ router.put('/:id', authMiddleware, roleMiddleware(['teacher']), async (req, res)
     }
     let exam = await Exam.findById(req.params.id);
     if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı' });
-    if (String(exam.createdBy) !== String(req.user.id)) {
+    const actor = await User.findById(req.user.id).select('role branch branchApproval').lean();
+    if (!canManageExam({ ...actor, id: req.user.id }, exam)) {
       return res.status(403).json({ message: 'Bu sınavı güncelleme yetkiniz yok' });
     }
     exam = await Exam.findByIdAndUpdate(req.params.id, update, { new: true });

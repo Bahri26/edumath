@@ -16,7 +16,7 @@ services:
       - key: MONGODB_DB
         value: Edumath
       - key: FRONTEND_URL
-        sync: false
+        value: https://edumath-client.onrender.com
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
@@ -103,7 +103,7 @@ services:
     pullRequestPreviewsEnabled: true
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: https://edumath-t10n.onrender.com/api
       - key: VITE_ASSET_BASE_URL
         sync: false
         # Render: API servis kökü (örn. https://edumath-api.onrender.com) — /api olmadan

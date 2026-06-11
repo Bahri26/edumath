@@ -657,8 +657,10 @@ exports.getMyExams = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
+    const teacher = await User.findById(teacherId).select('role branch branchApproval').lean();
+    const { attachExamAccess } = require('../utils/examAccess');
     return res.json({
-      data: exams,
+      data: attachExamAccess({ ...teacher, id: teacherId }, exams),
       total,
       pages: Math.ceil(total / limit),
       currentPage: page
@@ -839,7 +841,14 @@ exports.getSubjectExams = async (req, res) => {
 
     const total = await Exam.countDocuments(query);
     const exams = await Exam.find(query).sort(sort).skip((page - 1) * limit).limit(limit).lean();
-    res.json({ data: exams, total, pages: Math.ceil(total / limit), currentPage: page });
+    const teacher = await User.findById(req.user.id).select('role branch branchApproval').lean();
+    const { attachExamAccess } = require('../utils/examAccess');
+    res.json({
+      data: attachExamAccess({ ...teacher, id: req.user.id }, exams),
+      total,
+      pages: Math.ceil(total / limit),
+      currentPage: page,
+    });
   } catch (err) {
     res.status(500).json({ message: 'Branşa göre sınavlar alınamadı', error: err.message });
   }

@@ -27,6 +27,18 @@ import {
 } from '../../constants/patternTopicsUi';
 import { enrichQuestionForm } from '../../utils/patternQuestionSolver';
 
+function optionLabel(opt) {
+  if (typeof opt === 'string') return opt.trim();
+  if (opt && typeof opt.text === 'string') return opt.text.trim();
+  return '';
+}
+
+function optionMatchesAnswer(opt, correctAnswer) {
+  const label = optionLabel(opt);
+  const answer = String(correctAnswer || '').trim();
+  return label && answer && (label === answer || label.includes(answer) || answer.includes(label));
+}
+
 const MATH_TOPIC_OPTIONS_FALLBACK = [
   'Tümü',
   PATTERN_TOPIC_ALL_UNDER,
@@ -116,22 +128,28 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {question.options?.map((opt, idx) => (
+            {question.options?.map((opt, idx) => {
+              const label = optionLabel(opt);
+              const isCorrect = optionMatchesAnswer(opt, question.correctAnswer);
+              return (
               <div key={idx} className={`p-4 rounded-2xl border-2 flex items-center gap-4 ${
-                question.correctAnswer === (opt.text || opt)
+                isCorrect
                   ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10'
                   : 'border-slate-100 dark:border-slate-700'
               }`}>
                 <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
-                  question.correctAnswer === (opt.text || opt) ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-700'
+                  isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-700'
                 }`}>
                   {String.fromCharCode(65 + idx)}
                 </span>
                 <div className="flex items-center gap-3 flex-1">
-                  <span className="text-sm font-semibold flex-1">{renderWithLatex(opt.text || opt)}</span>
+                  <span className="text-sm font-semibold flex-1">
+                    {label ? renderWithLatex(label) : <span className="text-slate-400 italic">—</span>}
+                  </span>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {(hintText || codeText) && (

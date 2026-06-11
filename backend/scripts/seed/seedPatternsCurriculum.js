@@ -1039,12 +1039,17 @@ async function seedUsers() {
   return { admin, teacher, student };
 }
 
-async function seedCurriculum(teacherId) {
+async function seedCurriculum(teacherId, options = {}) {
+  const { classLevels } = options;
+  const items = classLevels?.length
+    ? curriculum.filter((entry) => classLevels.includes(entry.classLevel))
+    : curriculum;
+
   let topicsTouched = 0;
   let lessonsTouched = 0;
   let examsTouched = 0;
 
-  const seededExtraTopicNames = Array.from(new Set(curriculum.flatMap((item) => item.nextTopics || [])));
+  const seededExtraTopicNames = Array.from(new Set(items.flatMap((item) => item.nextTopics || [])));
   const extraTopics = await Topic.find({
     name: { $in: seededExtraTopicNames },
     subject: 'Matematik',
@@ -1056,20 +1061,28 @@ async function seedCurriculum(teacherId) {
     await Topic.deleteMany({ _id: { $in: extraTopicIds } });
   }
 
-  await Question.deleteMany({
+  const questionDeleteFilter = {
     topic: 'Örüntüler',
     subject: 'Matematik',
     createdBy: teacherId,
-  });
+  };
+  if (classLevels?.length) {
+    questionDeleteFilter.classLevel = { $in: classLevels };
+  }
+  await Question.deleteMany(questionDeleteFilter);
 
-  await Exam.deleteMany({
+  const examDeleteFilter = {
     topic: 'Örüntüler',
     subject: 'Matematik',
     createdBy: teacherId,
     examType: 'meb-patterns-screening',
-  });
+  };
+  if (classLevels?.length) {
+    examDeleteFilter.classLevel = { $in: classLevels };
+  }
+  await Exam.deleteMany(examDeleteFilter);
 
-  for (const item of curriculum) {
+  for (const item of items) {
     const metadata = curriculumMetadata[item.classLevel];
     const topic = await Topic.findOneAndUpdate(
       { name: 'Örüntüler', classLevel: item.classLevel, subject: 'Matematik' },
@@ -1174,6 +1187,12 @@ async function seedCurriculum(teacherId) {
   return { topicsTouched, lessonsTouched, examsTouched, patternQuestions, mebTaggedQuestions, totalTopics, totalLessons, totalExams };
 }
 
+module.exports = {
+  curriculum,
+  seedUsers,
+  seedCurriculum,
+};
+
 async function main() {
   const { uri, dbName } = getMongoConfig();
   await mongoose.connect(uri, { dbName, serverSelectionTimeoutMS: 10000 });
@@ -1196,7 +1215,9 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

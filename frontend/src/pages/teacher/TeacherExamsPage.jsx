@@ -707,6 +707,7 @@ export default function TeacherExamsPage() {
                   <Button variant="outline" size="sm" onClick={() => setPreviewId(exam._id)} aria-label="Önizle">
                     <Eye size={16} />
                   </Button>
+                  {exam.canManage !== false ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -718,15 +719,16 @@ export default function TeacherExamsPage() {
                       try {
                         await apiClient.delete(`/exams/${exam._id}`);
                         showToast('Sınav silindi', 'success');
-                      } catch {
+                      } catch (err) {
                         setExams(prev);
-                        showToast('Sınav silinemedi', 'error');
+                        showToast(err.response?.data?.message || 'Sınav silinemedi', 'error');
                       }
                     }}
                     aria-label="Sınavı sil"
                   >
                     <Trash2 size={16} />
                   </Button>
+                  ) : null}
                 </div>
               </div>
               <h3 className="text-lg font-black text-slate-800 dark:text-white mb-1 line-clamp-2">
@@ -746,7 +748,9 @@ export default function TeacherExamsPage() {
                     min={10}
                     max={180}
                     defaultValue={exam.duration || 60}
+                    disabled={exam.canManage === false}
                     onBlur={async (e) => {
+                      if (exam.canManage === false) return;
                       const val = parseInt(e.target.value || '60', 10);
                       if (val === exam.duration) return;
                       const prev = exams;
@@ -754,9 +758,9 @@ export default function TeacherExamsPage() {
                       try {
                         await apiClient.put(`/exams/${exam._id}`, { duration: val });
                         showToast('Süre güncellendi', 'success');
-                      } catch {
+                      } catch (err) {
                         setExams(prev);
-                        showToast('Süre güncellenemedi', 'error');
+                        showToast(err.response?.data?.message || 'Süre güncellenemedi', 'error');
                       }
                     }}
                     className="ml-1 w-14 p-1 rounded bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-200 font-bold normal-case"

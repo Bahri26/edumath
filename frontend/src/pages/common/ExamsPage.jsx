@@ -88,10 +88,18 @@ const ExamsPage = ({ role }) => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Silmek istediğine emin misin?")) {
+  const handleDelete = async (id, canManage = true) => {
+    if (canManage === false) {
+      showToast('Bu sınavı silme yetkiniz yok', 'error');
+      return;
+    }
+    if (!window.confirm('Silmek istediğine emin misin?')) return;
+    try {
       await apiClient.delete(`/exams/${id}`);
       fetchExams();
+      showToast('Sınav silindi', 'success');
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Sınav silinemedi', 'error');
     }
   };
 
@@ -445,8 +453,8 @@ const ExamsPage = ({ role }) => {
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-xl"><FileText size={24} /></div>
                 <div className="flex items-center gap-2">
                   {exam.classLevel && <Badge color="indigo" className="font-semibold">{exam.classLevel}</Badge>}
-                  {role === 'teacher' && (
-                    <Button aria-label="Sınavı Sil" variant="outline" size="sm" onClick={() => handleDelete(exam._id)}>
+                  {role === 'teacher' && exam.canManage !== false && (
+                    <Button aria-label="Sınavı Sil" variant="outline" size="sm" onClick={() => handleDelete(exam._id, exam.canManage)}>
                       <Trash2 size={16} />
                     </Button>
                   )}
