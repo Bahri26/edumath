@@ -84,7 +84,7 @@ export default function ExamPreviewModal({ examId, onClose }) {
                         mainClassName="text-sm text-slate-800 dark:text-slate-200 leading-relaxed"
                         className="mb-4"
                       />
-                      <QuestionVisual src={q.image} alt={`Soru ${idx + 1} gorseli`} className="mb-4 h-56" />
+                      <QuestionVisual src={q.image} alt={`Soru ${idx + 1} gorseli`} className="mb-4" />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {opts.map((opt, i) => (
                           <div key={i} className={`flex items-start gap-2 p-3 rounded-xl border ${opt.text === q.correctAnswer ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 dark:border-slate-700'}`}>

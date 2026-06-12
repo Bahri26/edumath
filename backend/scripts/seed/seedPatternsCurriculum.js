@@ -258,12 +258,16 @@ function getQuestionImage(classLevel, difficulty, text) {
     return matchedRule.image;
   }
 
-  const visualConfig = questionVisuals[classLevel];
-  if (!visualConfig) {
+  if (classLevel === '1. Sınıf') {
+    const hasVisualContent = /[▲■●○]|Elma|Armut|Kırmızı|Güneş|🟥|🔴|🔵|🟢|🔶/u.test(normalizedText);
+    const visualConfig = questionVisuals[classLevel];
+    if (hasVisualContent && visualConfig?.[difficulty]) {
+      return visualConfig[difficulty];
+    }
     return '';
   }
 
-  return visualConfig[difficulty] || visualConfig.default || '';
+  return '';
 }
 
 const optionImageMap = {

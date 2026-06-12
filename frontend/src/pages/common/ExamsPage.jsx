@@ -282,7 +282,7 @@ const ExamsPage = ({ role }) => {
                 mainClassName="text-lg font-medium text-slate-800 dark:text-white"
                 className="mb-4"
               />
-              <QuestionVisual src={q.image} alt={`Soru ${idx + 1} gorseli`} className="mb-4 h-56" />
+              <QuestionVisual src={q.image} alt={`Soru ${idx + 1} gorseli`} className="mb-4" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {(Array.isArray(q.options) ? q.options : []).map((opt, i) => {
                   const optionText = opt?.text || '';
@@ -405,7 +405,7 @@ const ExamsPage = ({ role }) => {
                       mainClassName="text-lg font-medium text-slate-800 dark:text-white"
                       className="mb-6"
                     />
-                    <QuestionVisual src={q.image} alt={`Antrenman ${idx + 1} gorseli`} className="mb-4 h-56" />
+                    <QuestionVisual src={q.image} alt={`Antrenman ${idx + 1} gorseli`} className="mb-4" />
 
                     {q.type === 'matching' ? (
                       <MatchingPracticeCard question={q} state={state} onChange={(promptId, selectedValue, correctPairs) => handleMatchingAnswer(idx, promptId, selectedValue, correctPairs)} />
