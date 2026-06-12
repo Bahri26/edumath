@@ -70,6 +70,10 @@ async function main() {
     );
 
     const title = `${classLevel} Ölçme ve Değerlendirme Sınavı`;
+    const now = new Date();
+    const endAt = new Date(now.getFullYear(), 5, 30, 23, 59, 59);
+    if (endAt < now) endAt.setFullYear(now.getFullYear() + 1);
+
     const exam = await Exam.create({
       title,
       description: `${classLevel} Matematik Örüntüler konusu — 7 kolay, 7 orta, 7 zor soru (${DURATION_MIN} dakika).`,
@@ -80,6 +84,8 @@ async function main() {
       questions: questionIds,
       createdBy: teacher._id,
       status: 'active',
+      startAt: now,
+      endAt,
       examType: 'ilkokul-olcme-degerlendirme',
       learningOutcomes,
     });

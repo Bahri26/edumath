@@ -42,6 +42,9 @@ router.get('/my-exams', protect, role(['teacher']), teacherController.getMyExams
 // Branşa göre sınavlar (onaylı branş gerekli)
 router.get('/subject/exams', protect, role(['teacher']), branchApproved, teacherController.getSubjectExams);
 
+// 📊 SINAV SONUÇLARI VE ANALİZ
+router.get('/exams/:examId/results', protect, role(['teacher', 'admin']), teacherController.getExamResults);
+
 // Branş talebi oluştur
 router.post('/branch-request', protect, role(['teacher']), teacherController.requestBranchApproval);
 

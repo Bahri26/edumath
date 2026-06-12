@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Plus, FileText, Trash2, Eye, Search,
   Clock, Award, Layers, Save, Sparkles,
-  ChevronLeft, ChevronRight, Calendar, ArrowLeft, GripVertical,
+  ChevronLeft, ChevronRight, Calendar, ArrowLeft, GripVertical, BarChart3,
 } from 'lucide-react';
 import apiClient, { resolveAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -16,6 +16,7 @@ import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Select from '../../components/ui/Select.jsx';
 import ExamPreviewModal from '../../components/exams/ExamPreviewModal.jsx';
+import ExamResultsModal from '../../components/exams/ExamResultsModal.jsx';
 
 // --- Alt Bileşenler (Stüdyo için) ---
 
@@ -116,6 +117,7 @@ export default function TeacherExamsPage() {
   const [loading, setLoading] = useState(true);
   const [poolLoading, setPoolLoading] = useState(false);
   const [previewId, setPreviewId] = useState(null);
+  const [resultsId, setResultsId] = useState(null);
 
   // Stüdyo State'leri
   const [examName, setExamName] = useState('');
@@ -704,6 +706,9 @@ export default function TeacherExamsPage() {
                   <Layers size={24} aria-hidden />
                 </div>
                 <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={() => setResultsId(exam._id)} aria-label="Sonuçlar">
+                    <BarChart3 size={16} />
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => setPreviewId(exam._id)} aria-label="Önizle">
                     <Eye size={16} />
                   </Button>
@@ -769,15 +774,16 @@ export default function TeacherExamsPage() {
                 </span>
                 <span
                   className={`px-2 py-0.5 rounded ${
-                    exam.status === 'active'
+                    exam.schedulePhase === 'live' || exam.status === 'active'
                       ? 'bg-green-600 text-white'
-                      : exam.status === 'draft'
+                      : exam.schedulePhase === 'scheduled'
                         ? 'bg-amber-500 text-white'
                         : 'bg-slate-500 text-white'
                   }`}
                 >
-                  {exam.status}
+                  {exam.schedulePhase === 'live' ? 'aktif' : exam.schedulePhase === 'scheduled' ? 'bekliyor' : exam.schedulePhase === 'ended' ? 'bitti' : exam.status}
                 </span>
+                <span className="normal-case">{exam.participantCount ?? (exam.results?.length || 0)} katılım</span>
               </div>
             </Card>
           ))}
@@ -795,6 +801,7 @@ export default function TeacherExamsPage() {
         </Button>
       </div>
       {previewId && <ExamPreviewModal examId={previewId} onClose={() => setPreviewId(null)} />}
+      {resultsId && <ExamResultsModal examId={resultsId} onClose={() => setResultsId(null)} />}
     </div>
   );
 }

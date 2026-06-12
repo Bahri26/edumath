@@ -7,6 +7,12 @@ const Exam = require('../models/Exam');
 const UserProgress = require('../models/UserProgress');
 const mongoose = require('mongoose');
 const { syncTeacherRosterFromTeacherContent } = require('../utils/studentRosterSync');
+const {
+  syncExamStatusIfNeeded,
+  attachExamScheduleMeta,
+  buildTopicAnalysis,
+} = require('../utils/examSchedule');
+const { canManageExam } = require('../utils/examAccess');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -659,8 +665,18 @@ exports.getMyExams = async (req, res) => {
       .lean();
     const teacher = await User.findById(teacherId).select('role branch branchApproval').lean();
     const { attachExamAccess } = require('../utils/examAccess');
+    const enriched = [];
+    for (const exam of exams) {
+      const doc = await Exam.findById(exam._id);
+      if (doc) await syncExamStatusIfNeeded(doc);
+      enriched.push({
+        ...attachExamAccess({ ...teacher, id: teacherId }, exam),
+        ...attachExamScheduleMeta(doc || exam),
+        participantCount: (exam.results || []).length,
+      });
+    }
     return res.json({
-      data: attachExamAccess({ ...teacher, id: teacherId }, exams),
+      data: enriched,
       total,
       pages: Math.ceil(total / limit),
       currentPage: page
@@ -843,8 +859,18 @@ exports.getSubjectExams = async (req, res) => {
     const exams = await Exam.find(query).sort(sort).skip((page - 1) * limit).limit(limit).lean();
     const teacher = await User.findById(req.user.id).select('role branch branchApproval').lean();
     const { attachExamAccess } = require('../utils/examAccess');
+    const enriched = [];
+    for (const exam of exams) {
+      const doc = await Exam.findById(exam._id);
+      if (doc) await syncExamStatusIfNeeded(doc);
+      enriched.push({
+        ...attachExamAccess({ ...teacher, id: req.user.id }, exam),
+        ...attachExamScheduleMeta(doc || exam),
+        participantCount: (exam.results || []).length,
+      });
+    }
     res.json({
-      data: attachExamAccess({ ...teacher, id: req.user.id }, exams),
+      data: enriched,
       total,
       pages: Math.ceil(total / limit),
       currentPage: page,
@@ -967,5 +993,56 @@ exports.getHintRequests = async (req, res) => {
   } catch (err) {
     console.error('getHintRequests error:', err);
     res.status(500).json({ message: 'İpucu istekleri alınamadı', error: err.message });
+  }
+};
+
+exports.getExamResults = async (req, res) => {
+  try {
+    const exam = await Exam.findById(req.params.examId).populate('questions', 'text topic learningOutcome difficulty');
+    if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı' });
+
+    await syncExamStatusIfNeeded(exam);
+    const actor = await User.findById(req.user.id).select('role branch branchApproval').lean();
+    if (!canManageExam({ ...actor, id: req.user.id }, exam)) {
+      return res.status(403).json({ message: 'Bu sınavın sonuçlarını görme yetkiniz yok' });
+    }
+
+    const results = exam.results || [];
+    const analysis = buildTopicAnalysis(results);
+    const rosterCount = await Student.countDocuments({ teacherId: req.user.id, grade: exam.classLevel });
+
+    res.json({
+      success: true,
+      exam: {
+        _id: exam._id,
+        title: exam.title,
+        classLevel: exam.classLevel,
+        duration: exam.duration,
+        startAt: exam.startAt,
+        endAt: exam.endAt,
+        status: exam.status,
+        ...attachExamScheduleMeta(exam),
+        questionCount: (exam.questions || []).length,
+      },
+      summary: {
+        ...analysis,
+        rosterCount,
+        participationRate: rosterCount
+          ? Math.round((analysis.participantCount / rosterCount) * 100)
+          : null,
+      },
+      students: results.map((r) => ({
+        studentId: r.studentId,
+        studentName: r.studentName,
+        score: r.score,
+        correctCount: r.correctCount,
+        wrongCount: r.wrongCount,
+        weakTopics: r.weakTopics || [],
+        topicStats: r.topicStats || [],
+        submittedAt: r.submittedAt,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Sınav sonuçları alınamadı', error: err.message });
   }
 };

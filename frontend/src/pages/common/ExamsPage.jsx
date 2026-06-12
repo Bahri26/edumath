@@ -43,6 +43,7 @@ const ExamsPage = ({ role }) => {
   const [myResult, setMyResult] = useState(null);
 
   const timerRef = useRef(null);
+  const answersRef = useRef({});
 
   const fetchExams = async () => {
     try {
@@ -103,40 +104,53 @@ const ExamsPage = ({ role }) => {
     }
   };
 
+  const PHASE_LABELS = {
+    scheduled: 'Henüz başlamadı',
+    live: 'Aktif',
+    ended: 'Süre doldu',
+  };
+
+  const PHASE_BADGE = {
+    scheduled: 'yellow',
+    live: 'green',
+    ended: 'blue',
+  };
+
   // --- STUDENT: SINAV BAŞLAT/BİTİR ---
   const startExam = async (examId) => {
     try {
-      const res = await apiClient.get(`/exams/${examId}`);
+      const res = await apiClient.get(`/exams/${examId}/take`);
       const examData = res.data;
       setActiveExam(examData);
       setTimeLeft(examData.duration * 60);
       setUserAnswers({});
+      answersRef.current = {};
       setExamResult(null);
-      setPracticeQuestions(null); // Eski alıştırmaları temizle
+      setPracticeQuestions(null);
 
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(timerRef.current);
-            finishExam(examData._id, {}); 
+            finishExam(answersRef.current);
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
-    } catch {
-      showToast("Sınav başlatılamadı.", "error");
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Sınav başlatılamadı.', 'error');
     }
   };
 
-  const finishExam = async () => {
+  const finishExam = async (answersOverride = null) => {
     if (!activeExam) return;
     clearInterval(timerRef.current);
+    const payload = answersOverride ?? userAnswers;
     try {
-      const res = await apiClient.post(`/exams/${activeExam._id}/submit`, { answers: userAnswers });
-      
-      // Backend artık { score, weakTopics } dönüyor
+      const res = await apiClient.post(`/exams/${activeExam._id}/submit`, { answers: payload });
+
       setExamResult(res.data);
       setActiveExam(null);
       fetchExams();
@@ -283,7 +297,11 @@ const ExamsPage = ({ role }) => {
                         type="radio"
                         name={`q-${q._id}`}
                         value={optionText}
-                        onChange={() => setUserAnswers({ ...userAnswers, [q._id]: optionText })}
+                        onChange={() => {
+                          const next = { ...userAnswers, [q._id]: optionText };
+                          setUserAnswers(next);
+                          answersRef.current = next;
+                        }}
                         className="mt-1 w-5 h-5 text-indigo-600"
                       />
                       <div className="flex-1">
@@ -464,13 +482,28 @@ const ExamsPage = ({ role }) => {
               {exam.description && <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">{exam.description}</p>}
               <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300 mb-6">
                 <span className="flex items-center gap-1"><Clock size={14}/> {exam.duration} Dk</span>
-                <span className="flex items-center gap-1"><AlertTriangle size={14}/> {exam.questions.length} Soru</span>
-                {exam.status && <Badge color={exam.status === 'active' ? 'green' : exam.status === 'draft' ? 'yellow' : 'blue'}>{exam.status}</Badge>}
+                <span className="flex items-center gap-1"><AlertTriangle size={14}/> {exam.questionCount ?? exam.questions?.length ?? 0} Soru</span>
+                {role === 'student' && exam.schedulePhase && (
+                  <Badge color={PHASE_BADGE[exam.schedulePhase] || 'blue'}>{PHASE_LABELS[exam.schedulePhase] || exam.effectiveStatus}</Badge>
+                )}
+                {role === 'teacher' && exam.status && (
+                  <Badge color={exam.status === 'active' ? 'green' : exam.status === 'draft' ? 'yellow' : 'blue'}>{exam.status}</Badge>
+                )}
               </div>
               {role === 'student' ? (
-                <div className="flex gap-2">
-                  <Button variant="primary" size="md" onClick={() => startExam(exam._id)} icon={Play}>Başla</Button>
-                  <Button variant="outline" size="md" onClick={() => viewMyResult(exam._id)}>Sonucum</Button>
+                <div className="flex gap-2 flex-wrap">
+                  {exam.canStart ? (
+                    <Button variant="primary" size="md" onClick={() => startExam(exam._id)} icon={Play}>Başla</Button>
+                  ) : exam.studentCompleted ? (
+                    <Button variant="outline" size="md" onClick={() => viewMyResult(exam._id)} icon={CheckCircle}>Sonucumu Gör</Button>
+                  ) : exam.schedulePhase === 'scheduled' ? (
+                    <span className="text-sm text-amber-600 dark:text-amber-400 font-medium py-2">Sınav henüz başlamadı</span>
+                  ) : (
+                    <span className="text-sm text-slate-500 py-2">Sınav süresi doldu</span>
+                  )}
+                  {exam.studentCompleted && exam.canStart === false && exam.schedulePhase === 'live' && (
+                    <Button variant="outline" size="md" onClick={() => viewMyResult(exam._id)}>Sonucum</Button>
+                  )}
                 </div>
               ) : (
                 <div className="w-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 py-2.5 rounded-xl text-center text-sm font-medium">
