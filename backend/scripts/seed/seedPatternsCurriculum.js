@@ -1148,9 +1148,19 @@ async function seedCurriculum(teacherId, options = {}) {
 
     const learningOutcomes = Array.from(new Set(examQuestions.map((question) => question.learningOutcome).filter(Boolean)));
 
+    const isIlkokul = ['1. Sınıf', '2. Sınıf', '3. Sınıf', '4. Sınıf'].includes(item.classLevel);
+    const examTitle = isIlkokul
+      ? `${item.classLevel} Ölçme ve Değerlendirme Sınavı`
+      : `${item.classLevel} Matematik - Örüntüler MEB Kazanım Tarama Sınavı`;
+    const examDuration = isIlkokul ? 20 : metadata.examDuration;
+    const examType = isIlkokul ? 'ilkokul-olcme-degerlendirme' : 'meb-patterns-screening';
+    const examDescription = isIlkokul
+      ? `${item.classLevel} Matematik Örüntüler konusu — 7 kolay, 7 orta, 7 zor soru (20 dakika).`
+      : `${item.classLevel} düzeyinde yalnızca Örüntüler konusu için hazırlanmış, 7 kolay 7 orta 7 zor sorudan oluşan MEB kazanım tarama sınavı.`;
+
     await Exam.findOneAndUpdate(
       {
-        title: `${item.classLevel} Matematik - Örüntüler MEB Kazanım Tarama Sınavı`,
+        title: examTitle,
         classLevel: item.classLevel,
         subject: 'Matematik',
         topic: 'Örüntüler',
@@ -1158,11 +1168,11 @@ async function seedCurriculum(teacherId, options = {}) {
       },
       {
         $set: {
-          description: `${item.classLevel} düzeyinde yalnızca Örüntüler konusu için hazırlanmış, 7 kolay 7 orta 7 zor sorudan oluşan MEB kazanım tarama sınavı.`,
-          duration: metadata.examDuration,
+          description: examDescription,
+          duration: examDuration,
           questions: examQuestions.map((question) => question._id),
           status: 'active',
-          examType: 'meb-patterns-screening',
+          examType,
           learningOutcomes,
           mebReference: MEB_REFERENCE,
         },

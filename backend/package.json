@@ -37,6 +37,7 @@
     "import:pattern-pdf-diagram": "node scripts/import/cropPatternPdfDiagramOnly.js",
     "import:grade5-pattern": "node scripts/import/applyGrade5PatternCurated.js",
     "setup:ilkokul": "node scripts/setup/setupIlkokulOnly.js",
+    "setup:ilkokul-exams": "node scripts/setup/setupIlkokulExams.js",
     "audit:ilkokul": "node scripts/tools/auditGrades1to4.js",
     "test:e2e-exam-exercise": "node scripts/tests/e2eInteractiveExamExercise.js"
   },
