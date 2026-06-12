@@ -46,6 +46,21 @@ node scripts/tools/testCloudinary.js
 
 Soru görseli yükleyince MongoDB `questions.image` alanı `https://res.cloudinary.com/...` olmalı.
 
+## 6. İlkokul örüntü SVG’lerini toplu yükleme
+
+Yerel `backend/uploads/patterns/*.svg` dosyalarını Cloudinary’ye taşır ve soru kayıtlarını günceller:
+
+```bash
+cd backend
+CONFIRM_PATTERN_SVG_CLOUD=YES npm run import:pattern-svg-cloud
+```
+
+Windows PowerShell:
+
+```powershell
+$env:CONFIRM_PATTERN_SVG_CLOUD='YES'; npm run import:pattern-svg-cloud
+```
+
 ## Güvenlik
 
 API Secret’ı asla GitHub’a commit etmeyin. Sızıntı olursa Cloudinary panelinden anahtarı yenileyin.

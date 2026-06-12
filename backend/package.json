@@ -34,6 +34,7 @@
     "import:pattern-pdf-repair": "node scripts/import/repairPatternPdfVisualQuestions.js",
     "import:pattern-pdf-sync": "node scripts/import/syncPatternPdfAssets.js",
     "import:pattern-pdf-cloud": "node scripts/import/uploadPatternPdfToCloud.js",
+    "import:pattern-svg-cloud": "node scripts/import/uploadPatternSvgsToCloud.js",
     "import:pattern-pdf-diagram": "node scripts/import/cropPatternPdfDiagramOnly.js",
     "import:grade5-pattern": "node scripts/import/applyGrade5PatternCurated.js",
     "setup:ilkokul": "node scripts/setup/setupIlkokulOnly.js",
