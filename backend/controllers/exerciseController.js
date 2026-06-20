@@ -8,6 +8,7 @@ const { recordUserActivity } = require('../services/activityLogger');
 const { buildTopicMongoClause } = require('../constants/patternTopics');
 const { stripQuestionForStudent } = require('../utils/examSchedule');
 const { parseAnswerPayload, summarizeExerciseSubmission } = require('../utils/exerciseAnswer');
+const { generateAndSaveExerciseVariants } = require('../services/exerciseQuestionVariantService');
 
 const STUDENT_QUESTION_FIELDS =
   'text difficulty type options image imageKey imageProvider interactiveType interactionData topic subject assessmentMeta';
@@ -124,26 +125,21 @@ exports.createExercise = async (req, res, next) => {
         difficultyFinal = resolved.difficulties.length ? resolved.difficulties : ['Orta'];
       }
     } else {
-      const matchStage = buildPoolMatchQuery({
+      const generated = await generateAndSaveExerciseVariants({
         classLevel,
         subject: subj,
         topic,
         questionTypes,
+        limit: AUTO_POOL_LIMIT,
+        createdBy: teacherId,
       });
 
-      const questions = await Question.find(matchStage).select('_id difficulty').lean();
-
-      if (questions.length === 0) {
-        return res.status(400).json({
-          message: 'Seçilen sınıf, konu ve soru çeşidine uygun soru bulunamadı.',
-        });
+      if (generated.error) {
+        return res.status(400).json({ message: generated.error });
       }
 
-      shuffleInPlace(questions);
-      const picked = questions.slice(0, Math.min(questions.length, AUTO_POOL_LIMIT));
-      questionIds = picked.map((q) => q._id);
-      difficultyFinal = [...new Set(picked.map((d) => d.difficulty).filter(Boolean))];
-      if (difficultyFinal.length === 0) difficultyFinal = ['Orta'];
+      questionIds = generated.questionIds;
+      difficultyFinal = generated.difficulties?.length ? generated.difficulties : ['Orta'];
     }
 
     const topicLabel =

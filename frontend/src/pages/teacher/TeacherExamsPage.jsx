@@ -574,101 +574,95 @@ export default function TeacherExamsPage() {
         </div>
       )}
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
-            <FileText size={28} className="text-brand-600 shrink-0" aria-hidden />
-            Sınav yönetimi
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">
-            Toplam <strong className="text-slate-700 dark:text-slate-200">{examTotal}</strong> sınav.
-          </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-xl">
-            Listede arama ve sınıf filtresi kullanın. Otomatik sınav için aşağıdaki tarih/süre alanlarını doldurup «Hızlı sınav»a basın; özel dağılım için «7-7-7 stüdyo»yu açın.
-          </p>
+      <header className="space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+          <FileText size={28} className="text-brand-600 shrink-0" aria-hidden />
+          Sınavlar
+        </h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Toplam <strong className="text-slate-700 dark:text-slate-200">{examTotal}</strong> sınav
+        </p>
+      </header>
+
+      <Card className="p-5 border border-slate-200 dark:border-slate-600">
+        <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Sınav oluştur</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-slate-600 dark:text-slate-400 font-medium">Başlangıç</span>
+            <input
+              type="datetime-local"
+              value={schedStart}
+              onChange={(e) => setSchedStart(e.target.value)}
+              className="border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 dark:bg-slate-900 dark:text-white"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-slate-600 dark:text-slate-400 font-medium">Bitiş</span>
+            <input
+              type="datetime-local"
+              value={schedEnd}
+              onChange={(e) => setSchedEnd(e.target.value)}
+              className="border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 dark:bg-slate-900 dark:text-white"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-slate-600 dark:text-slate-400 font-medium">Süre (dk)</span>
+            <input
+              type="number"
+              min={10}
+              max={180}
+              value={durationMin}
+              onChange={(e) => setDurationMin(parseInt(e.target.value || '60', 10))}
+              className="border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 dark:bg-slate-900 dark:text-white"
+            />
+          </label>
         </div>
-        <Card className="p-4 w-full lg:max-w-md shrink-0 border border-slate-200 dark:border-slate-600">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3">
-            Hızlı sınav (branş onayı gerekir)
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <label className="flex flex-col gap-1">
-              <span className="text-slate-500 dark:text-slate-400">Başlangıç</span>
-              <input
-                type="datetime-local"
-                value={schedStart}
-                onChange={(e) => setSchedStart(e.target.value)}
-                className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 dark:bg-slate-900 dark:text-white text-xs"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-slate-500 dark:text-slate-400">Bitiş</span>
-              <input
-                type="datetime-local"
-                value={schedEnd}
-                onChange={(e) => setSchedEnd(e.target.value)}
-                className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 dark:bg-slate-900 dark:text-white text-xs"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-slate-500 dark:text-slate-400">Süre (dk)</span>
-              <input
-                type="number"
-                min={10}
-                max={180}
-                value={durationMin}
-                onChange={(e) => setDurationMin(parseInt(e.target.value || '60', 10))}
-                className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 dark:bg-slate-900 dark:text-white text-xs"
-              />
-            </label>
-          </div>
-          <div className="flex flex-wrap gap-2 mt-4">
-            <Button
-              variant="outline"
-              size="md"
-              icon={Sparkles}
-              onClick={async () => {
-                try {
-                  if (profile.branchApproval !== 'approved') {
-                    showToast('Branş onayı sonrası hızlı sınav kullanılabilir.', 'warning');
-                    return;
-                  }
-                  const title = `Hızlı Sınav • ${profile.branch || 'Konu'} • ${classLevel}`;
-                  await apiClient.post('/exams/auto-generate', {
-                    title,
-                    duration: durationMin || 25,
-                    classLevel,
-                    subject: profile.branch || 'Matematik',
-                    ...(schedStart ? { startAt: schedStart } : {}),
-                    ...(schedEnd ? { endAt: schedEnd } : {}),
-                  });
-                  showToast('Hızlı sınav oluşturuldu!', 'success');
-                  fetchExams();
-                } catch (e) {
-                  const msg = e?.response?.data?.message || 'Hızlı sınav oluşturulamadı';
-                  showToast(msg, 'error');
+        <div className="flex flex-wrap gap-2 mt-4">
+          <Button
+            variant="primary"
+            size="md"
+            icon={Sparkles}
+            onClick={async () => {
+              try {
+                if (profile.branchApproval !== 'approved') {
+                  showToast('Branş onayı sonrası sınav oluşturulabilir.', 'warning');
+                  return;
                 }
-              }}
-            >
-              Hızlı sınav
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
-              icon={Plus}
-              onClick={() => {
-                setExamName('');
-                setEasyQ([]);
-                setMediumQ([]);
-                setHardQ([]);
-                setView('studio');
-              }}
-            >
-              7-7-7 stüdyo
-            </Button>
-          </div>
-        </Card>
-      </div>
+                const title = `Sınav • ${profile.branch || 'Konu'} • ${classLevel}`;
+                await apiClient.post('/exams/auto-generate', {
+                  title,
+                  duration: durationMin || 25,
+                  classLevel,
+                  subject: profile.branch || 'Matematik',
+                  ...(schedStart ? { startAt: schedStart } : {}),
+                  ...(schedEnd ? { endAt: schedEnd } : {}),
+                });
+                showToast('Sınav oluşturuldu.', 'success');
+                fetchExams();
+              } catch (e) {
+                const msg = e?.response?.data?.message || 'Sınav oluşturulamadı';
+                showToast(msg, 'error');
+              }
+            }}
+          >
+            Otomatik oluştur
+          </Button>
+          <Button
+            variant="outline"
+            size="md"
+            icon={Plus}
+            onClick={() => {
+              setExamName('');
+              setEasyQ([]);
+              setMediumQ([]);
+              setHardQ([]);
+              setView('studio');
+            }}
+          >
+            7-7-7 stüdyo
+          </Button>
+        </div>
+      </Card>
 
       <Card className="p-4 flex flex-col md:flex-row gap-4 md:items-end md:justify-between border border-slate-200 dark:border-slate-600">
         <div className="relative flex-1 w-full md:max-w-md">

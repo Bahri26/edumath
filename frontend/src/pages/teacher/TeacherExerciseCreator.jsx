@@ -403,9 +403,6 @@ export default function TeacherExerciseCreator() {
   const [formTopic, setFormTopic] = useState(PATTERN_TOPIC_ALL_UNDER);
   const [topicOptions, setTopicOptions] = useState([PATTERN_TOPIC_ALL_UNDER, ...PATTERN_TOPIC_ORDER]);
   const [selectedQuestionTypes, setSelectedQuestionTypes] = useState(['multiple-choice']);
-  const [gameMode, setGameMode] = useState('practice');
-  const [playTransform, setPlayTransform] = useState('classic');
-  const [timeLimit, setTimeLimit] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
 
   const [exercises, setExercises] = useState([]);
@@ -528,9 +525,9 @@ export default function TeacherExerciseCreator() {
         subject: formSubject,
         topic: formTopic,
         questionTypes: selectedQuestionTypes,
-        gameMode,
-        playTransform,
-        timeLimit: timeLimit ? parseInt(String(timeLimit), 10) : null,
+        gameMode: 'practice',
+        playTransform: 'classic',
+        timeLimit: null,
         pointsPerQuestion: 10,
         ...(buildMode === 'manual' && selectedQuestionIds.length > 0 ? { questionIds: selectedQuestionIds } : {}),
       };
@@ -540,9 +537,6 @@ export default function TeacherExerciseCreator() {
       setExerciseDescription('');
       setFormTopic(PATTERN_TOPIC_ALL_UNDER);
       setSelectedQuestionTypes(['multiple-choice']);
-      setGameMode('practice');
-      setPlayTransform('classic');
-      setTimeLimit(null);
       setBuildMode('auto');
       setSelectedQuestionIds([]);
       setCreateMode(false);
@@ -606,17 +600,18 @@ export default function TeacherExerciseCreator() {
         />
       ) : null}
 
-      {/* Üst şerit */}
-      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-brand-600 dark:text-brand-400 mb-1">
             <Trophy size={22} aria-hidden />
             <span className="text-[11px] font-black uppercase tracking-widest">Öğretmen</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-surface-900 dark:text-white tracking-tight">Egzersizler</h1>
-          <p className="text-sm text-surface-600 dark:text-surface-400 mt-1 max-w-xl">
-            Havuzdan sınıf ve konuya göre paket oluşturun — AI ile otomatik veya soruları elle seçin.
-          </p>
+          {!createMode && exercises.length > 0 ? (
+            <p className="text-sm text-surface-500 dark:text-surface-400 mt-1">
+              {total} egzersiz
+            </p>
+          ) : null}
         </div>
         <Button
           variant={createMode ? 'secondary' : 'primary'}
@@ -627,33 +622,28 @@ export default function TeacherExerciseCreator() {
               setCreateMode(false);
               setSelectedQuestionIds([]);
               setBuildMode('auto');
-              setPlayTransform('classic');
             } else {
               openCreate();
             }
           }}
-          ariaLabel={createMode ? 'Formu kapat' : 'Yeni egzersiz'}
+          ariaLabel={createMode ? 'Formu kapat' : 'Egzersiz oluştur'}
         >
-          {createMode ? 'Kapat' : 'Yeni egzersiz'}
+          {createMode ? 'Kapat' : 'Egzersiz oluştur'}
         </Button>
       </header>
 
-      {/* Oluşturma */}
       {createMode ? (
-        <Card className="space-y-4 border-brand-100 dark:border-brand-900/40">
-          <h2 className="text-lg font-bold flex items-center gap-2 text-surface-900 dark:text-white">
-            <Sparkles size={22} className="text-brand-500 shrink-0" />
-            Yeni paket
-          </h2>
+        <Card className="space-y-5 border-brand-100 dark:border-brand-900/40">
+          <h2 className="text-lg font-bold text-surface-900 dark:text-white">Egzersiz oluştur</h2>
           <input
             type="text"
-            placeholder="Örn. Rasyonel sayılar — hızlı tekrar"
+            placeholder="Egzersiz adı (örn. Rasyonel sayılar — tekrar)"
             value={exerciseName}
             onChange={(e) => setExerciseName(e.target.value)}
             className="w-full px-4 py-3 rounded-xl border border-surface-200 dark:border-surface-600 bg-surface-50 dark:bg-surface-900 text-surface-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500"
           />
           <textarea
-            placeholder="Kısa açıklama (isteğe bağlı)"
+            placeholder="Açıklama (isteğe bağlı)"
             value={exerciseDescription}
             onChange={(e) => setExerciseDescription(e.target.value)}
             rows={2}
@@ -678,8 +668,8 @@ export default function TeacherExerciseCreator() {
                   <Wand2 size={20} className="text-brand-600 shrink-0" />
                   AI ile oluştur
                 </div>
-                <p className="text-xs text-surface-600 dark:text-surface-400 mt-2 leading-relaxed">
-                  Seçtiğiniz sınıf, konu ve soru çeşidine göre havuzdan en fazla 15 soru otomatik seçilir.
+                <p className="text-xs text-surface-600 dark:text-surface-400 mt-1">
+                  Havuzdaki örneklerden sayılar değiştirilerek yeni sorular üretilir (en fazla 15)
                 </p>
               </button>
               <button
@@ -695,8 +685,8 @@ export default function TeacherExerciseCreator() {
                   <MousePointerClick size={20} className="text-brand-600 shrink-0" />
                   Manuel seç
                 </div>
-                <p className="text-xs text-surface-600 dark:text-surface-400 mt-2 leading-relaxed">
-                  Havuzdan tıklayarak ekleyin; sırayı değiştirin (en fazla 30 soru).
+                <p className="text-xs text-surface-600 dark:text-surface-400 mt-1">
+                  Soruları tek tek seçin (en fazla 30)
                 </p>
               </button>
             </div>
@@ -738,9 +728,11 @@ export default function TeacherExerciseCreator() {
           </FormSection>
 
           <FormSection step="3" title="Soru çeşidi">
-            <p className="text-xs text-surface-500 dark:text-surface-400 -mt-1">
-              En az bir çeşit seçin. Havuz ve AI paketi bu tiplerle filtrelenir.
-            </p>
+            {buildMode === 'auto' ? (
+              <p className="text-xs text-surface-500 dark:text-surface-400 mb-2">
+                Seçilen çeşitlerde havuzdan farklı sayılarla varyant sorular oluşturulur.
+              </p>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {QUESTION_TYPE_OPTIONS.map(({ value, label }) => (
                 <QuestionTypeToggle
@@ -772,47 +764,6 @@ export default function TeacherExerciseCreator() {
             </div>
           ) : null}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-surface-100 dark:border-surface-700">
-            <div>
-              <label className="text-xs font-bold text-surface-600 dark:text-surface-400 block mb-1">Oyun modu</label>
-              <Select value={gameMode} onChange={(e) => setGameMode(e.target.value)}>
-                <option value="practice">Pratik (sınırsız)</option>
-                <option value="challenge">Challenge (puan)</option>
-                <option value="timed">Süreli</option>
-              </Select>
-            </div>
-            {gameMode === 'timed' ? (
-              <div>
-                <label className="text-xs font-bold text-surface-600 dark:text-surface-400 block mb-1">Süre (dk)</label>
-                <input
-                  type="number"
-                  value={timeLimit ?? ''}
-                  onChange={(e) => setTimeLimit(e.target.value ? parseInt(e.target.value, 10) : null)}
-                  min={1}
-                  max={120}
-                  placeholder="15"
-                  className="w-full px-4 py-3 rounded-xl border border-surface-200 dark:border-surface-600 bg-surface-50 dark:bg-surface-900 text-surface-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-            ) : (
-              <div className="hidden md:block" aria-hidden />
-            )}
-          </div>
-          <div>
-            <label className="text-xs font-bold text-surface-600 dark:text-surface-400 block mb-1">
-              Öğrenci ekranı (soru havuzu aynı; sunum değişir)
-            </label>
-            <Select value={playTransform} onChange={(e) => setPlayTransform(e.target.value)}>
-              <option value="classic">Klasik — çoktan seçmeli / metin, soru tipine göre</option>
-              <option value="game_show">
-                Oyun gösterimi — sayı padı, şekil düğmeleri, büyük iki şık, boşluk alanı (eşleştirme/sıra aynı kalır)
-              </option>
-            </Select>
-            <p className="text-[11px] text-surface-500 dark:text-surface-400 mt-1.5 leading-relaxed">
-              Oyun gösteriminde cevap anahtarı değişmez; aynı doğru cevap farklı dokunmatik arayüzlerle verilir. İleride
-              özel sayı/şekil üretimi için ayrı şablonlar eklenebilir.
-            </p>
-          </div>
           <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-surface-100 dark:border-surface-700">
             <Button
               variant="outline"
@@ -822,7 +773,6 @@ export default function TeacherExerciseCreator() {
                 setCreateMode(false);
                 setSelectedQuestionIds([]);
                 setBuildMode('auto');
-                setPlayTransform('classic');
               }}
             >
               İptal
@@ -831,12 +781,12 @@ export default function TeacherExerciseCreator() {
               {isCreating ? (
                 <>
                   <Loader2 size={18} className="animate-spin shrink-0" aria-hidden />
-                  Oluşturuluyor…
+                  Kaydediliyor…
                 </>
               ) : (
                 <>
                   <Sparkles size={18} className="shrink-0" aria-hidden />
-                  Oluştur
+                  Egzersiz oluştur
                 </>
               )}
             </Button>
@@ -844,7 +794,7 @@ export default function TeacherExerciseCreator() {
         </Card>
       ) : null}
 
-      {/* Araç çubuğu */}
+      {!createMode ? (
       <Card className="p-4 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
         <div className="flex items-center gap-3 flex-wrap">
           <BookOpen className="text-surface-400 shrink-0" size={20} aria-hidden />
@@ -871,9 +821,9 @@ export default function TeacherExerciseCreator() {
           ) : null}
         </div>
       </Card>
+      ) : null}
 
-      {/* Liste */}
-      {loading ? (
+      {!createMode && (loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <SkeletonCard key={i} />
@@ -883,12 +833,7 @@ export default function TeacherExerciseCreator() {
         <EmptyState
           icon={Trophy}
           title="Henüz egzersiz yok"
-          description="Sınıf, konu ve soru çeşidine göre ilk paketinizi oluşturun."
-          action={
-            <Button icon={Plus} onClick={openCreate}>
-              Yeni egzersiz
-            </Button>
-          }
+          description="Sağ üstteki «Egzersiz oluştur» ile ilk paketinizi ekleyin."
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -903,9 +848,9 @@ export default function TeacherExerciseCreator() {
             />
           ))}
         </div>
-      )}
+      ))}
 
-      {!loading && totalPages > 1 ? (
+      {!createMode && !loading && totalPages > 1 ? (
         <div className="flex justify-center items-center gap-4 pt-2">
           <button
             type="button"
