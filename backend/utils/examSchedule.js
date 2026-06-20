@@ -61,6 +61,7 @@ function stripQuestionForStudent(question) {
   const q = question.toObject ? question.toObject() : { ...question };
   delete q.correctAnswer;
   delete q.solution;
+  delete q.difficulty;
   return q;
 }
 
@@ -87,21 +88,32 @@ function attachExamScheduleMeta(exam, studentId = null, now = new Date()) {
 
 function buildTopicAnalysis(results = []) {
   const topicWrong = new Map();
+  const difficultyWrong = { Kolay: 0, Orta: 0, Zor: 0 };
   let totalScore = 0;
   for (const r of results) {
     totalScore += Number(r.score) || 0;
     for (const ts of r.topicStats || []) {
       topicWrong.set(ts.topic, (topicWrong.get(ts.topic) || 0) + (ts.wrong || 0));
     }
+    for (const ad of r.answerDetails || []) {
+      if (!ad.isCorrect && ad.difficulty && difficultyWrong[ad.difficulty] != null) {
+        difficultyWrong[ad.difficulty] += 1;
+      }
+    }
   }
   const topicAnalysis = Array.from(topicWrong.entries())
     .map(([topic, wrongCount]) => ({ topic, wrongCount }))
     .sort((a, b) => b.wrongCount - a.wrongCount);
 
+  const difficultyAnalysis = Object.entries(difficultyWrong)
+    .map(([difficulty, wrongCount]) => ({ difficulty, wrongCount }))
+    .filter((d) => d.wrongCount > 0);
+
   return {
     participantCount: results.length,
     avgScore: results.length ? Math.round(totalScore / results.length) : 0,
     topicAnalysis,
+    difficultyAnalysis,
   };
 }
 

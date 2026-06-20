@@ -163,7 +163,15 @@ const ExamsPage = ({ role }) => {
   const finishExam = async (answersOverride = null, timeLeftOverride = null) => {
     if (!activeExam) return;
     clearInterval(timerRef.current);
-    const payload = answersOverride ?? userAnswers;
+    const isAnswerMap =
+      answersOverride != null &&
+      typeof answersOverride === 'object' &&
+      typeof answersOverride.preventDefault !== 'function';
+    const payload = isAnswerMap
+      ? answersOverride
+      : Object.keys(answersRef.current).length
+        ? answersRef.current
+        : userAnswers;
     const remaining = timeLeftOverride ?? timeLeft;
     const totalTimeSpentSeconds = computeExamTotalTimeSpent(
       examDurationRef.current || activeExam.duration,
@@ -293,14 +301,13 @@ const ExamsPage = ({ role }) => {
             <p className="text-sm text-slate-500">Toplam {activeExam.questions.length} Soru</p>
           </div>
           <div className={`text-2xl font-mono font-bold px-4 py-2 rounded-lg ${timeLeft < 300 ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>{formatTime(timeLeft)}</div>
-          <button onClick={finishExam} className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700">Bitir</button>
+          <button type="button" onClick={() => finishExam()} className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700">Bitir</button>
         </div>
         <div className="max-w-4xl mx-auto p-6 space-y-8">
           {activeExam.questions.map((q, idx) => (
             <div key={q._id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
               <div className="flex gap-3 mb-4">
                 <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold px-3 py-1 rounded-lg">Soru {idx + 1}</span>
-                <span className={`px-2 py-1 rounded text-xs font-bold text-white ${q.difficulty === 'Zor' ? 'bg-red-500' : q.difficulty === 'Orta' ? 'bg-yellow-500' : 'bg-green-500'}`}>{q.difficulty}</span>
               </div>
               <QuestionTextWithPattern
                 text={q.text}

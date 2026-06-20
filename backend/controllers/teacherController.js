@@ -1058,6 +1058,7 @@ exports.getExamResults = async (req, res) => {
         submittedAt: r.submittedAt,
         totalTimeSpentSeconds: r.totalTimeSpentSeconds ?? null,
         questionTimes: r.questionTimes || [],
+        answerDetails: r.answerDetails || [],
       })),
     });
   } catch (err) {

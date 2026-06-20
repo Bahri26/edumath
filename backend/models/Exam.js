@@ -30,6 +30,17 @@ const ExamSchema = new mongoose.Schema({
       questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Question' },
       timeSpentSeconds: { type: Number, default: 0 },
     }],
+    answerDetails: [{
+      questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Question' },
+      questionText: { type: String, default: '' },
+      topic: { type: String, default: '' },
+      learningOutcome: { type: String, default: '' },
+      difficulty: { type: String, default: '' },
+      questionType: { type: String, default: 'multiple-choice' },
+      studentAnswer: { type: String, default: '' },
+      isCorrect: { type: Boolean, default: false },
+      timeSpentSeconds: { type: Number, default: null },
+    }],
     submittedAt: { type: Date, default: Date.now }
   }]
 }, { timestamps: true, collection: 'exams' });

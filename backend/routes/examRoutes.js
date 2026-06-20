@@ -271,12 +271,31 @@ router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (r
     const weakTopicsSet = new Set();
     const topicCounts = new Map();
     const timesMap = questionTimes && typeof questionTimes === 'object' ? questionTimes : {};
+    const answerDetails = [];
 
     exam.questions.forEach((q) => {
       const focusArea = q.learningOutcome || q.topic || q.subject;
       const qid = String(q._id);
       const rawAnswer = answers[q._id] ?? answers[qid];
       const ok = gradeQuestionAnswer(q, rawAnswer);
+      const sec = Number(timesMap[qid] ?? timesMap[q._id]);
+
+      answerDetails.push({
+        questionId: q._id,
+        questionText: String(q.text || '').slice(0, 400),
+        topic: q.topic || '',
+        learningOutcome: q.learningOutcome || '',
+        difficulty: q.difficulty || '',
+        questionType: q.type || 'multiple-choice',
+        studentAnswer:
+          rawAnswer == null
+            ? ''
+            : typeof rawAnswer === 'object'
+              ? JSON.stringify(rawAnswer)
+              : String(rawAnswer),
+        isCorrect: ok,
+        timeSpentSeconds: Number.isFinite(sec) && sec >= 0 ? Math.round(sec) : null,
+      });
 
       if (!ok) {
         if (focusArea) {
@@ -315,6 +334,7 @@ router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (r
         ? Math.round(parsedTotalTime)
         : null,
       questionTimes: parsedQuestionTimes,
+      answerDetails,
     });
 
     await exam.save();

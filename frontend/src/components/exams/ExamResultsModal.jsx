@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { X, Users, BarChart3, TrendingDown, Clock } from 'lucide-react';
+import { X, Users, TrendingDown, Clock, ChevronDown, ChevronUp, CheckCircle2, XCircle } from 'lucide-react';
 import apiClient from '../../services/api';
 import Button from '../ui/Button.jsx';
 import { formatDuration } from '../../utils/formatDuration.js';
+import { renderWithLatex } from '../../utils/latex.jsx';
 
 const PHASE_LABELS = {
   scheduled: 'Henüz başlamadı',
@@ -11,10 +12,32 @@ const PHASE_LABELS = {
   draft: 'Taslak',
 };
 
+function formatStudentAnswer(value) {
+  if (!value) return '—';
+  const trimmed = String(value).trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.order)) {
+        return parsed.order.join(' → ');
+      }
+      if (parsed && typeof parsed === 'object') {
+        return Object.entries(parsed)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(' · ');
+      }
+    } catch {
+      /* plain text */
+    }
+  }
+  return trimmed.length > 120 ? `${trimmed.slice(0, 120)}…` : trimmed;
+}
+
 export default function ExamResultsModal({ examId, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedStudentId, setExpandedStudentId] = useState(null);
 
   useEffect(() => {
     if (!examId) return;
@@ -30,7 +53,9 @@ export default function ExamResultsModal({ examId, onClose }) {
         if (active) setLoading(false);
       }
     })();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [examId]);
 
   const exam = data?.exam;
@@ -39,7 +64,7 @@ export default function ExamResultsModal({ examId, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden">
         <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-lg font-bold text-slate-800 dark:text-white">
@@ -91,6 +116,28 @@ export default function ExamResultsModal({ examId, onClose }) {
                 </div>
               </div>
 
+              {summary.difficultyAnalysis?.length > 0 && (
+                <div>
+                  <h4 className="font-bold text-slate-800 dark:text-white mb-3">Zorluk bazlı yanlışlar</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {summary.difficultyAnalysis.map((d) => (
+                      <span
+                        key={d.difficulty}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
+                          d.difficulty === 'Zor'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-200'
+                            : d.difficulty === 'Orta'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200'
+                              : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200'
+                        }`}
+                      >
+                        {d.difficulty}: {d.wrongCount} yanlış
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {summary.topicAnalysis?.length > 0 && (
                 <div>
                   <h4 className="flex items-center gap-2 font-bold text-slate-800 dark:text-white mb-3">
@@ -114,29 +161,77 @@ export default function ExamResultsModal({ examId, onClose }) {
                 {students.length === 0 ? (
                   <p className="text-slate-500 text-sm py-4 text-center border border-dashed rounded-xl">Henüz sınav tamamlayan yok.</p>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-left text-slate-500 border-b border-slate-200 dark:border-slate-700">
-                          <th className="py-2 pr-2">Öğrenci</th>
-                          <th className="py-2 pr-2">Puan</th>
-                          <th className="py-2 pr-2">D/Y</th>
-                          <th className="py-2 pr-2">Süre</th>
-                          <th className="py-2">Zayıf alanlar</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {students.map((s) => (
-                          <tr key={String(s.studentId)} className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="py-3 pr-2 font-medium text-slate-800 dark:text-white">{s.studentName}</td>
-                            <td className="py-3 pr-2 font-bold text-brand-600">%{s.score}</td>
-                            <td className="py-3 pr-2">{s.correctCount}/{s.wrongCount}</td>
-                            <td className="py-3 pr-2 text-slate-600 dark:text-slate-300">{formatDuration(s.totalTimeSpentSeconds)}</td>
-                            <td className="py-3 text-xs text-slate-500 line-clamp-2">{(s.weakTopics || []).join(', ') || '—'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="space-y-3">
+                    {students.map((s) => {
+                      const sid = String(s.studentId);
+                      const expanded = expandedStudentId === sid;
+                      const details = s.answerDetails || [];
+                      return (
+                        <div key={sid} className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedStudentId(expanded ? null : sid)}
+                            className="w-full flex flex-wrap items-center gap-3 p-4 text-left bg-slate-50/80 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            <span className="font-semibold text-slate-800 dark:text-white flex-1 min-w-[120px]">{s.studentName}</span>
+                            <span className="font-bold text-brand-600">%{s.score}</span>
+                            <span className="text-sm text-slate-600 dark:text-slate-300">
+                              {s.correctCount}D / {s.wrongCount}Y
+                            </span>
+                            <span className="text-sm text-slate-500">{formatDuration(s.totalTimeSpentSeconds)}</span>
+                            {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                          </button>
+                          {expanded ? (
+                            <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
+                              {(s.weakTopics || []).length > 0 ? (
+                                <p className="text-xs text-rose-600 dark:text-rose-400">
+                                  Zayıf alanlar: {(s.weakTopics || []).join(', ')}
+                                </p>
+                              ) : null}
+                              {details.length === 0 ? (
+                                <p className="text-sm text-slate-500">Soru detayı kaydı yok (eski teslim).</p>
+                              ) : (
+                                <div className="space-y-2">
+                                  {details.map((ad, idx) => (
+                                    <div
+                                      key={String(ad.questionId || idx)}
+                                      className={`p-3 rounded-lg text-sm border ${
+                                        ad.isCorrect
+                                          ? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20'
+                                          : 'border-rose-200 bg-rose-50/50 dark:border-rose-900 dark:bg-rose-950/20'
+                                      }`}
+                                    >
+                                      <div className="flex items-start gap-2 mb-1">
+                                        {ad.isCorrect ? (
+                                          <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                                        ) : (
+                                          <XCircle size={16} className="text-rose-600 shrink-0 mt-0.5" />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium text-slate-800 dark:text-slate-100">
+                                            {idx + 1}. {renderWithLatex(ad.questionText || '—')}
+                                          </div>
+                                          <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-2">
+                                            {ad.difficulty ? <span>{ad.difficulty}</span> : null}
+                                            {ad.topic ? <span>{ad.topic}</span> : null}
+                                            {ad.timeSpentSeconds != null ? (
+                                              <span>{formatDuration(ad.timeSpentSeconds)}</span>
+                                            ) : null}
+                                          </div>
+                                          <div className="text-xs mt-1 text-slate-600 dark:text-slate-300">
+                                            Cevap: {formatStudentAnswer(ad.studentAnswer)}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

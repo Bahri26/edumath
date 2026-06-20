@@ -232,15 +232,6 @@ const ActiveExam = ({ exam, onFinish }) => {
                 mainClassName="text-xl font-bold text-slate-900 dark:text-white"
               />
             </div>
-            <span className={`px-3 py-1 rounded-lg text-xs font-bold text-white whitespace-nowrap ${
-              currentQ.difficulty === 'Zor' 
-                ? 'bg-red-500' 
-                : currentQ.difficulty === 'Orta' 
-                ? 'bg-amber-500' 
-                : 'bg-emerald-500'
-            }`}>
-              {currentQ.difficulty}
-            </span>
           </div>
 
           {currentQ.image && (
