@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { BookOpen, Clock, Play, Trophy, CheckCircle2, X } from 'lucide-react';
 import apiClient from '../../services/api';
@@ -21,27 +21,28 @@ export default function StudentStudyHub() {
 
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
+  const loadExercises = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await apiClient.get('/exercises/student/my-exercises', {
+        params: { page: 1, limit: 50 },
+      });
+      const rows = res.data?.data ?? res.data ?? [];
+      setExercises(Array.isArray(rows) ? rows : []);
+    } catch (err) {
+      setExercises([]);
+      setLoadError(err?.response?.data?.message || t('studyHub.loadError'));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await apiClient.get('/exercises/student/my-exercises', {
-          params: { page: 1, limit: 50 },
-        });
-        const rows = res.data?.data ?? res.data ?? [];
-        if (!cancelled) setExercises(Array.isArray(rows) ? rows : []);
-      } catch {
-        if (!cancelled) setExercises([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    loadExercises();
+  }, [loadExercises]);
 
   const { displayedExercises, filterActive, noTopicMatch } = useMemo(() => {
     if (!focusTopic) {
@@ -100,7 +101,12 @@ export default function StudentStudyHub() {
           </Link>
         </div>
 
-        {loading ? (
+        {loadError ? (
+          <div className="rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/30 p-6 text-center" role="alert">
+            <p className="text-sm text-rose-800 dark:text-rose-200 mb-4">{loadError}</p>
+            <Button variant="outline" onClick={loadExercises}>{t('studyHub.retry')}</Button>
+          </div>
+        ) : loading ? (
           <div className="grid sm:grid-cols-2 gap-4">
             {[1, 2].map((i) => (
               <SkeletonCard key={i} />

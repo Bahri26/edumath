@@ -468,6 +468,20 @@ async function deleteStoredAsset({ key, provider, url } = {}) {
   }));
 }
 
+function getStorageUploadErrorHint() {
+  if (process.env.NODE_ENV !== 'production') {
+    return 'Görsel yüklenemedi.';
+  }
+  const provider = String(process.env.STORAGE_PROVIDER || 'local').trim().toLowerCase();
+  if (provider === 'gdrive') {
+    return 'Görsel depolama yapılandırılmamış. Render’da STORAGE_PROVIDER=gdrive, GOOGLE_DRIVE_CREDENTIALS_JSON ve klasör ID ayarlayın.';
+  }
+  if (provider === 'cloudinary') {
+    return 'Görsel depolama yapılandırılmamış. Render’da STORAGE_PROVIDER=cloudinary ve Cloudinary anahtarlarını ayarlayın.';
+  }
+  return 'Görsel depolama yapılandırılmamış. Render’da STORAGE_PROVIDER=gdrive, cloudinary veya r2 ayarlayın.';
+}
+
 module.exports = {
   uploadBuffer,
   uploadFile,
@@ -484,4 +498,5 @@ module.exports = {
   getProviderName,
   ensureLocalUploadDirs,
   getStorageStatus,
+  getStorageUploadErrorHint,
 };

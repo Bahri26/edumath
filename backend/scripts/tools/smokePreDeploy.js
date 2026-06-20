@@ -3,9 +3,10 @@
  * Pre-deploy API smoke checks (no DB writes).
  * Usage:
  *   node scripts/tools/smokePreDeploy.js
- *   SMOKE_API_URL=https://edumath-api.onrender.com SMOKE_STUDENT_EMAIL=... SMOKE_STUDENT_PASSWORD=... node scripts/tools/smokePreDeploy.js
+ *   SMOKE_API_URL=https://edumath-t10n.onrender.com SMOKE_STUDENT_EMAIL=... SMOKE_STUDENT_PASSWORD=... node scripts/tools/smokePreDeploy.js
  */
 const base = (process.env.SMOKE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+const expectStorage = (process.env.SMOKE_EXPECT_STORAGE || '').trim().toLowerCase();
 
 async function request(path, options = {}) {
   const url = `${base}${path}`;
@@ -32,15 +33,39 @@ function fail(label, detail) {
   process.exitCode = 1;
 }
 
+function warn(label) {
+  console.log(`  ⚠ ${label}`);
+}
+
 async function main() {
   console.log(`Smoke: ${base}\n`);
 
   try {
     const health = await request('/health');
     if (health.ok && health.body?.status === 'ok') {
-      pass(`GET /health (${health.body.db || 'db?'})`);
+      pass(`GET /health (db: ${health.body.db || '?'})`);
+      const provider = health.body.storage?.provider;
+      if (provider) {
+        if (expectStorage && provider !== expectStorage) {
+          fail(`Storage provider`, `expected ${expectStorage}, got ${provider}`);
+        } else {
+          pass(`Storage provider: ${provider}`);
+        }
+      }
     } else {
       fail('GET /health', JSON.stringify(health.body));
+    }
+
+    const fullHealth = await request('/health?full=1');
+    if (fullHealth.ok && fullHealth.body?.mlService) {
+      const ml = fullHealth.body.mlService;
+      if (!ml.configured) {
+        console.log('  ○ ML service not configured');
+      } else if (ml.reachable) {
+        pass(`ML service reachable (${ml.url || 'ok'})`);
+      } else {
+        warn(`ML service down: ${ml.error || ml.status || 'unknown'}`);
+      }
     }
 
     const ready = await request('/ready');
@@ -82,8 +107,31 @@ async function main() {
       console.log('  ○ Login smoke skipped (set SMOKE_STUDENT_EMAIL + SMOKE_STUDENT_PASSWORD)');
     }
 
-    if (process.env.STORAGE_PROVIDER === 'gdrive' || process.env.SMOKE_CHECK_DRIVE === '1') {
-      console.log('  ○ Drive upload: run npm run verify:drive locally before prod deploy');
+    const teacherEmail = process.env.SMOKE_TEACHER_EMAIL || process.env.E2E_TEACHER_EMAIL;
+    const teacherPassword = process.env.SMOKE_TEACHER_PASSWORD || process.env.E2E_TEACHER_PASSWORD;
+    if (teacherEmail && teacherPassword) {
+      const login = await request('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: teacherEmail, password: teacherPassword }),
+      });
+      const token = login.body?.token || login.body?.accessToken;
+      if (login.ok && token) {
+        pass(`POST /api/auth/login teacher (${teacherEmail})`);
+        const questions = await request('/api/teacher/questions?page=1&limit=1', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (questions.status === 200) {
+          pass('GET /api/teacher/questions');
+        } else {
+          fail('Teacher questions', questions.status);
+        }
+      } else {
+        fail('Teacher login', login.body?.message || login.status);
+      }
+    }
+
+    if (expectStorage === 'gdrive') {
+      console.log('  ○ Drive upload: verify GOOGLE_DRIVE_CREDENTIALS_JSON on Render + npm run verify:drive locally');
     }
   } catch (err) {
     fail('Smoke runner', err.message);

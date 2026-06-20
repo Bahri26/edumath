@@ -109,30 +109,50 @@ async function request(path, body, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
   }
 }
 
-async function checkHealth({ timeoutMs = 3000 } = {}) {
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableMlError(message) {
+  return /429|502|503|504|abort|fetch failed|ECONNRESET|ETIMEDOUT/i.test(String(message || ''));
+}
+
+async function checkHealth({ timeoutMs = 8000, retries = 3 } = {}) {
   if (!isConfigured()) {
     return { configured: false, reachable: false, status: 'disabled' };
   }
 
-  try {
-    const data = await request('/health', null, { timeoutMs });
-    return {
-      configured: true,
-      reachable: true,
-      status: 'up',
-      url: getBaseUrl(),
-      service: data.service || 'edumath-ml-service',
-      version: data.version || null,
-    };
-  } catch (err) {
-    return {
-      configured: true,
-      reachable: false,
-      status: 'down',
-      url: getBaseUrl(),
-      error: err.message,
-    };
+  let lastError = null;
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    try {
+      const perAttemptTimeout = timeoutMs + (attempt - 1) * 4000;
+      const data = await request('/health', null, { timeoutMs: perAttemptTimeout });
+      return {
+        configured: true,
+        reachable: true,
+        status: 'up',
+        url: getBaseUrl(),
+        service: data.service || 'edumath-ml-service',
+        version: data.version || null,
+        attempts: attempt,
+      };
+    } catch (err) {
+      lastError = err;
+      if (attempt < retries && isRetryableMlError(err.message)) {
+        await sleep(2000 * attempt);
+        continue;
+      }
+      break;
+    }
   }
+
+  return {
+    configured: true,
+    reachable: false,
+    status: 'down',
+    url: getBaseUrl(),
+    error: lastError?.message || 'ML health check failed',
+  };
 }
 
 async function analyzeTopics(entries, { limit = 5, weakThreshold } = {}) {

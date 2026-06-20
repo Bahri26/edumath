@@ -242,7 +242,7 @@ const DashboardLayout = ({
                   role="menu"
                 >
                   <div className="p-4 border-b border-surface-100 dark:border-surface-700">
-                    <div className="font-bold truncate">{user?.name || 'Kullanıcı'}</div>
+                    <div className="font-bold truncate">{user?.name || t('common.userFallback')}</div>
                     <div className="text-xs text-surface-500 truncate">{user?.email || ''}</div>
                   </div>
                   <button

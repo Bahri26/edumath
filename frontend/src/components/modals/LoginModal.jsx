@@ -1,5 +1,5 @@
 // src/components/modals/LoginModal.jsx
-import React, { useState, useContext, useId, useEffect } from 'react';
+import React, { useState, useContext, useId, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Mail, Lock, User, BookOpen, Briefcase, Loader2, ArrowRight, LogIn, UserPlus, AlertCircle, CheckCircle, GraduationCap } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
@@ -8,8 +8,11 @@ import { wakeBackend } from '../../services/backendWake';
 import Input from '../ui/Input.jsx';
 import Select from '../ui/Select.jsx';
 import { getFriendlyApiError } from '../../utils/apiErrorMessage.js';
+import { translations } from '../../data/translations';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
-const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
+const LoginModal = ({ isOpen, onClose, onLoginSuccess, lang = 'tr' }) => {
+  const ui = translations[lang]?.login || translations.tr.login;
   const [isLoginView, setIsLoginView] = useState(true); 
   const [loading, setLoading] = useState(false);
   const [loadingHint, setLoadingHint] = useState(null);
@@ -28,6 +31,8 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
   const fid = useId().replace(/:/g, '');
+  const panelRef = useRef(null);
+  useFocusTrap(panelRef, isOpen);
 
   useEffect(() => {
     if (!isOpen || !isLoginView) {
@@ -37,7 +42,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
     let cancelled = false;
     wakeBackend().then((result) => {
       if (!cancelled && !result.ready) {
-        setLoadingHint('Sunucu hazırlanıyor; giriş biraz sürebilir.');
+        setLoadingHint(ui.serverWaking);
       }
     });
     return () => {
@@ -74,7 +79,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
               setLoadingHint('Sunucu henüz hazır değil; yine de giriş deneniyor…');
             }
           } else {
-            setLoadingHint(`Bağlantı yavaş, tekrar deneniyor (${attempt}/${maxAttempts})…`);
+            setLoadingHint(ui.retryHint.replace('{attempt}', attempt).replace('{max}', maxAttempts));
             await sleep(2500 * attempt);
           }
 
@@ -124,7 +129,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
           grade: formData.role === 'student' ? formData.grade : undefined,
           schoolType: formData.role === 'student' ? formData.schoolType : undefined
         });
-        setSuccess("Kayıt başarıyla oluşturuldu! Lütfen giriş yapın.");
+        setSuccess(ui.registerSuccess);
         setIsLoginView(true); 
         setFormData(prev => ({ ...prev, password: '' }));
       }
@@ -149,20 +154,26 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden flex flex-col max-h-[90vh]">
-        
-        <button onClick={onClose} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors z-10"><X size={24} /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" role="presentation" onClick={onClose}>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`${fid}-login-title`}
+        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button type="button" onClick={onClose} aria-label={ui.closeModal} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors z-10"><X size={24} aria-hidden /></button>
 
         <div className="p-8 pb-0 text-center">
           <div className="w-16 h-16 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-            {isLoginView ? <LogIn size={28} className="ml-1" /> : <UserPlus size={28} />}
+            {isLoginView ? <LogIn size={28} className="ml-1" aria-hidden /> : <UserPlus size={28} aria-hidden />}
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
-            {isLoginView ? 'Tekrar Hoşgeldiniz' : 'Hesap Oluşturun'}
+          <h2 id={`${fid}-login-title`} className="text-2xl font-bold text-slate-800 dark:text-white">
+            {isLoginView ? ui.loginTitle : ui.registerTitle}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
-            {isLoginView ? 'Hesabınıza giriş yaparak derslere devam edin.' : 'Edumath dünyasına katılmak için bilgilerinizi girin.'}
+            {isLoginView ? ui.loginSubtitle : ui.registerSubtitle}
           </p>
         </div>
 
@@ -178,11 +189,11 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
                 <div className="grid grid-cols-2 gap-3 mb-2">
                   <button type="button" onClick={() => setFormData({...formData, role: 'student'})} className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${formData.role === 'student' ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600 ring-1 ring-brand-500' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                     <BookOpen size={20} />
-                    <span className="text-sm font-medium">Öğrenci</span>
+                    <span className="text-sm font-medium">{ui.student}</span>
                   </button>
                   <button type="button" onClick={() => setFormData({...formData, role: 'teacher'})} className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${formData.role === 'teacher' ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600 ring-1 ring-brand-500' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                    <Briefcase size={20} />
-                    <span className="text-sm font-medium">Öğretmen</span>
+                    <Briefcase size={20} aria-hidden />
+                    <span className="text-sm font-medium">{ui.teacher}</span>
                   </button>
                 </div>
 
@@ -190,7 +201,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
                 {formData.role === 'student' && (
                   <>
                   <div className="space-y-1 animate-fade-in">
-                    <label htmlFor={`${fid}-school`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Kademe</label>
+                    <label htmlFor={`${fid}-school`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">{ui.schoolType}</label>
                     <div className="relative">
                       <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} aria-hidden />
                       <Select
@@ -207,7 +218,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
                     </div>
                   </div>
                   <div className="space-y-1 animate-fade-in">
-                    <label htmlFor={`${fid}-grade`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Sınıf Seviyesi</label>
+                    <label htmlFor={`${fid}-grade`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">{ui.grade}</label>
                     <div className="relative">
                       <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} aria-hidden />
                       <Select
@@ -228,7 +239,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
 
                 {/* AD SOYAD */}
                 <div className="space-y-1">
-                  <label htmlFor={`${fid}-name`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Ad Soyad</label>
+                  <label htmlFor={`${fid}-name`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">{ui.name}</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} aria-hidden />
                     <Input
@@ -236,7 +247,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
                       type="text"
                       name="name"
                       required
-                      placeholder="Adınız Soyadınız"
+                      placeholder={ui.namePlaceholder}
                       value={formData.name}
                       onChange={handleChange}
                       className="pl-10 pr-4"
@@ -248,7 +259,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
             )}
 
             <div className="space-y-1">
-              <label htmlFor={`${fid}-email`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">{isLoginView ? 'E-Posta veya Kullanıcı Adı' : 'E-Posta'}</label>
+              <label htmlFor={`${fid}-email`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">{isLoginView ? ui.emailLoginLabel : ui.emailLabel}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} aria-hidden />
                 <Input
@@ -256,7 +267,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
                   type={isLoginView ? 'text' : 'email'}
                   name="email"
                   required
-                  placeholder={isLoginView ? 'ornek@edumath.com veya BahadirTeacher' : 'ornek@edumath.com'}
+                  placeholder={isLoginView ? ui.emailLoginPlaceholder : ui.emailPlaceholder}
                   value={formData.email}
                   onChange={handleChange}
                   className="pl-10 pr-4"
@@ -266,7 +277,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
             </div>
 
             <div className="space-y-1">
-              <label htmlFor={`${fid}-password`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">Şifre</label>
+              <label htmlFor={`${fid}-password`} className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-1">{ui.passwordLabel}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={18} aria-hidden />
                 <Input
@@ -285,30 +296,30 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
 
             {isLoginView && (
               <div className="flex justify-between items-center text-sm">
-                <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400 cursor-pointer"><input type="checkbox" className="rounded border-slate-300 text-brand-600 focus:ring-brand-500" /> Beni Hatırla</label>
+                <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400 cursor-pointer"><input type="checkbox" className="rounded border-slate-300 text-brand-600 focus:ring-brand-500" /> {ui.rememberMe}</label>
                 <button type="button" className="text-brand-600 font-medium hover:underline"
                   onClick={async () => {
                     try {
                       if (!formData.email) {
-                        setError('Lütfen önce e-posta adresinizi girin.');
+                        setError(ui.resetNeedEmail);
                         return;
                       }
                       if (!formData.email.includes('@')) {
-                        setError('Şifre sıfırlama için e-posta adresi girmeniz gerekir.');
+                        setError(ui.resetNeedValidEmail);
                         return;
                       }
                       await apiClient.post('/auth/password-reset-request', { email: formData.email, note: 'Login modal talebi' });
-                      setSuccess('Şifre sıfırlama talebiniz alındı. Yönetici onayı sonrası size token iletilecek. Ardından /reset-password sayfasından şifrenizi güncelleyebilirsiniz.');
+                      setSuccess(ui.resetSuccess);
                     } catch (err) {
-                      setError(err?.response?.data?.message || 'Talep oluşturulamadı');
+                      setError(err?.response?.data?.message || ui.resetFail);
                     }
                   }}
-                >Şifremi Unuttum?</button>
+                >{ui.forgotPassword}</button>
               </div>
             )}
 
             <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-200/60 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
-              {loading ? <Loader2 className="animate-spin" size={20} /> : <>{isLoginView ? 'Giriş Yap' : 'Kayıt Ol'} <ArrowRight size={20} /></>}
+              {loading ? <Loader2 className="animate-spin" size={20} aria-hidden /> : <>{isLoginView ? ui.btnLogin : ui.btnRegister} <ArrowRight size={20} aria-hidden /></>}
             </button>
             {loading && loadingHint && (
               <p className="text-center text-xs text-slate-500 dark:text-slate-400">{loadingHint}</p>
@@ -316,8 +327,8 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
           </form>
 
           <div className="mt-6 text-center text-sm text-slate-500">
-            {isLoginView ? 'Hesabınız yok mu? ' : 'Zaten hesabınız var mı? '}
-            <button type="button" onClick={toggleView} className="text-brand-600 font-bold hover:underline">{isLoginView ? 'Kayıt Ol' : 'Giriş Yap'}</button>
+            {isLoginView ? `${ui.noAccount} ` : `${ui.hasAccount} `}
+            <button type="button" onClick={toggleView} className="text-brand-600 font-bold hover:underline">{isLoginView ? ui.register : ui.btnLogin}</button>
           </div>
 
           {isLoginView && (
@@ -330,7 +341,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
                   navigate('/admin/login');
                 }}
               >
-                Yönetici girişi →
+                {ui.adminEntry}
               </button>
             </div>
           )}

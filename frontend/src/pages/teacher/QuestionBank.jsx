@@ -24,6 +24,7 @@ import CollapsiblePanel from '../../components/ui/CollapsiblePanel.jsx';
 import QuestionTextWithPattern from '../../components/questions/QuestionTextWithPattern.jsx';
 import { sourceFilterOptions, sourceFilterToApi } from '../../utils/questionSourceLabel';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
+import { useTranslation } from '../../i18n/useTranslation';
 import {
   PATTERN_TOPIC_ORDER,
   PATTERN_TOPIC_ALL_UNDER,
@@ -192,8 +193,10 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
 };
 
 export default function QuestionBank() {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { askConfirm, ConfirmDialog } = useConfirmAction();
+  const [fetchError, setFetchError] = useState(null);
   const [profile, setProfile] = useState({ branch: '', branchApproval: 'none' });
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -251,7 +254,7 @@ export default function QuestionBank() {
             if (branchApproval === 'approved') {
               setProfile({ branch, branchApproval });
               setFilters(f => ({ ...f, subject: branch }));
-              showToast('Branş onaylandı! İçerikleriniz yükleniyor…', 'success');
+              showToast(t('questionBank.branchApprovedToast'), 'success');
               setPage(1);
               clearInterval(timer);
             }
@@ -331,6 +334,7 @@ export default function QuestionBank() {
     }
 
     setLoading(true);
+    setFetchError(null);
     try {
       const filterEntries = Object.entries(filters)
         .filter(([, v]) => v !== 'Tümü')
@@ -364,11 +368,12 @@ export default function QuestionBank() {
         setTotalQuestions(res.data.total || 0);
       }
     } catch {
-      showToast('Veriler senkronize edilemedi', 'error');
+      setFetchError(t('questionBank.errSyncInline'));
+      showToast(t('questionBank.errSync'), 'error');
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, filters, profile, profileLoaded, showToast]);
+  }, [page, debouncedSearch, filters, profile, profileLoaded, showToast, t]);
 
   useEffect(() => { fetchQuestions(); }, [fetchQuestions]);
 
@@ -429,21 +434,20 @@ export default function QuestionBank() {
 
   const handleDelete = async (id) => {
     const confirmed = await askConfirm({
-      title: 'Soru silinsin mi?',
-      description:
-        'Bu soru soru bankasından kalıcı olarak kaldırılacak. Sınav veya egzersizde kullanılıyorsa artık erişilemez olur. Bu işlem geri alınamaz.',
+      title: t('questionBank.deleteTitle'),
+      description: t('questionBank.deleteDesc'),
     });
     if (!confirmed) return;
     const prev = questions;
     setQuestions(prev.filter(q => q._id !== id));
-    setTotalQuestions(t => (t > 0 ? t - 1 : 0));
+    setTotalQuestions((count) => (count > 0 ? count - 1 : 0));
     try {
       await apiClient.delete(`/questions/${id}`);
-      showToast("Soru başarıyla silindi", "success");
+      showToast(t('questionBank.deleted'), 'success');
     } catch {
       setQuestions(prev);
-      setTotalQuestions(t => t + 1);
-      showToast("Soru silinemedi", "error");
+      setTotalQuestions((count) => count + 1);
+      showToast(t('questionBank.deleteFailed'), 'error');
     }
   };
 
@@ -464,14 +468,13 @@ export default function QuestionBank() {
       <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-end mb-4 sm:mb-8 px-0 sm:px-2">
         <div className="space-y-2 min-w-0">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            Soru Bankası
+            {t('questionBank.title')}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
-            Matematik soruları örüntü alt konularına göre gruplanır (şekil dizileri, sabit adımlı sayı örüntüsü,
-            kare/üçgensel sayılar vb.); kazanım metinleri MEB matematik programındaki örüntü çerçevesiyle uyumludur.
+            {t('questionBank.subtitle')}
           </p>
           <div className="flex items-center gap-2 text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">
-            <span className="text-indigo-600 font-black">#</span> TOPLAM {totalQuestions} SORU
+            <span className="text-indigo-600 font-black">#</span> {t('questionBank.total', { n: totalQuestions })}
           </div>
         </div>
 
@@ -481,10 +484,10 @@ export default function QuestionBank() {
             size="md"
             onClick={() => setIsAiGenerateOpen(true)}
             disabled={profile.branchApproval !== 'approved'}
-            title={profile.branchApproval !== 'approved' ? 'Branş onayından sonra kullanılabilir' : 'Havuzdaki sorulardan esinlenerek yeni sorular üretir'}
+            title={profile.branchApproval !== 'approved' ? t('questionBank.branchPending') : t('questionBank.aiGenerateTitle')}
             className="w-full sm:w-auto justify-center px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-violet-600 text-violet-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Wand2 size={18} className="shrink-0" /> AI ile Üret
+            <Wand2 size={18} className="shrink-0" /> {t('questionBank.aiGenerate')}
           </Button>
 
           <Button
@@ -492,24 +495,31 @@ export default function QuestionBank() {
             size="md"
             onClick={() => setIsSmartPasteOpen(true)}
             disabled={profile.branchApproval !== 'approved'}
-            title={profile.branchApproval !== 'approved' ? 'Branş onayından sonra kullanılabilir' : ''}
+            title={profile.branchApproval !== 'approved' ? t('questionBank.branchPending') : ''}
             className="w-full sm:w-auto justify-center px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-indigo-600 text-indigo-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Sparkles size={18} className="shrink-0" /> Akıllı Yapıştır
+            <Sparkles size={18} className="shrink-0" /> {t('questionBank.smartPaste')}
           </Button>
 
           <Button
             variant="primary"
             size="md"
             disabled={profile.branchApproval !== 'approved'}
-            title={profile.branchApproval !== 'approved' ? 'Branş onayından sonra kullanılabilir' : ''}
+            title={profile.branchApproval !== 'approved' ? t('questionBank.branchPending') : ''}
             onClick={openNewQuestionModal}
             className="w-full sm:w-auto justify-center px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl text-sm"
           >
-            <Plus size={20} className="shrink-0" /> Yeni Soru Ekle
+            <Plus size={20} className="shrink-0" /> {t('questionBank.addQuestion')}
           </Button>
         </div>
       </div>
+
+      {fetchError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/30 px-4 py-3 flex flex-wrap items-center justify-between gap-3" role="alert">
+          <p className="text-sm text-rose-800 dark:text-rose-200">{fetchError}</p>
+          <Button variant="outline" size="sm" onClick={() => fetchQuestions()}>{t('common.retry')}</Button>
+        </div>
+      )}
 
       {/* Filtre Paneli */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-center bg-white/50 dark:bg-slate-800/50 backdrop-blur-md p-3 sm:p-4 rounded-2xl sm:rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -517,7 +527,7 @@ export default function QuestionBank() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input 
             type="text"
-            placeholder="Kazanım, konu veya soru metni ara..."
+            placeholder={t('questionBank.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => {setSearchQuery(e.target.value); setPage(1);}}
             className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border-none rounded-2xl focus:ring-4 focus:ring-indigo-500/10 font-medium outline-none"
@@ -667,11 +677,11 @@ export default function QuestionBank() {
       {/* Pagination */}
       {!loading && totalPages > 1 && (
         <div className="flex justify-center items-center gap-4 mt-12">
-          <PaginationButton onClick={() => setPage(p => p - 1)} disabled={page === 1} icon={<ChevronLeft size={20}/>} />
+          <PaginationButton onClick={() => setPage(p => p - 1)} disabled={page === 1} icon={<ChevronLeft size={20}/>} ariaLabel={t('questionBank.pagePrev')} />
           <span className="text-sm font-black text-slate-400 uppercase tracking-widest px-4">
             Sayfa <span className="text-indigo-600">{page}</span> / {totalPages}
           </span>
-          <PaginationButton onClick={() => setPage(p => p + 1)} disabled={page === totalPages} icon={<ChevronRight size={20}/>} />
+          <PaginationButton onClick={() => setPage(p => p + 1)} disabled={page === totalPages} icon={<ChevronRight size={20}/>} ariaLabel={t('questionBank.pageNext')} />
         </div>
       )}
 
@@ -763,10 +773,12 @@ const FilterSelect = ({ icon, value, onChange, options }) => (
   </div>
 );
 
-const PaginationButton = ({ onClick, disabled, icon }) => (
+const PaginationButton = ({ onClick, disabled, icon, ariaLabel }) => (
   <button 
+    type="button"
     onClick={onClick} 
     disabled={disabled}
+    aria-label={ariaLabel}
     className="p-3 bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-100 dark:border-slate-700 text-slate-500 hover:border-indigo-600 hover:text-indigo-600 disabled:opacity-20 transition-all shadow-sm active:scale-95"
   >
     {icon}

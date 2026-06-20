@@ -275,7 +275,7 @@ app.get('/health', async (req, res) => {
 
     if (req.query.full === '1' && ml.configured) {
         try {
-            payload.mlService = await mlServiceClient.checkHealth({ timeoutMs: 2500 });
+            payload.mlService = await mlServiceClient.checkHealth({ timeoutMs: 10000, retries: 3 });
         } catch {
             payload.mlService = { ...ml, reachable: false, status: 'down' };
         }

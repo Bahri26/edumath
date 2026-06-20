@@ -150,7 +150,7 @@ const LandingPage = () => {
       <LoginModal 
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
-        t={t} 
+        lang={lang}
         onLoginSuccess={handleLoginSuccess} 
       />
 

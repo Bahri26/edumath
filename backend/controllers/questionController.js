@@ -1,6 +1,6 @@
 const { buildTopicMongoClause } = require('../constants/patternTopics');
 const Question = require('../models/Question');
-const { uploadFile, promoteLocalUpload, promoteAssessmentMetaAssets, toUploadRelativePath, deleteStoredAsset } = require('../services/storageService');
+const { uploadFile, promoteLocalUpload, promoteAssessmentMetaAssets, toUploadRelativePath, deleteStoredAsset, getStorageUploadErrorHint } = require('../services/storageService');
 const { recordUserActivity } = require('../services/activityLogger');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -327,9 +327,7 @@ exports.createQuestion = async (req, res, next) => {
         console.error('createQuestion image upload failed:', uploadErr?.message);
         const isProd = process.env.NODE_ENV === 'production';
         return res.status(isProd ? 503 : 500).json({
-          message: isProd
-            ? 'Görsel depolama yapılandırılmamış. Render’da STORAGE_PROVIDER=cloudinary veya r2 ayarlayın.'
-            : 'Görsel yüklenemedi.',
+          message: isProd ? getStorageUploadErrorHint() : 'Görsel yüklenemedi.',
           error: uploadErr?.message,
         });
       }

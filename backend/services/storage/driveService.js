@@ -57,7 +57,9 @@ function isDriveConfigured() {
     const inline = process.env.GOOGLE_DRIVE_CREDENTIALS_JSON?.trim();
     if (inline?.startsWith('{')) return true;
     const keyFile = resolveCredentialsPath();
-    return Boolean(keyFile && fs.existsSync(keyFile));
+    if (keyFile && fs.existsSync(keyFile)) return true;
+    const { isOAuthConfigured } = require('./driveOAuth');
+    return isOAuthConfigured();
   } catch {
     return false;
   }

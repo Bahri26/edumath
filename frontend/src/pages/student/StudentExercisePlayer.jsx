@@ -367,7 +367,7 @@ export default function StudentExercisePlayer() {
           onClick={() => navigate('/student/exercises')}
           className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
         >
-          <ArrowLeft size={16} /> Geri
+          <ArrowLeft size={16} aria-hidden /> {t('exercisePlayer.back')}
         </button>
         <div className="flex items-center gap-3">
           {timeLeft != null && (
@@ -418,7 +418,7 @@ export default function StudentExercisePlayer() {
               disabled={checking || !draftAnswer.trim()}
               onClick={handleCheck}
             >
-              {checking ? 'Kontrol ediliyor…' : 'Kontrol et'}
+              {checking ? t('exercisePlayer.checking') : t('exercisePlayer.check')}
             </Button>
           ) : (
             <div className="space-y-4">
@@ -430,16 +430,16 @@ export default function StudentExercisePlayer() {
                 {currentFeedback.isCorrect ? <CheckCircle size={22} className="shrink-0" /> : <XCircle size={22} className="shrink-0" />}
                 <div>
                   <p className="font-bold">
-                    {currentFeedback.isCorrect ? 'Doğru!' : 'Yanlış cevap'}
+                    {currentFeedback.isCorrect ? t('exercisePlayer.correct') : t('exercisePlayer.wrong')}
                   </p>
                   {!currentFeedback.isCorrect && (
                     <>
                       <p className="text-sm mt-1">
-                        Doğru cevap: <strong>{currentFeedback.correctAnswer}</strong>
+                        {t('exercisePlayer.correctAnswerLabel')} <strong>{currentFeedback.correctAnswer}</strong>
                       </p>
                       {currentFeedback.solution ? (
                         <div className="mt-3">
-                          <p className="text-xs font-bold opacity-70 mb-1">Çözüm</p>
+                          <p className="text-xs font-bold opacity-70 mb-1">{t('exercisePlayer.solutionLabel')}</p>
                           <SolutionDisplay text={currentFeedback.solution} />
                         </div>
                       ) : null}
@@ -457,9 +457,9 @@ export default function StudentExercisePlayer() {
               </div>
               <Button variant="primary" className="w-full" onClick={goNext} disabled={submitting}>
                 {currentIndex < questions.length - 1 ? (
-                  <>Sonraki soru <ArrowRight size={16} className="ml-1 inline" /></>
+                  <>{t('exercisePlayer.nextQuestion')} <ArrowRight size={16} className="ml-1 inline" aria-hidden /></>
                 ) : (
-                  submitting ? 'Kaydediliyor…' : 'Bitir ve kaydet'
+                  submitting ? t('exercisePlayer.saving') : t('exercisePlayer.finishSave')
                 )}
               </Button>
             </div>
