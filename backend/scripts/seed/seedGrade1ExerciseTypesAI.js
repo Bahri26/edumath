@@ -157,7 +157,7 @@ function buildMatching() {
   ];
   return sets.map((set, i) =>
     base({
-      text: 'Her örneği doğru örüntü türüyle eşleştirin.',
+      text: `Eşleştirme ${i + 1}: ${set.prompts.map((p) => p.label).join(' ve ')} örüntülerini türleriyle eşleştirin.`,
       type: 'matching',
       interactiveType: 'matching',
       interactionData: set,
@@ -171,48 +171,61 @@ function buildMatching() {
 }
 
 function buildSequence() {
-  const orders = [
-    ['rule', 'predict', 'verify'],
-    ['rule', 'delta', 'predict'],
-    ['delta', 'rule', 'predict'],
-    ['rule', 'predict'],
-    ['find', 'check', 'apply'],
+  const specs = [
+    {
+      text: '2, 4, 6, 8 sayı örüntüsünü çözerken adımları sıraya koyun.',
+      items: [
+        { id: 'rule', label: 'Örüntüdeki kuralı bul' },
+        { id: 'predict', label: 'Eksik terimi tahmin et' },
+        { id: 'verify', label: 'Sonucu kontrol et' },
+      ],
+      correctOrder: ['rule', 'predict', 'verify'],
+    },
+    {
+      text: '🔴 🔵 tekrar örüntüsünde adımları doğru sıraya dizin.',
+      items: [
+        { id: 'rule', label: 'Tekrar kuralını fark et' },
+        { id: 'delta', label: 'Renk sırasını say' },
+        { id: 'predict', label: 'Sıradaki rengi yaz' },
+      ],
+      correctOrder: ['rule', 'delta', 'predict'],
+    },
+    {
+      text: '10, 9, 8 azalan örüntüsü için çözüm adımlarını sıralayın.',
+      items: [
+        { id: 'delta', label: 'Azalış farkını bul' },
+        { id: 'rule', label: 'Kuralı yaz' },
+        { id: 'predict', label: 'Devamını tamamla' },
+      ],
+      correctOrder: ['delta', 'rule', 'predict'],
+    },
+    {
+      text: '🟡 🟢 renk örüntüsünde sonraki rengi bulmak için adımları dizin.',
+      items: [
+        { id: 'rule', label: 'Renk sırasını gör' },
+        { id: 'predict', label: 'Sonraki rengi seç' },
+      ],
+      correctOrder: ['rule', 'predict'],
+    },
+    {
+      text: '3, 6, 9 artan örüntüsünü çözmek için adımları sıraya koyun.',
+      items: [
+        { id: 'find', label: 'Örüntüyü incele' },
+        { id: 'check', label: '+3 kuralını doğrula' },
+        { id: 'apply', label: 'Kuralı uygula' },
+      ],
+      correctOrder: ['find', 'check', 'apply'],
+    },
   ];
-  const itemSets = [
-    [
-      { id: 'rule', label: 'Örüntüdeki kuralı bul' },
-      { id: 'predict', label: 'Eksik terimi tahmin et' },
-      { id: 'verify', label: 'Sonucu kontrol et' },
-    ],
-    [
-      { id: 'rule', label: 'Tekrar kuralını fark et' },
-      { id: 'delta', label: 'Artış miktarını say' },
-      { id: 'predict', label: 'Sıradaki öğeyi yaz' },
-    ],
-    [
-      { id: 'delta', label: 'Farkı bul' },
-      { id: 'rule', label: 'Kuralı yaz' },
-      { id: 'predict', label: 'Devamını tamamla' },
-    ],
-    [
-      { id: 'rule', label: 'Renk sırasını gör' },
-      { id: 'predict', label: 'Sonraki rengi seç' },
-    ],
-    [
-      { id: 'find', label: 'Örüntüyü incele' },
-      { id: 'check', label: 'Kuralı doğrula' },
-      { id: 'apply', label: 'Kuralı uygula' },
-    ],
-  ];
-  return orders.map((correctOrder, i) =>
+  return specs.map((spec, i) =>
     base({
-      text: 'Örüntüyü çözmek için adımları doğru sıraya koyun.',
+      text: spec.text,
       type: 'sequence',
       interactiveType: 'sequence',
-      interactionData: { items: itemSets[i], correctOrder },
+      interactionData: { items: spec.items, correctOrder: spec.correctOrder },
       options: [],
       correctAnswer: '__interactive_sequence__',
-      solution: `Doğru sıra: ${correctOrder.join(' → ')}`,
+      solution: `Doğru sıra: ${spec.correctOrder.join(' → ')}`,
       topic: 'Örüntüler — Çözüm adımları (sıralama)',
       assessmentMeta: { packId: PACK_ID, code: `SQ-${i + 1}` },
     }),

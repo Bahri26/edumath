@@ -6,6 +6,7 @@ import Button from '../ui/Button.jsx';
 import { questionTypeLabel } from '../../constants/questionTypesUi';
 
 const MAX_DEFAULT = 25;
+const EMPTY_TYPES = Object.freeze([]);
 
 /**
  * Havuzdan soru seçimi: öğretmen soruları veya (branş onaylıysa) branş havuzu.
@@ -14,23 +15,50 @@ export default function ExerciseQuestionPicker({
   classLevel,
   subject,
   topic,
-  questionTypes = [],
+  questionTypes: questionTypesProp,
   branchApproved,
   selectedIds,
   onSelectedIdsChange,
   maxSelected = MAX_DEFAULT,
+  knownQuestions = [],
 }) {
+  const questionTypes = questionTypesProp?.length ? questionTypesProp : EMPTY_TYPES;
+  const typesKey = questionTypes.join(',');
+
   const [poolSearch, setPoolSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [poolPage, setPoolPage] = useState(1);
   const [poolQuestions, setPoolQuestions] = useState([]);
   const [poolTotalPages, setPoolTotalPages] = useState(1);
   const [poolLoading, setPoolLoading] = useState(false);
+  const [knownById, setKnownById] = useState(() => new Map());
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(poolSearch.trim()), 250);
     return () => clearTimeout(t);
   }, [poolSearch]);
+
+  useEffect(() => {
+    if (!knownQuestions?.length) return;
+    setKnownById((prev) => {
+      const next = new Map(prev);
+      for (const q of knownQuestions) {
+        if (q?._id) next.set(String(q._id), q);
+      }
+      return next;
+    });
+  }, [knownQuestions]);
+
+  useEffect(() => {
+    if (!poolQuestions.length) return;
+    setKnownById((prev) => {
+      const next = new Map(prev);
+      for (const q of poolQuestions) {
+        if (q?._id) next.set(String(q._id), q);
+      }
+      return next;
+    });
+  }, [poolQuestions]);
 
   const fetchPool = useCallback(async () => {
     if (!classLevel) return;
@@ -64,7 +92,7 @@ export default function ExerciseQuestionPicker({
     } finally {
       setPoolLoading(false);
     }
-  }, [branchApproved, classLevel, subject, topic, questionTypes, poolPage, debouncedSearch]);
+  }, [branchApproved, classLevel, subject, topic, typesKey, poolPage, debouncedSearch]);
 
   useEffect(() => {
     fetchPool();
@@ -72,7 +100,7 @@ export default function ExerciseQuestionPicker({
 
   useEffect(() => {
     setPoolPage(1);
-  }, [classLevel, subject, topic, questionTypes, debouncedSearch, branchApproved]);
+  }, [classLevel, subject, topic, typesKey, debouncedSearch, branchApproved]);
 
   const addId = (id) => {
     const sid = String(id);
@@ -94,7 +122,8 @@ export default function ExerciseQuestionPicker({
   };
 
   const idSet = new Set(selectedIds);
-  const selectedMeta = selectedIds.map((id) => poolQuestions.find((q) => String(q._id) === id)).filter(Boolean);
+  const resolveQuestion = (id) => knownById.get(String(id)) || poolQuestions.find((q) => String(q._id) === String(id));
+  const selectedMeta = selectedIds.map((id) => resolveQuestion(id)).filter(Boolean);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -190,8 +219,7 @@ export default function ExerciseQuestionPicker({
             </p>
           ) : (
             selectedIds.map((id, idx) => {
-              const fromPool = poolQuestions.find((q) => String(q._id) === id);
-              const label = fromPool?.text ? String(fromPool.text).slice(0, 80) : id.slice(-6);
+              const q = resolveQuestion(id);
               return (
                 <div
                   key={id}
@@ -199,7 +227,7 @@ export default function ExerciseQuestionPicker({
                 >
                   <span className="text-[10px] font-bold text-surface-400 w-5">{idx + 1}</span>
                   <span className="flex-1 line-clamp-2 text-surface-800 dark:text-surface-100">
-                    {fromPool ? renderWithLatex(fromPool.text || '—') : `Soru…${label}`}
+                    {q ? renderWithLatex(q.text || '—') : `Soru yükleniyor… (${String(id).slice(-6)})`}
                   </span>
                   <div className="flex gap-0.5 shrink-0">
                     <button

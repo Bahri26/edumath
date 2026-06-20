@@ -140,6 +140,23 @@ const ExerciseCard = ({ exercise, onView, onEditQuestions, onResults, onDelete }
   </Card>
 );
 
+function exerciseQuestionPreviewText(q) {
+  const text = String(q?.text || '').trim();
+  if (q?.type === 'sequence' && q?.interactionData?.items?.length) {
+    const steps = q.interactionData.items.map((item) => item.label).join(' → ');
+    return text && !/^Örüntüyü çözmek için adımları doğru sıraya koyun\.?$/i.test(text)
+      ? text
+      : `Adımlar: ${steps}`;
+  }
+  if (q?.type === 'matching' && q?.interactionData?.prompts?.length) {
+    const examples = q.interactionData.prompts.map((p) => p.label).join(' · ');
+    return text && !/^Her örneği doğru örüntü türüyle eşleştirin\.?$/i.test(text)
+      ? text
+      : `Eşleştir: ${examples}`;
+  }
+  return text || '—';
+}
+
 function ExercisePreviewModal({ exerciseId, onClose }) {
   const { showToast } = useToast();
   const [data, setData] = useState(null);
@@ -239,7 +256,7 @@ function ExercisePreviewModal({ exerciseId, onClose }) {
                         className="rounded-xl border border-slate-100 dark:border-slate-800 p-3 bg-slate-50/80 dark:bg-slate-800/40"
                       >
                         <div className="inline text-sm font-medium text-slate-800 dark:text-slate-100 pl-1">
-                          {renderWithLatex(q.text || '—')}
+                          {renderWithLatex(exerciseQuestionPreviewText(q))}
                         </div>
                         {imgSrc ? (
                           <div className="mt-2 flex justify-center">
@@ -265,6 +282,7 @@ function ManageExerciseQuestionsModal({ exerciseId, branchApproved, onClose, onS
   const [saving, setSaving] = useState(false);
   const [meta, setMeta] = useState({ name: '', classLevel: '', subject: 'Matematik' });
   const [selectedIds, setSelectedIds] = useState([]);
+  const [knownQuestions, setKnownQuestions] = useState([]);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -284,6 +302,7 @@ function ManageExerciseQuestionsModal({ exerciseId, branchApproved, onClose, onS
           });
           const ids = (data.questions || []).map((q) => String(q._id || q));
           setSelectedIds(ids);
+          setKnownQuestions(Array.isArray(data.questions) ? data.questions : []);
         }
       } catch {
         if (!cancelled) {
@@ -379,6 +398,7 @@ function ManageExerciseQuestionsModal({ exerciseId, branchApproved, onClose, onS
               branchApproved={branchApproved}
               selectedIds={selectedIds}
               onSelectedIdsChange={setSelectedIds}
+              knownQuestions={knownQuestions}
               maxSelected={30}
             />
           )}
