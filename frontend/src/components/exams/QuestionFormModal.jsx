@@ -1,12 +1,13 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { 
-  X, Save, Loader2, Image as ImageIcon, 
-  PlusCircle, Trash2, CheckCircle, Layers, 
-  Target, BookOpen, HelpCircle, Sparkles, Wand2, ClipboardPaste, ArrowRight
+import {
+  X, Save, Loader2, Image as ImageIcon,
+  PlusCircle, Trash2, CheckCircle, Layers,
+  Target, BookOpen, HelpCircle, Sparkles, Wand2, ClipboardPaste, ArrowRight, ChevronDown,
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
+import QuestionSourceBadge from '../questions/QuestionSourceBadge.jsx';
 import SolutionDisplay from '../questions/SolutionDisplay.jsx';
 import { enrichQuestionForm, optionMatchesCorrect } from '../../utils/patternQuestionSolver';
 import { parsePastedQuestionText } from '../../utils/parsePastedQuestionText';
@@ -18,9 +19,11 @@ const QuestionFormModal = ({
   const firstInputRef = useRef(null);
   const { showToast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
-  const [pasteOpen, setPasteOpen] = useState(true);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [pasteLoading, setPasteLoading] = useState(false);
+  const [markAsExpert, setMarkAsExpert] = useState(false);
 
   // Fallback internal state when parent does not provide controlled props
   const [fallbackForm, setFallbackForm] = useState({
@@ -51,14 +54,18 @@ const QuestionFormModal = ({
     difficulty: effectiveForm?.difficulty || 'Orta',
     correctAnswer: effectiveForm?.correctAnswer || '',
     solution: effectiveForm?.solution || '',
-    options: effectiveForm?.options || ['', '', '', '', '']
+    options: effectiveForm?.options || ['', '', '', '', ''],
+    source: effectiveForm?.source || 'Manuel',
+    assessmentMeta: effectiveForm?.assessmentMeta || null,
   };
 
   useEffect(() => {
     if (isOpen && firstInputRef.current) firstInputRef.current.focus();
     if (!isOpen) {
       setPasteText('');
-      setPasteOpen(true);
+      setPasteOpen(false);
+      setAdvancedOpen(false);
+      setMarkAsExpert(false);
     }
   }, [isOpen]);
 
@@ -156,14 +163,20 @@ const QuestionFormModal = ({
 
     setIsSaving(true);
     try {
+      const resolvedSource =
+        markAsExpert || (form.source !== 'AI' && !editingId) ? 'Manuel' : form.source || 'Manuel';
       const formData = new FormData();
       Object.keys(submitForm).forEach(key => {
         if (key === 'options') {
           submitForm.options.forEach(opt => formData.append('options', opt));
-        } else {
+        } else if (key !== 'source' && key !== 'assessmentMeta') {
           formData.append(key, submitForm[key]);
         }
       });
+      formData.append('source', resolvedSource);
+      if (form.assessmentMeta) {
+        formData.append('assessmentMeta', JSON.stringify(form.assessmentMeta));
+      }
       if (effectiveMainImage && effectiveMainImage.file) formData.append('image', effectiveMainImage.file);
 
       const endpoint = editingId ? `/questions/${editingId}` : '/questions';
@@ -205,53 +218,105 @@ const QuestionFormModal = ({
 
         <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
 
-          {/* Kopyala-yapıştır */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <QuestionSourceBadge
+              question={{ source: markAsExpert ? 'Manuel' : form.source, assessmentMeta: form.assessmentMeta }}
+              size="lg"
+            />
+            {form.source === 'AI' && !markAsExpert ? (
+              <label className="inline-flex items-center gap-2 text-xs font-semibold text-teal-800 dark:text-teal-200 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={markAsExpert}
+                  onChange={(e) => setMarkAsExpert(e.target.checked)}
+                  className="rounded border-teal-400 text-teal-600 focus:ring-teal-500"
+                />
+                Uzman olarak doğruladım (AI etiketini kaldır)
+              </label>
+            ) : null}
+          </div>
+
+          {form.source === 'AI' && !markAsExpert ? (
+            <div
+              className="rounded-xl border border-violet-200 bg-violet-50/80 dark:bg-violet-950/30 dark:border-violet-800 px-4 py-3 text-sm text-violet-950 dark:text-violet-100"
+              role="status"
+            >
+              <strong className="font-black">AI kaynağı:</strong> Metin, şıklar ve doğru cevabı kaydetmeden önce
+              kontrol edin. Onayladığınızda «Uzman olarak doğruladım» seçeneğini işaretleyebilirsiniz.
+            </div>
+          ) : null}
+
+          {/* Gelişmiş: kopyala-yapıştır */}
           {!editingId ? (
-            <section className="rounded-[1.75rem] border-2 border-dashed border-indigo-200 dark:border-indigo-800/50 bg-indigo-50/40 dark:bg-indigo-950/20 p-5 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
-                  <ClipboardPaste size={14} /> Kopyala-yapıştır
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setPasteOpen((v) => !v)}
-                  className="text-[10px] font-bold uppercase text-indigo-600"
-                >
-                  {pasteOpen ? 'Gizle' : 'Göster'}
-                </button>
-              </div>
-              {pasteOpen ? (
-                <>
-                  <p className="text-xs text-indigo-900/70 dark:text-indigo-200/70 ml-1">
-                    PDF, Word veya ekrandan soruyu kopyalayıp buraya yapıştırın. Sistem metni, şıkları (A) B) C) D)) ve varsa cevabı ayırır.
-                  </p>
-                  <textarea
-                    rows={5}
-                    value={pasteText}
-                    onChange={(e) => setPasteText(e.target.value)}
-                    onPaste={(e) => {
-                      const pasted = e.clipboardData.getData('text');
-                      if (!pasted?.trim()) return;
-                      setTimeout(() => {
-                        setPasteText(pasted);
-                        applyParsedPaste(pasted);
-                      }, 0);
-                    }}
-                    className="w-full p-4 bg-white/90 dark:bg-slate-900 rounded-[1.25rem] border-none outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium"
-                    placeholder={'Örn:\nKenar uzunlukları 2 cm olan...\nA) 11  B) 17  C) 22  D) 28\nCevap: D'}
-                  />
-                  <div className="flex justify-end">
+            <section className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setAdvancedOpen((v) => !v)}
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-900/50 text-left hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors"
+                aria-expanded={advancedOpen}
+              >
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                  Gelişmiş
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`text-slate-400 transition-transform ${advancedOpen ? 'rotate-180' : ''}`}
+                  aria-hidden
+                />
+              </button>
+              {advancedOpen ? (
+                <div className="p-4 space-y-3 border-t border-slate-200 dark:border-slate-700">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+                      <ClipboardPaste size={14} /> Kopyala-yapıştır
+                    </label>
                     <button
                       type="button"
-                      disabled={pasteLoading}
-                      onClick={() => handlePasteParse()}
-                      className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 disabled:opacity-50"
+                      onClick={() => setPasteOpen((v) => !v)}
+                      className="text-[10px] font-bold uppercase text-indigo-600"
                     >
-                      {pasteLoading ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
-                      Ayrıştır ve forma aktar
+                      {pasteOpen ? 'Gizle' : 'Aç'}
                     </button>
                   </div>
-                </>
+                  {pasteOpen ? (
+                    <>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">
+                        PDF, Word veya ekrandan soruyu kopyalayıp yapıştırın. Sistem metni, şıkları (A) B) C) D)) ve varsa
+                        cevabı ayırır.
+                      </p>
+                      <textarea
+                        rows={5}
+                        value={pasteText}
+                        onChange={(e) => setPasteText(e.target.value)}
+                        onPaste={(e) => {
+                          const pasted = e.clipboardData.getData('text');
+                          if (!pasted?.trim()) return;
+                          setTimeout(() => {
+                            setPasteText(pasted);
+                            applyParsedPaste(pasted);
+                          }, 0);
+                        }}
+                        className="w-full p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-600 outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium"
+                        placeholder={'Örn:\nKenar uzunlukları 2 cm olan...\nA) 11  B) 17  C) 22  D) 28\nCevap: D'}
+                      />
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          disabled={pasteLoading}
+                          onClick={() => handlePasteParse()}
+                          className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 disabled:opacity-50"
+                        >
+                          {pasteLoading ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
+                          Ayrıştır ve forma aktar
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Toplu metin yapıştırarak soru alanlarını otomatik doldurabilirsiniz.
+                    </p>
+                  )}
+                </div>
               ) : null}
             </section>
           ) : null}

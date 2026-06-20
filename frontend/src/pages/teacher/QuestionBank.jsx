@@ -14,12 +14,14 @@ import { useToast } from '../../context/ToastContext';
 import 'katex/dist/katex.min.css';
 import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
-import SkeletonCard from '../../components/ui/SkeletonCard';
+import EmptyState from '../../components/ui/EmptyState.jsx';
 import { renderWithLatex } from '../../utils/latex.jsx';
 import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
+import QuestionSourceBadge from '../../components/questions/QuestionSourceBadge.jsx';
 import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
 import CollapsiblePanel from '../../components/ui/CollapsiblePanel.jsx';
 import QuestionTextWithPattern from '../../components/questions/QuestionTextWithPattern.jsx';
+import { sourceFilterOptions, sourceFilterToApi } from '../../utils/questionSourceLabel';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
 import {
   PATTERN_TOPIC_ORDER,
@@ -111,6 +113,7 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
                   {topicCode}
                 </span>
               )}
+              <QuestionSourceBadge question={question} size="sm" />
             </div>
             <QuestionTextWithPattern text={question.text} />
           </div>
@@ -204,7 +207,7 @@ export default function QuestionBank() {
   const [mainImage, setMainImage] = useState({ file: null, preview: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [filters, setFilters] = useState({ subject: 'Tümü', difficulty: 'Tümü', classLevel: 'Tümü', topic: 'Tümü' });
+  const [filters, setFilters] = useState({ subject: 'Tümü', difficulty: 'Tümü', classLevel: 'Tümü', topic: 'Tümü', source: 'Tümü' });
   const [topics, setTopics] = useState([]);
     // Load teacher profile for branch/approval
     useEffect(() => {
@@ -328,12 +331,16 @@ export default function QuestionBank() {
 
     setLoading(true);
     try {
+      const filterEntries = Object.entries(filters)
+        .filter(([, v]) => v !== 'Tümü')
+        .map(([k, v]) => (k === 'source' ? [k, sourceFilterToApi(v) || v] : [k, v]))
+        .filter(([, v]) => v);
       const params = {
         page,
         limit: 8,
         search: debouncedSearch,
         sortBy: 'topic',
-        ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== 'Tümü')),
+        ...Object.fromEntries(filterEntries),
       };
       // If branch approved, use subject-wide endpoint (ignores external subject filter and uses teacher branch)
       let res;
@@ -388,6 +395,37 @@ export default function QuestionBank() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.branch, profile.branchApproval, filters.classLevel]);
 
+  const openNewQuestionModal = () => {
+    setEditingQuestion(null);
+    const subj =
+      profile.branchApproval === 'approved' && profile.branch
+        ? profile.branch
+        : filters.subject !== 'Tümü'
+          ? filters.subject
+          : 'Matematik';
+    const isMath =
+      subj === 'Matematik' ||
+      (profile.branchApproval === 'approved' && profile.branch === 'Matematik');
+    setManualForm(
+      isMath
+        ? {
+            text: '',
+            subject: subj,
+            topic: PATTERN_TOPIC_ORDER[0],
+            learningOutcome: '',
+            classLevel: '2. Sınıf',
+            difficulty: 'Kolay',
+            correctAnswer: '',
+            solution: '',
+            options: ['', '', '', '', ''],
+            source: 'Manuel',
+          }
+        : null
+    );
+    setMainImage({ file: null, preview: '' });
+    setIsModalOpen(true);
+  };
+
   const handleDelete = async (id) => {
     const confirmed = await askConfirm({
       title: 'Soru silinsin mi?',
@@ -408,13 +446,23 @@ export default function QuestionBank() {
     }
   };
 
+  const hasActiveFilters =
+    debouncedSearch ||
+    Object.entries(filters).some(([, v]) => v && v !== 'Tümü');
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setFilters({ subject: 'Tümü', difficulty: 'Tümü', classLevel: 'Tümü', topic: 'Tümü', source: 'Tümü' });
+    setPage(1);
+  };
+
   return (
-    <div className="p-8 space-y-10 pb-32 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8 sm:space-y-10 pb-24 sm:pb-32 max-w-7xl mx-auto">
       
-      {/* Üst Header: Görseldeki Tasarım */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 mb-8 px-2">
-        <div className="space-y-2">
-          <h1 className="text-5xl font-black tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+      {/* Üst Header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-end mb-4 sm:mb-8 px-0 sm:px-2">
+        <div className="space-y-2 min-w-0">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
             Soru Bankası
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
@@ -426,16 +474,16 @@ export default function QuestionBank() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3 justify-end">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3 w-full lg:w-auto lg:justify-end">
           <Button
             variant="outline"
             size="md"
             onClick={() => setIsAiGenerateOpen(true)}
             disabled={profile.branchApproval !== 'approved'}
             title={profile.branchApproval !== 'approved' ? 'Branş onayından sonra kullanılabilir' : 'Havuzdaki sorulardan esinlenerek yeni sorular üretir'}
-            className="px-6 py-4 rounded-2xl border-2 border-violet-600 text-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto justify-center px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-violet-600 text-violet-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Wand2 size={20} /> AI ile Üret
+            <Wand2 size={18} className="shrink-0" /> AI ile Üret
           </Button>
 
           <Button
@@ -444,9 +492,9 @@ export default function QuestionBank() {
             onClick={() => setIsSmartPasteOpen(true)}
             disabled={profile.branchApproval !== 'approved'}
             title={profile.branchApproval !== 'approved' ? 'Branş onayından sonra kullanılabilir' : ''}
-            className="px-6 py-4 rounded-2xl border-2 border-indigo-600 text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto justify-center px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-indigo-600 text-indigo-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Sparkles size={20} /> Akıllı Yapıştır
+            <Sparkles size={18} className="shrink-0" /> Akıllı Yapıştır
           </Button>
 
           <Button
@@ -454,44 +502,16 @@ export default function QuestionBank() {
             size="md"
             disabled={profile.branchApproval !== 'approved'}
             title={profile.branchApproval !== 'approved' ? 'Branş onayından sonra kullanılabilir' : ''}
-            onClick={() => {
-              setEditingQuestion(null);
-              const subj =
-                profile.branchApproval === 'approved' && profile.branch
-                  ? profile.branch
-                  : filters.subject !== 'Tümü'
-                    ? filters.subject
-                    : 'Matematik';
-              const isMath =
-                subj === 'Matematik' ||
-                (profile.branchApproval === 'approved' && profile.branch === 'Matematik');
-              setManualForm(
-                isMath
-                  ? {
-                      text: '',
-                      subject: subj,
-                      topic: PATTERN_TOPIC_ORDER[0],
-                      learningOutcome: '',
-                      classLevel: '2. Sınıf',
-                      difficulty: 'Kolay',
-                      correctAnswer: '',
-                      solution: '',
-                      options: ['', '', '', '', ''],
-                    }
-                  : null
-              );
-              setMainImage({ file: null, preview: '' });
-              setIsModalOpen(true);
-            }}
-            className="px-8 py-4 rounded-2xl"
+            onClick={openNewQuestionModal}
+            className="w-full sm:w-auto justify-center px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl text-sm"
           >
-            <Plus size={24} /> Yeni Soru Ekle
+            <Plus size={20} className="shrink-0" /> Yeni Soru Ekle
           </Button>
         </div>
       </div>
 
       {/* Filtre Paneli */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center bg-white/50 dark:bg-slate-800/50 backdrop-blur-md p-4 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-center bg-white/50 dark:bg-slate-800/50 backdrop-blur-md p-3 sm:p-4 rounded-2xl sm:rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="lg:col-span-5 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input 
@@ -502,7 +522,7 @@ export default function QuestionBank() {
             className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border-none rounded-2xl focus:ring-4 focus:ring-indigo-500/10 font-medium outline-none"
           />
         </div>
-        <div className="lg:col-span-7 grid grid-cols-4 gap-3">
+        <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
           <FilterSelect 
             icon={<Layers size={14}/>} 
             value={profile.branch && profile.branchApproval === 'approved' ? profile.branch : filters.subject}
@@ -524,6 +544,7 @@ export default function QuestionBank() {
           />
           <FilterSelect icon={<Hash size={14}/>} value={filters.classLevel} onChange={(v) => setFilters({...filters, classLevel: v})} options={['Tümü', ...Array.from({length:12}, (_,i)=>`${i+1}. Sınıf`)]} />
           <FilterSelect icon={<Star size={14}/>} value={filters.difficulty} onChange={(v) => setFilters({...filters, difficulty: v})} options={['Tümü', 'Kolay', 'Orta', 'Zor']} />
+          <FilterSelect icon={<Sparkles size={14}/>} value={filters.source} onChange={(v) => { setFilters({ ...filters, source: v }); setPage(1); }} options={sourceFilterOptions()} />
         </div>
       </div>
 
@@ -571,10 +592,26 @@ export default function QuestionBank() {
             ))}
           </div>
         ) : questions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white/30 rounded-[3rem] border border-dashed border-slate-200">
-            <FileText size={48} className="text-slate-200 mb-4" />
-            <p className="text-slate-400 font-bold">Aranan kriterlere uygun soru bulunamadı.</p>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="Aranan kriterlere uygun soru yok"
+            description={
+              hasActiveFilters
+                ? 'Filtreleri veya arama metnini değiştirin; gerekirse tüm filtreleri temizleyerek tekrar deneyin.'
+                : 'Henüz soru bankanızda kayıt yok. Yeni soru ekleyebilir veya AI ile üretebilirsiniz.'
+            }
+            action={
+              hasActiveFilters ? (
+                <Button variant="outline" size="md" onClick={clearAllFilters}>
+                  Filtreleri temizle
+                </Button>
+              ) : profile.branchApproval === 'approved' ? (
+                <Button variant="primary" size="md" onClick={openNewQuestionModal}>
+                  <Plus size={18} /> İlk soruyu ekle
+                </Button>
+              ) : null
+            }
+          />
         ) : (
           questions.map((q, idx) => {
             const topicLine = q.topic || 'Konu belirtilmemiş';
@@ -613,6 +650,8 @@ export default function QuestionBank() {
                       correctAnswer: typeof question.correctAnswer === 'string' ? question.correctAnswer : String(question.correctAnswer ?? ''),
                       solution: question.solution || '',
                       options: padded,
+                      source: question.source || 'Manuel',
+                      assessmentMeta: question.assessmentMeta || null,
                     });
                     setMainImage(question.image ? { file: null, preview: question.image } : { file: null, preview: '' });
                     setIsModalOpen(true);
@@ -668,7 +707,9 @@ export default function QuestionBank() {
               difficulty: parsed.difficulty || 'Orta',
               correctAnswer: parsed.correctAnswer || '',
               solution: parsed.solution || '',
-              options: Array.isArray(parsed.options) ? parsed.options.concat(Array(5).fill('')).slice(0,5) : ['', '', '', '', '']
+              options: Array.isArray(parsed.options) ? parsed.options.concat(Array(5).fill('')).slice(0,5) : ['', '', '', '', ''],
+              source: 'AI',
+              assessmentMeta: parsed.assessmentMeta || { origin: 'smart-parse', parseMode: parsed.parseMode || 'smart-parse' },
             });
             setManualForm(enriched);
             if (imageFile) {

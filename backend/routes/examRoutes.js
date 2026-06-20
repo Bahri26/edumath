@@ -55,10 +55,9 @@ router.get('/by-class', authMiddleware, roleMiddleware(['student']), async (req,
       .sort({ createdAt: -1 })
       .select('-questions');
 
-    const enriched = [];
-    for (const exam of exams) {
-      enriched.push(await syncAndAttach(exam, req.user.id));
-    }
+    const enriched = await Promise.all(
+      exams.map((exam) => syncAndAttach(exam, req.user.id)),
+    );
     res.json(enriched);
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -151,7 +151,8 @@ const TeacherReports = () => {
     if (!iso) return '';
     try {
       const d = new Date(iso);
-      return d.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
+      const locale = language === 'EN' ? 'en-US' : 'tr-TR';
+      return d.toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' });
     } catch {
       return '';
     }

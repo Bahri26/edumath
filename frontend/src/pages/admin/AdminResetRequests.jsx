@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { KeyRound, Loader2 } from 'lucide-react';
 import adminService from '../../services/adminService';
 import AdminInternalNotesPanel from '../../components/admin/AdminInternalNotesPanel';
+import AdminScrollHint from '../../components/admin/AdminScrollHint';
 import { admin as a } from '../../components/admin/adminUi';
 
 const AdminResetRequests = () => {
@@ -187,6 +188,8 @@ const AdminResetRequests = () => {
           Talepler yükleniyor…
         </div>
       ) : (
+        <>
+        <AdminScrollHint />
         <div className={a.tableWrap}>
           <table className={a.table}>
             <thead>
@@ -248,6 +251,7 @@ const AdminResetRequests = () => {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {notesRequestId && (

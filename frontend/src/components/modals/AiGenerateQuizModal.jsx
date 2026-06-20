@@ -4,6 +4,7 @@ import { generateQuiz } from '../../services/aiService';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { describeApiError } from '../../utils/errorMessage';
+import QuestionSourceBadge from '../questions/QuestionSourceBadge.jsx';
 import Button from '../ui/Button.jsx';
 import { PATTERN_TOPIC_ORDER, PATTERN_TOPIC_ALL_UNDER } from '../../constants/patternTopicsUi';
 
@@ -111,6 +112,7 @@ export default function AiGenerateQuizModal({
     difficulty,
     type: 'multiple-choice',
     source: 'AI',
+    assessmentMeta: { origin: 'ai-generate' },
     learningOutcome: String(q.learningOutcome || '').trim(),
     mebReference: String(q.mebReference || '').trim(),
   });
@@ -150,6 +152,8 @@ export default function AiGenerateQuizModal({
       correctAnswer: String(q.correctAnswer || ''),
       solution: String(q.explanation ?? q.solution ?? ''),
       options: padded,
+      source: 'AI',
+      assessmentMeta: { origin: 'ai-generate' },
     });
     onClose();
   };
@@ -256,8 +260,12 @@ export default function AiGenerateQuizModal({
           ) : (
             <>
               {generateHint && (
-                <p className="text-xs font-medium text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/40 border border-violet-100 dark:border-violet-800 rounded-xl px-4 py-3">
-                  {generateHint}
+                <p className="text-xs font-medium text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/40 border border-violet-100 dark:border-violet-800 rounded-xl px-4 py-3 flex flex-wrap items-center gap-2">
+                  <QuestionSourceBadge
+                    question={{ source: 'AI', assessmentMeta: { origin: 'ai-generate' } }}
+                    size="sm"
+                  />
+                  <span>{generateHint}</span>
                 </p>
               )}
             <ul className="space-y-3">
@@ -266,8 +274,14 @@ export default function AiGenerateQuizModal({
                   key={i}
                   className="rounded-2xl border border-slate-100 dark:border-slate-700 p-4 bg-slate-50/80 dark:bg-slate-900/40"
                 >
-                  <span className="text-[10px] font-black text-violet-600 uppercase tracking-wider">#{i + 1}</span>
-                  <p className="mt-1 text-sm text-slate-800 dark:text-slate-100 font-semibold">{q.text}</p>
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className="text-[10px] font-black text-violet-600 uppercase tracking-wider">#{i + 1}</span>
+                    <QuestionSourceBadge
+                      question={{ source: 'AI', assessmentMeta: { origin: 'ai-generate' } }}
+                      size="sm"
+                    />
+                  </div>
+                  <p className="text-sm text-slate-800 dark:text-slate-100 font-semibold">{q.text}</p>
                   <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                     Doğru: <span className="font-bold text-emerald-600">{String(q.correctAnswer || '')}</span>
                   </p>

@@ -143,6 +143,75 @@ async function scoreEntries(entries, { limit = 5 } = {}) {
   return scoreEntriesWithLocalMatrix(entries);
 }
 
+function ingestExamsIntoTopicMap(topicMap, exams, oid) {
+  const studentId = String(oid);
+  for (const exam of exams) {
+    const examTopic = exam.topic || 'Sınav';
+    for (const r of exam.results || []) {
+      if (String(r.studentId) !== studentId) continue;
+      const correctN = Number(r.correctCount) || 0;
+      const wrongN = Number(r.wrongCount) || 0;
+      if (correctN + wrongN > 0) {
+        pushTopicStat(topicMap, examTopic, correctN >= wrongN);
+      }
+      for (const ts of r.topicStats || []) {
+        const topic = ts.topic || examTopic;
+        const wrong = Number(ts.wrong) || 0;
+        for (let i = 0; i < wrong; i += 1) pushTopicStat(topicMap, topic, false);
+        if (wrong === 0) pushTopicStat(topicMap, topic, true);
+      }
+      for (const wt of r.weakTopics || []) {
+        pushTopicStat(topicMap, wt, false);
+      }
+    }
+  }
+}
+
+function ingestExercisesIntoTopicMap(topicMap, exercises, oid) {
+  const studentId = String(oid);
+  for (const ex of exercises) {
+    const topic = ex.topic || 'Çalışma';
+    for (const sub of ex.submissions || []) {
+      if (String(sub.studentId) !== studentId) continue;
+      pushTopicStat(topicMap, topic, sub.status === 'completed', sub.durationMs || 0);
+    }
+  }
+}
+
+function ingestAssignmentsIntoTopicMap(topicMap, assignments, oid) {
+  const studentId = String(oid);
+  for (const a of assignments) {
+    const topic = a.topic || a.title || 'Ödev';
+    for (const sub of a.submissions || []) {
+      if (String(sub.studentId) !== studentId) continue;
+      pushTopicStat(topicMap, topic, sub.status === 'completed' || sub.grade >= 50);
+    }
+  }
+}
+
+function ingestLearningEventsIntoTopicMap(topicMap, events) {
+  for (const ev of events) {
+    if (!ev.topic) continue;
+    if (ev.type === 'error') pushTopicStat(topicMap, ev.topic, false);
+    if (ev.type === 'hint') pushTopicStat(topicMap, ev.topic, false);
+  }
+}
+
+function ingestLessonProgressIntoTopicMap(topicMap, progressRows, lessonById) {
+  for (const row of progressRows) {
+    const lesson = lessonById.get(String(row.lessonId));
+    const topicName = lesson?.topic?.name || lesson?.title || 'Ders quiz';
+    const correctN = Number(row.correctCount) || 0;
+    const wrongN = Number(row.wrongCount) || 0;
+    if (correctN + wrongN > 0) {
+      for (let i = 0; i < correctN; i += 1) pushTopicStat(topicMap, topicName, true);
+      for (let i = 0; i < wrongN; i += 1) pushTopicStat(topicMap, topicName, false);
+    } else if (row.completed) {
+      pushTopicStat(topicMap, topicName, true);
+    }
+  }
+}
+
 /**
  * Öğrenci cevaplarından konu bazlı istatistik toplar; skorlama ml-service veya ml-matrix ile yapılır.
  */
@@ -151,65 +220,23 @@ async function collectTopicStats(studentId) {
   const topicMap = {};
 
   if (oid) {
-    const exams = await Exam.find({ 'results.studentId': oid })
-      .select('results topic')
-      .lean();
+    const [exams, exercises, assignments, events, progressRows] = await Promise.all([
+      Exam.find({ 'results.studentId': oid }).select('results topic').lean(),
+      Exercise.find({ 'submissions.studentId': oid }).select('submissions topic').lean(),
+      Assignment.find({ 'submissions.studentId': oid }).select('submissions topic title').lean(),
+      LearningEvent.find({ userId: oid })
+        .sort({ createdAt: -1 })
+        .limit(200)
+        .select('topic type meta')
+        .lean(),
+      UserProgress.find({ userId: oid }).lean(),
+    ]);
 
-    for (const exam of exams) {
-      const examTopic = exam.topic || 'Sınav';
-      for (const r of exam.results || []) {
-        if (String(r.studentId) !== String(oid)) continue;
-        const correctN = Number(r.correctCount) || 0;
-        const wrongN = Number(r.wrongCount) || 0;
-        if (correctN + wrongN > 0) {
-          pushTopicStat(topicMap, examTopic, correctN >= wrongN);
-        }
-        for (const ts of r.topicStats || []) {
-          const topic = ts.topic || examTopic;
-          const wrong = Number(ts.wrong) || 0;
-          for (let i = 0; i < wrong; i += 1) pushTopicStat(topicMap, topic, false);
-          if (wrong === 0) pushTopicStat(topicMap, topic, true);
-        }
-        for (const wt of r.weakTopics || []) {
-          pushTopicStat(topicMap, wt, false);
-        }
-      }
-    }
+    ingestExamsIntoTopicMap(topicMap, exams, oid);
+    ingestExercisesIntoTopicMap(topicMap, exercises, oid);
+    ingestAssignmentsIntoTopicMap(topicMap, assignments, oid);
+    ingestLearningEventsIntoTopicMap(topicMap, events);
 
-    const exercises = await Exercise.find({ 'submissions.studentId': oid })
-      .select('submissions topic')
-      .lean();
-    for (const ex of exercises) {
-      const topic = ex.topic || 'Çalışma';
-      for (const sub of ex.submissions || []) {
-        if (String(sub.studentId) !== String(oid)) continue;
-        pushTopicStat(topicMap, topic, sub.status === 'completed', sub.durationMs || 0);
-      }
-    }
-
-    const assignments = await Assignment.find({ 'submissions.studentId': oid })
-      .select('submissions topic title')
-      .lean();
-    for (const a of assignments) {
-      const topic = a.topic || a.title || 'Ödev';
-      for (const sub of a.submissions || []) {
-        if (String(sub.studentId) !== String(oid)) continue;
-        pushTopicStat(topicMap, topic, sub.status === 'completed' || sub.grade >= 50);
-      }
-    }
-
-    const events = await LearningEvent.find({ userId: oid })
-      .sort({ createdAt: -1 })
-      .limit(200)
-      .select('topic type meta')
-      .lean();
-    for (const ev of events) {
-      if (!ev.topic) continue;
-      if (ev.type === 'error') pushTopicStat(topicMap, ev.topic, false);
-      if (ev.type === 'hint') pushTopicStat(topicMap, ev.topic, false);
-    }
-
-    const progressRows = await UserProgress.find({ userId: oid }).lean();
     const lessonIds = progressRows.map((r) => r.lessonId).filter(Boolean);
     const lessons = lessonIds.length
       ? await Lesson.find({ _id: { $in: lessonIds } })
@@ -218,19 +245,7 @@ async function collectTopicStats(studentId) {
           .lean()
       : [];
     const lessonById = new Map(lessons.map((l) => [String(l._id), l]));
-
-    for (const row of progressRows) {
-      const lesson = lessonById.get(String(row.lessonId));
-      const topicName = lesson?.topic?.name || lesson?.title || 'Ders quiz';
-      const correctN = Number(row.correctCount) || 0;
-      const wrongN = Number(row.wrongCount) || 0;
-      if (correctN + wrongN > 0) {
-        for (let i = 0; i < correctN; i += 1) pushTopicStat(topicMap, topicName, true);
-        for (let i = 0; i < wrongN; i += 1) pushTopicStat(topicMap, topicName, false);
-      } else if (row.completed) {
-        pushTopicStat(topicMap, topicName, true);
-      }
-    }
+    ingestLessonProgressIntoTopicMap(topicMap, progressRows, lessonById);
   }
 
   let entries = buildRawTopicEntries(topicMap);
@@ -282,5 +297,12 @@ module.exports = {
   getWeakTopics,
   scoreEntries,
   scoreEntriesWithLocalMatrix,
+  pushTopicStat,
+  buildRawTopicEntries,
+  ingestExamsIntoTopicMap,
+  ingestExercisesIntoTopicMap,
+  ingestAssignmentsIntoTopicMap,
+  ingestLearningEventsIntoTopicMap,
+  ingestLessonProgressIntoTopicMap,
   WEAK_THRESHOLD,
 };

@@ -431,7 +431,7 @@ const AudienceLandingPage = ({ audience }) => {
       </main>
 
       <Footer t={t} />
-      <Chatbox assistantType="math_expert" />
+      <Chatbox lang={lang} />
     </div>
   );
 };

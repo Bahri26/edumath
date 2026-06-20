@@ -14,6 +14,11 @@ const crypto = require('crypto');
 const teacherOnly = [protect, roleMiddleware(['teacher', 'admin'])];
 const authenticated = [protect, roleMiddleware(['student', 'teacher', 'admin'])];
 
+/** Public AI metadata for landing chat badge (no secrets). */
+router.get('/public-info', (_req, res) => {
+  res.json({ provider: getAiProvider() });
+});
+
 // 9. Teacher Report (Detaylı öğretmen raporu)
 router.post('/teacher-report', ...teacherOnly, aiController.teacherReport);
 // 7. Sınav Sonucu Değerlendirme & Analiz

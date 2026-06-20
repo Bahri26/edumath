@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, Shield } from 'lucide-react';
 import adminService from '../../services/adminService';
+import AdminScrollHint from '../../components/admin/AdminScrollHint';
 import { admin as a } from '../../components/admin/adminUi';
+import { useTranslation } from '../../i18n/useTranslation';
 
 const AdminAuditLog = () => {
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
@@ -79,6 +82,8 @@ const AdminAuditLog = () => {
           Kayıtlar yükleniyor…
         </div>
       ) : (
+        <>
+        <AdminScrollHint />
         <div className={a.tableWrap}>
           <table className={a.table}>
             <thead>
@@ -125,12 +130,12 @@ const AdminAuditLog = () => {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-900/50">
         <span className="font-medium text-slate-600 dark:text-slate-300">
-          <span className="tabular-nums text-slate-900 dark:text-white">{total}</span> kayıt · Sayfa{' '}
-          <span className="tabular-nums">{page}</span> / {totalPages}
+          {t('admin.paginationRecords', { total, page, pages: totalPages })}
         </span>
         <div className="flex gap-2">
           <button
@@ -139,7 +144,7 @@ const AdminAuditLog = () => {
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
           >
-            Önceki
+            {t('admin.prev')}
           </button>
           <button
             type="button"
@@ -147,7 +152,7 @@ const AdminAuditLog = () => {
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
           >
-            Sonraki
+            {t('admin.next')}
           </button>
         </div>
       </div>

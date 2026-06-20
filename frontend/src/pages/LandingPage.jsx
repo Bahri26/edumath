@@ -184,7 +184,7 @@ const LandingPage = () => {
       <Footer t={t} />
 
       {/* Yapay Zeka Destekli Örüntü Asistanı */}
-      <Chatbox assistantType="math_expert" />
+      <Chatbox lang={lang} />
 
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { GraduationCap, Loader2, Search } from 'lucide-react';
 import adminService from '../../services/adminService';
+import AdminScrollHint from '../../components/admin/AdminScrollHint';
 import { admin as a } from '../../components/admin/adminUi';
 
 const AdminBranchRequests = () => {
@@ -68,6 +69,8 @@ const AdminBranchRequests = () => {
           Liste yükleniyor…
         </div>
       ) : (
+        <>
+        <AdminScrollHint />
         <div className={a.tableWrap}>
           <table className={a.table}>
             <thead>
@@ -140,6 +143,7 @@ const AdminBranchRequests = () => {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-900/50">

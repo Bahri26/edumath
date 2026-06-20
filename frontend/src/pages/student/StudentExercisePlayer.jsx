@@ -6,6 +6,7 @@ import {
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';
+import { useTranslation } from '../../i18n/useTranslation';
 import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
 import QuestionTextWithPattern from '../../components/questions/QuestionTextWithPattern.jsx';
 import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
@@ -29,6 +30,7 @@ function optionText(opt) {
 }
 
 export default function StudentExercisePlayer() {
+  const { t } = useTranslation();
   const { exerciseId } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -68,7 +70,7 @@ export default function StudentExercisePlayer() {
         setTimeLeft(null);
       }
     } catch (err) {
-      showToast(err.response?.data?.message || 'Egzersiz yüklenemedi', 'error');
+      showToast(err.response?.data?.message || t('exercisePlayer.errLoad'), 'error');
       navigate('/student/exercises');
     } finally {
       setLoading(false);
@@ -140,7 +142,7 @@ export default function StudentExercisePlayer() {
       });
       setFinished(res.data);
     } catch (err) {
-      showToast(err.response?.data?.message || 'Gönderilemedi', 'error');
+      showToast(err.response?.data?.message || t('exercisePlayer.errSubmit'), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -148,7 +150,7 @@ export default function StudentExercisePlayer() {
 
   const handleCheck = async () => {
     if (!currentQ || !draftAnswer.trim()) {
-      showToast('Önce bir cevap seç veya yaz', 'warning');
+      showToast(t('exercisePlayer.pickAnswer'), 'warning');
       return;
     }
     setChecking(true);
@@ -172,7 +174,7 @@ export default function StudentExercisePlayer() {
         [currentQ._id]: { answer: draftAnswer, timeSpent },
       }));
     } catch (err) {
-      showToast(err.response?.data?.message || 'Kontrol edilemedi', 'error');
+      showToast(err.response?.data?.message || t('exercisePlayer.errCheck'), 'error');
     } finally {
       setChecking(false);
     }
@@ -256,7 +258,7 @@ export default function StudentExercisePlayer() {
 
   if (loading) {
     return (
-      <StudentPageShell title="Egzersiz yükleniyor…" maxWidthClass="max-w-2xl">
+      <StudentPageShell title={t('exercisePlayer.loading')} maxWidthClass="max-w-2xl">
         <div className="flex justify-center py-16">
           <Loader2 className="animate-spin text-indigo-600" size={36} />
         </div>
@@ -271,7 +273,7 @@ export default function StudentExercisePlayer() {
     const wrongItems = Object.entries(review).filter(([, v]) => !v.isCorrect);
     return (
       <StudentPageShell
-        title="Egzersiz tamamlandı"
+        title={t('exercisePlayer.completed')}
         subtitle={exercise.name}
         maxWidthClass="max-w-2xl"
       >
@@ -281,14 +283,19 @@ export default function StudentExercisePlayer() {
           </div>
           <p className="text-3xl font-black text-slate-800 dark:text-white">%{finished.score}</p>
           <p className="text-slate-600 dark:text-slate-300">
-            {finished.correctCount} / {finished.totalQuestions} doğru
-            {finished.totalTimeSpent ? ` · ${Math.floor(finished.totalTimeSpent / 60)} dk ${finished.totalTimeSpent % 60} sn` : ''}
+            {t('exercisePlayer.scoreSummary', { correct: finished.correctCount, total: finished.totalQuestions })}
+            {finished.totalTimeSpent
+              ? ` · ${t('exercisePlayer.timeSummary', {
+                  minutes: Math.floor(finished.totalTimeSpent / 60),
+                  seconds: finished.totalTimeSpent % 60,
+                })}`
+              : ''}
           </p>
         </div>
 
         {wrongItems.length > 0 && (
           <div className="space-y-4 mb-8">
-            <h3 className="font-bold text-slate-800 dark:text-white">Yanlış cevapların</h3>
+            <h3 className="font-bold text-slate-800 dark:text-white">{t('exercisePlayer.wrongTitle')}</h3>
             {wrongItems.map(([qid, rev]) => {
               const q = questions.find((item) => String(item._id) === String(qid));
               return (
@@ -303,11 +310,11 @@ export default function StudentExercisePlayer() {
                     />
                   )}
                   <p className="text-sm text-rose-700 dark:text-rose-300">
-                    Doğru cevap: <strong>{rev.correctAnswer}</strong>
+                    {t('exercisePlayer.correctAnswer', { answer: rev.correctAnswer })}
                   </p>
                   {rev.solution ? (
                     <div className="mt-2">
-                      <p className="text-xs font-bold text-slate-500 mb-1">Çözüm</p>
+                      <p className="text-xs font-bold text-slate-500 mb-1">{t('exercisePlayer.solution')}</p>
                       <SolutionDisplay text={rev.solution} />
                     </div>
                   ) : null}
@@ -318,17 +325,17 @@ export default function StudentExercisePlayer() {
               to="/student/exercises"
               className="inline-flex items-center gap-2 text-indigo-600 font-semibold hover:underline"
             >
-              Başka egzersiz dene →
+              {t('exercisePlayer.tryAnother')}
             </Link>
           </div>
         )}
 
         <div className="flex flex-wrap gap-3 justify-center">
           <Button variant="outline" onClick={() => navigate('/student/exercises')}>
-            Listeye dön
+            {t('exercisePlayer.backToList')}
           </Button>
           <Button variant="primary" onClick={() => navigate('/student/courses')}>
-            Derslere git
+            {t('exercisePlayer.goCourses')}
           </Button>
         </div>
       </StudentPageShell>

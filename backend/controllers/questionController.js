@@ -107,7 +107,7 @@ exports.getQuestions = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
-    const { search, subject, classLevel, difficulty, topic, sortBy } = req.query;
+    const { search, subject, classLevel, difficulty, topic, sortBy, source } = req.query;
     const sortByTopic = String(sortBy || '').toLowerCase() === 'topic';
 
     const query = {};
@@ -117,6 +117,7 @@ exports.getQuestions = async (req, res, next) => {
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
     const topicClause0 = buildTopicMongoClause(topic, escapeRegex);
     if (topicClause0) query.topic = topicClause0;
+    if (source && source !== 'Tümü' && source !== 'All') query.source = source;
     const searchMeta = buildQuestionSearch(query, search, 'text');
 
     // Eğer istek öğretmenden geliyorsa ve branşı onaylıysa, varsayılan olarak kendi branşındaki (subject) soruları göster
@@ -230,7 +231,7 @@ exports.getTeacherQuestions = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
-    const { search, subject, classLevel, difficulty, topic, sortBy } = req.query;
+    const { search, subject, classLevel, difficulty, topic, sortBy, source } = req.query;
     const sortByTopic = String(sortBy || '').toLowerCase() === 'topic';
 
     const query = {};
@@ -240,6 +241,7 @@ exports.getTeacherQuestions = async (req, res, next) => {
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
     const topicClauseT = buildTopicMongoClause(topic, escapeRegex);
     if (topicClauseT) query.topic = topicClauseT;
+    if (source && source !== 'Tümü' && source !== 'All') query.source = source;
     const searchMeta = buildQuestionSearch(query, search, 'text');
 
     let total = await Question.countDocuments(query);

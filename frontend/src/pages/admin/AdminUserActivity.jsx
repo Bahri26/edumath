@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   Eye,
@@ -11,18 +11,10 @@ import {
   User,
 } from 'lucide-react';
 import adminService from '../../services/adminService';
+import AdminTableEmpty from '../../components/admin/AdminTableEmpty';
 import { admin as a } from '../../components/admin/adminUi';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
 import { useTranslation } from '../../i18n/useTranslation';
-
-const CATEGORY_OPTIONS = [
-  { value: '', label: 'Tüm kategoriler' },
-  { value: 'auth', label: 'Giriş / çıkış' },
-  { value: 'content', label: 'İçerik oluşturma' },
-  { value: 'learning', label: 'Öğrenme / teslim' },
-  { value: 'admin', label: 'Yönetim' },
-  { value: 'system', label: 'Sistem' },
-];
 
 const CATEGORY_BADGE = {
   auth: 'bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300',
@@ -32,16 +24,24 @@ const CATEGORY_BADGE = {
   system: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
 };
 
-const roleLabel = (role) => {
-  if (role === 'teacher') return 'Öğretmen';
-  if (role === 'admin') return 'Admin';
-  if (role === 'student') return 'Öğrenci';
-  return role || '—';
-};
-
 export default function AdminUserActivity() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const dateLocale = language === 'EN' ? 'en-US' : 'tr-TR';
   const { askConfirm, ConfirmDialog } = useConfirmAction();
+
+  const categoryOptions = useMemo(
+    () => [
+      { value: '', label: t('admin.activity.categoryAll') },
+      { value: 'auth', label: t('admin.activity.categories.auth') },
+      { value: 'content', label: t('admin.activity.categories.content') },
+      { value: 'learning', label: t('admin.activity.categories.learning') },
+      { value: 'admin', label: t('admin.activity.categories.admin') },
+      { value: 'system', label: t('admin.activity.categories.system') },
+    ],
+    [t],
+  );
+
+  const roleLabel = (role) => t(`admin.roles.${role}`) || role || '—';
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
   const [limit] = useState(30);
@@ -102,7 +102,7 @@ export default function AdminUserActivity() {
         setTotal(data.pagination?.total ?? 0);
       } catch (err) {
         if (!cancelled) {
-          setError(err?.response?.data?.message || 'Aktiviteler yüklenemedi');
+          setError(err?.response?.data?.message || t('admin.activity.errLoad'));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -124,15 +124,14 @@ export default function AdminUserActivity() {
       setAddNote('');
       await loadWatchlist();
     } catch (err) {
-      setError(err?.response?.data?.message || 'Takibe eklenemedi');
+      setError(err?.response?.data?.message || t('admin.activity.errWatch'));
     }
   };
 
   const handleRemoveWatch = async (uid) => {
     const confirmed = await askConfirm({
-      title: 'Takip listesinden çıkarılsın mı?',
-      description:
-        'Bu kullanıcı izleme listesinden kaldırılacak. Aktivite geçmişi silinmez; yalnızca hızlı takip filtresi kapanır.',
+      title: t('admin.activity.removeWatchTitle'),
+      description: t('admin.activity.removeWatchDesc'),
     });
     if (!confirmed) return;
     try {
@@ -140,7 +139,7 @@ export default function AdminUserActivity() {
       await loadWatchlist();
       if (userId === String(uid)) setUserId('');
     } catch (err) {
-      setError(err?.response?.data?.message || 'Takipten çıkarılamadı');
+      setError(err?.response?.data?.message || t('admin.activity.errUnwatch'));
     }
   };
 
@@ -157,19 +156,16 @@ export default function AdminUserActivity() {
           <Activity className="h-6 w-6" />
         </span>
         <div className="flex-1 min-w-0">
-          <p className={a.eyebrow}>İzleme</p>
-          <h1 className={a.title}>Kullanıcı aktiviteleri</h1>
-          <p className={a.subtitle}>
-            Giriş/çıkış, içerik oluşturma, sınav ve ödev teslimleri. Belirli kullanıcıları takip listesine
-            ekleyerek yalnızca onları süzebilirsiniz.
-          </p>
+          <p className={a.eyebrow}>{t('admin.activity.eyebrow')}</p>
+          <h1 className={a.title}>{t('admin.activity.title')}</h1>
+          <p className={a.subtitle}>{t('admin.activity.subtitle')}</p>
           {summary && (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                Son 24 saat: <strong>{summary.last24h}</strong> olay
+                {t('admin.activity.last24h', { n: summary.last24h })}
               </span>
               <span className="rounded-full bg-amber-50 px-3 py-1 font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                Takip edilen: <strong>{summary.watchedUsers}</strong> kullanıcı
+                {t('admin.activity.watchedUsers', { n: summary.watchedUsers })}
               </span>
             </div>
           )}
@@ -180,26 +176,26 @@ export default function AdminUserActivity() {
         <aside className={`${a.cardSoft} space-y-4 p-4`}>
           <div className="flex items-center gap-2">
             <Star className="h-4 w-4 text-amber-500" />
-            <h2 className="text-sm font-bold text-slate-800 dark:text-white">Özel takip listesi</h2>
+            <h2 className="text-sm font-bold text-slate-800 dark:text-white">{t('admin.activity.watchlistTitle')}</h2>
           </div>
 
           <form onSubmit={handleAddWatch} className="space-y-2">
-            <label className={a.fieldLabel}>Kullanıcı ID</label>
+            <label className={a.fieldLabel}>{t('admin.activity.userId')}</label>
             <input
               className={a.inputCompact}
-              placeholder="MongoDB user _id"
+              placeholder={t('admin.activity.userIdPlaceholder')}
               value={addUserId}
               onChange={(e) => setAddUserId(e.target.value)}
             />
             <input
               className={a.inputCompact}
-              placeholder="Not (isteğe bağlı)"
+              placeholder={t('admin.activity.noteOptional')}
               value={addNote}
               onChange={(e) => setAddNote(e.target.value)}
             />
             <button type="submit" className={`${a.btnSmPrimary} w-full justify-center`}>
               <Plus className="h-3.5 w-3.5" />
-              Takibe ekle
+              {t('admin.activity.addWatch')}
             </button>
           </form>
 
@@ -208,7 +204,7 @@ export default function AdminUserActivity() {
               <Loader2 className="h-5 w-5 animate-spin text-violet-600" />
             </div>
           ) : watchlist.length === 0 ? (
-            <p className="text-xs text-slate-500">Henüz takip edilen kullanıcı yok.</p>
+            <p className="text-xs text-slate-500">{t('admin.activity.watchEmpty')}</p>
           ) : (
             <ul className="space-y-2 max-h-64 overflow-y-auto">
               {watchlist.map((w) => {
@@ -253,16 +249,16 @@ export default function AdminUserActivity() {
             }}
           >
             {watchOnly ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-            {watchOnly ? 'Tüm kullanıcıları göster' : 'Sadece takip edilenler'}
+            {watchOnly ? t('admin.activity.showAll') : t('admin.activity.watchOnly')}
           </button>
         </aside>
 
         <div className="space-y-4 min-w-0">
           <div className={a.filterBar}>
             <div className="min-w-[140px] flex-1">
-              <label className={a.fieldLabel}>Kategori</label>
+              <label className={a.fieldLabel}>{t('admin.activity.category')}</label>
               <select className={a.select} value={category} onChange={(e) => setCategory(e.target.value)}>
-                {CATEGORY_OPTIONS.map((o) => (
+                {categoryOptions.map((o) => (
                   <option key={o.value || 'all'} value={o.value}>
                     {o.label}
                   </option>
@@ -270,30 +266,30 @@ export default function AdminUserActivity() {
               </select>
             </div>
             <div className="min-w-[120px] flex-1">
-              <label className={a.fieldLabel}>İşlem</label>
+              <label className={a.fieldLabel}>{t('admin.activity.action')}</label>
               <input
                 className={a.input}
-                placeholder="login, exam_create…"
+                placeholder={t('admin.activity.actionPlaceholder')}
                 value={action}
                 onChange={(e) => setAction(e.target.value)}
               />
             </div>
             <div className="min-w-[140px] flex-1">
-              <label className={a.fieldLabel}>Kullanıcı ID</label>
+              <label className={a.fieldLabel}>{t('admin.activity.filterUserId')}</label>
               <input
                 className={a.input}
-                placeholder="Filtrele…"
+                placeholder={t('admin.activity.filterUserPlaceholder')}
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
               />
             </div>
             <div className="min-w-[160px] flex-[1.5]">
-              <label className={a.fieldLabel}>Ara</label>
+              <label className={a.fieldLabel}>{t('admin.activity.search')}</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   className={`${a.input} pl-9`}
-                  placeholder="İsim, e-posta, özet…"
+                  placeholder={t('admin.activity.searchPlaceholder')}
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                 />
@@ -312,7 +308,7 @@ export default function AdminUserActivity() {
                     setWatchOnly(false);
                   }}
                 >
-                  Temizle
+                  {t('admin.clear')}
                 </button>
               </div>
             )}
@@ -323,96 +319,139 @@ export default function AdminUserActivity() {
           {loading ? (
             <div className={a.loadingBox}>
               <Loader2 className="mr-2 h-5 w-5 animate-spin text-violet-600" />
-              Aktiviteler yükleniyor…
+              {t('admin.activity.loading')}
             </div>
+          ) : items.length === 0 ? (
+            <AdminTableEmpty title={t('admin.activity.emptyTitle')} description={t('admin.activity.emptyDesc')} />
           ) : (
             <>
-            <p className="mb-2 text-xs text-slate-500 dark:text-slate-400 md:hidden" role="note">
-              {t('admin.tableScrollHint')}
-            </p>
-            <div className={a.tableWrap}>
-              <table className={a.table}>
-                <thead>
-                  <tr>
-                    <th className={a.thSticky}>Zaman</th>
-                    <th className={a.th}>Kullanıcı</th>
-                    <th className={a.th}>Kategori</th>
-                    <th className={a.th}>Özet</th>
-                    <th className={a.th}>Hedef</th>
-                    <th className={a.th}>IP</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((row) => {
-                    const pop = row.userId && typeof row.userId === 'object' ? row.userId : null;
-                    const displayName = pop?.name || row.userName || '—';
-                    const displayEmail = pop?.email || row.userEmail || '';
-                    const displayRole = pop?.role || row.userRole;
-                    return (
-                      <tr key={row._id} className={a.tr}>
-                        <td className={`${a.tdSticky} whitespace-nowrap font-mono text-xs text-slate-500`}>
-                          {row.createdAt ? new Date(row.createdAt).toLocaleString('tr-TR') : '—'}
-                        </td>
-                        <td className={a.td}>
-                          <div className="flex items-center gap-2">
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
-                              <User className="h-4 w-4 text-slate-500" />
-                            </span>
-                            <div className="min-w-0">
-                              <button
-                                type="button"
-                                className="truncate text-left text-sm font-medium text-slate-800 hover:text-violet-600 dark:text-slate-100"
-                                onClick={() => filterByUser(pop?._id || row.userId)}
-                              >
-                                {displayName}
-                              </button>
-                              <div className="truncate text-[11px] text-slate-500">{displayEmail}</div>
-                              {displayRole ? (
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                                  {roleLabel(displayRole)}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-                        </td>
-                        <td className={a.td}>
-                          <span
-                            className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                              CATEGORY_BADGE[row.category] || CATEGORY_BADGE.system
-                            }`}
+              <div className={a.mobileCardList}>
+                {items.map((row) => {
+                  const pop = row.userId && typeof row.userId === 'object' ? row.userId : null;
+                  const displayName = pop?.name || row.userName || '—';
+                  const displayEmail = pop?.email || row.userEmail || '';
+                  const displayRole = pop?.role || row.userRole;
+                  return (
+                    <article key={row._id} className={a.mobileCard}>
+                      <p className="font-mono text-xs text-slate-500">
+                        {row.createdAt ? new Date(row.createdAt).toLocaleString(dateLocale) : '—'}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                          <User className="h-4 w-4 text-slate-500" />
+                        </span>
+                        <div className="min-w-0">
+                          <button
+                            type="button"
+                            className="truncate text-left text-sm font-medium text-slate-800 hover:text-violet-600 dark:text-slate-100"
+                            onClick={() => filterByUser(pop?._id || row.userId)}
                           >
-                            {row.category}
-                          </span>
-                          <code className="mt-1 block text-[10px] text-slate-400">{row.action}</code>
-                        </td>
-                        <td className={`${a.td} max-w-[240px] text-sm text-slate-700 dark:text-slate-200`}>
-                          {row.summary}
-                        </td>
-                        <td className={`${a.td} text-xs text-slate-500`}>
-                          {row.targetLabel || row.targetType || '—'}
-                        </td>
-                        <td className={`${a.td} font-mono text-[10px] text-slate-400`}>{row.ip || '—'}</td>
+                            {displayName}
+                          </button>
+                          <div className="truncate text-[11px] text-slate-500">{displayEmail}</div>
+                          {displayRole ? (
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                              {roleLabel(displayRole)}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div>
+                        <span
+                          className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                            CATEGORY_BADGE[row.category] || CATEGORY_BADGE.system
+                          }`}
+                        >
+                          {row.category}
+                        </span>
+                        <code className="mt-1 block text-[10px] text-slate-400">{row.action}</code>
+                      </div>
+                      <p className="text-sm text-slate-700 dark:text-slate-200">{row.summary}</p>
+                      <p className="text-xs text-slate-500">
+                        {row.targetLabel || row.targetType || '—'}
+                        {row.ip ? ` · ${row.ip}` : ''}
+                      </p>
+                    </article>
+                  );
+                })}
+              </div>
+
+              <div className={a.tableDesktopOnly}>
+                <div className={a.tableWrap}>
+                  <table className={a.table}>
+                    <thead>
+                      <tr>
+                        <th className={a.thSticky}>{t('admin.activity.colTime')}</th>
+                        <th className={a.th}>{t('admin.activity.colUser')}</th>
+                        <th className={a.th}>{t('admin.activity.colCategory')}</th>
+                        <th className={a.th}>{t('admin.activity.colSummary')}</th>
+                        <th className={a.th}>{t('admin.activity.colTarget')}</th>
+                        <th className={a.th}>{t('admin.activity.colIp')}</th>
                       </tr>
-                    );
-                  })}
-                  {items.length === 0 && (
-                    <tr>
-                      <td className={`${a.td} py-12 text-center text-slate-500`} colSpan={6}>
-                        Bu kriterlere uygun aktivite bulunamadı. Yeni kayıtlar giriş ve içerik işlemlerinden
-                        itibaren burada görünür.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody>
+                      {items.map((row) => {
+                        const pop = row.userId && typeof row.userId === 'object' ? row.userId : null;
+                        const displayName = pop?.name || row.userName || '—';
+                        const displayEmail = pop?.email || row.userEmail || '';
+                        const displayRole = pop?.role || row.userRole;
+                        return (
+                          <tr key={row._id} className={a.tr}>
+                            <td className={`${a.tdSticky} whitespace-nowrap font-mono text-xs text-slate-500`}>
+                              {row.createdAt ? new Date(row.createdAt).toLocaleString(dateLocale) : '—'}
+                            </td>
+                            <td className={a.td}>
+                              <div className="flex items-center gap-2">
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                                  <User className="h-4 w-4 text-slate-500" />
+                                </span>
+                                <div className="min-w-0">
+                                  <button
+                                    type="button"
+                                    className="truncate text-left text-sm font-medium text-slate-800 hover:text-violet-600 dark:text-slate-100"
+                                    onClick={() => filterByUser(pop?._id || row.userId)}
+                                  >
+                                    {displayName}
+                                  </button>
+                                  <div className="truncate text-[11px] text-slate-500">{displayEmail}</div>
+                                  {displayRole ? (
+                                    <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                                      {roleLabel(displayRole)}
+                                    </span>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </td>
+                            <td className={a.td}>
+                              <span
+                                className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                  CATEGORY_BADGE[row.category] || CATEGORY_BADGE.system
+                                }`}
+                              >
+                                {row.category}
+                              </span>
+                              <code className="mt-1 block text-[10px] text-slate-400">{row.action}</code>
+                            </td>
+                            <td className={`${a.td} max-w-[240px] text-sm text-slate-700 dark:text-slate-200`}>
+                              {row.summary}
+                            </td>
+                            <td className={`${a.td} text-xs text-slate-500`}>
+                              {row.targetLabel || row.targetType || '—'}
+                            </td>
+                            <td className={`${a.td} font-mono text-[10px] text-slate-400`}>{row.ip || '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </>
           )}
 
           <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-900/50">
             <span className="font-medium text-slate-600 dark:text-slate-300">
-              <span className="tabular-nums text-slate-900 dark:text-white">{total}</span> kayıt · Sayfa{' '}
-              <span className="tabular-nums">{page}</span> / {totalPages}
+              {t('admin.paginationRecords', { total, page, pages: totalPages })}
             </span>
             <div className="flex gap-2">
               <button
@@ -421,7 +460,7 @@ export default function AdminUserActivity() {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
               >
-                Önceki
+                {t('admin.prev')}
               </button>
               <button
                 type="button"
@@ -429,7 +468,7 @@ export default function AdminUserActivity() {
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Sonraki
+                {t('admin.next')}
               </button>
             </div>
           </div>

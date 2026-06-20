@@ -404,6 +404,14 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
               )}
             </div>
           ) : (
+            <div className="space-y-6">
+              <div
+                className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 text-sm text-amber-950 dark:text-amber-100"
+                role="status"
+              >
+                <strong className="font-black">Doğrulama gerekli:</strong> Kaydetmeden önce soru metnini, şıkları ve
+                işaretli doğru cevabı kontrol edin. OCR/AI hatalı okuyabilir.
+              </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-500">
               <div className="space-y-5">
                 {hasShapeSection ? (
@@ -572,6 +580,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                   />
                 </details>
               </div>
+            </div>
             </div>
           )}
         </div>

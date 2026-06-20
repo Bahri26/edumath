@@ -1,7 +1,8 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Brain, Loader2, Sparkles } from 'lucide-react';
 import { fetchStudentInsights, generatePracticeQuestions } from '../../services/aiService';
-import { LanguageContext } from '../../context/LanguageContext';
+import { useTranslation } from '../../i18n/useTranslation';
 import AIPractice from '../exams/AIPractice';
 
 function readStoredUserId() {
@@ -13,51 +14,14 @@ function readStoredUserId() {
   }
 }
 
-const copy = {
-  TR: {
-    title: 'Geliştirmen gereken konular',
-    subtitle: 'Yerel analiz — sınav ve çalışmalarına göre',
-    subtitleMl: 'ML analizi — sınav ve çalışmalarına göre',
-    empty: 'Henüz konu listesi yüklenemedi. Biraz sonra tekrar dene veya öğretmenin konuları eklediğinden emin ol.',
-    suggestedHint: 'Henüz yeterli sınav/çalışma verin yok. Sınıfına uygun konulardan başlaman için öneriler:',
-    loading: 'Konular analiz ediliyor…',
-    mastery: 'Başarı',
-    attempts: '{{n}} deneme',
-    practice: 'Önerilen alıştırma',
-    practicing: 'Hazırlanıyor…',
-    goHub: 'Çalışma merkezi',
-    allGood: 'Harika! Şu an belirgin bir zayıf konu görünmüyor. Yine de tekrar için çalışabilirsin.',
-    startLabel: 'Başla',
-  },
-  EN: {
-    title: 'Topics to improve',
-    subtitle: 'Local analysis from your quizzes and practice',
-    subtitleMl: 'ML analysis from your quizzes and practice',
-    empty: 'Could not load topics. Try again later or ask your teacher to add topics.',
-    suggestedHint: 'Not enough quiz data yet. Suggested topics to start with:',
-    loading: 'Analyzing topics…',
-    mastery: 'Mastery',
-    attempts: '{{n}} attempts',
-    practice: 'Suggested practice',
-    practicing: 'Preparing…',
-    goHub: 'Study hub',
-    allGood: 'Great! No weak topics stand out right now. You can still review in the study hub.',
-    startLabel: 'Start',
-  },
-};
-
-const fill = (str, vars) =>
-  typeof str !== 'string' ? str : str.replace(/\{\{(\w+)\}\}/g, (_, k) => (vars[k] != null ? String(vars[k]) : ''));
-
 export default function WeakTopicsInsightCard({
   compact = false,
   showPractice = true,
   onGoHub,
   className = '',
 }) {
-  const { language } = useContext(LanguageContext);
-  const t = copy[language] || copy.TR;
-  const getText = (key) => t[key] || copy.TR[key];
+  const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [insights, setInsights] = useState({
@@ -66,8 +30,10 @@ export default function WeakTopicsInsightCard({
     suggested: false,
     hasActivity: false,
     scoringProvider: 'local-matrix',
+    provider: 'local',
   });
   const [practiceLoading, setPracticeLoading] = useState(false);
+  const [practiceLoadingTopic, setPracticeLoadingTopic] = useState('');
   const [practiceQuestions, setPracticeQuestions] = useState(null);
 
   useEffect(() => {
@@ -83,6 +49,7 @@ export default function WeakTopicsInsightCard({
           suggested: Boolean(data?.suggested),
           hasActivity: Boolean(data?.hasActivity),
           scoringProvider: data?.scoringProvider || 'local-matrix',
+          provider: data?.provider || 'local',
         });
       } catch {
         if (!cancelled) setInsights({ weakTopics: [], topics: [] });
@@ -95,22 +62,32 @@ export default function WeakTopicsInsightCard({
     };
   }, []);
 
-  const displayTopics = (insights.topics?.length ? insights.topics : [])
-    .slice(0, compact ? 3 : 5);
+  const displayTopics = (insights.topics?.length ? insights.topics : []).slice(0, compact ? 3 : 5);
 
   const weakList =
     insights.weakTopics?.length > 0
       ? insights.weakTopics
       : displayTopics.filter((x) => x.isWeak).map((x) => x.topic);
 
-  const handlePractice = async () => {
-    if (!weakList.length) return;
+  const subtitleKey = insights.suggested
+    ? 'weakTopics.suggestedHint'
+    : insights.scoringProvider === 'ml-service'
+      ? 'weakTopics.subtitleMl'
+      : 'weakTopics.subtitleLocal';
+
+  const providerLabel = t(`chat.provider.${insights.provider}`) || t('chat.provider.unknown');
+
+  const handlePractice = async (topics) => {
+    const list = Array.isArray(topics) ? topics : weakList.slice(0, 3);
+    if (!list.length) return;
+    const single = list.length === 1 ? list[0] : '';
     setPracticeLoading(true);
+    if (single) setPracticeLoadingTopic(single);
     setPracticeQuestions(null);
     try {
       const uid = readStoredUserId();
       const data = await generatePracticeQuestions({
-        weakTopics: weakList.slice(0, 3),
+        weakTopics: list,
         studentId: uid || undefined,
         count: 5,
       });
@@ -119,7 +96,12 @@ export default function WeakTopicsInsightCard({
       setPracticeQuestions([]);
     } finally {
       setPracticeLoading(false);
+      setPracticeLoadingTopic('');
     }
+  };
+
+  const goToTopicExercises = (topic) => {
+    navigate(`/student/exercises?topic=${encodeURIComponent(topic)}`);
   };
 
   return (
@@ -135,35 +117,37 @@ export default function WeakTopicsInsightCard({
           </div>
           <div className="min-w-0 flex-1">
             <h3 className={`font-bold text-slate-800 dark:text-white ${compact ? 'text-base' : 'text-lg'}`}>
-              {getText('title')}
+              {t('weakTopics.title')}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {insights.suggested
-                ? getText('suggestedHint')
-                : getText(insights.scoringProvider === 'ml-service' ? 'subtitleMl' : 'subtitle')}
-            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{t(subtitleKey)}</p>
+            {!loading && (
+              <p className="text-[10px] font-bold uppercase tracking-wider text-violet-500 mt-1">
+                {t('weakTopics.providerNote', { provider: providerLabel })}
+              </p>
+            )}
           </div>
         </div>
 
         {loading ? (
           <p className="text-sm text-slate-500 flex items-center gap-2">
             <Loader2 size={16} className="animate-spin" aria-hidden />
-            {getText('loading')}
+            {t('weakTopics.loading')}
           </p>
         ) : displayTopics.length === 0 ? (
-          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{getText('empty')}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{t('weakTopics.empty')}</p>
         ) : weakList.length === 0 ? (
           <p className="text-sm text-teal-700 dark:text-teal-300 flex items-start gap-2">
             <Sparkles size={18} className="shrink-0 mt-0.5" aria-hidden />
-            {getText('allGood')}
+            {t('weakTopics.allGood')}
           </p>
         ) : (
-          <ul className="space-y-3" aria-label={getText('title')}>
+          <ul className="space-y-3" aria-label={t('weakTopics.title')}>
             {displayTopics.map((row) => {
               const mastery = row.mastery ?? Math.round((row.accuracy || 0) * 100);
               const isWeak = row.isWeak || weakList.includes(row.topic);
+              const topicBusy = practiceLoadingTopic === row.topic;
               return (
-                <li key={row.topic} className="space-y-1">
+                <li key={row.topic} className="space-y-1.5">
                   <div className="flex justify-between gap-2 text-sm">
                     <span
                       className={`font-semibold truncate ${
@@ -174,8 +158,10 @@ export default function WeakTopicsInsightCard({
                     </span>
                     <span className="text-xs text-slate-500 shrink-0">
                       {row.suggested
-                        ? getText('startLabel')
-                        : `%${mastery}${row.total > 0 ? ` · ${fill(getText('attempts'), { n: row.total })}` : ''}`}
+                        ? t('weakTopics.startLabel')
+                        : `%${mastery}${
+                            row.total > 0 ? ` · ${t('weakTopics.attemptsLabel', { n: row.total })}` : ''
+                          }`}
                     </span>
                   </div>
                   <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
@@ -186,6 +172,32 @@ export default function WeakTopicsInsightCard({
                       style={{ width: `${Math.max(4, mastery)}%` }}
                     />
                   </div>
+                  {isWeak && showPractice && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => goToTopicExercises(row.topic)}
+                        className="inline-flex items-center min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold border border-sky-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-slate-700"
+                      >
+                        {t('weakTopics.goExercises')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePractice([row.topic])}
+                        disabled={practiceLoading}
+                        className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60"
+                      >
+                        {topicBusy ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin" aria-hidden />
+                            {t('weakTopics.practicing')}
+                          </>
+                        ) : (
+                          t('weakTopics.practiceTopic')
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -197,17 +209,17 @@ export default function WeakTopicsInsightCard({
             {showPractice && weakList.length > 0 && (
               <button
                 type="button"
-                onClick={handlePractice}
+                onClick={() => handlePractice(weakList.slice(0, 3))}
                 disabled={practiceLoading}
                 className="inline-flex items-center gap-2 min-h-[40px] px-4 py-2 rounded-xl text-sm font-bold bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60"
               >
-                {practiceLoading ? (
+                {practiceLoading && !practiceLoadingTopic ? (
                   <>
                     <Loader2 size={16} className="animate-spin" aria-hidden />
-                    {getText('practicing')}
+                    {t('weakTopics.practicing')}
                   </>
                 ) : (
-                  getText('practice')
+                  t('weakTopics.practice')
                 )}
               </button>
             )}
@@ -217,7 +229,7 @@ export default function WeakTopicsInsightCard({
                 onClick={onGoHub}
                 className="inline-flex items-center min-h-[40px] px-4 py-2 rounded-xl text-sm font-bold border border-sky-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-slate-700"
               >
-                {getText('goHub')}
+                {t('studyHub.title')}
               </button>
             )}
           </div>
@@ -225,7 +237,7 @@ export default function WeakTopicsInsightCard({
       </div>
 
       {practiceQuestions && practiceQuestions.length > 0 && (
-        <AIPractice questions={practiceQuestions} sourceLabel={getText('subtitle')} />
+        <AIPractice questions={practiceQuestions} sourceLabel={t('weakTopics.subtitleLocal')} />
       )}
     </div>
   );

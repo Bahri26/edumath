@@ -54,6 +54,11 @@ export const admin = {
 
   tableWrap:
     'overflow-x-auto overscroll-x-contain rounded-2xl border border-slate-200/80 bg-white shadow-lg shadow-slate-200/20 ring-1 ring-slate-100/80 dark:border-slate-700 dark:bg-slate-900/80 dark:shadow-none dark:ring-slate-800/80 [-webkit-overflow-scrolling:touch]',
+  /** Hide wide table on small screens when a card list is shown alongside. */
+  tableDesktopOnly: 'hidden lg:block',
+  mobileCardList: 'lg:hidden space-y-3',
+  mobileCard:
+    'rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 space-y-3',
   table: 'w-full min-w-[960px] border-collapse text-sm',
   thSticky:
     'sticky left-0 z-10 border-b border-slate-200/90 bg-gradient-to-b from-slate-50 to-slate-100/80 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-700 dark:from-slate-800/90 dark:to-slate-900/80 dark:text-slate-400 shadow-[4px_0_8px_-4px_rgba(15,23,42,0.12)] dark:shadow-[4px_0_8px_-4px_rgba(0,0,0,0.35)]',
