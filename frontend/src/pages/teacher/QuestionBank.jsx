@@ -15,6 +15,7 @@ import 'katex/dist/katex.min.css';
 import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
+import SkeletonCard from '../../components/ui/SkeletonCard';
 import { renderWithLatex } from '../../utils/latex.jsx';
 import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
 import QuestionSourceBadge from '../../components/questions/QuestionSourceBadge.jsx';
