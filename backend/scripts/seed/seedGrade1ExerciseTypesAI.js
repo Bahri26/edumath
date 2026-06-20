@@ -23,12 +23,16 @@ function getMongoConfig() {
 }
 
 async function requireTeacher() {
-  const email = process.env.SEED_TEACHER_EMAIL || 'teacher@edumath.local';
-  const teacher = await User.findOne({ email }).select('_id email');
-  if (!teacher) {
-    throw new Error(`Teacher not found: ${email}. Run npm run seed:patterns first.`);
+  const email = (process.env.SEED_TEACHER_EMAIL || '').trim();
+  if (email) {
+    const teacher = await User.findOne({ email }).select('_id email');
+    if (teacher) return teacher;
   }
-  return teacher;
+  const fallback = await User.findOne({ role: 'teacher', branchApproval: 'approved' }).select('_id email');
+  if (fallback) return fallback;
+  const any = await User.findOne({ role: 'teacher' }).select('_id email');
+  if (any) return any;
+  throw new Error('Teacher not found. Run npm run seed:login-users first.');
 }
 
 function base(extra) {
@@ -259,7 +263,11 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+module.exports = { buildQuestions, PACK_ID, main };

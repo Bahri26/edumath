@@ -53,17 +53,26 @@ function getMongoConfig() {
 }
 
 async function resolveTeachers() {
-  const email = (process.env.SEED_TEACHER_EMAIL || '').trim();
-  if (email) {
-    const teacher = await User.findOne({ email, role: 'teacher' }).select('_id email name');
-    if (!teacher) throw new Error(`Teacher not found: ${email}`);
-    return [teacher];
+  const single = (process.env.SEED_TEACHER_EMAIL || '').trim();
+  if (single) {
+    const teacher = await User.findOne({ email: single }).select('_id email name role');
+    if (teacher) return [teacher];
   }
 
-  const allTeachers = await User.find({ role: 'teacher' }).select('_id email name').limit(50);
-  if (allTeachers.length > 0) return allTeachers;
+  const emails = [
+    'bahadir26@hotmail.com',
+    'bahadirteacher@edumath.local',
+    'emre@gmail.com',
+    'teacher@edumath.local',
+  ];
+  const byEmail = await User.find({ email: { $in: emails } }).select('_id email name role');
+  const byRole = await User.find({ role: 'teacher' }).select('_id email name role').limit(100);
+  const map = new Map();
+  for (const u of [...byEmail, ...byRole]) map.set(String(u._id), u);
+  const all = [...map.values()];
+  if (all.length > 0) return all;
 
-  throw new Error('No teacher user found. Run npm run seed:patterns or seed:login-users first.');
+  throw new Error('No teacher user found. Run npm run seed:login-users first.');
 }
 
 async function createDemoExercisesForTeacher(teacher) {
