@@ -18,11 +18,22 @@ import { getHomePathForRole } from '../utils/roleRoutes';
 
 // Veriyi İçe Aktar
 import { translations } from '../data/translations';
+import {
+  appToLandingLocale,
+  landingToAppLocale,
+  readStoredLanguage,
+  writeStoredLanguage,
+} from '../i18n/locale';
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
-  const [lang, setLang] = useState('tr');
+  const [lang, setLangState] = useState(() => appToLandingLocale(readStoredLanguage()));
+  const setLang = (next) => {
+    const normalized = next === 'en' ? 'en' : 'tr';
+    setLangState(normalized);
+    writeStoredLanguage(landingToAppLocale(normalized));
+  };
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const theme = isDarkMode ? 'dark' : 'light';
 

@@ -14,6 +14,7 @@ import {
   ListOrdered,
   Wand2,
   MousePointerClick,
+  BarChart3,
 } from 'lucide-react';
 import apiClient, { resolveAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -23,10 +24,12 @@ import { QUESTION_TYPE_OPTIONS } from '../../constants/questionTypesUi';
 import SkeletonCard from '../../components/ui/SkeletonCard';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import Button from '../../components/ui/Button.jsx';
+import { useConfirmAction } from '../../hooks/useConfirmAction';
 import Card from '../../components/ui/Card.jsx';
 import Select from '../../components/ui/Select.jsx';
 import { renderWithLatex } from '../../utils/latex.jsx';
 import ExerciseQuestionPicker from '../../components/exercises/ExerciseQuestionPicker.jsx';
+import ExerciseResultsModal from '../../components/exercises/ExerciseResultsModal.jsx';
 import 'katex/dist/katex.min.css';
 
 /**
@@ -64,7 +67,7 @@ const FormSection = ({ step, title, children }) => (
   </section>
 );
 
-const ExerciseCard = ({ exercise, onView, onEditQuestions, onDelete }) => (
+const ExerciseCard = ({ exercise, onView, onEditQuestions, onResults, onDelete }) => (
   <Card className="p-5 flex flex-col h-full hover:border-brand-200 dark:hover:border-brand-800">
     <div className="flex justify-between items-start gap-3 mb-3">
       <div className="min-w-0 flex-1">
@@ -81,6 +84,14 @@ const ExerciseCard = ({ exercise, onView, onEditQuestions, onDelete }) => (
           aria-label="Önizle"
         >
           <Eye size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onResults(exercise._id)}
+          className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+          aria-label="Sonuçlar"
+        >
+          <BarChart3 size={18} />
         </button>
         <button
           type="button"
@@ -379,6 +390,7 @@ function ManageExerciseQuestionsModal({ exerciseId, branchApproved, onClose, onS
 
 export default function TeacherExerciseCreator() {
   const { showToast } = useToast();
+  const { askConfirm, ConfirmDialog } = useConfirmAction();
 
   const [createMode, setCreateMode] = useState(false);
   const [exerciseName, setExerciseName] = useState('');
@@ -402,6 +414,7 @@ export default function TeacherExerciseCreator() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [previewId, setPreviewId] = useState(null);
+  const [resultsId, setResultsId] = useState(null);
   const closePreview = useCallback(() => setPreviewId(null), []);
 
   const [profile, setProfile] = useState({ branch: '', branchApproval: 'none' });
@@ -546,7 +559,12 @@ export default function TeacherExerciseCreator() {
   };
 
   const handleDeleteExercise = async (id) => {
-    if (!window.confirm('Bu egzersizi silmek istediğinizden emin misiniz?')) return;
+    const confirmed = await askConfirm({
+      title: 'Egzersiz silinsin mi?',
+      description:
+        'Bu egzersiz kalıcı olarak kaldırılacak. Öğrenciler artık bu egzersize erişemez. Bu işlem geri alınamaz.',
+    });
+    if (!confirmed) return;
     try {
       await apiClient.delete(`/exercises/${id}`);
       showToast('Egzersiz silindi', 'success');
@@ -578,6 +596,7 @@ export default function TeacherExerciseCreator() {
   return (
     <div className="flex-1 p-4 md:p-6 space-y-6 pb-20 max-w-6xl mx-auto w-full">
       {previewId ? <ExercisePreviewModal exerciseId={previewId} onClose={closePreview} /> : null}
+      {resultsId ? <ExerciseResultsModal exerciseId={resultsId} onClose={() => setResultsId(null)} /> : null}
       {editExerciseId ? (
         <ManageExerciseQuestionsModal
           exerciseId={editExerciseId}
@@ -878,6 +897,7 @@ export default function TeacherExerciseCreator() {
               key={ex._id}
               exercise={ex}
               onView={setPreviewId}
+              onResults={setResultsId}
               onEditQuestions={setEditExerciseId}
               onDelete={handleDeleteExercise}
             />
@@ -910,6 +930,7 @@ export default function TeacherExerciseCreator() {
           </button>
         </div>
       ) : null}
+      <ConfirmDialog />
     </div>
   );
 }

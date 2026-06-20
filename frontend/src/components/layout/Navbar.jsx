@@ -144,9 +144,10 @@ const Navbar = ({ lang, setLang, theme, toggleTheme, t, onLoginClick }) => {
               type="button"
               onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
               className="p-2 rounded-full hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-600 dark:text-surface-300"
+              aria-label={lang === 'tr' ? 'Switch to English' : 'Türkçeye geç'}
               title={lang === 'tr' ? 'English' : 'Türkçe'}
             >
-              <Globe size={20} />
+              <Globe size={20} aria-hidden />
             </button>
             <button
               type="button"
@@ -213,15 +214,18 @@ const Navbar = ({ lang, setLang, theme, toggleTheme, t, onLoginClick }) => {
               type="button"
               onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
               className="p-2 rounded-full hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-600 dark:text-surface-300"
+              aria-label={lang === 'tr' ? 'Switch to English' : 'Türkçeye geç'}
+              title={lang === 'tr' ? 'English' : 'Türkçe'}
             >
-              <Globe size={20} />
+              <Globe size={20} aria-hidden />
             </button>
             <button
               type="button"
               onClick={toggleTheme}
               className="p-2 rounded-full hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-600 dark:text-surface-300"
+              aria-label={theme === 'dark' ? 'Aydınlık tema' : 'Karanlık tema'}
             >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              {theme === 'dark' ? <Sun size={20} aria-hidden /> : <Moon size={20} aria-hidden />}
             </button>
             {user && (
               <>

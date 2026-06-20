@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import adminService from '../../services/adminService';
 import { admin as a } from '../../components/admin/adminUi';
+import { useConfirmAction } from '../../hooks/useConfirmAction';
+import { useTranslation } from '../../i18n/useTranslation';
 
 const CATEGORY_OPTIONS = [
   { value: '', label: 'Tüm kategoriler' },
@@ -38,6 +40,8 @@ const roleLabel = (role) => {
 };
 
 export default function AdminUserActivity() {
+  const { t } = useTranslation();
+  const { askConfirm, ConfirmDialog } = useConfirmAction();
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
   const [limit] = useState(30);
@@ -125,6 +129,12 @@ export default function AdminUserActivity() {
   };
 
   const handleRemoveWatch = async (uid) => {
+    const confirmed = await askConfirm({
+      title: 'Takip listesinden çıkarılsın mı?',
+      description:
+        'Bu kullanıcı izleme listesinden kaldırılacak. Aktivite geçmişi silinmez; yalnızca hızlı takip filtresi kapanır.',
+    });
+    if (!confirmed) return;
     try {
       await adminService.removeFromWatchlist(uid);
       await loadWatchlist();
@@ -316,11 +326,15 @@ export default function AdminUserActivity() {
               Aktiviteler yükleniyor…
             </div>
           ) : (
+            <>
+            <p className="mb-2 text-xs text-slate-500 dark:text-slate-400 md:hidden" role="note">
+              {t('admin.tableScrollHint')}
+            </p>
             <div className={a.tableWrap}>
               <table className={a.table}>
                 <thead>
                   <tr>
-                    <th className={a.th}>Zaman</th>
+                    <th className={a.thSticky}>Zaman</th>
                     <th className={a.th}>Kullanıcı</th>
                     <th className={a.th}>Kategori</th>
                     <th className={a.th}>Özet</th>
@@ -336,7 +350,7 @@ export default function AdminUserActivity() {
                     const displayRole = pop?.role || row.userRole;
                     return (
                       <tr key={row._id} className={a.tr}>
-                        <td className={`${a.td} whitespace-nowrap font-mono text-xs text-slate-500`}>
+                        <td className={`${a.tdSticky} whitespace-nowrap font-mono text-xs text-slate-500`}>
                           {row.createdAt ? new Date(row.createdAt).toLocaleString('tr-TR') : '—'}
                         </td>
                         <td className={a.td}>
@@ -392,6 +406,7 @@ export default function AdminUserActivity() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
 
           <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-900/50">
@@ -420,6 +435,7 @@ export default function AdminUserActivity() {
           </div>
         </div>
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

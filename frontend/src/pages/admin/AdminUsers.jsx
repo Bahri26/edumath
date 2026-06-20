@@ -3,8 +3,12 @@ import { Loader2, UserPlus, UsersRound } from 'lucide-react';
 import adminService from '../../services/adminService';
 import AdminInternalNotesPanel from '../../components/admin/AdminInternalNotesPanel';
 import { admin as a } from '../../components/admin/adminUi';
+import { useConfirmAction } from '../../hooks/useConfirmAction';
+import { useTranslation } from '../../i18n/useTranslation';
 
 const AdminUsers = () => {
+  const { t } = useTranslation();
+  const { askConfirm, ConfirmDialog } = useConfirmAction();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -306,11 +310,15 @@ const AdminUsers = () => {
           Liste yükleniyor…
         </div>
       ) : (
+        <>
+        <p className="mb-2 text-xs text-slate-500 dark:text-slate-400 md:hidden" role="note">
+          {t('admin.tableScrollHint')}
+        </p>
         <div className={a.tableWrap}>
           <table className={a.table}>
             <thead>
               <tr>
-                <th className={a.th}>Ad</th>
+                <th className={a.thSticky}>Ad</th>
                 <th className={a.th}>E-posta</th>
                 <th className={a.th}>Rol</th>
                 <th className={a.th}>Kayıt</th>
@@ -325,7 +333,7 @@ const AdminUsers = () => {
             <tbody>
               {items.map((it) => (
                 <tr key={it._id} className={a.tr}>
-                  <td className={a.td}>
+                  <td className={a.tdSticky}>
                     {editingId === it._id ? (
                       <input
                         className={a.inputCompact + ' w-full max-w-[160px]'}
@@ -469,7 +477,12 @@ const AdminUsers = () => {
                       type="button"
                       className={a.btnSmDanger}
                       onClick={async () => {
-                        if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
+                        const confirmed = await askConfirm({
+                          title: 'Kullanıcı silinsin mi?',
+                          description:
+                            'Bu kullanıcı hesabı kalıcı olarak kaldırılacak. İlişkili veriler silinir ve geri alınamaz.',
+                        });
+                        if (!confirmed) return;
                         try {
                           const r = await adminService.deleteUser(it._id);
                           setInfo(r);
@@ -487,6 +500,7 @@ const AdminUsers = () => {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-900/50">
@@ -531,6 +545,7 @@ const AdminUsers = () => {
           </div>
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 };

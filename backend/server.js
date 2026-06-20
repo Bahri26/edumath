@@ -13,6 +13,9 @@ const errorHandler = require('./middlewares/errorHandler');
 
 dotenv.config();
 
+const { initMonitoring } = require('./utils/monitoring');
+initMonitoring();
+
 const User = require('./models/User');
 
 // --- CRITICAL ENV VALIDATION (fail-fast) ---
@@ -245,8 +248,12 @@ app.use('/api/progress', progressRoutes); // İlerleme ve trendler
     app.use('/api/lessons', require('./routes/lessonRoutes'));
 app.use('/api/pattern-templates', patternTemplateRoutes);
 
-// --- API Dokümantasyonu ---
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// --- API Dokümantasyonu (production'da varsayılan kapalı) ---
+const swaggerEnabled =
+  process.env.NODE_ENV !== 'production' || String(process.env.SWAGGER_ENABLED || '').toLowerCase() === 'true';
+if (swaggerEnabled) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
 
 // Test Route
 app.get('/', (req, res) => {

@@ -30,10 +30,13 @@ async function syncAndAttach(exam, studentId = null) {
   return attachExamScheduleMeta(exam, studentId);
 }
 
-// 1. TÜM SINAVLARI GETİR
-router.get('/', async (req, res) => {
+// 1. TÜM SINAVLARI GETİR (öğretmen/admin — öğrenci sonuçları gizli)
+router.get('/', authMiddleware, roleMiddleware(['teacher', 'admin']), async (req, res) => {
   try {
-    const exams = await Exam.find().sort({ createdAt: -1 });
+    const exams = await Exam.find()
+      .sort({ createdAt: -1 })
+      .select('-results')
+      .lean();
     res.json(exams);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -87,11 +90,18 @@ router.get('/:id/take', authMiddleware, roleMiddleware(['student']), async (req,
   }
 });
 
-// SINAV DETAYI GETİR (öğretmen / genel — cevap anahtarı dahil)
-router.get('/:id', async (req, res) => {
+// SINAV DETAYI GETİR (öğretmen / admin — cevap anahtarı dahil)
+router.get('/:id', authMiddleware, roleMiddleware(['teacher', 'admin']), async (req, res) => {
   try {
     const exam = await Exam.findById(req.params.id).populate('questions');
     if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı' });
+
+    const user = await User.findById(req.user.id).select('role branch branchApproval');
+    if (!user) return res.status(401).json({ message: 'Kullanıcı bulunamadı.' });
+    if (!canManageExam(user, exam)) {
+      return res.status(403).json({ message: 'Bu sınavı görüntüleme yetkiniz yok.' });
+    }
+
     await syncExamStatusIfNeeded(exam);
     res.json(exam);
   } catch (err) {
@@ -248,7 +258,7 @@ router.put('/:id', authMiddleware, roleMiddleware(['teacher', 'admin']), async (
 
 router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (req, res) => {
   try {
-    const { answers } = req.body;
+    const { answers, totalTimeSpentSeconds, questionTimes } = req.body;
     const exam = await Exam.findById(req.params.id).populate('questions');
     if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı' });
 
@@ -261,10 +271,12 @@ router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (r
     let correctCount = 0;
     const weakTopicsSet = new Set();
     const topicCounts = new Map();
+    const timesMap = questionTimes && typeof questionTimes === 'object' ? questionTimes : {};
 
     exam.questions.forEach((q) => {
       const focusArea = q.learningOutcome || q.topic || q.subject;
-      const rawAnswer = answers[q._id] ?? answers[String(q._id)];
+      const qid = String(q._id);
+      const rawAnswer = answers[q._id] ?? answers[qid];
       const ok = gradeQuestionAnswer(q, rawAnswer);
 
       if (!ok) {
@@ -283,6 +295,15 @@ router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (r
 
     const studentName = (await User.findById(req.user.id).select('name'))?.name || 'Öğrenci';
     const topicStats = Array.from(topicCounts.entries()).map(([topic, wrong]) => ({ topic, wrong }));
+    const parsedQuestionTimes = exam.questions
+      .map((q) => {
+        const sec = Number(timesMap[String(q._id)] ?? timesMap[q._id]);
+        if (!Number.isFinite(sec) || sec < 0) return null;
+        return { questionId: q._id, timeSpentSeconds: Math.round(sec) };
+      })
+      .filter(Boolean);
+
+    const parsedTotalTime = Number(totalTimeSpentSeconds);
     exam.results.push({
       studentId: req.user.id,
       studentName,
@@ -291,6 +312,10 @@ router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (r
       wrongCount,
       topicStats,
       weakTopics: Array.from(weakTopicsSet),
+      totalTimeSpentSeconds: Number.isFinite(parsedTotalTime) && parsedTotalTime >= 0
+        ? Math.round(parsedTotalTime)
+        : null,
+      questionTimes: parsedQuestionTimes,
     });
 
     await exam.save();
@@ -318,7 +343,7 @@ router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (r
       targetType: 'exam',
       targetId: exam._id,
       targetLabel: exam.title,
-      metadata: { score, correctCount, wrongCount },
+      metadata: { score, correctCount, wrongCount, totalTimeSpentSeconds: parsedTotalTime },
     });
 
     res.json({
@@ -328,6 +353,9 @@ router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (r
       wrongCount,
       topicStats,
       weakTopics: Array.from(weakTopicsSet),
+      totalTimeSpentSeconds: Number.isFinite(parsedTotalTime) && parsedTotalTime >= 0
+        ? Math.round(parsedTotalTime)
+        : null,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -34,6 +34,8 @@ export const Interactive = {
           open={open}
           title="Kaydı sil"
           description="Bu kayıt kalıcı olarak kaldırılacak."
+          cancelLabel="Hayır"
+          confirmLabel="Evet"
           onConfirm={() => setOpen(false)}
           onCancel={() => setOpen(false)}
         />

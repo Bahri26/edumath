@@ -45,24 +45,22 @@ services:
         value: gemini-1.5-pro
       - key: AI_PROVIDER
         value: local
-      # Kalıcı görsel: cloudinary (kolay) veya R2
+      # Kalıcı görsel: Google Drive (Banking ile aynı service account)
       - key: STORAGE_PROVIDER
+        value: gdrive
+      - key: GOOGLE_DRIVE_CREDENTIALS_JSON
         sync: false
-      - key: CLOUDINARY_CLOUD_NAME
+      - key: GOOGLE_DRIVE_IMAGES_FOLDER_ID
+        value: 1XlKbtgJEtGgWF3jkH3KfB4bMF-KvWSze
+      - key: GOOGLE_DRIVE_PATTERNS_FOLDER_ID
+        value: 1t1fV32CQI_YAoJkIYdosU3mmbikeMQIh
+      - key: GOOGLE_DRIVE_PUBLIC
+        value: "true"
+      - key: GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN
         sync: false
-      - key: CLOUDINARY_API_KEY
+      - key: GOOGLE_DRIVE_OAUTH_CLIENT_ID
         sync: false
-      - key: CLOUDINARY_API_SECRET
-        sync: false
-      - key: S3_BUCKET_NAME
-        sync: false
-      - key: S3_ENDPOINT
-        sync: false
-      - key: S3_ACCESS_KEY_ID
-        sync: false
-      - key: S3_SECRET_ACCESS_KEY
-        sync: false
-      - key: S3_PUBLIC_BASE_URL
+      - key: GOOGLE_DRIVE_OAUTH_CLIENT_SECRET
         sync: false
       # Python ML mikroservisi (edumath-ml)
       - key: ML_SERVICE_URL
@@ -79,6 +77,8 @@ services:
         value: 0.55
       - key: ML_SERVICE_TIMEOUT_MS
         value: 15000
+      - key: SENTRY_DSN
+        sync: false
 
   - type: web
     name: edumath-ml
@@ -105,14 +105,15 @@ services:
       - key: VITE_API_URL
         value: https://edumath-t10n.onrender.com/api
       - key: VITE_ASSET_BASE_URL
-        sync: false
-        # Render: API servis kökü (örn. https://edumath-api.onrender.com) — /api olmadan
+        value: https://edumath-t10n.onrender.com
       - key: VITE_API_TIMEOUT_MS
         value: 15000
       - key: VITE_AUTH_TIMEOUT_MS
         value: 60000
       - key: VITE_AI_TIMEOUT_MS
         value: 45000
+      - key: VITE_SENTRY_DSN
+        sync: false
     routes:
       - type: rewrite
         source: /*

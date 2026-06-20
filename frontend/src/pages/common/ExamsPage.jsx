@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Clock, FileText, Plus, Trash2, Play, CheckCircle, AlertTriangle, X, Brain, Sparkles, GripVertical } from 'lucide-react';
 import apiClient from '../../services/api';
 import { generatePracticeQuestions } from '../../services/aiService';
@@ -13,8 +14,14 @@ import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
 import QuestionTextWithPattern from '../../components/questions/QuestionTextWithPattern.jsx';
 import { MatchingPracticeCard, SequencePracticeCard } from '../../components/exams/InteractivePracticeCards.jsx';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';
+import { useConfirmAction } from '../../hooks/useConfirmAction';
+import StudentHint from '../../components/StudentHint.jsx';
+import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
+import { computeExamTotalTimeSpent } from '../../hooks/useQuestionTimer.js';
+import { formatDuration } from '../../utils/formatDuration.js';
 
 const ExamsPage = ({ role }) => {
+  const { askConfirm, ConfirmDialog } = useConfirmAction();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -44,6 +51,8 @@ const ExamsPage = ({ role }) => {
 
   const timerRef = useRef(null);
   const answersRef = useRef({});
+  const questionTimesRef = useRef({});
+  const examDurationRef = useRef(0);
 
   const fetchExams = async () => {
     try {
@@ -94,7 +103,12 @@ const ExamsPage = ({ role }) => {
       showToast('Bu sınavı silme yetkiniz yok', 'error');
       return;
     }
-    if (!window.confirm('Silmek istediğine emin misin?')) return;
+    const confirmed = await askConfirm({
+      title: 'Sınav silinsin mi?',
+      description:
+        'Bu sınav ve varsa öğrenci sonuçları kalıcı olarak silinecek. Öğrenciler artık bu sınava giremez. Bu işlem geri alınamaz.',
+    });
+    if (!confirmed) return;
     try {
       await apiClient.delete(`/exams/${id}`);
       fetchExams();
@@ -123,8 +137,10 @@ const ExamsPage = ({ role }) => {
       const examData = res.data;
       setActiveExam(examData);
       setTimeLeft(examData.duration * 60);
+      examDurationRef.current = examData.duration;
       setUserAnswers({});
       answersRef.current = {};
+      questionTimesRef.current = {};
       setExamResult(null);
       setPracticeQuestions(null);
 
@@ -133,7 +149,7 @@ const ExamsPage = ({ role }) => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(timerRef.current);
-            finishExam(answersRef.current);
+            finishExam(answersRef.current, 0);
             return 0;
           }
           return prev - 1;
@@ -144,14 +160,23 @@ const ExamsPage = ({ role }) => {
     }
   };
 
-  const finishExam = async (answersOverride = null) => {
+  const finishExam = async (answersOverride = null, timeLeftOverride = null) => {
     if (!activeExam) return;
     clearInterval(timerRef.current);
     const payload = answersOverride ?? userAnswers;
+    const remaining = timeLeftOverride ?? timeLeft;
+    const totalTimeSpentSeconds = computeExamTotalTimeSpent(
+      examDurationRef.current || activeExam.duration,
+      remaining,
+    );
     try {
-      const res = await apiClient.post(`/exams/${activeExam._id}/submit`, { answers: payload });
+      const res = await apiClient.post(`/exams/${activeExam._id}/submit`, {
+        answers: payload,
+        totalTimeSpentSeconds,
+        questionTimes: questionTimesRef.current,
+      });
 
-      setExamResult(res.data);
+      setExamResult({ ...res.data, totalTimeSpentSeconds });
       setActiveExam(null);
       fetchExams();
     } catch (err) {
@@ -301,6 +326,13 @@ const ExamsPage = ({ role }) => {
                           const next = { ...userAnswers, [q._id]: optionText };
                           setUserAnswers(next);
                           answersRef.current = next;
+                          questionTimesRef.current = {
+                            ...questionTimesRef.current,
+                            [q._id]: computeExamTotalTimeSpent(
+                              examDurationRef.current || activeExam.duration,
+                              timeLeft,
+                            ),
+                          };
                         }}
                         className="mt-1 w-5 h-5 text-indigo-600"
                       />
@@ -332,7 +364,17 @@ const ExamsPage = ({ role }) => {
              {examResult.score >= 50 ? <CheckCircle size={40} /> : <AlertTriangle size={40} className="text-orange-500"/>}
           </div>
           <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">Sınav Tamamlandı!</h2>
-          <p className="text-slate-500 mb-6">Başarı Puanın: <span className={`text-2xl font-bold ${examResult.score >= 50 ? 'text-green-600' : 'text-orange-500'}`}>{examResult.score}</span></p>
+          <p className="text-slate-500 mb-6">
+            Başarı Puanın:{' '}
+            <span className={`text-2xl font-bold ${examResult.score >= 50 ? 'text-green-600' : 'text-orange-500'}`}>
+              {examResult.score}
+            </span>
+            {examResult.totalTimeSpentSeconds != null && (
+              <span className="block text-sm mt-2 text-slate-400">
+                Süre: {Math.floor(examResult.totalTimeSpentSeconds / 60)} dk {examResult.totalTimeSpentSeconds % 60} sn
+              </span>
+            )}
+          </p>
           
           {/* Eksik Konular Listesi */}
           {examResult.weakTopics && examResult.weakTopics.length > 0 ? (
@@ -348,10 +390,11 @@ const ExamsPage = ({ role }) => {
               
               {/* AI Butonu - Sadece sorular henüz üretilmediyse göster */}
               {!practiceQuestions && (
+                <div className="flex flex-col gap-2 mt-4">
                 <button 
                   onClick={handleGeneratePractice} 
                   disabled={loadingAI}
-                  className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-200 dark:shadow-none"
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-200 dark:shadow-none"
                 >
                   {loadingAI ? (
                     <>
@@ -365,6 +408,19 @@ const ExamsPage = ({ role }) => {
                     </>
                   )}
                 </button>
+                <Link
+                  to="/student/exercises"
+                  className="w-full text-center py-3 rounded-xl font-bold border-2 border-indigo-200 text-indigo-700 dark:border-indigo-800 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                >
+                  Egzersizlere git
+                </Link>
+                <Link
+                  to="/student/courses"
+                  className="w-full text-center py-3 rounded-xl font-bold border-2 border-slate-200 text-slate-600 dark:border-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  İlgili derslere git
+                </Link>
+                </div>
               )}
             </div>
           ) : (
@@ -441,11 +497,30 @@ const ExamsPage = ({ role }) => {
                     )}
 
                     {isAnswered && q.type !== 'matching' && q.type !== 'sequence' && (
-                      <div className={`mt-4 p-4 rounded-xl text-sm ${state.isCorrect ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                      <div className={`mt-4 p-4 rounded-xl text-sm ${state.isCorrect ? 'bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-200' : 'bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-200'}`}>
                         <div className="font-bold mb-1 flex items-center gap-2">
                            {state.isCorrect ? <CheckCircle size={16}/> : <X size={16}/>}
                            {state.isCorrect ? "Doğru Cevap!" : "Yanlış Cevap"}
                         </div>
+                        {!state.isCorrect && q.correctAnswer && (
+                          <p className="mb-2">Doğru cevap: <strong>{q.correctAnswer}</strong></p>
+                        )}
+                        {!state.isCorrect && q.solution ? (
+                          <div className="mb-2">
+                            <p className="text-xs font-bold opacity-70 mb-1">Çözüm</p>
+                            <SolutionDisplay text={q.solution} />
+                          </div>
+                        ) : null}
+                        {!state.isCorrect && (
+                          <StudentHint
+                            questionId={q._id}
+                            questionText={q.text || q.questionText}
+                            studentAnswer={state?.selected || ''}
+                            topic={q.topic}
+                            subject={q.subject}
+                            compact
+                          />
+                        )}
                       </div>
                     )}
                   </div>
@@ -550,6 +625,9 @@ const ExamsPage = ({ role }) => {
               <div>
                 <span className="font-semibold">Doğru:</span> {myResult.correctCount} • <span className="font-semibold">Yanlış:</span> {myResult.wrongCount}
               </div>
+              {myResult.totalTimeSpentSeconds != null && (
+                <div><span className="font-semibold">Süre:</span> {formatDuration(myResult.totalTimeSpentSeconds)}</div>
+              )}
               {Array.isArray(myResult.weakTopics) && myResult.weakTopics.length > 0 && (
                 <div>
                   <div className="font-semibold mb-1">Zayıf Konular</div>
@@ -558,6 +636,14 @@ const ExamsPage = ({ role }) => {
                       <li key={i}>{t}</li>
                     ))}
                   </ul>
+                  <div className="flex flex-col gap-2 mt-4">
+                    <Link to="/student/exercises" className="text-center py-2 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700">
+                      Egzersizlere git
+                    </Link>
+                    <Link to="/student/courses" className="text-center py-2 rounded-xl font-bold border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800">
+                      Derslere git
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
@@ -745,6 +831,7 @@ const ExamsPage = ({ role }) => {
           </div>
         </div>
       )}
+      <ConfirmDialog />
     </>
   );
 };

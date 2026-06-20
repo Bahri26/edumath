@@ -10,12 +10,15 @@ ml-service/
 ├── requirements.txt
 ├── .env.example
 ├── README.md
+├── tests/                     # pytest birim testleri
 └── services/
     ├── health.py
+    ├── pattern_topics.py      # MEB örüntü alt konu etiketleri
     ├── weak_topics.py         # Öğrenci zayıf konu skorlama
     ├── question_solver.py     # Örüntü / geometri / cebir çözücü
+    ├── question_generate.py   # Havuzdan soru üretimi + şablonlar
     ├── question_parse.py      # OCR metni → soru + şıklar
-    └── question_analyze.py    # Konu, zorluk, etiket çıkarımı
+    └── question_analyze.py    # Konu, zorluk, MEB alt konu çıkarımı
 ```
 
 ## Kurulum
@@ -42,16 +45,23 @@ python main.py
 
 Servis varsayılan olarak `http://localhost:8100` adresinde açılır.
 
+## Test
+
+```bash
+cd ml-service
+pytest -q
+```
+
 ## API uçları
 
 | Metot | Yol | Açıklama |
 |--------|-----|----------|
 | GET | `/health` | Servis durumu ve yetenekler |
 | POST | `/analyze/topics` | Zayıf konuları sırala |
-| POST | `/score/topics` | Konu skorlarını hesapla |
+| POST | `/score/topics` | Konu skorlarını hesapla (backend doğrudan kullanmaz) |
 | POST | `/questions/solve` | Bilinen örüntü tipini çöz |
 | POST | `/questions/parse-text` | OCR metnini ayrıştır |
-| POST | `/questions/analyze` | Konu / zorluk / etiket |
+| POST | `/questions/analyze` | Konu / zorluk / MEB alt konu |
 | POST | `/questions/enrich` | Ayrıştır + analiz + çözüm (tek çağrı) |
 | POST | `/questions/generate-from-pool` | Havuz stiline göre yeni soru üret |
 
@@ -78,6 +88,7 @@ curl -X POST http://localhost:8100/analyze/topics \
 - Smart Paste / OCR sonrası `enrichParsedQuestion` → `/questions/enrich`
 - Metin ayrıştırma → `/questions/parse-text`
 - Öğrenci konu analizi → `/analyze/topics`
+- Havuz tabanlı üretim → `/questions/generate-from-pool`
 
 Tanımlı değilse Node içindeki yerel JS çözücü ve `ml-matrix` fallback devreye girer.
 
@@ -102,7 +113,17 @@ cd backend && npm run verify:ml-service
 
 Render Blueprint (`render.yaml`) `edumath-ml` servisini ekler; `edumath-api` içinde `ML_SERVICE_URL` bu servise bağlanır.
 
-API health: `GET https://<api>/health` → `mlService.status: "up"`.
+## MEB 7 alt konu — ML kapsamı (v0.2.1)
+
+| Alt konu | Çözücü | Üretim şablonu | Not |
+|----------|--------|----------------|-----|
+| Geometrik (şekil) | Kısmen (altıgen, üçgen çevresi, ilkokul tekrar) | Evet | SVG şekil örüntüleri Node `patternTemplateService` |
+| Sayı (sabit adım) | Evet | Evet | |
+| Sayı (karma kural / two_step) | Evet | Evet | |
+| Kare sayılar | Evet | Evet | |
+| Üçgensel sayılar | Evet | Evet | |
+| Eşleştirme | Hayır | Hayır | Etkileşimli tip — yalnızca Node |
+| Sıralama (adımlar) | Hayır | Hayır | Etkileşimli tip — yalnızca Node |
 
 ## Desteklenen soru tipleri (yerel çözücü)
 
@@ -111,7 +132,10 @@ API health: `GET https://<api>/health` → `mlService.status: "up"`.
 | Altıgen örüntüsü | n. adımda 2n altıgen |
 | Üçgen çevresi | MEB: P(n) = 4n + 4s |
 | Cebirsel kural | Birim küp: 3x, 4x, 2x+2 |
-| Aritmetik dizi | Şıklarda düzenli artış |
+| Aritmetik dizi | Şıklarda veya metinde düzenli artış |
+| Kare sayılar | 4, 9, 16, … → 25 |
+| Üçgensel sayılar | 3, 6, 10, … → 15 |
+| İki adımlı kural | +a, −b, +a, −b … |
 
 Yeni tipler `services/question_solver.py` içine eklenir; dış API gerekmez.
 

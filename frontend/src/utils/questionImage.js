@@ -1,4 +1,4 @@
-import { resolveAssetUrl, getBackendOrigin } from '../../services/api';
+import { resolveAssetUrl, getBackendOrigin } from '../services/api';
 
 /**
  * Soruda gerçekten gösterilebilir bir görsel var mı?

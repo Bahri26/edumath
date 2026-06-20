@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, Check, Trash2, Info, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import apiClient from '../../services/api';
+import { useConfirmAction } from '../../hooks/useConfirmAction';
 
 const NotificationDropdown = () => {
+  const { askConfirm, ConfirmDialog } = useConfirmAction();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -66,6 +68,11 @@ const NotificationDropdown = () => {
   // Sil
   const deleteNotification = async (e, id) => {
     e.stopPropagation();
+    const confirmed = await askConfirm({
+      title: 'Bildirim kaldırılsın mı?',
+      description: 'Bu bildirim listenizden kalıcı olarak silinecek.',
+    });
+    if (!confirmed) return;
     try {
       await apiClient.delete(`/notifications/${id}`);
       setNotifications(prev => prev.filter(n => n._id !== id));
@@ -142,6 +149,7 @@ const NotificationDropdown = () => {
           </div>
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 };

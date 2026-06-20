@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320">
+  <rect width="900" height="320" rx="24" fill="#FAF5FF"/>
+  <text x="36" y="44" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#6D28D9">Kare Sayı Örüntüsü</text>
+  
+  <text x="120" y="100" font-size="14" fill="#475569">1² = 1</text>
+  <circle cx="130" cy="130" r="8" fill="#7C3AED"/>
+  <text x="230" y="100" font-size="14" fill="#475569">2² = 4</text>
+  <g transform="translate(210,115)">
+    <circle cx="10" cy="10" r="7" fill="#7C3AED"/><circle cx="30" cy="10" r="7" fill="#7C3AED"/>
+    <circle cx="10" cy="30" r="7" fill="#7C3AED"/><circle cx="30" cy="30" r="7" fill="#7C3AED"/>
+  </g>
+  <text x="360" y="100" font-size="14" fill="#475569">3² = 9</text>
+  <g transform="translate(340,108)">
+    <circle cx="10" cy="10" r="7" fill="#7C3AED"/>
+    <circle cx="32" cy="10" r="7" fill="#7C3AED"/>
+    <circle cx="54" cy="10" r="7" fill="#7C3AED"/>
+    <circle cx="10" cy="32" r="7" fill="#7C3AED"/>
+    <circle cx="32" cy="32" r="7" fill="#7C3AED"/>
+    <circle cx="54" cy="32" r="7" fill="#7C3AED"/>
+    <circle cx="10" cy="54" r="7" fill="#7C3AED"/>
+    <circle cx="32" cy="54" r="7" fill="#7C3AED"/>
+    <circle cx="54" cy="54" r="7" fill="#7C3AED"/>
+  </g>
+  <text x="520" y="100" font-size="14" fill="#475569">4² = 16</text>
+  <g transform="translate(500,100)">
+    <circle cx="8" cy="8" r="6" fill="#7C3AED"/>
+    <circle cx="26" cy="8" r="6" fill="#7C3AED"/>
+    <circle cx="44" cy="8" r="6" fill="#7C3AED"/>
+    <circle cx="62" cy="8" r="6" fill="#7C3AED"/>
+    <circle cx="8" cy="26" r="6" fill="#7C3AED"/>
+    <circle cx="26" cy="26" r="6" fill="#7C3AED"/>
+    <circle cx="44" cy="26" r="6" fill="#7C3AED"/>
+    <circle cx="62" cy="26" r="6" fill="#7C3AED"/>
+    <circle cx="8" cy="44" r="6" fill="#7C3AED"/>
+    <circle cx="26" cy="44" r="6" fill="#7C3AED"/>
+    <circle cx="44" cy="44" r="6" fill="#7C3AED"/>
+    <circle cx="62" cy="44" r="6" fill="#7C3AED"/>
+    <circle cx="8" cy="62" r="6" fill="#7C3AED"/>
+    <circle cx="26" cy="62" r="6" fill="#7C3AED"/>
+    <circle cx="44" cy="62" r="6" fill="#7C3AED"/>
+    <circle cx="62" cy="62" r="6" fill="#7C3AED"/>
+  </g>
+  <rect x="700" y="95" width="140" height="100" rx="12" fill="#F5F3FF" stroke="#C4B5FD" stroke-dasharray="6 4"/>
+  <text x="770" y="155" text-anchor="middle" font-size="32" font-weight="700" fill="#6D28D9">?</text>
+  <text x="770" y="185" text-anchor="middle" font-size="14" fill="#475569">5² = ?</text>
+  <text x="36" y="298" font-family="Arial, sans-serif" font-size="16" fill="#64748B">Her gruptaki mavi nokta sayısı bir tam kareyi temsil eder.</text>
+</svg>

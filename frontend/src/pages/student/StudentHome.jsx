@@ -243,8 +243,8 @@ const StudentHome = () => {
   const utcKey = new Date().toISOString().slice(0, 10);
 
   const incompleteExerciseCount = exercisesForClass.filter((ex) => {
-    const sub = (ex.submissions || []).find((s) => String(s.studentId) === String(uid));
-    return !sub || sub.status !== 'completed';
+    const prog = ex.studentProgress;
+    return !prog || prog.status !== 'completed';
   }).length;
 
   const openExamCount = examsForClass.filter(
@@ -253,8 +253,8 @@ const StudentHome = () => {
 
   const exerciseCompletedToday =
     exercisesForClass.some((ex) => {
-      const sub = (ex.submissions || []).find((s) => String(s.studentId) === String(uid));
-      return sub?.status === 'completed' && sameUtcDay(sub.completedAt, utcKey);
+      const prog = ex.studentProgress;
+      return prog?.status === 'completed' && sameUtcDay(prog.completedAt, utcKey);
     });
 
   const examCompletedToday =
@@ -281,6 +281,7 @@ const StudentHome = () => {
       hintFromTopic: true,
     },
     { titleKey: 'kidMissionQuiz', hintKey: 'kidMissionQuizHint', path: '/student/quizzes', emoji: '⭐', accent: 'from-teal-400 to-emerald-500' },
+    { titleKey: 'goalExercise', hintKey: 'goalExerciseSubTodo', path: '/student/exercises', emoji: '🏋️', accent: 'from-indigo-400 to-violet-500' },
   ];
 
   const missionSubtitle = (m) => {
@@ -290,6 +291,11 @@ const StudentHome = () => {
     if (m.path === '/student/quizzes') {
       return openExamCount > 0
         ? fill(getText('kidMissionQuizHintOpen'), { n: openExamCount })
+        : getText(m.hintKey);
+    }
+    if (m.path === '/student/exercises') {
+      return incompleteExerciseCount > 0
+        ? fill(getText('kidPracticePendingHint'), { n: incompleteExerciseCount })
         : getText(m.hintKey);
     }
     return getText(m.hintKey);
@@ -321,7 +327,7 @@ const StudentHome = () => {
           <h2 className="mt-8 mb-4 text-lg sm:text-xl font-extrabold text-slate-800 dark:text-white">
             {getText('kidTodayTitle')}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {kidMissions.map((m) => (
               <button
                 key={m.titleKey}

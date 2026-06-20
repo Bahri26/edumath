@@ -18,4 +18,6 @@ const AssignmentSchema = new mongoose.Schema({
   }]
 }, { timestamps: true, collection: 'assignments' });
 
+AssignmentSchema.index({ createdBy: 1, createdAt: -1 }, { name: 'assignments_created_by_created_at' });
+
 module.exports = mongoose.model('Assignment', AssignmentSchema);

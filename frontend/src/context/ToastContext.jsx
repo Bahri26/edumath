@@ -38,3 +38,12 @@ export const ToastProvider = ({ children }) => {
     </ToastContext.Provider>
   );
 };
+
+/** Test ortamı: API notifier kaydı olmadan toast context sağlar. */
+const noopToast = () => {};
+
+export const TestToastProvider = ({ children }) => (
+  <ToastContext.Provider value={{ showToast: noopToast }}>
+    {children}
+  </ToastContext.Provider>
+);

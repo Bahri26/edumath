@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '../context/ToastContext';
+import { useConfirmAction } from './useConfirmAction';
 
 /**
  * Generic CRUD Hook - Exam, Question, Survey gibi varlıklar için
@@ -8,8 +9,9 @@ import { useToast } from '../context/ToastContext';
  * @param {Function} config.apiService - API çağrılarını yapan servis
  * @param {Function} config.onRefresh - Veri yenilendiğinde çağrılacak callback
  */
-export const useCrudEntity = ({ entityName, apiService, onRefresh }) => {
+export const useCrudEntity = ({ entityName, apiService, onRefresh, deleteConfirm }) => {
   const { showToast } = useToast();
+  const { askConfirm, ConfirmDialog } = useConfirmAction();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -104,8 +106,12 @@ export const useCrudEntity = ({ entityName, apiService, onRefresh }) => {
   }, [entityName, apiService, showToast, onRefresh]);
 
   // Öğe Sil
-  const deleteItem = useCallback(async (id) => {
-    if (!window.confirm('Silmek istediğinizden emin misiniz?')) return false;
+  const deleteItem = useCallback(async (id, customConfirm) => {
+    const confirmed = await askConfirm(customConfirm || deleteConfirm || {
+      title: 'Kayıt silinsin mi?',
+      description: 'Bu kayıt kalıcı olarak kaldırılacak. Bu işlem geri alınamaz.',
+    });
+    if (!confirmed) return false;
     
     setLoading(true);
     try {
@@ -124,11 +130,15 @@ export const useCrudEntity = ({ entityName, apiService, onRefresh }) => {
     } finally {
       setLoading(false);
     }
-  }, [entityName, apiService, showToast, onRefresh]);
+  }, [entityName, apiService, showToast, onRefresh, askConfirm, deleteConfirm]);
 
   // Toplu Sil
-  const deleteMultiple = useCallback(async (ids) => {
-    if (!window.confirm(`${ids.length} öğe silinecek. Emin misiniz?`)) return false;
+  const deleteMultiple = useCallback(async (ids, customConfirm) => {
+    const confirmed = await askConfirm(customConfirm || {
+      title: `${ids.length} kayıt silinsin mi?`,
+      description: `Seçili ${ids.length} kayıt kalıcı olarak kaldırılacak. Bu işlem geri alınamaz.`,
+    });
+    if (!confirmed) return false;
 
     setLoading(true);
     try {
@@ -145,7 +155,7 @@ export const useCrudEntity = ({ entityName, apiService, onRefresh }) => {
     } finally {
       setLoading(false);
     }
-  }, [entityName, apiService, showToast, onRefresh]);
+  }, [entityName, apiService, showToast, onRefresh, askConfirm]);
 
   // Filtre Uygula
   const applyFilters = useCallback(async (newFilters) => {
@@ -182,6 +192,7 @@ export const useCrudEntity = ({ entityName, apiService, onRefresh }) => {
     changePage,
     
     // Utilities
-    refetch: () => fetchItems(pagination.page, filters)
+    refetch: () => fetchItems(pagination.page, filters),
+    ConfirmDialog,
   };
 };

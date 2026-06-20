@@ -9,7 +9,7 @@ import { LanguageContext } from '../context/LanguageContext.jsx';
 
 const mockAuth = { user: { name: 'Test User', role: 'student' }, logout: () => {} };
 const mockTheme = { isDarkMode: false, setIsDarkMode: () => {}, toggleTheme: () => {} };
-const mockLanguage = { language: 'TR' };
+const mockLanguage = { language: 'TR', setLanguage: () => {}, isEnglish: false };
 
 const navMenuItems = [
   { id: 'home', label: 'Ana Sayfa', icon: () => null, path: '/student/home' },

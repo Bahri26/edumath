@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const aiController = require('../controllers/aiController');
 const protect = require('../middlewares/authMiddleware');
+const roleMiddleware = require('../middlewares/roleMiddleware');
 const { collectTopicStats } = require('../services/studentAnalyticsService');
 const { getAiProvider } = require('../config/aiProvider');
 const multer = require('multer');
@@ -10,14 +11,17 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
+const teacherOnly = [protect, roleMiddleware(['teacher', 'admin'])];
+const authenticated = [protect, roleMiddleware(['student', 'teacher', 'admin'])];
+
 // 9. Teacher Report (Detaylı öğretmen raporu)
-router.post('/teacher-report', aiController.teacherReport);
+router.post('/teacher-report', ...teacherOnly, aiController.teacherReport);
 // 7. Sınav Sonucu Değerlendirme & Analiz
-router.post('/exam-result-analysis', aiController.examResultAnalysis);
+router.post('/exam-result-analysis', ...teacherOnly, aiController.examResultAnalysis);
 // 8. Soru Çözerken İpucu (öğrenci girişi ile çağrılır; LearningEvent yazılır)
-router.post('/get-hint', protect, aiController.getHint);
+router.post('/get-hint', ...authenticated, aiController.getHint);
 // 6. Öğrenci Cevabı Analiz & Soru Önerisi
-router.post('/analyze-and-suggest', aiController.analyzeAndSuggest);
+router.post('/analyze-and-suggest', ...teacherOnly, aiController.analyzeAndSuggest);
 
 const uploadDir = path.join(__dirname, '..', 'uploads', 'temp');
 if (!fs.existsSync(uploadDir)) {
@@ -42,31 +46,31 @@ const upload = multer({
 });
 
 // 1. Fotoğraftan Çözüm
-router.post('/solve-image', upload.single('image'), aiController.solveFromImage);
+router.post('/solve-image', ...teacherOnly, upload.single('image'), aiController.solveFromImage);
 
 // 1.b Akıllı Görsel Parse (Structured JSON)
-router.post('/smart-parse', upload.single('image'), aiController.smartParse);
+router.post('/smart-parse', ...teacherOnly, upload.single('image'), aiController.smartParse);
 
 // 1.c Akıllı Metin Parse (Copy-Paste)
-router.post('/smart-parse-text', aiController.smartParseText);
+router.post('/smart-parse-text', ...teacherOnly, aiController.smartParseText);
 
 // 2. Soru Üretici (Öğretmen)
-router.post('/generate-quiz', aiController.generateQuiz);
+router.post('/generate-quiz', ...teacherOnly, aiController.generateQuiz);
 
 // 2.b MEB uyumlu, gorsel-odakli oruntu soru paketi
-router.post('/generate-pattern-pack', aiController.generatePatternQuestionPack);
+router.post('/generate-pattern-pack', ...teacherOnly, aiController.generatePatternQuestionPack);
 
 // 3. Çalışma Planı (Öğrenci - Artık controller'da var)
-router.post('/study-plan', aiController.createStudyPlan);
+router.post('/study-plan', ...authenticated, aiController.createStudyPlan);
 
 // 4. Analiz
-router.post('/analyze', aiController.analyzePerformance);
+router.post('/analyze', ...authenticated, aiController.analyzePerformance);
 
 // 5. Alıştırma (Öğrenci - Practice)
-router.post('/practice', aiController.generatePracticeQuestions);
+router.post('/practice', ...authenticated, aiController.generatePracticeQuestions);
 
 // Yerel ML: öğrenci konu istatistikleri (ml-service veya ml-matrix fallback)
-router.get('/student-insights', protect, async (req, res) => {
+router.get('/student-insights', ...authenticated, async (req, res) => {
   try {
     const stats = await collectTopicStats(req.user.id);
     res.json({

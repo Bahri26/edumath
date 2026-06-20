@@ -14,6 +14,11 @@ router.get('/teacher/my-exercises', protect, role(['teacher', 'admin']), exercis
 // ✅ 2. ÖĞRENCİ SINIFININA AIT EGZERSIZLER (Spesifik pattern)
 router.get('/student/my-exercises', protect, role(['student']), exerciseController.getStudentExercises);
 
+// ✅ Öğrenci oynatma / anlık kontrol (/:id'den önce)
+router.get('/:id/play', protect, role(['student']), exerciseController.getExerciseForPlay);
+router.post('/:id/check-answer', protect, role(['student']), exerciseController.checkExerciseAnswer);
+router.get('/:id/results', protect, role(['teacher', 'admin']), exerciseController.getExerciseResults);
+
 // ============================================
 // GENEL ROTALARI SONRA TANIMLAYALIM
 // ============================================

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import apiClient from "../../services/api";
 import { useToast } from "../../context/ToastContext";
 import StudentHint from "../../components/StudentHint.jsx";
+import SolutionDisplay from "../../components/questions/SolutionDisplay.jsx";
 import StudentPageShell from "../../components/student/StudentPageShell.jsx";
 
 export default function LessonQuiz() {
@@ -74,12 +75,42 @@ export default function LessonQuiz() {
   };
 
   if (result) {
+    const wrongItems = (result.review || []).filter((r) => !r.isCorrect);
     return (
       <StudentPageShell title="Quiz Sonucu" subtitle="Sonuçların kaydedildi. İstersen tekrar dene!" maxWidthClass="max-w-xl">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4 mb-8">
         <div className="mb-4 text-slate-700 dark:text-slate-200">
           Doğru: <b>{result.correct}</b> • Yanlış: <b>{result.wrong}</b> • XP: <b>{result.xp}</b>
         </div>
+        </div>
+
+        {wrongItems.length > 0 && (
+          <div className="space-y-4 mb-8 text-left">
+            <h3 className="font-bold text-slate-800 dark:text-white">Yanlış cevapların</h3>
+            {wrongItems.map((item, i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-rose-200 dark:border-rose-800 bg-rose-50/50 dark:bg-rose-950/20 p-4"
+              >
+                <p className="font-medium text-slate-800 dark:text-white mb-2">{item.question}</p>
+                <p className="text-sm text-rose-700 dark:text-rose-300">
+                  Senin cevabın: {item.userAnswer || '—'}
+                </p>
+                <p className="text-sm text-emerald-700 dark:text-emerald-300 mt-1">
+                  Doğru cevap: <strong>{item.correctAnswer}</strong>
+                </p>
+                {item.solution ? (
+                  <div className="mt-2">
+                    <p className="text-xs font-bold text-slate-500 mb-1">Çözüm</p>
+                    <SolutionDisplay text={item.solution} />
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="text-center">
         <button
           className="min-h-[44px] px-8 py-3 bg-gradient-to-r from-sky-500 to-teal-500 text-white rounded-2xl font-bold hover:brightness-105"
           type="button"

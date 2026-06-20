@@ -318,15 +318,54 @@ function solvePatternQuestion(input = {}) {
   return null;
 }
 
+const GENERIC_SOLUTION = 'Çözüm: örüntü kuralını bulun, adım adım uygulayın ve şıklarla karşılaştırın.';
+
+function isGenericSolutionText(solution) {
+  const s = String(solution || '').trim();
+  return !s || s === GENERIC_SOLUTION;
+}
+
+function buildTemplateSolution(parsed = {}) {
+  const options = Array.isArray(parsed.options)
+    ? parsed.options.map((o) => String(o || '').trim()).filter(Boolean)
+    : [];
+  const answer = String(parsed.correctAnswer || '').trim();
+  let letter = '';
+  if (/^[A-E]$/i.test(answer)) {
+    letter = answer.toUpperCase();
+  } else {
+    const idx = options.findIndex((o) => o === answer || o.includes(answer) || answer.includes(o));
+    if (idx >= 0) letter = String.fromCharCode(65 + idx);
+  }
+  const step = String(parsed.text || '').match(/(\d+)\s*\.\s*ad[ıi]m/i);
+  const stepHint = step
+    ? `${step[1]}. adım için kuralı uygulayın.`
+    : 'İstenen adım veya terim için kuralı uygulayın.';
+  const lines = [
+    'Örüntünün kuralını (artış miktarı, çarpan veya şekil sayısı) belirleyin.',
+    stepHint,
+  ];
+  if (letter && answer.length > 1 && !/^[A-E]$/i.test(answer)) {
+    lines.push(`Sonuç ${letter}) ${answer} şıkkına uyar.`);
+  } else if (letter) {
+    const optText = options[letter.charCodeAt(0) - 65] || '';
+    lines.push(optText ? `Doğru cevap ${letter}) ${optText} şıkkıdır.` : `Doğru şık ${letter}.`);
+  } else if (answer) {
+    lines.push(`Doğru cevap: ${answer}.`);
+  } else {
+    lines.push('Sonucu şıklarla karşılaştırarak doğru seçeneği işaretleyin.');
+  }
+  return buildSolutionLines(lines);
+}
 /**
- * Mevcut cevap/çözüm yoksa otomatik doldurur (yerel JS).
+ * Mevcut cevap/çözüm yoksa veya çözüm jenerikse otomatik doldurur (yerel JS).
  */
 function enrichParsedQuestion(parsed = {}) {
   const options = Array.isArray(parsed.options) ? parsed.options : [];
   const hasAnswer = String(parsed.correctAnswer || '').trim().length > 0;
-  const hasSolution = String(parsed.solution || '').trim().length > 0;
+  const genericSolution = isGenericSolutionText(parsed.solution);
 
-  if (hasAnswer && hasSolution) {
+  if (hasAnswer && !genericSolution) {
     return parsed;
   }
 
@@ -339,15 +378,19 @@ function enrichParsedQuestion(parsed = {}) {
     options,
   });
 
-  if (!solved) {
-    return parsed;
+  if (solved) {
+    return {
+      ...parsed,
+      correctAnswer: hasAnswer ? parsed.correctAnswer : solved.correctAnswer,
+      solution: genericSolution ? solved.solution : parsed.solution,
+    };
   }
 
-  return {
-    ...parsed,
-    correctAnswer: hasAnswer ? parsed.correctAnswer : solved.correctAnswer,
-    solution: hasSolution ? parsed.solution : solved.solution,
-  };
+  if (genericSolution) {
+    return { ...parsed, solution: buildTemplateSolution(parsed) };
+  }
+
+  return parsed;
 }
 
 const mlServiceClient = require('./mlServiceClient');
@@ -361,9 +404,14 @@ async function enrichParsedQuestionAsync(parsed = {}) {
       const enriched = await mlServiceClient.enrichQuestion(parsed);
       if (enriched) {
         const hasAnswer = String(enriched.correctAnswer || '').trim().length > 0;
-        const hasSolution = String(enriched.solution || '').trim().length > 0;
+        const hasSolution = String(enriched.solution || '').trim().length > 0
+          && !isGenericSolutionText(enriched.solution);
         if (hasAnswer || hasSolution) {
-          return { ...parsed, ...enriched, engine: enriched.engine || 'ml-service' };
+          const merged = { ...parsed, ...enriched, engine: enriched.engine || 'ml-service' };
+          if (isGenericSolutionText(merged.solution)) {
+            merged.solution = buildTemplateSolution(merged);
+          }
+          return merged;
         }
       }
     } catch (err) {
@@ -371,13 +419,19 @@ async function enrichParsedQuestionAsync(parsed = {}) {
     }
   }
 
-  return { ...enrichParsedQuestion(parsed), engine: 'local' };
+  const local = enrichParsedQuestion(parsed);
+  if (isGenericSolutionText(local.solution)) {
+    local.solution = buildTemplateSolution(local);
+  }
+  return { ...local, engine: 'local' };
 }
 
 module.exports = {
   solvePatternQuestion,
   enrichParsedQuestion,
   enrichParsedQuestionAsync,
+  buildTemplateSolution,
+  isGenericSolutionText,
   findOptionByValue,
   normalizeOptionValue,
 };

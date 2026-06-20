@@ -53,8 +53,12 @@ export const admin = {
     'flex flex-wrap items-end gap-4 rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-slate-700/80 dark:bg-slate-900/50',
 
   tableWrap:
-    'overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-lg shadow-slate-200/20 ring-1 ring-slate-100/80 dark:border-slate-700 dark:bg-slate-900/80 dark:shadow-none dark:ring-slate-800/80',
-  table: 'w-full min-w-[720px] border-collapse text-sm',
+    'overflow-x-auto overscroll-x-contain rounded-2xl border border-slate-200/80 bg-white shadow-lg shadow-slate-200/20 ring-1 ring-slate-100/80 dark:border-slate-700 dark:bg-slate-900/80 dark:shadow-none dark:ring-slate-800/80 [-webkit-overflow-scrolling:touch]',
+  table: 'w-full min-w-[960px] border-collapse text-sm',
+  thSticky:
+    'sticky left-0 z-10 border-b border-slate-200/90 bg-gradient-to-b from-slate-50 to-slate-100/80 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-700 dark:from-slate-800/90 dark:to-slate-900/80 dark:text-slate-400 shadow-[4px_0_8px_-4px_rgba(15,23,42,0.12)] dark:shadow-[4px_0_8px_-4px_rgba(0,0,0,0.35)]',
+  tdSticky:
+    'sticky left-0 z-10 border-b border-slate-100/90 bg-white px-4 py-3 align-middle text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 shadow-[4px_0_8px_-4px_rgba(15,23,42,0.08)] dark:shadow-[4px_0_8px_-4px_rgba(0,0,0,0.3)]',
   th: 'border-b border-slate-200/90 bg-gradient-to-b from-slate-50 to-slate-100/80 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 first:rounded-tl-2xl last:rounded-tr-2xl dark:border-slate-700 dark:from-slate-800/90 dark:to-slate-900/80 dark:text-slate-400',
   td: 'border-b border-slate-100/90 px-4 py-3 align-middle text-slate-700 dark:border-slate-800 dark:text-slate-200',
   tr: 'transition-colors hover:bg-violet-50/40 dark:hover:bg-slate-800/35',

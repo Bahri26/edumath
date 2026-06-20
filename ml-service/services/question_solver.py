@@ -43,7 +43,7 @@ def parse_numeric_option(value: Any) -> float | None:
 
 
 def extract_target_step(text: str) -> int | None:
-    m = re.search(r"(\d+)\s*\.\s*ad[ıi]m", text or "", re.I)
+    m = re.search(r"(\d+)\s*\.\s*(?:ad[ıi]m|terim)", text or "", re.I)
     return int(m.group(1)) if m else None
 
 
@@ -267,6 +267,227 @@ def solve_algebraic_rule_pattern(text: str, options: list[str], extra_text: str 
     )
 
 
+def extract_comma_number_tokens(text: str) -> list[int | None]:
+    """Metinden virgülle ayrılmış sayı dizisi çıkarır; ? veya boşluk eksik terimdir."""
+    combined = str(text or "")
+    chunk = re.search(r"[\d\s,?\.]+(?:,\s*[\d\s,?\.]+){2,}", combined)
+    if not chunk:
+        return []
+    raw = chunk.group(0)
+    tokens: list[int | None] = []
+    for part in re.split(r"\s*,\s*", raw.strip()):
+        part = part.strip().rstrip(".")
+        if not part or part in {"?", "…", "..."}:
+            tokens.append(None)
+            continue
+        try:
+            tokens.append(int(round(float(part.replace(",", ".")))))
+        except ValueError:
+            continue
+    return tokens
+
+
+def triangular_number(n: int) -> int:
+    return (n * (n + 1)) // 2
+
+
+def _is_square_sequence(values: list[int]) -> tuple[bool, int | None]:
+    """Ardışık kare sayılar mı? Döner: (uyum, bir sonraki n değeri)."""
+    if len(values) < 3:
+        return False, None
+    roots = []
+    for v in values:
+        root = round(v ** 0.5)
+        if root * root != v:
+            return False, None
+        roots.append(root)
+    if roots[1] - roots[0] != 1 or roots[2] - roots[1] != 1:
+        return False, None
+    return True, roots[-1] + 1
+
+
+def _is_triangular_sequence(values: list[int]) -> tuple[bool, int | None]:
+    if len(values) < 3:
+        return False, None
+    indices: list[int] = []
+    for v in values:
+        found = False
+        for n in range(1, 80):
+            if triangular_number(n) == v:
+                indices.append(n)
+                found = True
+                break
+        if not found:
+            return False, None
+    if indices[1] - indices[0] != 1 or indices[2] - indices[1] != 1:
+        return False, None
+    return True, indices[-1] + 1
+
+
+def _infer_two_step_rule(values: list[int]) -> tuple[int, int] | None:
+    """Alternating +a / -b kuralını bilinen ardışık terimlerden çıkarır."""
+    if len(values) < 4:
+        return None
+    diffs = [values[i + 1] - values[i] for i in range(len(values) - 1)]
+    pos = [d for d in diffs if d > 0]
+    neg = [abs(d) for d in diffs if d < 0]
+    if not pos or not neg:
+        return None
+    a = max(set(pos), key=pos.count)
+    b = max(set(neg), key=neg.count)
+    rebuilt = [values[0]]
+    for i in range(len(values) - 1):
+        delta = a if i % 2 == 0 else -b
+        rebuilt.append(rebuilt[-1] + delta)
+    if rebuilt != values[: len(rebuilt)]:
+        return None
+    return a, b
+
+
+def _extend_two_step(start: int, steps: int, a: int, b: int) -> int:
+    current = start
+    for i in range(steps):
+        current += a if i % 2 == 0 else -b
+    return current
+
+
+def solve_square_numbers_pattern(text: str, options: list[str]) -> SolveResult | None:
+    lower = (text or "").lower()
+    if not re.search(r"kare\s*say|kare\s*say[ıi]|n[\^²2]|n\s*\*\s*n", lower) and not re.search(
+        r"1,\s*4,\s*9|4,\s*9,\s*16", lower
+    ):
+        tokens = extract_comma_number_tokens(text)
+        known = [t for t in tokens if t is not None]
+        ok, _ = _is_square_sequence(known[:3]) if len(known) >= 3 else (False, None)
+        if not ok:
+            return None
+    else:
+        tokens = extract_comma_number_tokens(text)
+        known = [t for t in tokens if t is not None]
+
+    if len(known) < 3:
+        nums = [parse_numeric_option(o) for o in options]
+        filled = [int(n) for n in nums if n is not None]
+        if len(filled) >= 3:
+            known = filled[:3]
+
+    ok, next_n = _is_square_sequence(known[:3])
+    if not ok or next_n is None:
+        return None
+    predicted = next_n * next_n
+    match = find_option_by_value(options, predicted)
+    if not match:
+        return None
+    return _to_result(
+        match,
+        [
+            f"Terimler kare sayı dizisidir: {known[0]}, {known[1]}, {known[2]} = n².",
+            f"Sıradaki n = {next_n}; {next_n}² = {predicted}.",
+            f"Doğru cevap {chr(65 + match['index'])}) {match['value']} şıkkıdır.",
+        ],
+        "square-numbers",
+    )
+
+
+def solve_triangular_numbers_pattern(text: str, options: list[str]) -> SolveResult | None:
+    lower = (text or "").lower()
+    if not re.search(r"üçgensel|ucgensel|triangular|t_n|n\(n\+1\)", lower):
+        tokens = extract_comma_number_tokens(text)
+        known = [t for t in tokens if t is not None]
+        ok, _ = _is_triangular_sequence(known[:3]) if len(known) >= 3 else (False, None)
+        if not ok:
+            return None
+    else:
+        tokens = extract_comma_number_tokens(text)
+        known = [t for t in tokens if t is not None]
+
+    if len(known) < 3:
+        return None
+    ok, next_n = _is_triangular_sequence(known[:3])
+    if not ok or next_n is None:
+        return None
+    predicted = triangular_number(next_n)
+    match = find_option_by_value(options, predicted)
+    if not match:
+        return None
+    return _to_result(
+        match,
+        [
+            f"Terimler üçgensel sayı dizisidir: T(n) = n(n+1)/2.",
+            f"Sıradaki T({next_n}) = {predicted}.",
+            f"Doğru cevap {chr(65 + match['index'])}) {match['value']} şıkkıdır.",
+        ],
+        "triangular-numbers",
+    )
+
+
+def solve_two_step_pattern(text: str, options: list[str]) -> SolveResult | None:
+    lower = (text or "").lower()
+    if not re.search(r"iki\s*ad[ıi]ml[ıi]|karma\s*kural|art\s*arda", lower):
+        if "?" not in text and "?" not in lower:
+            return None
+
+    tokens = extract_comma_number_tokens(text)
+    if not tokens:
+        return None
+
+    missing_indices = [i for i, t in enumerate(tokens) if t is None]
+    if len(missing_indices) != 1:
+        return None
+    missing_index = missing_indices[0]
+    prefix = [t for i, t in enumerate(tokens) if t is not None and i < missing_index]
+    if len(prefix) < 3:
+        return None
+
+    rule = _infer_two_step_rule(prefix)
+    if not rule:
+        return None
+    a, b = rule
+    predicted = _extend_two_step(prefix[0], missing_index, a, b)
+    match = find_option_by_value(options, predicted)
+    if not match:
+        return None
+    return _to_result(
+        match,
+        [
+            f"İki adımlı kural: çift adımda +{a}, tek adımda −{b}.",
+            f"Eksik terim ({missing_index + 1}. sıra): {predicted}.",
+            f"Doğru cevap {chr(65 + match['index'])}) {match['value']} şıkkıdır.",
+        ],
+        "two-step",
+    )
+
+
+def solve_arithmetic_from_text(text: str, options: list[str]) -> SolveResult | None:
+    step = extract_target_step(text)
+    if not step or step < 1:
+        return None
+    tokens = extract_comma_number_tokens(text)
+    known = [t for t in tokens if t is not None]
+    if len(known) < 3:
+        return None
+    diffs = [known[i + 1] - known[i] for i in range(len(known) - 1)]
+    if not diffs:
+        return None
+    avg_diff = diffs[0]
+    if not all(abs(d - avg_diff) < 0.51 for d in diffs):
+        return None
+    predicted = round(known[0] + avg_diff * (step - 1))
+    match = find_option_by_value(options, predicted)
+    if not match:
+        return None
+    sign = "+" if avg_diff > 0 else ""
+    return _to_result(
+        match,
+        [
+            f"Dizi aritmetiktir; artış {sign}{round(avg_diff, 1)}.",
+            f"{step}. terim: {known[0]} + {round(avg_diff, 1)} × ({step} − 1) = {predicted}.",
+            f"Doğru cevap {chr(65 + match['index'])}) {match['value']} şıkkıdır.",
+        ],
+        "arithmetic-sequence",
+    )
+
+
 def solve_arithmetic_from_options(text: str, options: list[str]) -> SolveResult | None:
     step = extract_target_step(text)
     if not step or step < 1:
@@ -315,6 +536,10 @@ def solve_pattern_question(payload: dict[str, Any]) -> dict[str, Any] | None:
         lambda t, o: solve_algebraic_rule_pattern(t, o, extra),
         solve_hexagon_count_pattern,
         solve_triangle_perimeter_pattern,
+        solve_square_numbers_pattern,
+        solve_triangular_numbers_pattern,
+        solve_two_step_pattern,
+        solve_arithmetic_from_text,
         solve_arithmetic_from_options,
     ]
 

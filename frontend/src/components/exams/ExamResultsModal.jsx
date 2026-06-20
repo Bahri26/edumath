@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { X, Users, BarChart3, TrendingDown } from 'lucide-react';
+import { X, Users, BarChart3, TrendingDown, Clock } from 'lucide-react';
 import apiClient from '../../services/api';
 import Button from '../ui/Button.jsx';
+import { formatDuration } from '../../utils/formatDuration.js';
 
 const PHASE_LABELS = {
   scheduled: 'Henüz başlamadı',
@@ -61,7 +62,7 @@ export default function ExamResultsModal({ examId, onClose }) {
 
           {!loading && !error && summary && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-950/30 border border-brand-100 dark:border-brand-900">
                   <div className="text-xs font-bold text-brand-600 uppercase">Katılım</div>
                   <div className="text-2xl font-black text-brand-700 dark:text-brand-300">{summary.participantCount}</div>
@@ -69,6 +70,14 @@ export default function ExamResultsModal({ examId, onClose }) {
                 <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900">
                   <div className="text-xs font-bold text-emerald-600 uppercase">Ort. Puan</div>
                   <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300">%{summary.avgScore}</div>
+                </div>
+                <div className="p-4 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-900">
+                  <div className="text-xs font-bold text-violet-600 uppercase flex items-center gap-1">
+                    <Clock size={12} /> Ort. Süre
+                  </div>
+                  <div className="text-lg font-black text-violet-700 dark:text-violet-300 mt-1">
+                    {formatDuration(summary.avgTimeSpentSeconds)}
+                  </div>
                 </div>
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                   <div className="text-xs font-bold text-slate-500 uppercase">Sınıf</div>
@@ -112,6 +121,7 @@ export default function ExamResultsModal({ examId, onClose }) {
                           <th className="py-2 pr-2">Öğrenci</th>
                           <th className="py-2 pr-2">Puan</th>
                           <th className="py-2 pr-2">D/Y</th>
+                          <th className="py-2 pr-2">Süre</th>
                           <th className="py-2">Zayıf alanlar</th>
                         </tr>
                       </thead>
@@ -121,6 +131,7 @@ export default function ExamResultsModal({ examId, onClose }) {
                             <td className="py-3 pr-2 font-medium text-slate-800 dark:text-white">{s.studentName}</td>
                             <td className="py-3 pr-2 font-bold text-brand-600">%{s.score}</td>
                             <td className="py-3 pr-2">{s.correctCount}/{s.wrongCount}</td>
+                            <td className="py-3 pr-2 text-slate-600 dark:text-slate-300">{formatDuration(s.totalTimeSpentSeconds)}</td>
                             <td className="py-3 text-xs text-slate-500 line-clamp-2">{(s.weakTopics || []).join(', ') || '—'}</td>
                           </tr>
                         ))}

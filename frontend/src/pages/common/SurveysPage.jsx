@@ -5,9 +5,11 @@ import { useToast } from '../../context/ToastContext';
 import SkeletonCard from '../../components/ui/SkeletonCard';
 import { useSearchParams } from 'react-router-dom';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';
+import { useConfirmAction } from '../../hooks/useConfirmAction';
 
 const SurveysPage = ({ role }) => {
   const { showToast } = useToast();
+  const { askConfirm, ConfirmDialog } = useConfirmAction();
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
     // Öğretmen filtreleri
@@ -107,7 +109,12 @@ const SurveysPage = ({ role }) => {
     ));
   };
 
-  const removeOptionFromQuestion = (qId, optIndex) => {
+  const removeOptionFromQuestion = async (qId, optIndex) => {
+    const confirmed = await askConfirm({
+      title: 'Seçenek kaldırılsın mı?',
+      description: 'Anket taslağından bu şık kaldırılacak. Kaydetmeden önce geri alamazsınız.',
+    });
+    if (!confirmed) return;
     setQuestions(questions.map(q => {
       if (q.id === qId) {
         return { ...q, options: q.options.filter((_, i) => i !== optIndex) };
@@ -126,10 +133,14 @@ const SurveysPage = ({ role }) => {
     setNextQuestionId(nextQuestionId + 1);
   };
 
-  const removeQuestion = (id) => {
-    if (questions.length > 1) {
-      setQuestions(questions.filter(q => q.id !== id));
-    }
+  const removeQuestion = async (id) => {
+    if (questions.length <= 1) return;
+    const confirmed = await askConfirm({
+      title: 'Soru kaldırılsın mı?',
+      description: 'Anket taslağından bu soru kaldırılacak. Kaydetmeden önce geri alamazsınız.',
+    });
+    if (!confirmed) return;
+    setQuestions(questions.filter(q => q.id !== id));
   };
 
   const handleCreate = async (e) => {
@@ -193,18 +204,20 @@ const SurveysPage = ({ role }) => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Bu anketi silmek istediğinize emin misiniz?')) {
-      const prev = surveys;
-      // Optimistic removal
-      setSurveys(prev.filter(s => s._id !== id));
-      try {
-        await apiClient.delete(`/surveys/${id}`);
-        showToast('Anket silindi', 'success');
-      } catch (err) {
-        // Rollback on failure
-        setSurveys(prev);
-        showToast('Anket silinemedi', 'error');
-      }
+    const confirmed = await askConfirm({
+      title: 'Anket silinsin mi?',
+      description:
+        'Bu anket ve toplanmış yanıtlar kalıcı olarak silinecek. Öğrenciler artık bu ankete erişemez. Bu işlem geri alınamaz.',
+    });
+    if (!confirmed) return;
+    const prev = surveys;
+    setSurveys(prev.filter(s => s._id !== id));
+    try {
+      await apiClient.delete(`/surveys/${id}`);
+      showToast('Anket silindi', 'success');
+    } catch (err) {
+      setSurveys(prev);
+      showToast('Anket silinemedi', 'error');
     }
   };
 
@@ -568,6 +581,7 @@ const SurveysPage = ({ role }) => {
     return (
       <StudentPageShell title="Anketler" subtitle="Aktif anketlere katıl, görüşlerini paylaş." maxWidthClass="max-w-4xl">
         <div className="space-y-6">{surveysBody}</div>
+        <ConfirmDialog />
       </StudentPageShell>
     );
   }
@@ -575,6 +589,7 @@ const SurveysPage = ({ role }) => {
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
       {surveysBody}
+      <ConfirmDialog />
     </div>
   );
 };

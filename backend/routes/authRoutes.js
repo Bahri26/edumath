@@ -32,7 +32,7 @@ const registerSchema = Joi.object({
   username: Joi.string().trim().min(3).max(50).optional(),
   email: Joi.string().email().required(),
   password: Joi.string().min(6).max(128).required(),
-  role: Joi.string().valid('student', 'teacher', 'admin').default('student'),
+  role: Joi.string().valid('student', 'teacher').default('student'),
   grade: Joi.string().optional(),
   schoolType: Joi.string().valid('ilkokul', 'ortaokul', 'lise').default('ilkokul')
 });
@@ -67,6 +67,7 @@ const publicResetRequestSchema = Joi.object({
 });
 const PasswordResetRequest = require('../models/PasswordResetRequest');
 const { recordUserActivity } = require('../services/activityLogger');
+const { resolveSelfRegisterRole } = require('../utils/registerRole');
 
 const normalizeIdentifier = (value) => String(value || '').trim().toLowerCase();
 const authSlowLogMs = Number(process.env.AUTH_SLOW_LOG_MS || 800);
@@ -141,6 +142,7 @@ const syncUserLoginIdentifiers = async (user) => {
 router.post('/register', validate(registerSchema), async (req, res) => {
   try {
     const { name, username, email, password, role, grade, schoolType } = req.body;
+    const safeRole = resolveSelfRegisterRole(role);
     const normalizedEmail = normalizeIdentifier(email);
     const normalizedUsername = username ? normalizeIdentifier(username) : '';
 
@@ -160,7 +162,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     }
 
     // Kayıt (hashleme User pre-save hook'unda yapılır)
-    const newUser = new User({ name, username, email, password, role, grade, schoolType, status: autoApprove ? 'active' : 'pending', mustChangePassword: false });
+    const newUser = new User({ name, username, email, password, role: safeRole, grade, schoolType, status: autoApprove ? 'active' : 'pending', mustChangePassword: false });
     await newUser.save();
 
     await recordUserActivity(req, {

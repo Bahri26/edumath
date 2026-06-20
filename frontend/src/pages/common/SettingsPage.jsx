@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   User,
@@ -16,6 +16,9 @@ import {
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { useTranslation } from '../../i18n/useTranslation';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import FormField from '../../components/ui/FormField.jsx';
 import Input from '../../components/ui/Input.jsx';
 import Select from '../../components/ui/Select.jsx';
@@ -23,6 +26,7 @@ import EmptyState from '../../components/ui/EmptyState.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { SUBJECTS, CLASS_LEVELS } from '../../data/classLevelsAndDifficulties';
+import { useConfirmAction } from '../../hooks/useConfirmAction';
 
 const GRADE_OPTIONS = [...CLASS_LEVELS, 'Mezun'];
 
@@ -37,11 +41,16 @@ const SectionHeading = ({ icon: Icon, children }) => (
 
 const SettingsPage = ({ role = 'student' }) => {
   const { showToast } = useToast();
+  const { askConfirm, ConfirmDialog } = useConfirmAction();
   const { setIsDarkMode } = useTheme();
+  const { setLanguage } = useLanguage();
+  const { t } = useTranslation();
   const [showPwdModal, setShowPwdModal] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [pwdLoading, setPwdLoading] = useState(false);
+  const pwdModalRef = useRef(null);
+  useFocusTrap(pwdModalRef, showPwdModal);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -85,6 +94,7 @@ const SettingsPage = ({ role = 'student' }) => {
           language: d.language === 'EN' ? 'EN' : 'TR',
         });
         syncThemeFromValue(theme);
+        setLanguage(d.language === 'EN' ? 'EN' : 'TR');
       } catch (error) {
         if (import.meta.env.DEV) {
           console.warn('Profil yüklenemedi:', error?.message);
@@ -111,7 +121,7 @@ const SettingsPage = ({ role = 'student' }) => {
       }
     };
     fetchNotifications();
-  }, [syncThemeFromValue]);
+  }, [syncThemeFromValue, setLanguage]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -126,12 +136,15 @@ const SettingsPage = ({ role = 'student' }) => {
       if (field === 'theme') {
         syncThemeFromValue(value);
       }
+      if (field === 'language') {
+        setLanguage(value);
+      }
     } catch (error) {
       setFormData((prev) => ({ ...prev, [field]: previous }));
       if (field === 'theme') {
         syncThemeFromValue(previous);
       }
-      showToast('Ayar güncellenemedi: ' + (error.response?.data?.message || error.message), 'error');
+      showToast(t('settings.prefUpdateError') + ': ' + (error.response?.data?.message || error.message), 'error');
     }
   };
 
@@ -155,7 +168,8 @@ const SettingsPage = ({ role = 'student' }) => {
       }
       await apiClient.put('/users/profile', payload);
       syncThemeFromValue(formData.theme);
-      showToast('Bilgileriniz başarıyla güncellendi.', 'success');
+      setLanguage(formData.language);
+      showToast(t('settings.saveSuccess'), 'success');
     } catch (error) {
       showToast('Hata oluştu: ' + (error.response?.data?.message || error.message), 'error');
     } finally {
@@ -178,13 +192,13 @@ const SettingsPage = ({ role = 'student' }) => {
     return (
       <div className="flex flex-col justify-center items-center min-h-[40vh] gap-3" role="status" aria-live="polite">
         <Loader2 className="animate-spin text-brand-600" size={40} aria-hidden />
-        <span className="text-sm text-slate-500 dark:text-slate-400">Ayarlar yükleniyor…</span>
+        <span className="text-sm text-slate-500 dark:text-slate-400">{t('settings.loading')}</span>
       </div>
     );
   }
 
   const isTeacher = role === 'teacher';
-  const title = isTeacher ? 'Öğretmen ayarları' : 'Öğrenci ayarları';
+  const title = isTeacher ? t('settings.teacherTitle') : t('settings.studentTitle');
 
   return (
     <div className="animate-fade-in max-w-4xl mx-auto space-y-8 pb-20">
@@ -200,9 +214,7 @@ const SettingsPage = ({ role = 'student' }) => {
           {title}
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">
-          {isTeacher
-            ? 'Hesap bilgileri burada; branş onayı ve detaylı profil alanları için profil sayfasını kullanın.'
-            : 'Hesap, görünüm ve bildirim tercihlerinizi buradan yönetebilirsiniz.'}
+          {isTeacher ? t('settings.teacherSubtitle') : t('settings.studentSubtitle')}
         </p>
         <Link
           to={profilePath(role)}
@@ -288,9 +300,9 @@ const SettingsPage = ({ role = 'student' }) => {
               </div>
             </div>
             <div>
-              <SectionHeading icon={Globe}>Dil</SectionHeading>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Arayüz dil tercihi (desteklenen içeriklerde).</p>
-              <FormField label="Dil">
+              <SectionHeading icon={Globe}>{t('settings.languageLabel')}</SectionHeading>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{t('settings.languageHint')}</p>
+              <FormField label={t('settings.languageLabel')}>
                 <Select
                   name="language"
                   value={formData.language}
@@ -386,9 +398,12 @@ const SettingsPage = ({ role = 'student' }) => {
             variant="danger"
             size="md"
             onClick={async () => {
-              if (!window.confirm('Hesabınızı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
-                return;
-              }
+              const confirmed = await askConfirm({
+                title: 'Hesap silinsin mi?',
+                description:
+                  'Hesabınız ve tüm verileriniz kalıcı olarak silinecek. Oturumunuz kapanır ve bu işlem geri alınamaz.',
+              });
+              if (!confirmed) return;
               try {
                 await apiClient.delete('/users/delete');
                 showToast('Hesabınız silindi.', 'success');
@@ -418,7 +433,10 @@ const SettingsPage = ({ role = 'student' }) => {
             }
           }}
         >
-          <div className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 dark:border-slate-600 animate-fade-in">
+          <div
+            ref={pwdModalRef}
+            className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 dark:border-slate-600 animate-fade-in"
+          >
             <h3 id="pwd-modal-title" className="font-bold text-lg mb-1 text-slate-900 dark:text-white">
               Şifre değiştir
             </h3>
@@ -498,6 +516,7 @@ const SettingsPage = ({ role = 'student' }) => {
           )}
         </Button>
       </div>
+      <ConfirmDialog />
     </div>
   );
 };

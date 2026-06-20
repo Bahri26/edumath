@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320">
+  <rect width="900" height="320" rx="24" fill="#F0FDFA"/>
+  <text x="36" y="44" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#0F766E">Geometrik Toplam — Basamak Modeli</text>
+  
+  <rect x="100" y="210" width="50" height="30" fill="#14B8A6"/><text x="125" y="255" text-anchor="middle" font-size="14" fill="#0F766E">3</text>
+  <rect x="170" y="180" width="50" height="60" fill="#0D9488"/><text x="195" y="255" text-anchor="middle" font-size="14" fill="#0F766E">6</text>
+  <rect x="240" y="150" width="50" height="90" fill="#0F766E"/><text x="265" y="255" text-anchor="middle" font-size="14" fill="#0F766E">12</text>
+  <rect x="310" y="90" width="50" height="150" fill="#115E59"/><text x="335" y="255" text-anchor="middle" font-size="14" fill="#0F766E">24</text>
+  <rect x="380" y="30" width="50" height="210" fill="#134E4A"/><text x="405" y="255" text-anchor="middle" font-size="14" fill="#0F766E">48</text>
+  <rect x="450" y="0" width="50" height="240" fill="#042F2E"/><text x="475" y="255" text-anchor="middle" font-size="14" fill="#0F766E">96</text>
+  <line x1="80" y1="240" x2="530" y2="240" stroke="#94A3B8" stroke-width="2"/>
+  <rect x="560" y="80" width="300" height="150" rx="16" fill="#fff" stroke="#99F6E4" stroke-width="2"/>
+  <text x="710" y="130" text-anchor="middle" font-size="18" fill="#134E4A">S₆ = 3 + 6 + 12 + 24 + 48 + 96</text>
+  <text x="710" y="175" text-anchor="middle" font-size="28" font-weight="700" fill="#0F766E">S₆ = ?</text>
+  <text x="36" y="298" font-family="Arial, sans-serif" font-size="16" fill="#64748B">Her basamak bir öncekinin 2 katı</text>
+</svg>

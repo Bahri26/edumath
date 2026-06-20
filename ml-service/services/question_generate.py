@@ -10,8 +10,9 @@ import random
 import re
 from typing import Any
 
+from .pattern_topics import LEARNING_OUTCOME_BY_LABEL, PATTERN_TOPIC_LABELS
 from .question_analyze import infer_difficulty, infer_topic
-from .question_solver import solve_pattern_question
+from .question_solver import solve_pattern_question, triangular_number
 
 CONTEXT_THEMES = [
     ("boncuk", "renkli boncuklar", "boncuk dizisi"),
@@ -83,6 +84,8 @@ def _resolve_template_kind(kind: str, class_level: str) -> str:
     if grade <= 4:
         return "elementary"
     if grade <= 6 and kind in ("algebraic_rule", "triangle_perimeter", "hexagon"):
+        return "arithmetic"
+    if grade <= 5 and kind in ("square_numbers", "triangular_numbers", "two_step"):
         return "arithmetic"
     if grade <= 8 and kind == "algebraic_rule":
         return "arithmetic"
@@ -194,6 +197,12 @@ def _replace_numbers(text: str, rng: random.Random, scale: float | None = None) 
 
 def _classify_sample(text: str) -> str:
     t = (text or "").lower()
+    if re.search(r"kare\s*say|1,\s*4,\s*9", t):
+        return "square_numbers"
+    if re.search(r"üçgensel|ucgensel|triangular", t):
+        return "triangular_numbers"
+    if re.search(r"iki\s*ad[ıi]ml[ıi]|karma\s*kural", t):
+        return "two_step"
     if re.search(r"alt[ıi]gen|altigen", t) and re.search(r"ad[ıi]m", t):
         return "hexagon"
     if re.search(r"üçgen|ucgen|eşkenar|eskenar", t) and re.search(r"çevre|cevre", t):
@@ -317,6 +326,89 @@ def _generate_algebraic_rule(theme: tuple[str, str, str], rng: random.Random) ->
     }
 
 
+def _generate_square_numbers(theme: tuple[str, str, str], rng: random.Random, difficulty: str) -> dict[str, Any]:
+    _, context, _ = theme
+    base = rng.randint(2, 4) if difficulty == "Kolay" else rng.randint(3, 6)
+    terms = [(base + i) ** 2 for i in range(3)]
+    correct = (base + 3) ** 2
+    shown = ", ".join(str(t) for t in terms) + ", ?"
+    opts = sorted({correct, correct + base, (base + 2) ** 2, (base + 4) ** 2})[:4]
+    opts = [str(o) for o in opts]
+    if str(correct) not in opts:
+        opts[0] = str(correct)
+    idx = opts.index(str(correct))
+    return {
+        "text": f"{context.capitalize()} tablosundaki {shown} dizisi kare sayı örüntüsüdür. Soru işareti yerine hangi sayı gelmelidir?",
+        "options": opts,
+        "correctAnswer": str(correct),
+        "solution": _build_solution_lines([
+            "Terimler n² biçimindedir; n değeri her adımda 1 artar.",
+            f"Sıradaki terim: ({base + 3})² = {correct}.",
+            f"Doğru cevap {chr(65 + idx)}) {correct} şıkkıdır.",
+        ]),
+        "learningOutcome": LEARNING_OUTCOME_BY_LABEL[PATTERN_TOPIC_LABELS["SQUARES"]],
+        "templateKey": "square_numbers",
+        "topic": PATTERN_TOPIC_LABELS["SQUARES"],
+    }
+
+
+def _generate_triangular_numbers(theme: tuple[str, str, str], rng: random.Random, difficulty: str) -> dict[str, Any]:
+    _, context, _ = theme
+    base = rng.randint(2, 4) if difficulty == "Kolay" else rng.randint(3, 6)
+    terms = [triangular_number(base + i) for i in range(3)]
+    correct = triangular_number(base + 3)
+    shown = ", ".join(str(t) for t in terms) + ", ?"
+    opts = sorted({correct, triangular_number(base + 2), triangular_number(base + 4), correct + 3})[:4]
+    opts = [str(o) for o in opts]
+    if str(correct) not in opts:
+        opts[0] = str(correct)
+    idx = opts.index(str(correct))
+    return {
+        "text": f"{context.capitalize()} dizisinde {shown} üçgensel sayı örüntüsü vardır. Soru işareti yerine hangi sayı gelmelidir?",
+        "options": opts,
+        "correctAnswer": str(correct),
+        "solution": _build_solution_lines([
+            "Terimler T(n) = n(n+1)/2 biçimindedir.",
+            f"Sıradaki terim T({base + 3}) = {correct}.",
+            f"Doğru cevap {chr(65 + idx)}) {correct} şıkkıdır.",
+        ]),
+        "learningOutcome": LEARNING_OUTCOME_BY_LABEL[PATTERN_TOPIC_LABELS["TRIANGULAR"]],
+        "templateKey": "triangular_numbers",
+        "topic": PATTERN_TOPIC_LABELS["TRIANGULAR"],
+    }
+
+
+def _generate_two_step(theme: tuple[str, str, str], rng: random.Random, difficulty: str) -> dict[str, Any]:
+    _, context, _ = theme
+    a = 2 if difficulty == "Kolay" else 5 if difficulty == "Zor" else 3
+    b = 1 if difficulty == "Kolay" else 4 if difficulty == "Zor" else 2
+    start = rng.randint(4, 9)
+    seq: list[int] = [start]
+    for k in range(6):
+        seq.append(seq[-1] + (a if k % 2 == 0 else -b))
+    missing_index = 5
+    correct = seq[missing_index]
+    shown = ", ".join("?" if i == missing_index else str(v) for i, v in enumerate(seq))
+    opts = sorted({correct, correct + a, correct - b, correct + (a - b)})[:4]
+    opts = [str(o) for o in opts]
+    if str(correct) not in opts:
+        opts[0] = str(correct)
+    idx = opts.index(str(correct))
+    return {
+        "text": f"{context.capitalize()} tablosunda {shown} örüntüsünde soru işareti yerine gelen sayı kaçtır? (İki adımlı kural)",
+        "options": opts,
+        "correctAnswer": str(correct),
+        "solution": _build_solution_lines([
+            f"Kural: çift adımda +{a}, tek adımda −{b}.",
+            f"Eksik terim adım adım hesaplanır → {correct}.",
+            f"Doğru cevap {chr(65 + idx)}) {correct} şıkkıdır.",
+        ]),
+        "learningOutcome": LEARNING_OUTCOME_BY_LABEL[PATTERN_TOPIC_LABELS["RULE"]],
+        "templateKey": "two_step",
+        "topic": PATTERN_TOPIC_LABELS["RULE"],
+    }
+
+
 def _variant_from_sample(
     sample: dict[str, Any],
     params: dict[str, Any],
@@ -356,10 +448,9 @@ def _variant_from_sample(
         ci = solved.get("correctIndex")
         if ci is not None and 0 <= ci < len(new_opts):
             correct = new_opts[ci] or correct
-    elif correct:
-        correct = _replace_numbers(correct, rng, scale)
-        if solution:
-            solution = _replace_numbers(solution, rng, scale)
+    else:
+        # Çözücü doğrulayamadıysa yanlış anahtar riski — şablona düş
+        return None
 
     if not correct or len([o for o in new_opts if o]) < 2:
         return None
@@ -414,6 +505,12 @@ def _template_question(
         base = _generate_triangle_perimeter(step, side, theme)
     elif resolved == "algebraic_rule":
         base = _generate_algebraic_rule(theme, rng)
+    elif resolved == "square_numbers":
+        base = _generate_square_numbers(theme, rng, difficulty)
+    elif resolved == "triangular_numbers":
+        base = _generate_triangular_numbers(theme, rng, difficulty)
+    elif resolved == "two_step":
+        base = _generate_two_step(theme, rng, difficulty)
     elif resolved == "arithmetic":
         base = _generate_arithmetic(difficulty, theme, rng)
     else:

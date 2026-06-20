@@ -24,7 +24,12 @@ const ExamSchema = new mongoose.Schema({
     correctCount: Number,
     wrongCount: Number,
     topicStats: [{ topic: String, wrong: Number }],
-    weakTopics: [String], 
+    weakTopics: [String],
+    totalTimeSpentSeconds: { type: Number, default: null },
+    questionTimes: [{
+      questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Question' },
+      timeSpentSeconds: { type: Number, default: 0 },
+    }],
     submittedAt: { type: Date, default: Date.now }
   }]
 }, { timestamps: true, collection: 'exams' });

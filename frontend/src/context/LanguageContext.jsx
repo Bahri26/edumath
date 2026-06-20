@@ -1,15 +1,37 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { normalizeAppLocale, readStoredLanguage, writeStoredLanguage } from '../i18n/locale';
 
-export const LanguageContext = createContext();
+export const LanguageContext = createContext(null);
 
 export const LanguageProvider = ({ children }) => {
-  const [language, setLanguage] = useState('TR');
+  const [language, setLanguageState] = useState(() => readStoredLanguage());
 
-  return (
-    <LanguageContext.Provider value={{ language, setLanguage }}>
-      {children}
-    </LanguageContext.Provider>
+  const setLanguage = useCallback((next) => {
+    const normalized = normalizeAppLocale(next);
+    setLanguageState(normalized);
+    writeStoredLanguage(normalized);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = language === 'EN' ? 'en' : 'tr';
+  }, [language]);
+
+  const value = useMemo(
+    () => ({
+      language,
+      setLanguage,
+      isEnglish: language === 'EN',
+    }),
+    [language, setLanguage],
   );
+
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 };
 
-export const useLanguage = () => useContext(LanguageContext);
+export const useLanguage = () => {
+  const ctx = useContext(LanguageContext);
+  if (!ctx) {
+    throw new Error('useLanguage must be used within LanguageProvider');
+  }
+  return ctx;
+};

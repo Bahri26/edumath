@@ -1,0 +1,216 @@
+{
+  "sourcePdf": "C:\\Users\\kocba\\OneDrive\\Masaüstü\\Bahri\\Doktora Tezi\\6 sınıf örüntü - başlık.pdf",
+  "pageCount": 8,
+  "pages": [
+    {
+      "page": 1,
+      "image": "page-01.png",
+      "width": 1162,
+      "height": 1586,
+      "expectedQuestions": 3,
+      "regions": [
+        {
+          "index": 1,
+          "y0": 158.6,
+          "y1": 570.5
+        },
+        {
+          "index": 2,
+          "y0": 572.5,
+          "y1": 1416.5
+        },
+        {
+          "index": 3,
+          "y0": 1418.5,
+          "y1": 1457.1
+        }
+      ],
+      "answerKeys": {},
+      "hasTextLayer": false,
+      "anchorCount": 0,
+      "regionMethod": "ink-gaps"
+    },
+    {
+      "page": 2,
+      "image": "page-02.png",
+      "width": 1162,
+      "height": 1586,
+      "expectedQuestions": 3,
+      "regions": [
+        {
+          "index": 1,
+          "y0": 158.6,
+          "y1": 441.5
+        },
+        {
+          "index": 2,
+          "y0": 443.5,
+          "y1": 883.5
+        },
+        {
+          "index": 3,
+          "y0": 885.5,
+          "y1": 1457.1
+        }
+      ],
+      "answerKeys": {},
+      "hasTextLayer": false,
+      "anchorCount": 0,
+      "regionMethod": "ink-gaps"
+    },
+    {
+      "page": 3,
+      "image": "page-03.png",
+      "width": 1162,
+      "height": 1586,
+      "expectedQuestions": 3,
+      "regions": [
+        {
+          "index": 1,
+          "y0": 158.6,
+          "y1": 788.0
+        },
+        {
+          "index": 2,
+          "y0": 790.0,
+          "y1": 1335.5
+        },
+        {
+          "index": 3,
+          "y0": 1337.5,
+          "y1": 1457.1
+        }
+      ],
+      "answerKeys": {},
+      "hasTextLayer": false,
+      "anchorCount": 0,
+      "regionMethod": "ink-gaps"
+    },
+    {
+      "page": 4,
+      "image": "page-04.png",
+      "width": 1162,
+      "height": 1586,
+      "expectedQuestions": 3,
+      "regions": [
+        {
+          "index": 1,
+          "y0": 158.6,
+          "y1": 361.5
+        },
+        {
+          "index": 2,
+          "y0": 363.5,
+          "y1": 1021.5
+        },
+        {
+          "index": 3,
+          "y0": 1023.5,
+          "y1": 1457.1
+        }
+      ],
+      "answerKeys": {},
+      "hasTextLayer": false,
+      "anchorCount": 0,
+      "regionMethod": "ink-gaps"
+    },
+    {
+      "page": 5,
+      "image": "page-05.png",
+      "width": 1162,
+      "height": 1586,
+      "expectedQuestions": 3,
+      "regions": [
+        {
+          "index": 1,
+          "y0": 158.6,
+          "y1": 572.5
+        },
+        {
+          "index": 2,
+          "y0": 574.5,
+          "y1": 1302.5
+        },
+        {
+          "index": 3,
+          "y0": 1304.5,
+          "y1": 1457.1
+        }
+      ],
+      "answerKeys": {},
+      "hasTextLayer": false,
+      "anchorCount": 0,
+      "regionMethod": "ink-gaps"
+    },
+    {
+      "page": 6,
+      "image": "page-06.png",
+      "width": 1162,
+      "height": 1586,
+      "expectedQuestions": 2,
+      "regions": [
+        {
+          "index": 1,
+          "y0": 158.6,
+          "y1": 647.0
+        },
+        {
+          "index": 2,
+          "y0": 649.0,
+          "y1": 1457.1
+        }
+      ],
+      "answerKeys": {},
+      "hasTextLayer": false,
+      "anchorCount": 0,
+      "regionMethod": "ink-gaps"
+    },
+    {
+      "page": 7,
+      "image": "page-07.png",
+      "width": 1162,
+      "height": 1586,
+      "expectedQuestions": 2,
+      "regions": [
+        {
+          "index": 1,
+          "y0": 158.6,
+          "y1": 689.0
+        },
+        {
+          "index": 2,
+          "y0": 691.0,
+          "y1": 1457.1
+        }
+      ],
+      "answerKeys": {},
+      "hasTextLayer": false,
+      "anchorCount": 0,
+      "regionMethod": "ink-gaps"
+    },
+    {
+      "page": 8,
+      "image": "page-08.png",
+      "width": 1162,
+      "height": 1586,
+      "expectedQuestions": 2,
+      "regions": [
+        {
+          "index": 1,
+          "y0": 158.6,
+          "y1": 652.0
+        },
+        {
+          "index": 2,
+          "y0": 654.0,
+          "y1": 1457.1
+        }
+      ],
+      "answerKeys": {},
+      "hasTextLayer": false,
+      "anchorCount": 0,
+      "regionMethod": "ink-gaps"
+    }
+  ],
+  "answerKeys": {}
+}

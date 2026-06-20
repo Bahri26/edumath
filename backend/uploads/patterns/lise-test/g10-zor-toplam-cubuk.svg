@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320">
+  <rect width="900" height="320" rx="24" fill="#EEF2FF"/>
+  <text x="36" y="44" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#3730A3">Geometrik Dizi — Toplam Grafiği</text>
+  
+  <rect x="120" y="200" width="60" height="40" fill="#6366F1"/><text x="150" y="255" text-anchor="middle" font-size="16" fill="#4338CA">4</text>
+  <rect x="220" y="160" width="60" height="80" fill="#4F46E5"/><text x="250" y="255" text-anchor="middle" font-size="16" fill="#4338CA">8</text>
+  <rect x="320" y="80" width="60" height="160" fill="#4338CA"/><text x="350" y="255" text-anchor="middle" font-size="16" fill="#4338CA">16</text>
+  <rect x="420" y="0" width="60" height="240" fill="#3730A3"/><text x="450" y="255" text-anchor="middle" font-size="16" fill="#4338CA">32</text>
+  <line x1="100" y1="240" x2="520" y2="240" stroke="#94A3B8" stroke-width="2"/>
+  <rect x="560" y="60" width="280" height="180" rx="16" fill="#fff" stroke="#C7D2FE" stroke-width="2"/>
+  <text x="700" y="120" text-anchor="middle" font-size="20" fill="#475569">S₄ = 4 + 8 + 16 + 32</text>
+  <text x="700" y="170" text-anchor="middle" font-size="32" font-weight="700" fill="#4338CA">S₄ = ?</text>
+  <text x="36" y="298" font-family="Arial, sans-serif" font-size="16" fill="#64748B">a_n = 4·2^(n-1) dizisinin ilk 4 teriminin toplamı kaçtır?</text>
+</svg>

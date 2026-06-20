@@ -1,10 +1,34 @@
 const Exercise = require('../models/Exercise');
 const Question = require('../models/Question');
 const User = require('../models/User');
+const Student = require('../models/Student');
 const { gradeQuestionAnswer } = require('../utils/questionGrading');
 const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
 const { recordUserActivity } = require('../services/activityLogger');
 const { buildTopicMongoClause } = require('../constants/patternTopics');
+const { stripQuestionForStudent } = require('../utils/examSchedule');
+const { parseAnswerPayload, summarizeExerciseSubmission } = require('../utils/exerciseAnswer');
+
+const STUDENT_QUESTION_FIELDS =
+  'text difficulty type options image imageKey imageProvider interactiveType interactionData topic subject assessmentMeta';
+
+async function resolveStudentClass(studentId) {
+  const student = await User.findById(studentId).select('grade classLevel name');
+  if (!student) return { error: 'Öğrenci bulunamadı', status: 404 };
+  const studentClass = student.grade || student.classLevel;
+  if (!studentClass) return { error: 'Öğrenci sınıf bilgisi bulunamadı', status: 400 };
+  return { student, studentClass };
+}
+
+async function assertStudentCanAccessExercise(exercise, studentId) {
+  const { student, studentClass, error, status } = await resolveStudentClass(studentId);
+  if (error) return { ok: false, error, status };
+  if (!exercise.isActive) return { ok: false, error: 'Egzersiz aktif değil', status: 403 };
+  if (exercise.classLevel !== studentClass) {
+    return { ok: false, error: 'Bu egzersiz sizin sınıfınıza ait değil', status: 403 };
+  }
+  return { ok: true, student, studentClass };
+}
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const MAX_EXERCISE_QUESTIONS = 30;
@@ -219,21 +243,22 @@ exports.getStudentExercises = async (req, res, next) => {
       .skip((page - 1) * limit)
       .limit(limit)
       .populate('createdBy', 'name')
-      .populate(
-        'questions',
-        'text difficulty type options correctAnswer solution image imageKey imageProvider interactiveType interactionData topic subject'
-      );
+      .select('-submissions.answers');
 
     // Her egzersiz için öğrencinin ilerlemesini ekle
     const enrichedExercises = exercises.map(ex => {
       const submission = ex.submissions?.find(s => s.studentId.toString() === studentId);
       return {
         ...ex.toObject(),
+        questions: undefined,
+        questionCount: ex.totalQuestions || (ex.questions?.length ?? 0),
         studentProgress: submission ? {
           score: submission.score,
           status: submission.status,
           completedQuestions: submission.completedQuestions,
-          startedAt: submission.startedAt
+          startedAt: submission.startedAt,
+          completedAt: submission.completedAt,
+          totalTimeSpent: submission.totalTimeSpent ?? null,
         } : null
       };
     });
@@ -261,7 +286,118 @@ exports.getExerciseById = async (req, res, next) => {
       return res.status(404).json({ message: 'Egzersiz bulunamadı' });
     }
 
+    if (req.user?.role === 'student') {
+      const access = await assertStudentCanAccessExercise(exercise, req.user.id);
+      if (!access.ok) {
+        return res.status(access.status).json({ message: access.error });
+      }
+      const doc = exercise.toObject();
+      doc.questions = (doc.questions || []).map(stripQuestionForStudent);
+      const submission = exercise.submissions?.find(
+        (s) => s.studentId.toString() === String(req.user.id),
+      );
+      return res.json({
+        success: true,
+        data: {
+          ...doc,
+          studentProgress: submission ? {
+            score: submission.score,
+            status: submission.status,
+            completedAt: submission.completedAt,
+            totalTimeSpent: submission.totalTimeSpent ?? null,
+          } : null,
+        },
+      });
+    }
+
     res.json({ success: true, data: exercise });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ✅ 4b. ÖĞRENCİ EGZERSİZ OYNAT (cevap anahtarı gizli)
+exports.getExerciseForPlay = async (req, res, next) => {
+  try {
+    const exercise = await Exercise.findById(req.params.id)
+      .populate('questions', STUDENT_QUESTION_FIELDS)
+      .populate('createdBy', 'name');
+
+    if (!exercise) {
+      return res.status(404).json({ message: 'Egzersiz bulunamadı' });
+    }
+
+    const access = await assertStudentCanAccessExercise(exercise, req.user.id);
+    if (!access.ok) {
+      return res.status(access.status).json({ message: access.error });
+    }
+
+    const submission = exercise.submissions?.find(
+      (s) => s.studentId.toString() === String(req.user.id),
+    );
+
+    res.json({
+      success: true,
+      data: {
+        _id: exercise._id,
+        name: exercise.name,
+        description: exercise.description,
+        classLevel: exercise.classLevel,
+        subject: exercise.subject,
+        topic: exercise.topic,
+        totalQuestions: exercise.totalQuestions,
+        gameMode: exercise.gameMode,
+        playTransform: exercise.playTransform,
+        timeLimit: exercise.timeLimit,
+        pointsPerQuestion: exercise.pointsPerQuestion,
+        createdBy: exercise.createdBy,
+        questions: (exercise.questions || []).map(stripQuestionForStudent),
+        studentProgress: submission ? {
+          score: submission.score,
+          status: submission.status,
+          completedAt: submission.completedAt,
+        } : null,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ✅ 4c. TEK SORU KONTROL (anında geri bildirim)
+exports.checkExerciseAnswer = async (req, res, next) => {
+  try {
+    const { questionId, answer } = req.body;
+    if (!questionId) {
+      return res.status(400).json({ message: 'questionId gerekli' });
+    }
+
+    const exercise = await Exercise.findById(req.params.id).populate(
+      'questions',
+      `${STUDENT_QUESTION_FIELDS} correctAnswer solution`,
+    );
+    if (!exercise) {
+      return res.status(404).json({ message: 'Egzersiz bulunamadı' });
+    }
+
+    const access = await assertStudentCanAccessExercise(exercise, req.user.id);
+    if (!access.ok) {
+      return res.status(access.status).json({ message: access.error });
+    }
+
+    const question = exercise.questions.find((q) => String(q._id) === String(questionId));
+    if (!question) {
+      return res.status(404).json({ message: 'Soru bu egzersize ait değil' });
+    }
+
+    const isCorrect = gradeQuestionAnswer(question, answer);
+    res.json({
+      success: true,
+      isCorrect,
+      correctAnswer: question.correctAnswer,
+      solution: question.solution || '',
+      topic: question.topic || '',
+    });
   } catch (error) {
     next(error);
   }
@@ -293,24 +429,29 @@ exports.submitExercise = async (req, res, next) => {
   try {
     const studentId = req.user.id;
     const exerciseId = req.params.id || req.body.exerciseId;
-    const { answers } = req.body;
+    const { answers, totalTimeSpentSeconds } = req.body;
 
     const exercise = await Exercise.findById(exerciseId).populate(
       'questions',
-      'text difficulty type options correctAnswer solution image imageKey imageProvider interactiveType interactionData topic subject'
+      `${STUDENT_QUESTION_FIELDS} correctAnswer solution`,
     );
     if (!exercise) {
       return res.status(404).json({ message: 'Egzersiz bulunamadı' });
+    }
+
+    const access = await assertStudentCanAccessExercise(exercise, studentId);
+    if (!access.ok) {
+      return res.status(access.status).json({ message: access.error });
     }
 
     let correctCount = 0;
     const submittedAnswers = [];
     const reviewByQuestion = {};
 
-    // Her sorunun cevabını kontrol et
-    for (const [questionId, userAnswer] of Object.entries(answers || {})) {
+    for (const [questionId, rawPayload] of Object.entries(answers || {})) {
       const question = exercise.questions.find((q) => String(q._id) === String(questionId));
       if (question) {
+        const { answer: userAnswer, timeSpent } = parseAnswerPayload(rawPayload);
         const isCorrect = gradeQuestionAnswer(question, userAnswer);
         if (isCorrect) correctCount += 1;
 
@@ -318,21 +459,27 @@ exports.submitExercise = async (req, res, next) => {
           questionId,
           answer: userAnswer,
           correct: isCorrect,
-          timeSpent: 0
+          timeSpent,
         });
 
         reviewByQuestion[questionId] = {
           isCorrect,
           userAnswer,
           correctAnswer: question.correctAnswer,
+          solution: question.solution || '',
+          timeSpent,
         };
       }
     }
 
-    const score = Math.round((correctCount / exercise.totalQuestions) * 100);
-    const points = correctCount * exercise.pointsPerQuestion;
+    const { score, points, totalTimeSpent } = summarizeExerciseSubmission({
+      correctCount,
+      totalQuestions: exercise.totalQuestions,
+      pointsPerQuestion: exercise.pointsPerQuestion,
+      totalTimeSpentSeconds,
+      submittedAnswers,
+    });
 
-    // Eğer submission varsa güncelle, yoksa yeni oluştur
     let submission = exercise.submissions.find(s => s.studentId.toString() === studentId);
     
     if (submission) {
@@ -341,6 +488,7 @@ exports.submitExercise = async (req, res, next) => {
       submission.completedQuestions = correctCount;
       submission.status = 'completed';
       submission.completedAt = new Date();
+      submission.totalTimeSpent = totalTimeSpent;
     } else {
       exercise.submissions.push({
         studentId,
@@ -349,7 +497,8 @@ exports.submitExercise = async (req, res, next) => {
         completedQuestions: correctCount,
         status: 'completed',
         answers: submittedAnswers,
-        completedAt: new Date()
+        completedAt: new Date(),
+        totalTimeSpent,
       });
     }
 
@@ -368,7 +517,7 @@ exports.submitExercise = async (req, res, next) => {
       targetType: 'exercise',
       targetId: exercise._id,
       targetLabel: exercise.name,
-      metadata: { score, correctCount },
+      metadata: { score, correctCount, totalTimeSpent },
     });
 
     res.json({
@@ -378,11 +527,13 @@ exports.submitExercise = async (req, res, next) => {
       points,
       correctCount,
       totalQuestions: exercise.totalQuestions,
+      totalTimeSpent,
       data: {
         score,
         points,
         correctCount,
         totalQuestions: exercise.totalQuestions,
+        totalTimeSpent,
         answers: reviewByQuestion,
       },
     });
@@ -439,6 +590,87 @@ exports.updateExercise = async (req, res, next) => {
       .populate('questions', 'text difficulty type image classLevel subject')
       .lean();
     res.json({ success: true, message: 'Egzersiz güncellendi', data: populated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ✅ 8. EGZERSIZ SONUÇLARI (Teacher / admin)
+exports.getExerciseResults = async (req, res, next) => {
+  try {
+    const teacherId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    const exercise = await Exercise.findById(req.params.id)
+      .populate('createdBy', 'name email')
+      .populate('questions', 'text topic difficulty');
+
+    if (!exercise) {
+      return res.status(404).json({ message: 'Egzersiz bulunamadı' });
+    }
+
+    if (!isAdmin && exercise.createdBy?.toString?.() !== teacherId && exercise.createdBy?._id?.toString() !== teacherId) {
+      return res.status(403).json({ message: 'Bu egzersizin sonuçlarını görme yetkiniz yok' });
+    }
+
+    const submissions = (exercise.submissions || []).filter((s) => s.status === 'completed');
+    const scores = submissions.map((s) => Number(s.score) || 0);
+    const times = submissions
+      .map((s) => s.totalTimeSpent)
+      .filter((t) => t != null && Number.isFinite(t));
+
+    const rosterCount = await Student.countDocuments({
+      teacherId,
+      grade: exercise.classLevel,
+    });
+
+    res.json({
+      success: true,
+      exercise: {
+        _id: exercise._id,
+        name: exercise.name,
+        classLevel: exercise.classLevel,
+        subject: exercise.subject,
+        topic: exercise.topic,
+        totalQuestions: exercise.totalQuestions,
+        timeLimit: exercise.timeLimit,
+        gameMode: exercise.gameMode,
+      },
+      summary: {
+        participantCount: submissions.length,
+        avgScore: scores.length
+          ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+          : 0,
+        avgTimeSpentSeconds: times.length
+          ? Math.round(times.reduce((a, b) => a + b, 0) / times.length)
+          : null,
+        rosterCount,
+        participationRate: rosterCount
+          ? Math.round((submissions.length / rosterCount) * 100)
+          : null,
+      },
+      students: submissions.map((s) => {
+        const answerList = s.answers || [];
+        const correctFromAnswers = answerList.filter((a) => a.correct).length;
+        const wrongFromAnswers = answerList.filter((a) => a.correct === false).length;
+        return {
+          studentId: s.studentId,
+          studentName: s.studentName,
+          score: s.score,
+          correctCount: correctFromAnswers || s.completedQuestions || 0,
+          wrongCount: wrongFromAnswers,
+          totalTimeSpent: s.totalTimeSpent ?? null,
+          completedAt: s.completedAt,
+          avgTimePerQuestion: (() => {
+            const answerTimes = answerList
+              .map((a) => a.timeSpent)
+              .filter((t) => t != null && t > 0);
+            return answerTimes.length
+              ? Math.round(answerTimes.reduce((a, b) => a + b, 0) / answerTimes.length)
+              : null;
+          })(),
+        };
+      }).sort((a, b) => (b.score || 0) - (a.score || 0)),
+    });
   } catch (error) {
     next(error);
   }

@@ -2,9 +2,9 @@ import React, { useContext, useState, useEffect, useRef, useCallback } from 'rea
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { LanguageContext } from '../context/LanguageContext';
-import { LogOut, Moon, Sun, User, Settings, Menu, X } from 'lucide-react';
+import { LogOut, Moon, Sun, User, Settings, Menu, X, Globe } from 'lucide-react';
 import NotificationDropdown from '../components/ui/NotificationDropdown.jsx';
+import { useTranslation } from '../i18n/useTranslation';
 
 const DashboardLayout = ({
   navMenuItems = [],
@@ -19,8 +19,7 @@ const DashboardLayout = ({
   const studentKid = role === 'student';
   const { user, logout } = useContext(AuthContext);
   const { isDarkMode, toggleTheme } = useTheme();
-  // Language context kept for future i18n needs
-  useContext(LanguageContext);
+  const { t, language, setLanguage } = useTranslation();
   const [isNavMenuOpen, setIsNavMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -118,7 +117,7 @@ const DashboardLayout = ({
             ? 'bg-white/95 dark:bg-surface-800/95 backdrop-blur-md border-r border-kid-rail/80 dark:border-surface-700'
             : 'bg-white dark:bg-surface-800'
         } ${isNavMenuOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none'}`}
-        aria-label="Yan menü"
+        aria-label={t('sidebar')}
         aria-hidden={!isNavMenuOpen}
         inert={isNavMenuOpen ? undefined : ''}
       >
@@ -140,7 +139,7 @@ const DashboardLayout = ({
           </span>
           <button
             onClick={closeSidebar}
-            aria-label="Menüyü kapat"
+            aria-label={t('closeMenu')}
             className="p-1 rounded-md hover:bg-surface-100 dark:hover:bg-surface-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             <X size={20} />
@@ -149,7 +148,7 @@ const DashboardLayout = ({
         <nav
           id="primary-nav"
           className="mt-6 space-y-2 overflow-y-auto overscroll-contain pb-8"
-          aria-label={`${role === 'teacher' ? 'Öğretmen' : 'Öğrenci'} navigasyonu`}
+          aria-label={role === 'teacher' ? t('teacherNav') : t('studentNav')}
         >
           {navMenuItems.map((item) => (
             <button
@@ -184,7 +183,7 @@ const DashboardLayout = ({
               type="button"
               onClick={toggleSidebar}
               className="p-2 rounded-md hover:bg-surface-200 dark:hover:bg-surface-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              aria-label={isNavMenuOpen ? 'Menüyü kapat' : 'Menüyü aç'}
+              aria-label={isNavMenuOpen ? t('closeMenu') : t('openMenu')}
               aria-expanded={isNavMenuOpen}
               aria-controls="primary-nav"
             >
@@ -197,19 +196,30 @@ const DashboardLayout = ({
                   : 'text-brand-600'
               }`}
             >
-              {role === 'teacher' ? 'Öğretmen Paneli' : 'Matematik Maceram'}
+              {role === 'teacher' ? t('teacherPanel') : t('studentPanel')}
             </span>
             {extraHeader}
           </div>
 
           <div className="flex items-center gap-3">
             <button
+              type="button"
+              onClick={() => setLanguage(language === 'EN' ? 'TR' : 'EN')}
+              className="p-2 rounded-full hover:bg-surface-200 dark:hover:bg-surface-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              aria-label={language === 'EN' ? t('switchToTr') : t('switchToEn')}
+              title={language === 'EN' ? 'Türkçe' : 'English'}
+            >
+              <Globe size={20} aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
               onClick={toggleTheme}
               className="p-2 rounded-full hover:bg-surface-200 dark:hover:bg-surface-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              aria-label={isDarkMode ? 'Aydınlık temaya geç' : 'Karanlık temaya geç'}
-              title={isDarkMode ? 'Aydınlık tema' : 'Karanlık tema'}
+              aria-label={isDarkMode ? t('lightTheme') : t('darkTheme')}
+              title={isDarkMode ? t('lightTheme') : t('darkTheme')}
             >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+              {isDarkMode ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}
             </button>
 
             <NotificationDropdown />
@@ -218,7 +228,7 @@ const DashboardLayout = ({
               <button
                 onClick={() => setIsProfileOpen((v) => !v)}
                 className="p-2 rounded-full hover:bg-surface-200 dark:hover:bg-surface-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                aria-label="Profil menüsü"
+                aria-label={t('profileMenu')}
                 aria-haspopup="menu"
                 aria-expanded={isProfileOpen}
               >
@@ -238,7 +248,7 @@ const DashboardLayout = ({
                     role="menuitem"
                     className="w-full text-left px-4 py-2.5 hover:bg-surface-100 dark:hover:bg-surface-700 flex items-center gap-2"
                   >
-                    <User size={16} aria-hidden /> Profil
+                    <User size={16} aria-hidden /> {t('profile')}
                   </button>
                   {profileMenuExtras.map((item) => {
                     const Icon = item.icon;
@@ -266,14 +276,14 @@ const DashboardLayout = ({
                     role="menuitem"
                     className="w-full text-left px-4 py-2.5 hover:bg-surface-100 dark:hover:bg-surface-700 flex items-center gap-2"
                   >
-                    <Settings size={16} aria-hidden /> Ayarlar
+                    <Settings size={16} aria-hidden /> {t('settings')}
                   </button>
                   <button
                     onClick={handleLogout}
                     role="menuitem"
                     className="w-full text-left px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                   >
-                    <LogOut size={16} /> Çıkış Yap
+                    <LogOut size={16} aria-hidden /> {t('logout')}
                   </button>
                 </div>
               )}

@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import SettingsPage from './SettingsPage';
 import { ThemeProvider } from '../../context/ThemeContext';
+import { LanguageProvider } from '../../context/LanguageContext';
 
 beforeAll(() => {
   Object.defineProperty(window, 'matchMedia', {
@@ -54,9 +55,11 @@ vi.mock('../../services/api', () => ({
 
 const wrap = (ui) =>
   render(
-    <ThemeProvider>
-      <MemoryRouter>{ui}</MemoryRouter>
-    </ThemeProvider>,
+    <LanguageProvider>
+      <ThemeProvider>
+        <MemoryRouter>{ui}</MemoryRouter>
+      </ThemeProvider>
+    </LanguageProvider>,
   );
 
 describe('SettingsPage', () => {

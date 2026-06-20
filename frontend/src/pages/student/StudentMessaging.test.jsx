@@ -1,19 +1,18 @@
-// Mock IntersectionObserver for jsdom
-global.IntersectionObserver = class {
-  constructor() {}
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
-import { describe, it, expect } from 'vitest';
-import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import StudentMessaging from './StudentMessaging';
+import { renderWithProviders } from '../../test/test-utils';
+
+vi.mock('../../services/api', () => ({
+  default: {
+    get: vi.fn(() => Promise.resolve({ data: [] })),
+    post: vi.fn(() => Promise.resolve({ data: {} })),
+  },
+}));
 
 describe('StudentMessaging', () => {
-  it('renders main section', () => {
-    render(<StudentMessaging />);
-    expect(screen.getByText(/mesaj|message/i)).toBeInTheDocument();
+  it('renders main section', async () => {
+    renderWithProviders(<StudentMessaging />);
+    expect(await screen.findByText(/mesaj|message/i)).toBeInTheDocument();
   });
 });

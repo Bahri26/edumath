@@ -39,6 +39,7 @@ const StudentHome = lazy(() => import('./pages/student/StudentHome'));
 const StudentCourses = lazy(() => import('./pages/student/StudentCourses'));
 const StudentAssignments = lazy(() => import('./pages/student/StudentAssignments'));
 const StudentStudyHub = lazy(() => import('./pages/student/StudentStudyHub'));
+const StudentExercisePlayer = lazy(() => import('./pages/student/StudentExercisePlayer'));
 const LessonQuiz = lazy(() => import('./pages/student/LessonQuiz'));
 const StudentCalendar = lazy(() => import('./pages/student/StudentCalendar'));
 const StudentMessaging = lazy(() => import('./pages/student/StudentMessaging'));
@@ -144,6 +145,7 @@ function App() {
             <Route path="courses" element={<StudentCourses />} />
             <Route path="assignments" element={<StudentAssignments />} />
             <Route path="exercises" element={<StudentStudyHub />} />
+            <Route path="exercises/:exerciseId" element={<StudentExercisePlayer />} />
             <Route path="lesson/:lessonId" element={<LessonQuiz />} />
             <Route path="calendar" element={<StudentCalendar />} />
             <Route path="messages" element={<StudentMessaging />} />

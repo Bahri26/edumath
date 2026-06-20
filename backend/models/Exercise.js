@@ -39,4 +39,6 @@ const ExerciseSchema = new mongoose.Schema({
   
 }, { timestamps: true, collection: 'exercises' });
 
+ExerciseSchema.index({ createdBy: 1, createdAt: -1 }, { name: 'exercises_created_by_created_at' });
+
 module.exports = mongoose.model('Exercise', ExerciseSchema);

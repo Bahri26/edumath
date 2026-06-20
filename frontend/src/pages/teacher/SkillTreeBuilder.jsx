@@ -15,6 +15,7 @@ import { useToast } from '../../context/ToastContext';
 import { LanguageContext } from '../../context/LanguageContext';
 import Card from '../../components/ui/Card.jsx';
 import { CLASS_LEVELS, SUBJECTS } from '../../data/classLevelsAndDifficulties';
+import { useConfirmAction } from '../../hooks/useConfirmAction';
 
 const COPY = {
   TR: {
@@ -35,8 +36,10 @@ const COPY = {
     edit: 'Düzenle',
     deleteTopic: 'Konuyu sil',
     deleteLesson: 'Dersi sil',
-    confirmTopic: 'Bu konuyu ve içindeki tüm dersleri silmek istediğinize emin misiniz?',
-    confirmLesson: 'Bu dersi silmek istediğinize emin misiniz? Öğrenci ilerlemesi de silinir.',
+    confirmTopicTitle: 'Konu silinsin mi?',
+    confirmLessonTitle: 'Ders silinsin mi?',
+    confirmTopic: 'Bu konu ve içindeki tüm dersler kalıcı olarak silinecek. Öğrenci ilerlemesi de kaldırılır. Bu işlem geri alınamaz.',
+    confirmLesson: 'Bu ders kalıcı olarak silinecek. Bu derse ait öğrenci ilerlemesi de kaldırılır. Bu işlem geri alınamaz.',
     topicOrderHint: 'Konu sırası öğrenci listesindeki görünümü etkiler.',
     lessonOrderHint: 'Ders sırası öğrenci konu kartındaki sırayı belirler.',
     live: 'Canlı düzenleme',
@@ -59,8 +62,10 @@ const COPY = {
     edit: 'Edit',
     deleteTopic: 'Delete topic',
     deleteLesson: 'Delete lesson',
-    confirmTopic: 'Delete this topic and all its lessons?',
-    confirmLesson: 'Delete this lesson? Student progress for it will be removed.',
+    confirmTopicTitle: 'Delete this topic?',
+    confirmLessonTitle: 'Delete this lesson?',
+    confirmTopic: 'This topic and all its lessons will be permanently removed. Student progress will also be deleted. This cannot be undone.',
+    confirmLesson: 'This lesson will be permanently removed. Student progress for it will also be deleted. This cannot be undone.',
     topicOrderHint: 'Topic order affects how students see the list.',
     lessonOrderHint: 'Lesson order is shown on the student topic card.',
     live: 'Live editing',
@@ -73,6 +78,7 @@ const sortedLessons = (lessons) =>
 export default function SkillTreeBuilder() {
   const { language } = useContext(LanguageContext);
   const { showToast } = useToast();
+  const { askConfirm, ConfirmDialog } = useConfirmAction();
   const t = COPY[language] || COPY.TR;
 
   const [classLevel, setClassLevel] = useState('9. Sınıf');
@@ -179,7 +185,11 @@ export default function SkillTreeBuilder() {
   };
 
   const deleteTopic = async (topicId) => {
-    if (!window.confirm(t.confirmTopic)) return;
+    const confirmed = await askConfirm({
+      title: t.confirmTopicTitle,
+      description: t.confirmTopic,
+    });
+    if (!confirmed) return;
     try {
       await apiClient.delete(`/topics/${topicId}`);
       bump();
@@ -190,7 +200,11 @@ export default function SkillTreeBuilder() {
   };
 
   const deleteLesson = async (lessonId) => {
-    if (!window.confirm(t.confirmLesson)) return;
+    const confirmed = await askConfirm({
+      title: t.confirmLessonTitle,
+      description: t.confirmLesson,
+    });
+    if (!confirmed) return;
     try {
       await apiClient.delete(`/lessons/${lessonId}`);
       bump();
@@ -560,6 +574,7 @@ export default function SkillTreeBuilder() {
           })}
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

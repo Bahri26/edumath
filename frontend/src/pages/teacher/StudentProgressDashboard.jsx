@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Users,
@@ -14,11 +14,13 @@ import {
   BarChart3,
   Sparkles,
   X,
+  Dumbbell,
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import Card from '../../components/ui/Card.jsx';
-import { LanguageContext } from '../../context/LanguageContext';
+import { useProgressLabels } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
+import { formatDuration } from '../../utils/formatDuration';
 
 const formatRelativeTime = (value, lang) => {
   if (!value) return '—';
@@ -37,67 +39,6 @@ const formatRelativeTime = (value, lang) => {
   return lang === 'EN' ? `${diffDays} d ago` : `${diffDays} gün önce`;
 };
 
-const COPY = {
-  TR: {
-    title: 'Öğrenci takibi',
-    subtitle: 'Ders bazlı quiz ilerlemesi ve son deneme tarihleri.',
-    classList: 'Sınıf listesi',
-    searchPlaceholder: 'İsim veya e-posta ara…',
-    noStudents: 'Henüz kayıtlı öğrenci yok.',
-    rosterEmptyHint:
-      'Liste, sizin oluşturduğunuz sınav, egzersiz, ödev veya anketi tamamlayan öğrencilerden oluşur. Sadece müfredat ders quiz’i çözenler burada otomatik görünmez.',
-    loadError: 'Öğrenci listesi yüklenemedi.',
-    progressError: 'İlerleme verisi alınamadı.',
-    selectPrompt: 'Soldan bir öğrenci seçin',
-    selectHint: 'Quiz doğru/yanlış sayıları ve XP burada listelenir.',
-    invalidStudent: 'Bu öğrenci sınıfınızda bulunamadı.',
-    lessons: 'Dersler',
-    noProgress: 'Bu öğrenci için henüz ders ilerlemesi yok.',
-    loadingProgress: 'İlerleme yükleniyor…',
-    correctCol: 'Doğru',
-    wrongCol: 'Yanlış',
-    summaryLessons: 'Ders sayısı',
-    summaryCorrect: 'Toplam doğru',
-    summaryWrong: 'Toplam yanlış',
-    summaryXp: 'Toplam XP',
-    accuracy: 'Quiz isabeti',
-    grade: 'Sınıf',
-    avgShort: 'Ort.',
-    studentsCount: (n) => `${n} öğrenci`,
-    clearSelection: 'Seçimi kaldır',
-    classAvg: 'Sınıf ort.',
-  },
-  EN: {
-    title: 'Student progress',
-    subtitle: 'Per-lesson quiz stats and last attempt times.',
-    classList: 'Class roster',
-    searchPlaceholder: 'Search name or email…',
-    noStudents: 'No students enrolled yet.',
-    rosterEmptyHint:
-      'The roster is built from students who completed your exam, exercise, assignment, or survey. Students who only solve built-in lesson quizzes are not linked here automatically.',
-    loadError: 'Could not load the roster.',
-    progressError: 'Could not load progress.',
-    selectPrompt: 'Pick a student on the left',
-    selectHint: 'Correct/wrong counts and XP appear here.',
-    invalidStudent: 'This student is not in your class.',
-    lessons: 'Lessons',
-    noProgress: 'No lesson progress for this student yet.',
-    loadingProgress: 'Loading progress…',
-    correctCol: 'Correct',
-    wrongCol: 'Wrong',
-    summaryLessons: 'Lessons',
-    summaryCorrect: 'Total correct',
-    summaryWrong: 'Total wrong',
-    summaryXp: 'Total XP',
-    accuracy: 'Quiz accuracy',
-    grade: 'Grade',
-    avgShort: 'Avg.',
-    studentsCount: (n) => `${n} students`,
-    clearSelection: 'Clear selection',
-    classAvg: 'Class avg.',
-  },
-};
-
 function initials(name) {
   const parts = String(name || '')
     .trim()
@@ -108,17 +49,18 @@ function initials(name) {
 }
 
 export default function StudentProgressDashboard() {
-  const { language } = useContext(LanguageContext);
+  const t = useProgressLabels();
+  const { language } = t;
   const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryStudent = searchParams.get('student');
-  const t = COPY[language] || COPY.TR;
 
   const [students, setStudents] = useState([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState(null);
   const [search, setSearch] = useState('');
   const [progress, setProgress] = useState([]);
+  const [exercises, setExercises] = useState([]);
   const [progressLoading, setProgressLoading] = useState(false);
   const [progressError, setProgressError] = useState(null);
 
@@ -148,7 +90,7 @@ export default function StudentProgressDashboard() {
     return () => {
       active = false;
     };
-  }, [showToast, t.loadError]);
+  }, [showToast, language, t.loadError]);
 
   const filteredStudents = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -182,6 +124,7 @@ export default function StudentProgressDashboard() {
       queueMicrotask(() => {
         if (!active) return;
         setProgress([]);
+        setExercises([]);
         setProgressError(null);
         setProgressLoading(false);
       });
@@ -201,6 +144,7 @@ export default function StudentProgressDashboard() {
       queueMicrotask(() => {
         if (!active) return;
         setProgress([]);
+        setExercises([]);
         setProgressError(t.invalidStudent);
         setProgressLoading(false);
       });
@@ -220,10 +164,12 @@ export default function StudentProgressDashboard() {
       .then((res) => {
         if (!active) return;
         setProgress(Array.isArray(res.data?.progress) ? res.data.progress : []);
+        setExercises(Array.isArray(res.data?.exercises) ? res.data.exercises : []);
       })
       .catch((err) => {
         if (!active) return;
         setProgress([]);
+        setExercises([]);
         const msg = err?.response?.data?.message || t.progressError;
         setProgressError(msg);
         if (err?.response?.status !== 403) showToast(msg, 'error');
@@ -234,7 +180,13 @@ export default function StudentProgressDashboard() {
     return () => {
       active = false;
     };
-  }, [queryStudent, students, showToast, t.invalidStudent, t.progressError]);
+  }, [queryStudent, students, showToast, language, t.invalidStudent, t.progressError]);
+
+  const statusLabel = (status) => {
+    if (status === 'completed') return t.statusCompleted;
+    if (status === 'abandoned') return t.statusAbandoned;
+    return t.statusStarted;
+  };
 
   const selectStudent = useCallback(
     (id) => {
@@ -253,8 +205,9 @@ export default function StudentProgressDashboard() {
     const xp = progress.reduce((a, p) => a + (Number(p.xp) || 0), 0);
     const attempts = correct + wrong;
     const accuracy = attempts > 0 ? Math.round((100 * correct) / attempts) : null;
-    return { correct, wrong, xp, accuracy, lessons: progress.length };
-  }, [progress]);
+    const exerciseTime = exercises.reduce((a, e) => a + (Number(e.totalTimeSpent) || 0), 0);
+    return { correct, wrong, xp, accuracy, lessons: progress.length, exercises: exercises.length, exerciseTime };
+  }, [progress, exercises]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 animate-fade-in space-y-8">
@@ -464,6 +417,33 @@ export default function StudentProgressDashboard() {
                 ))}
               </div>
 
+              {exercises.length > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Card className="p-4">
+                    <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-700/80 p-2 text-sky-600 dark:text-sky-400">
+                      <Dumbbell size={18} aria-hidden />
+                    </div>
+                    <p className="mt-3 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
+                      {totals.exercises}
+                    </p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      {t.summaryExercises}
+                    </p>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-700/80 p-2 text-indigo-600 dark:text-indigo-400">
+                      <Clock size={18} aria-hidden />
+                    </div>
+                    <p className="mt-3 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
+                      {formatDuration(totals.exerciseTime, language)}
+                    </p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      {t.summaryExerciseTime}
+                    </p>
+                  </Card>
+                </div>
+              )}
+
               {totals.accuracy != null && totals.accuracy >= 0 && (
                 <Card className="p-5">
                   <div className="flex items-center justify-between gap-3 mb-2">
@@ -541,13 +521,66 @@ export default function StudentProgressDashboard() {
                                 )}
                               </div>
                               <p className="mt-1 text-[10px] text-center text-slate-400 uppercase tracking-wider">
-                                {sum > 0 ? `${pct}% ${language === 'EN' ? 'correct' : 'doğru'}` : '—'}
+                                {sum > 0 ? t.correctPct(pct) : '—'}
                               </p>
                             </div>
                           </div>
                         </div>
                       );
                     })}
+                  </div>
+                )}
+              </Card>
+
+              <Card className="p-0 overflow-hidden">
+                <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3 flex items-center gap-2">
+                  <Dumbbell size={18} className="text-sky-500" aria-hidden />
+                  <h3 className="font-bold text-slate-800 dark:text-white">{t.exercises}</h3>
+                </div>
+
+                {progressLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-16 text-slate-500 text-sm">
+                    <Loader2 className="animate-spin" size={18} aria-hidden />
+                    {t.loadingProgress}
+                  </div>
+                ) : exercises.length === 0 ? (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 px-4 py-12 text-center">{t.noExercises}</p>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                    {exercises.map((ex) => (
+                      <div
+                        key={String(ex.exerciseId)}
+                        className="px-4 py-4 hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-slate-900 dark:text-white truncate">{ex.name || '—'}</p>
+                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                              <span className="inline-flex items-center gap-1 font-medium text-sky-600 dark:text-sky-400">
+                                <Target size={12} aria-hidden />
+                                {ex.score ?? '—'} {t.exerciseScore.toLowerCase()}
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <BookOpen size={12} aria-hidden />
+                                {ex.completedQuestions ?? 0}/{ex.totalQuestions ?? '—'} {t.questionsDone.toLowerCase()}
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <Clock size={12} aria-hidden />
+                                {formatDuration(ex.totalTimeSpent, language)}
+                              </span>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 font-medium">
+                                {statusLabel(ex.status)}
+                              </span>
+                              {ex.completedAt && (
+                                <span className="inline-flex items-center gap-1">
+                                  {formatRelativeTime(ex.completedAt, language)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </Card>

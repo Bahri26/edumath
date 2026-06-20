@@ -5,6 +5,7 @@ const Question = require('../models/Question');
 const Survey = require('../models/Survey');
 const Exam = require('../models/Exam');
 const UserProgress = require('../models/UserProgress');
+const Exercise = require('../models/Exercise');
 const mongoose = require('mongoose');
 const { syncTeacherRosterFromTeacherContent } = require('../utils/studentRosterSync');
 const {
@@ -13,6 +14,10 @@ const {
   buildTopicAnalysis,
 } = require('../utils/examSchedule');
 const { canManageExam } = require('../utils/examAccess');
+const {
+  mapLessonProgressRows,
+  mapStudentExerciseSubmissions,
+} = require('../utils/studentProgress');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -458,16 +463,19 @@ exports.getStudentProgress = async (req, res) => {
       .sort({ lastAttempt: -1 })
       .lean();
 
-    const progress = rows.map((row) => ({
-      lessonId: row.lessonId?._id || row.lessonId,
-      lessonTitle: row.lessonId?.title || '',
-      correctCount: row.correctCount || 0,
-      wrongCount: row.wrongCount || 0,
-      xp: row.xp || 0,
-      lastAttempt: row.lastAttempt || null,
-    }));
+    const progress = mapLessonProgressRows(rows);
 
-    return res.json({ progress });
+    const exerciseDocs = await Exercise.find({
+      createdBy: teacherId,
+      'submissions.studentId': student.userId,
+    })
+      .select('name gameMode totalQuestions submissions updatedAt')
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    const exercises = mapStudentExerciseSubmissions(exerciseDocs, student.userId);
+
+    return res.json({ progress, exercises });
   } catch (err) {
     return res.status(500).json({ message: 'İlerleme alınamadı', error: err.message });
   }
@@ -1030,6 +1038,14 @@ exports.getExamResults = async (req, res) => {
         participationRate: rosterCount
           ? Math.round((analysis.participantCount / rosterCount) * 100)
           : null,
+        avgTimeSpentSeconds: (() => {
+          const times = results
+            .map((r) => r.totalTimeSpentSeconds)
+            .filter((t) => t != null && Number.isFinite(t));
+          return times.length
+            ? Math.round(times.reduce((a, b) => a + b, 0) / times.length)
+            : null;
+        })(),
       },
       students: results.map((r) => ({
         studentId: r.studentId,
@@ -1040,6 +1056,8 @@ exports.getExamResults = async (req, res) => {
         weakTopics: r.weakTopics || [],
         topicStats: r.topicStats || [],
         submittedAt: r.submittedAt,
+        totalTimeSpentSeconds: r.totalTimeSpentSeconds ?? null,
+        questionTimes: r.questionTimes || [],
       })),
     });
   } catch (err) {

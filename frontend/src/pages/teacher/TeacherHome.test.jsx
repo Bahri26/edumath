@@ -7,11 +7,13 @@ global.IntersectionObserver = class {
 };
 
 import { describe, it, expect, vi } from 'vitest';
-import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import TeacherHome from './TeacherHome';
 import { AuthContext } from '../../context/AuthContext';
+import { LanguageContext } from '../../context/LanguageContext';
+import { ThemeProvider } from '../../context/ThemeContext';
+import { render } from '@testing-library/react';
 
 vi.mock('../../services/api', () => ({
   __esModule: true,
@@ -35,11 +37,15 @@ vi.mock('../../services/api', () => ({
 
 const renderWithAuth = (user = { name: 'Ayşe Öğretmen', email: 'a@test.com' }) =>
   render(
-    <AuthContext.Provider value={{ user, login: vi.fn(), logout: vi.fn(), loading: false, sessionTimeout: 1 }}>
-      <MemoryRouter>
-        <TeacherHome />
-      </MemoryRouter>
-    </AuthContext.Provider>
+    <MemoryRouter>
+      <ThemeProvider>
+        <AuthContext.Provider value={{ user, login: vi.fn(), logout: vi.fn(), loading: false, sessionTimeout: 1 }}>
+          <LanguageContext.Provider value={{ language: 'TR', setLanguage: () => {} }}>
+            <TeacherHome />
+          </LanguageContext.Provider>
+        </AuthContext.Provider>
+      </ThemeProvider>
+    </MemoryRouter>
   );
 
 describe('TeacherHome', () => {

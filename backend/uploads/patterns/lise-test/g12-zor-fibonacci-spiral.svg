@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320">
+  <rect width="900" height="320" rx="24" fill="#FFFBEB"/>
+  <text x="36" y="44" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#B45309">Fibonacci Dizisi — Spiral Model</text>
+  
+  <rect x="120" y="170" width="30" height="30" fill="#F59E0B" stroke="#D97706"/><text x="135" y="190" text-anchor="middle" font-size="14" fill="#fff">1</text>
+  <rect x="150" y="170" width="30" height="30" fill="#FBBF24" stroke="#D97706"/><text x="165" y="190" text-anchor="middle" font-size="14" fill="#fff">1</text>
+  <rect x="120" y="140" width="60" height="30" fill="#F97316" stroke="#C2410C"/><text x="150" y="160" text-anchor="middle" font-size="14" fill="#fff">2</text>
+  <rect x="180" y="110" width="60" height="60" fill="#EA580C" stroke="#C2410C"/><text x="210" y="145" text-anchor="middle" font-size="16" fill="#fff">3</text>
+  <rect x="120" y="50" width="90" height="90" fill="#DC2626" stroke="#991B1B"/><text x="165" y="100" text-anchor="middle" font-size="18" fill="#fff">5</text>
+  <rect x="210" y="50" width="150" height="150" fill="#B91C1C" stroke="#991B1B" stroke-dasharray="8 5"/><text x="285" y="130" text-anchor="middle" font-size="28" font-weight="700" fill="#fff">?</text>
+  <text x="500" y="120" font-size="20" fill="#92400E">1, 1, 2, 3, 5, ?</text>
+  <text x="500" y="160" font-size="16" fill="#64748B">F_n = F_{n-1} + F_{n-2}</text>
+  <text x="36" y="298" font-family="Arial, sans-serif" font-size="16" fill="#64748B">Her yeni kare, önceki iki karenin toplam boyutundadır.</text>
+</svg>

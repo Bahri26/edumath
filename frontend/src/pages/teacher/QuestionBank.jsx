@@ -20,6 +20,7 @@ import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
 import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
 import CollapsiblePanel from '../../components/ui/CollapsiblePanel.jsx';
 import QuestionTextWithPattern from '../../components/questions/QuestionTextWithPattern.jsx';
+import { useConfirmAction } from '../../hooks/useConfirmAction';
 import {
   PATTERN_TOPIC_ORDER,
   PATTERN_TOPIC_ALL_UNDER,
@@ -81,7 +82,13 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
         ? 'border-indigo-500 ring-4 ring-indigo-500/10 shadow-xl' 
         : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 hover:shadow-lg'
     }`}>
-      <div className="p-6 cursor-pointer" onClick={onToggle}>
+      <button
+        type="button"
+        className="w-full text-left p-6 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-[1.5rem]"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-label={expanded ? 'Soru detayını gizle' : 'Soru detayını göster'}
+      >
         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
           <div className="space-y-4 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -108,15 +115,15 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
             <QuestionTextWithPattern text={question.text} />
           </div>
           <div className="flex md:flex-col gap-2 opacity-60 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300" onClick={e => e.stopPropagation()}>
-            <button onClick={() => onEdit(question)} className="p-2.5 bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-indigo-600 transition-all">
-              <Edit2 size={18} />
+            <button type="button" onClick={() => onEdit(question)} aria-label="Soruyu düzenle" className="p-2.5 bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-indigo-600 transition-all">
+              <Edit2 size={18} aria-hidden />
             </button>
-            <button onClick={() => onDelete(question._id)} className="p-2.5 bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-rose-600 transition-all">
-              <Trash2 size={18} />
+            <button type="button" onClick={() => onDelete(question._id)} aria-label="Soruyu sil" className="p-2.5 bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-rose-600 transition-all">
+              <Trash2 size={18} aria-hidden />
             </button>
           </div>
         </div>
-      </div>
+      </button>
 
       {expanded && (
         <div className="px-6 pb-6 pt-2 border-t border-slate-50 dark:border-slate-700 space-y-6 animate-in slide-in-from-top-2">
@@ -182,6 +189,7 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
 
 export default function QuestionBank() {
   const { showToast } = useToast();
+  const { askConfirm, ConfirmDialog } = useConfirmAction();
   const [profile, setProfile] = useState({ branch: '', branchApproval: 'none' });
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -381,19 +389,22 @@ export default function QuestionBank() {
   }, [profile.branch, profile.branchApproval, filters.classLevel]);
 
   const handleDelete = async (id) => {
-    if (window.confirm("Bu soruyu silmek istediğinizden emin misiniz?")) {
-      const prev = questions;
-      // Optimistic removal
-      setQuestions(prev.filter(q => q._id !== id));
-      setTotalQuestions(t => (t > 0 ? t - 1 : 0));
-      try {
-        await apiClient.delete(`/questions/${id}`);
-        showToast("Soru başarıyla silindi", "success");
-      } catch {
-        setQuestions(prev);
-        setTotalQuestions(t => t + 1);
-        showToast("Soru silinemedi", "error");
-      }
+    const confirmed = await askConfirm({
+      title: 'Soru silinsin mi?',
+      description:
+        'Bu soru soru bankasından kalıcı olarak kaldırılacak. Sınav veya egzersizde kullanılıyorsa artık erişilemez olur. Bu işlem geri alınamaz.',
+    });
+    if (!confirmed) return;
+    const prev = questions;
+    setQuestions(prev.filter(q => q._id !== id));
+    setTotalQuestions(t => (t > 0 ? t - 1 : 0));
+    try {
+      await apiClient.delete(`/questions/${id}`);
+      showToast("Soru başarıyla silindi", "success");
+    } catch {
+      setQuestions(prev);
+      setTotalQuestions(t => t + 1);
+      showToast("Soru silinemedi", "error");
     }
   };
 
@@ -691,6 +702,7 @@ export default function QuestionBank() {
           }}
         />
       )}
+      <ConfirmDialog />
     </div>
   );
 }

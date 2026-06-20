@@ -1,38 +1,32 @@
-# Edumath Ogretmen Kullanim Kilavuzu
+# Öğretmen kılavuzu (kısa)
 
-## Hedef
+## Giriş ve branş
 
-Bu kilavuz, ogretmenin soru bankasi, sinav akisi ve ogrenci takibini hizli sekilde yonetebilmesi icin temel kullanim duzenini anlatir.
+- Branş değişikliği yönetici onayına düşebilir; durumu **Profil** sayfasından takip edin.
 
-## Ilk Kurulumda Yapilacaklar
+## Soru bankası
 
-1. Brans ve sinif duzeyi filtrelerini kontrol et.
-2. Kullanacagin temel konu havuzunu belirle.
-3. Bu hafta uygulanacak sinav veya egzersiz akislarini netlestir.
+- Soru ekleme, filtreleme, AI/smart paste ile toplu içe aktarma.
+- Görseller Google Drive’a yüklenir (prod’da OAuth yapılandırması gerekir).
 
-## Temel Akis
+## Egzersiz ve sınav
 
-1. Ogretmen paneline gir.
-2. Soru bankasinda ders, konu, sinif ve zorluk filtrelerini uygula.
-3. Secilen sorularla sinav veya egzersiz kurgusu olustur.
-4. Kazanim ve konu dagilimini kontrol et.
-5. Uygulama sonrasi ogrenci ilerleme ekranindan sonuclari incele.
-6. Raporlara gore bir sonraki icerigi planla.
+- **Egzersiz oluştur** → havuzdan soru seç → öğrencilere Study Hub’da görünür.
+- **Sınav** → zaman penceresi ve sonuç modalları ile takip.
 
-## En Cok Kullanilacak Ekranlar
+## Öğrenci takibi
 
-- Soru bankasi: konu, zorluk ve sinif bazli filtreleme.
-- Sinavlar: secilen sorularla hizli kurgu ve tekrar kullanim.
-- Ogrenci ilerleme ve raporlar: sonuc analizi ve sonraki planlama.
+**Öğrenci takibi** menüsünden:
 
-## Verimli Kullanim Ipuclari
+- Ders quiz ilerlemesi (doğru/yanlış, XP)
+- Egzersiz puanı ve harcanan süre
 
-- Sinav olusturmadan once soru havuzunu daraltmak zamani ciddi sekilde kisaltir.
-- Sinif degistiginde konu ve soru havuzunu yeniden yuklemek daha saglikli sonuc verir.
-- Rapor ekranini sadece gozlem icin degil, sonraki planlama icin kullan.
+Roster, sizin içeriklerinizi tamamlayan öğrencilerden oluşur.
 
-## Sorun Yasarsan
+## Sonuçlar
 
-- Brans onayi ve rol bilgisini kontrol et.
-- Panel verileri gelmiyorsa yeniden giris yapip dashboard ozetini yenile.
-- Ogrenci listesi veya sinav verisi bossa filtrelerin sinif ve ders ile uyumlu oldugundan emin ol.
+- Egzersiz/sınav sonuç modallarında süre ve soru bazlı detay.
+
+## Deploy / prod notu
+
+Render’da `GOOGLE_DRIVE_OAUTH_*` ve klasör ID’leri tanımlı olmalı. Yerelde `npm run verify:drive` ile doğrulayın.

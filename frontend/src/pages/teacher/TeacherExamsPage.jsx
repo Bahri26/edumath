@@ -17,6 +17,7 @@ import Card from '../../components/ui/Card.jsx';
 import Select from '../../components/ui/Select.jsx';
 import ExamPreviewModal from '../../components/exams/ExamPreviewModal.jsx';
 import ExamResultsModal from '../../components/exams/ExamResultsModal.jsx';
+import { useConfirmAction } from '../../hooks/useConfirmAction';
 
 // --- Alt Bileşenler (Stüdyo için) ---
 
@@ -103,6 +104,7 @@ const DropZone = ({ questions, onDropQuestion, onRemove, label, colorClass, icon
 // --- Ana Sayfa Bileşeni ---
 export default function TeacherExamsPage() {
   const { showToast } = useToast();
+  const { askConfirm, ConfirmDialog } = useConfirmAction();
   const [profile, setProfile] = useState({ branch: '', branchApproval: 'none' });
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [view, setView] = useState('list'); // 'list' veya 'studio'
@@ -378,6 +380,24 @@ export default function TeacherExamsPage() {
       fetchExams();
     } catch {
       showToast('Hata oluştu', 'error');
+    }
+  };
+
+  const handleDeleteExam = async (exam) => {
+    const confirmed = await askConfirm({
+      title: 'Sınav silinsin mi?',
+      description:
+        'Bu sınav ve varsa öğrenci sonuçları kalıcı olarak silinecek. Öğrenciler artık bu sınava giremez. Bu işlem geri alınamaz.',
+    });
+    if (!confirmed) return;
+    const prev = exams;
+    setExams((p) => p.filter((e) => e._id !== exam._id));
+    try {
+      await apiClient.delete(`/exams/${exam._id}`);
+      showToast('Sınav silindi', 'success');
+    } catch (err) {
+      setExams(prev);
+      showToast(err.response?.data?.message || 'Sınav silinemedi', 'error');
     }
   };
 
@@ -717,18 +737,7 @@ export default function TeacherExamsPage() {
                     variant="outline"
                     size="sm"
                     className="!text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40"
-                    onClick={async () => {
-                      if (!window.confirm('Bu sınavı silmek istiyor musun?')) return;
-                      const prev = exams;
-                      setExams((p) => p.filter((e) => e._id !== exam._id));
-                      try {
-                        await apiClient.delete(`/exams/${exam._id}`);
-                        showToast('Sınav silindi', 'success');
-                      } catch (err) {
-                        setExams(prev);
-                        showToast(err.response?.data?.message || 'Sınav silinemedi', 'error');
-                      }
-                    }}
+                    onClick={() => handleDeleteExam(exam)}
                     aria-label="Sınavı sil"
                   >
                     <Trash2 size={16} />
@@ -802,6 +811,7 @@ export default function TeacherExamsPage() {
       </div>
       {previewId && <ExamPreviewModal examId={previewId} onClose={() => setPreviewId(null)} />}
       {resultsId && <ExamResultsModal examId={resultsId} onClose={() => setResultsId(null)} />}
+      <ConfirmDialog />
     </div>
   );
 }

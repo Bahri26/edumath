@@ -16,6 +16,14 @@ const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
 
+const driveService = (() => {
+  try {
+    return require('./storage/driveService');
+  } catch {
+    return null;
+  }
+})();
+
 let s3Client = null;
 let cloudinaryClient = null;
 
@@ -30,6 +38,10 @@ function isCloudinaryEnabled() {
     && !!CLOUDINARY_API_SECRET;
 }
 
+function isGoogleDriveEnabled() {
+  return STORAGE_PROVIDER === 'gdrive' && driveService?.isDriveConfigured?.();
+}
+
 function isObjectStorageEnabled() {
   return ['r2', 's3'].includes(STORAGE_PROVIDER)
     && !!S3_BUCKET_NAME
@@ -39,11 +51,12 @@ function isObjectStorageEnabled() {
 }
 
 function isRemoteStorageEnabled() {
-  return isCloudinaryEnabled() || isObjectStorageEnabled();
+  return isCloudinaryEnabled() || isGoogleDriveEnabled() || isObjectStorageEnabled();
 }
 
 function getProviderName() {
   if (isCloudinaryEnabled()) return 'cloudinary';
+  if (isGoogleDriveEnabled()) return 'gdrive';
   if (isObjectStorageEnabled()) return STORAGE_PROVIDER;
   return 'local';
 }
@@ -61,22 +74,27 @@ function ensureLocalUploadDirs() {
 
 function getStorageStatus() {
   const cloudinary = isCloudinaryEnabled();
+  const gdrive = isGoogleDriveEnabled();
   const objectEnabled = isObjectStorageEnabled();
   return {
     provider: getProviderName(),
     objectStorageEnabled: objectEnabled,
     cloudinaryEnabled: cloudinary,
+    googleDriveEnabled: gdrive,
     remoteStorageEnabled: isRemoteStorageEnabled(),
     localUploadDir: isRemoteStorageEnabled() ? null : LOCAL_UPLOAD_DIR,
     publicBaseUrl: cloudinary
       ? `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}`
-      : objectEnabled
-        ? (S3_PUBLIC_BASE_URL || '(S3_PUBLIC_BASE_URL gerekli)')
-        : '/uploads',
+      : gdrive
+        ? 'https://drive.google.com/uc?export=view&id=…'
+        : objectEnabled
+          ? (S3_PUBLIC_BASE_URL || '(S3_PUBLIC_BASE_URL gerekli)')
+          : '/uploads',
     bucket: objectEnabled ? S3_BUCKET_NAME : null,
     cloudName: cloudinary ? CLOUDINARY_CLOUD_NAME : null,
+    driveImagesFolderId: gdrive ? driveService.getImagesFolderId() : null,
     productionHint: process.env.NODE_ENV === 'production' && !isRemoteStorageEnabled()
-      ? 'Render üretiminde STORAGE_PROVIDER=cloudinary veya r2 ayarlayın.'
+      ? 'Render üretiminde STORAGE_PROVIDER=gdrive veya cloudinary ayarlayın.'
       : null,
   };
 }
@@ -188,6 +206,15 @@ async function uploadBuffer(buffer, options = {}) {
   } = options;
 
   const key = buildObjectKey(prefix, originalName, extension);
+
+  if (isGoogleDriveEnabled()) {
+    const uploaded = await driveService.uploadBuffer(buffer, {
+      originalName,
+      mimeType,
+      prefix,
+    });
+    return uploaded;
+  }
 
   if (isCloudinaryEnabled()) {
     const cloudinary = getCloudinary();
@@ -405,6 +432,15 @@ async function deleteStoredAsset({ key, provider, url } = {}) {
     return;
   }
 
+  if (normalizedProvider === 'gdrive' && normalizedKey) {
+    try {
+      await driveService.deleteFile(normalizedKey);
+    } catch (err) {
+      console.warn('gdrive delete failed:', err?.message);
+    }
+    return;
+  }
+
   if (normalizedProvider === 'cloudinary' && normalizedKey) {
     const cloudinary = getCloudinary();
     if (cloudinary) {
@@ -443,6 +479,7 @@ module.exports = {
   deleteStoredAsset,
   isObjectStorageEnabled,
   isCloudinaryEnabled,
+  isGoogleDriveEnabled,
   isRemoteStorageEnabled,
   getProviderName,
   ensureLocalUploadDirs,

@@ -28,7 +28,7 @@ API_KEY = os.getenv("ML_SERVICE_API_KEY", "").strip()
 app = FastAPI(
     title="Edumath ML Service",
     description="Yerel soru çözümü, ayrıştırma ve öğrenci konu analizi (dış AI yok)",
-    version="0.2.0",
+    version="0.2.1",
 )
 
 
@@ -98,7 +98,7 @@ def _check_api_key(x_api_key: str | None) -> None:
 @app.get("/health")
 def health() -> dict[str, Any]:
     payload = health_payload()
-    payload["version"] = "0.2.0"
+    payload["version"] = "0.2.1"
     payload["capabilities"] = [
         "weak-topics",
         "question-solve",

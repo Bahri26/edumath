@@ -47,10 +47,20 @@ router.post('/:id/submit', auth, async (req, res) => {
   const lesson = await Lesson.findById(req.params.id);
   if (!lesson) return res.status(404).json({ message: 'Lesson not found' });
   const { answers } = req.body;
-  let correct = 0, wrong = 0;
-  lesson.quiz.forEach((q, i) => {
-    if (answers[i] === q.correctAnswer) correct++;
-    else wrong++;
+  let correct = 0;
+  let wrong = 0;
+  const review = lesson.quiz.map((q, i) => {
+    const userAnswer = answers[i];
+    const isCorrect = userAnswer === q.correctAnswer;
+    if (isCorrect) correct += 1;
+    else wrong += 1;
+    return {
+      question: q.question,
+      userAnswer: userAnswer || '',
+      correctAnswer: q.correctAnswer,
+      isCorrect,
+      solution: q.solution || '',
+    };
   });
   await UserProgress.findOneAndUpdate(
     { userId: req.user.id, lessonId: lesson._id },
@@ -70,7 +80,7 @@ router.post('/:id/submit', auth, async (req, res) => {
     metadata: { correct, wrong, xp: correct * 10 },
   });
 
-  res.json({ correct, wrong, xp: correct * 10 });
+  res.json({ correct, wrong, xp: correct * 10, review });
 });
 
 module.exports = router;

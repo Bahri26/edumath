@@ -153,6 +153,60 @@ export const registerAuthFailureHandler = (fn) => {
     authFailureHandler = typeof fn === 'function' ? fn : null;
 };
 
+const persistSessionTokens = (token, refreshToken) => {
+    if (token) {
+        localStorage.setItem('token', token);
+    }
+    if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+    }
+    const userRaw = localStorage.getItem('user');
+    if (userRaw && token) {
+        try {
+            const parsed = JSON.parse(userRaw);
+            localStorage.setItem('user', JSON.stringify({ ...parsed, token }));
+        } catch {
+            /* ignore */
+        }
+    }
+};
+
+let refreshInFlight = null;
+
+const refreshAccessToken = async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+        throw new Error('Refresh token yok');
+    }
+
+    const response = await axios.post(
+        `${API_BASE}/auth/refresh`,
+        { refreshToken },
+        {
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            timeout: AUTH_TIMEOUT,
+        },
+    );
+
+    const { token, refreshToken: newRefresh } = response.data || {};
+    if (!token) {
+        throw new Error('Yeni access token alınamadı');
+    }
+
+    persistSessionTokens(token, newRefresh);
+    return token;
+};
+
+const shouldSkipRefresh = (config) => {
+    const path = String(config?.url || '');
+    return (
+        path.includes('/auth/login')
+        || path.includes('/auth/register')
+        || path.includes('/auth/refresh')
+        || path.includes('/auth/logout')
+    );
+};
+
 const apiClient = axios.create({
     baseURL: API_BASE,
     headers: {
@@ -255,11 +309,35 @@ apiClient.interceptors.response.use(
         }
 
         if (status === 401) {
-            console.warn('Oturum süresi doldu, çıkış yapılıyor...');
-            try {
-                authFailureHandler?.(error);
-            } catch {
-                /* ignore */
+            if (config && !config.__isRetryAfterRefresh && !shouldSkipRefresh(config)) {
+                try {
+                    if (!refreshInFlight) {
+                        refreshInFlight = refreshAccessToken().finally(() => {
+                            refreshInFlight = null;
+                        });
+                    }
+                    const newToken = await refreshInFlight;
+                    config.headers = config.headers || {};
+                    config.headers.Authorization = `Bearer ${newToken}`;
+                    config.__isRetryAfterRefresh = true;
+                    return apiClient(config);
+                } catch (refreshError) {
+                    console.warn('Oturum yenilenemedi, çıkış yapılıyor...', refreshError?.message || refreshError);
+                    try {
+                        authFailureHandler?.(error);
+                    } catch {
+                        /* ignore */
+                    }
+                }
+            } else if (shouldSkipRefresh(config)) {
+                /* login/register hataları — logout yok */
+            } else {
+                console.warn('Oturum süresi doldu, çıkış yapılıyor...');
+                try {
+                    authFailureHandler?.(error);
+                } catch {
+                    /* ignore */
+                }
             }
         }
         // Global toast-based error handling (non-401)

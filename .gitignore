@@ -9,7 +9,10 @@ ml-service/__pycache__/
 ml-service/**/__pycache__/
 ml-service/.env
 frontend/dist/
+frontend/test-results/
 backend/dist/
+backend/tmp/
+tmp/
 backend/coverage/
 backend/.nyc_output/
 
@@ -21,6 +24,9 @@ backend/.nyc_output/
 !.env.example
 backend/.env
 frontend/.env
+backend/gcp-service-account.json
+backend/drive-oauth-client.json
+backend/drive-oauth-token.json
 
 # =============================
 # Loglar & geçici çıktılar
@@ -49,6 +55,7 @@ backend/uploads/*
 !backend/uploads/pattern-templates/
 !backend/uploads/pattern-templates/.gitkeep
 !backend/uploads/temp/
+backend/uploads/temp/*
 !backend/uploads/temp/.gitkeep
 
 # =============================
@@ -56,6 +63,8 @@ backend/uploads/*
 # =============================
 .git-commit-msg.tmp
 *.tmp
+docs/**/*.pdf
+tez_taslak.pdf
 
 # =============================
 # IDE / OS

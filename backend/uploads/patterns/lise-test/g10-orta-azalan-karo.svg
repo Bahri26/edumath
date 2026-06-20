@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320">
+  <rect width="900" height="320" rx="24" fill="#F5F3FF"/>
+  <text x="36" y="44" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#5B21B6">Azalan Karo Modeli</text>
+  
+  <rect x="80" y="80" width="180" height="180" rx="8" fill="#6366F1" opacity="0.9"/>
+  <text x="170" y="178" text-anchor="middle" font-size="28" font-weight="700" fill="#fff">729</text>
+  <path d="M280 170 L340 170" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+  <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#94A3B8"/></marker></defs>
+  <rect x="360" y="110" width="120" height="120" rx="8" fill="#818CF8"/>
+  <text x="420" y="182" text-anchor="middle" font-size="24" font-weight="700" fill="#fff">243</text>
+  <path d="M500 170 L560 170" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+  <rect x="580" y="140" width="80" height="80" rx="8" fill="#A5B4FC"/>
+  <text x="620" y="188" text-anchor="middle" font-size="20" font-weight="700" fill="#fff">81</text>
+  <path d="M680 170 L740 170" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrow)"/>
+  <rect x="760" y="158" width="54" height="54" rx="8" fill="#C7D2FE"/>
+  <text x="787" y="192" text-anchor="middle" font-size="18" font-weight="700" fill="#4338CA">27</text>
+  <text x="36" y="298" font-family="Arial, sans-serif" font-size="16" fill="#64748B">Her adımda alan üçte bire iniyor. Ortak oran kaçtır?</text>
+</svg>
