@@ -6,7 +6,8 @@ export const translations = {
       courses: 'Kurslar',
       curriculum: 'Müfredat',
       contact: 'İletişim',
-      login: 'Giriş Yap'
+      login: 'Giriş Yap',
+      skipToContent: 'Ana içeriğe atla',
     },
     hero: {
       badge: '🚀 Geleceğin Eğitimi Burada',
@@ -120,7 +121,8 @@ export const translations = {
       courses: 'Courses',
       curriculum: 'Curriculum',
       contact: 'Contact',
-      login: 'Login'
+      login: 'Login',
+      skipToContent: 'Skip to main content',
     },
     hero: {
       badge: '🚀 Future of Education is Here',

@@ -472,6 +472,8 @@ const EXERCISE_PLAYER = {
     errSubmit: 'Gönderilemedi',
     pickAnswer: 'Önce bir cevap seç veya yaz',
     errCheck: 'Kontrol edilemedi',
+    questionImageAlt: 'Soru görseli',
+    timeRemaining: 'Kalan süre',
   },
   EN: {
     loading: 'Loading exercise…',
@@ -488,6 +490,8 @@ const EXERCISE_PLAYER = {
     errSubmit: 'Could not submit',
     pickAnswer: 'Select or enter an answer first',
     errCheck: 'Could not check answer',
+    questionImageAlt: 'Question illustration',
+    timeRemaining: 'Time remaining',
   },
 };
 

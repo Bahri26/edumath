@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { LogOut, Moon, Sun, User, Settings, Menu, X, Globe } from 'lucide-react';
 import NotificationDropdown from '../components/ui/NotificationDropdown.jsx';
+import SkipLink from '../components/ui/SkipLink.jsx';
 import { useTranslation } from '../i18n/useTranslation';
 
 const DashboardLayout = ({
@@ -99,6 +100,7 @@ const DashboardLayout = ({
           : 'bg-surface-50 dark:bg-surface-900'
       }`}
     >
+      <SkipLink>{t('skipToContent')}</SkipLink>
       {isNavMenuOpen && (
         <div
           className="fixed inset-0 z-20 bg-black/40"
@@ -291,7 +293,7 @@ const DashboardLayout = ({
           </div>
         </header>
 
-        <main className={`flex-1 ${studentKid ? 'p-4 sm:p-6 pb-10' : 'p-6'}`}>
+        <main id="main-content" tabIndex={-1} className={`flex-1 ${studentKid ? 'p-4 sm:p-6 pb-10' : 'p-6'}`}>
           {children ? children : <Outlet />}
         </main>
       </div>

@@ -54,6 +54,10 @@ curl https://YOUR-API.onrender.com/health
 curl https://YOUR-API.onrender.com/ready
 ```
 
+**Adım adım Drive geçişi:** [render-drive-production.md](./render-drive-production.md)  
+**Güvenlik denetimi:** [owasp-security-checklist.md](./owasp-security-checklist.md)  
+**Erişilebilirlik denetimi:** [wcag-accessibility-checklist.md](./wcag-accessibility-checklist.md)
+
 ## 3. Render — Frontend client
 
 | Variable | Notes |

@@ -13,6 +13,7 @@ import Curriculum from '../sections/Curriculum'; // Kademeli Örüntü Müfredat
 import Courses from '../sections/Courses';       // İnteraktif Örüntü Modülleri
 import Contact from '../sections/Contact';
 import Chatbox from '../components/ui/Chatbox';
+import SkipLink from '../components/ui/SkipLink';
 import { useTheme } from '../context/ThemeContext';
 import { getHomePathForRole } from '../utils/roleRoutes';
 
@@ -133,6 +134,7 @@ const LandingPage = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark' ? 'bg-surface-950 text-surface-50' : 'bg-surface-50 text-surface-900'}`}>
+      <SkipLink>{t.nav.skipToContent}</SkipLink>
       
       {/* Gezinme Çubuğu */}
       <Navbar 
@@ -153,7 +155,7 @@ const LandingPage = () => {
       />
 
       {/* ANA İÇERİK ALANI */}
-      <main className="flex-grow">
+      <main id="main-content" tabIndex={-1} className="flex-grow">
         
         {/* Hero: "Örüntüleri Keşfet" temalı giriş alanı */}
         <Hero

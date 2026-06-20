@@ -344,6 +344,17 @@ export default function StudentExercisePlayer() {
 
   const progress = questions.length ? Math.round(((currentIndex + (isAnswered ? 1 : 0)) / questions.length) * 100) : 0;
 
+  const questionImageAlt = useMemo(() => {
+    if (!currentQ) return t('exercisePlayer.questionImageAlt');
+    const snippet = String(currentQ.text || currentQ.topic || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 100);
+    return snippet
+      ? `${t('exercisePlayer.questionImageAlt')}: ${snippet}`
+      : t('exercisePlayer.questionImageAlt');
+  }, [currentQ, t]);
+
   return (
     <StudentPageShell
       title={exercise.name}
@@ -360,10 +371,16 @@ export default function StudentExercisePlayer() {
         </button>
         <div className="flex items-center gap-3">
           {timeLeft != null && (
-            <span className={`inline-flex items-center gap-1 font-mono font-bold px-3 py-1 rounded-xl text-sm ${
-              timeLeft < 120 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
-            }`}>
-              <Clock size={14} /> {formatTime(timeLeft)}
+            <span
+              className={`inline-flex items-center gap-1 font-mono font-bold px-3 py-1 rounded-xl text-sm ${
+                timeLeft < 120 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
+              }`}
+              role="timer"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-label={t('exercisePlayer.timeRemaining')}
+            >
+              <Clock size={14} aria-hidden="true" /> {formatTime(timeLeft)}
             </span>
           )}
           <span className="text-sm font-bold text-slate-500">
@@ -390,7 +407,7 @@ export default function StudentExercisePlayer() {
             text={currentQ.text}
             mainClassName="text-lg font-medium text-slate-800 dark:text-white"
           />
-          <QuestionVisual src={currentQ.image} alt="Soru görseli" />
+          <QuestionVisual src={currentQ.image} alt={questionImageAlt} />
 
           {renderInput()}
 

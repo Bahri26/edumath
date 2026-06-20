@@ -12,6 +12,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
+import SkipLink from '../../components/ui/SkipLink.jsx';
+import { useTranslation } from '../../i18n/useTranslation';
 
 const navClass = ({ isActive }) =>
   [
@@ -23,9 +25,11 @@ const navClass = ({ isActive }) =>
 
 const AdminLayout = () => {
   const { logout } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/30">
+      <SkipLink>{t('skipToContent')}</SkipLink>
       <div className="mx-auto flex min-h-screen max-w-[1920px]">
         <aside className="sticky top-0 flex h-screen w-[260px] shrink-0 flex-col border-r border-white/10 bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 text-slate-200 shadow-xl shadow-slate-900/20">
           <div className="border-b border-white/10 px-5 py-6">
@@ -83,7 +87,7 @@ const AdminLayout = () => {
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 overflow-x-hidden">
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overflow-x-hidden">
           <div className="min-h-screen">
             <Outlet />
           </div>

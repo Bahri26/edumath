@@ -16,10 +16,59 @@
     width: 100%;
     height: 100%;
   }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid theme('colors.brand.500');
+    outline-offset: 2px;
+  }
 }
 
 /* --- Custom Scrollbar --- */
 @layer utilities {
+  .skip-link {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .skip-link:focus {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 9999;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0.625rem 1rem;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    border-radius: 0.5rem;
+    background-color: theme('colors.white');
+    color: theme('colors.brand.700');
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    outline: 2px solid theme('colors.brand.500');
+    outline-offset: 2px;
+  }
+
+  :is(.dark .skip-link:focus) {
+    background-color: theme('colors.surface.800');
+    color: theme('colors.brand.300');
+  }
+
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: rgba(100, 116, 139, 0.5) transparent;

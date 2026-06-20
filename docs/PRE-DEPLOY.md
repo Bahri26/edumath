@@ -46,6 +46,15 @@ cd backend ; npm run smoke:predeploy
 
 Detay: [deploy-checklist.md](./deploy-checklist.md)
 
+## Detaylı denetim kılavuzları
+
+| Konu | Belge |
+|------|--------|
+| OWASP güvenlik (Top 10) | [owasp-security-checklist.md](./owasp-security-checklist.md) |
+| WCAG 2.1 AA erişilebilirlik | [wcag-accessibility-checklist.md](./wcag-accessibility-checklist.md) |
+| Render → Google Drive geçişi | [render-drive-production.md](./render-drive-production.md) |
+| Yerel `.env` → Render eşlemesi | [render-env-edumath.md](./render-env-edumath.md) |
+
 ## Bilinçli olarak sonraya bırakılanlar
 
 - TeacherExerciseCreator, QuestionBank, ExamsPage tam i18n

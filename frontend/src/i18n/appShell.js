@@ -17,6 +17,7 @@ export const APP_SHELL = {
     switchToEn: 'İngilizceye geç',
     switchToTr: 'Türkçeye geç',
     languageTitle: 'Dil',
+    skipToContent: 'Ana içeriğe atla',
   },
   EN: {
     teacherPanel: 'Teacher dashboard',
@@ -35,5 +36,6 @@ export const APP_SHELL = {
     switchToEn: 'Switch to English',
     switchToTr: 'Switch to Turkish',
     languageTitle: 'Language',
+    skipToContent: 'Skip to main content',
   },
 };
