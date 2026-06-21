@@ -2,6 +2,10 @@ const { isLocalAi, isOllamaAi } = require('../config/aiProvider');
 const localText = require('../services/localTextService');
 const localQuestions = require('../services/localQuestionService');
 const {
+  assertTeacherCanAccessStudentUser,
+  resolveSelfStudentUserId,
+} = require('../utils/teacherStudentAccess');
+const {
   buildInteractivePracticeQuestions,
   buildFallbackPracticeQuestions,
 } = require('../services/practiceQuestionBank');
@@ -217,6 +221,16 @@ exports.analyzeAndSuggest = async (req, res) => {
     if (!answer || !studentId) {
       return res.status(400).json({ message: "Eksik parametre." });
     }
+
+    const access = await assertTeacherCanAccessStudentUser(
+      req.user.id,
+      studentId,
+      req.user.role,
+    );
+    if (!access.allowed) {
+      return res.status(access.status || 403).json({ message: access.message });
+    }
+
     const result = await analyzeAndSuggest(answer, topic, studentId);
     res.json(result);
   } catch (error) {
@@ -607,16 +621,33 @@ exports.generateQuiz = async (req, res) => {
 // ------------------------------------------------------------------
 exports.generatePracticeQuestions = async (req, res) => {
   try {
-    const { weakTopics, studentId } = req.body;
+    const { weakTopics, studentId: requestedStudentId } = req.body;
+    const role = req.user?.role;
+    const targetStudentId = resolveSelfStudentUserId(
+      role,
+      req.user?.id,
+      requestedStudentId,
+    );
+
+    if (role === 'teacher') {
+      const access = await assertTeacherCanAccessStudentUser(
+        req.user.id,
+        targetStudentId,
+        role,
+      );
+      if (!access.allowed) {
+        return res.status(access.status || 403).json({ message: access.message });
+      }
+    }
 
     if (!weakTopics || weakTopics.length === 0) {
-      if (isLocalAi() && studentId) {
+      if (isLocalAi() && targetStudentId) {
         const { getWeakTopics } = require('../services/studentAnalyticsService');
-        const inferred = await getWeakTopics(studentId);
+        const inferred = await getWeakTopics(targetStudentId);
         if (inferred.length) {
           const local = await localQuestions.generateLocalPractice({
             weakTopics: inferred,
-            studentId,
+            studentId: targetStudentId,
             count: 5,
           });
           return res.json(local);
@@ -628,7 +659,7 @@ exports.generatePracticeQuestions = async (req, res) => {
     if (isLocalAi()) {
       const local = await localQuestions.generateLocalPractice({
         weakTopics,
-        studentId: studentId || req.user?.id,
+        studentId: targetStudentId,
         count: 5,
       });
       return res.json(local);
