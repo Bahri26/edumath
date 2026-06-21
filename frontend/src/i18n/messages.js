@@ -749,6 +749,67 @@ const QUESTION_BANK = {
   },
 };
 
+const STUDENT_EXAMS = {
+  TR: {
+    pageTitle: 'Sınavlar',
+    pageSubtitle: 'Sınıfına uygun sınavları çöz; sonuçlarını ve güçlendirme önerilerini buradan takip et.',
+    emptyTitle: 'Henüz sınav yok',
+    emptyDesc: 'Öğretmenin paylaştığında burada görünür. Bu arada derslerinden çalışmaya devam edebilirsin.',
+    goCourses: 'Derslerime git',
+    start: 'Başla',
+    viewResult: 'Sonucumu gör',
+    scheduled: 'Henüz başlamadı',
+    ended: 'Süre doldu',
+    phaseLive: 'Aktif',
+    questionProgress: 'Soru {current} / {total}',
+    answeredCount: '{n} cevaplandı',
+    questionLabel: 'Soru {n}',
+    questionImageAlt: 'Soru görseli',
+    questionAnsweredAria: ', cevaplandı',
+    prev: 'Önceki',
+    next: 'Sonraki',
+    finish: 'Gönder ve bitir',
+    finishEarly: 'Sınavı şimdi gönder',
+    confirmFinishTitle: 'Sınavı gönder?',
+    confirmEarlyTitle: 'Sınavı şimdi gönder?',
+    confirmUnanswered:
+      '{n} soru cevaplanmadı. Sınavı şimdi göndermek istiyor musun? Cevapladığın sorular kaydedilecek.',
+    confirmAllAnswered: 'Sınavı göndermek istiyor musun? Tüm cevapların kaydedilecek.',
+    errStart: 'Sınav başlatılamadı.',
+    errSubmit: 'Sınav gönderilirken hata oluştu.',
+    questionsCount: '{n} soru',
+  },
+  EN: {
+    pageTitle: 'Exams',
+    pageSubtitle: 'Take class exams, track results, and follow practice suggestions here.',
+    emptyTitle: 'No exams yet',
+    emptyDesc: 'When your teacher publishes one, it will appear here. Keep studying from your courses in the meantime.',
+    goCourses: 'Go to my courses',
+    start: 'Start',
+    viewResult: 'View my result',
+    scheduled: 'Not started yet',
+    ended: 'Time is up',
+    phaseLive: 'Live',
+    questionProgress: 'Question {current} / {total}',
+    answeredCount: '{n} answered',
+    questionLabel: 'Question {n}',
+    questionImageAlt: 'Question image',
+    questionAnsweredAria: ', answered',
+    prev: 'Previous',
+    next: 'Next',
+    finish: 'Submit and finish',
+    finishEarly: 'Submit now',
+    confirmFinishTitle: 'Submit exam?',
+    confirmEarlyTitle: 'Submit exam now?',
+    confirmUnanswered:
+      '{n} questions unanswered. Submit now? Your answered questions will be saved.',
+    confirmAllAnswered: 'Submit the exam? All your answers will be saved.',
+    errStart: 'Could not start the exam.',
+    errSubmit: 'Could not submit the exam.',
+    questionsCount: '{n} questions',
+  },
+};
+
 /** Unified message catalog: shell (flat) + nested sections. */
 export const MESSAGES = {
   TR: {
@@ -763,6 +824,7 @@ export const MESSAGES = {
     studyHub: STUDY_HUB.TR,
     exercisePlayer: EXERCISE_PLAYER.TR,
     questionBank: QUESTION_BANK.TR,
+    studentExams: STUDENT_EXAMS.TR,
   },
   EN: {
     ...APP_SHELL.EN,
@@ -776,6 +838,7 @@ export const MESSAGES = {
     studyHub: STUDY_HUB.EN,
     exercisePlayer: EXERCISE_PLAYER.EN,
     questionBank: QUESTION_BANK.EN,
+    studentExams: STUDENT_EXAMS.EN,
   },
 };
 

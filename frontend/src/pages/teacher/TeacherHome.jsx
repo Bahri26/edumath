@@ -10,12 +10,10 @@ import {
   Trophy,
   Users,
   TrendingUp,
-  ClipboardList,
-  Calendar,
   BarChart3,
   LineChart,
+  ChevronDown,
 } from 'lucide-react';
-import StatCard from '../../components/ui/StatCard';
 import ActivityRow from '../../components/ui/ActivityRow';
 import apiClient from '../../services/api';
 import Button from '../../components/ui/Button.jsx';
@@ -49,27 +47,25 @@ const difficultyLabel = (avg) => {
   return 'Zor';
 };
 
-const StatGridSkeleton = () => (
-  <div className="col-span-full grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse">
-    {[1, 2, 3].map((k) => (
-      <Card key={k} className="p-6">
-        <div className="h-3 w-28 bg-slate-200 dark:bg-slate-600 rounded mb-4" />
-        <div className="grid grid-cols-2 gap-4">
-          <div className="h-24 rounded-2xl bg-slate-100 dark:bg-slate-700" />
-          <div className="h-24 rounded-2xl bg-slate-100 dark:bg-slate-700" />
+const KpiStripSkeleton = () => (
+  <Card className="p-6 col-span-full animate-pulse">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      {[1, 2, 3, 4].map((k) => (
+        <div key={k} className="space-y-2">
+          <div className="h-3 w-24 bg-slate-200 dark:bg-slate-600 rounded" />
+          <div className="h-8 w-14 bg-slate-200 dark:bg-slate-600 rounded" />
         </div>
-      </Card>
-    ))}
-    <Card className="p-6 lg:col-span-2">
-      <div className="h-3 w-24 bg-slate-200 dark:bg-slate-600 rounded mb-4" />
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="h-24 rounded-2xl bg-slate-100 dark:bg-slate-700" />
-        <div className="h-24 rounded-2xl bg-slate-100 dark:bg-slate-700" />
-        <div className="h-24 rounded-2xl bg-slate-100 dark:bg-slate-700" />
-      </div>
-    </Card>
-  </div>
+      ))}
+    </div>
+  </Card>
 );
+
+const KPI_ITEMS = [
+  { key: 'students', title: 'Toplam öğrenci', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/30', getValue: (s) => s.totalStudents ?? 0 },
+  { key: 'average', title: 'Sınıf ortalaması', icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/30', getValue: (s) => `${s.classAverage ?? 0}%` },
+  { key: 'exams', title: 'Aktif sınavlar', icon: BarChart3, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/30', getValue: (s) => s.activeExams ?? 0 },
+  { key: 'questions', title: 'Soru bankası', icon: FileText, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/30', getValue: (s) => s.totalQuestions ?? 0 },
+];
 
 const TeacherHome = () => {
   const { user } = useContext(AuthContext);
@@ -82,6 +78,7 @@ const TeacherHome = () => {
   const [students, setStudents] = useState([]);
   const [dashboardReports, setDashboardReports] = useState(null);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [showMoreActions, setShowMoreActions] = useState(false);
 
   const displayName = (user?.name && String(user.name).trim()) || 'Hocam';
 
@@ -199,7 +196,7 @@ const TeacherHome = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {dashboardError && !dashboardLoading && (
             <div className="col-span-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
               <span>{dashboardError}</span>
@@ -209,50 +206,33 @@ const TeacherHome = () => {
             </div>
           )}
           {dashboardLoading ? (
-            <StatGridSkeleton />
+            <KpiStripSkeleton />
           ) : stats ? (
-            <>
-              <Card className="p-6">
-                <h3 className="font-bold text-sm text-slate-600 dark:text-slate-300 mb-3 uppercase tracking-wider">
-                  Öğrenciler
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <StatCard title="Toplam öğrenci" value={stats.totalStudents ?? 0} icon={Users} color="bg-blue-600" />
-                  <StatCard title="Sınıf ortalaması" value={`${stats.classAverage ?? 0}%`} icon={TrendingUp} color="bg-indigo-600" />
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <h3 className="font-bold text-sm text-slate-600 dark:text-slate-300 mb-3 uppercase tracking-wider">
-                  Sorular
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <StatCard title="Soru bankası (sizin)" value={stats.totalQuestions ?? 0} icon={FileText} color="bg-purple-600" />
-                  <StatCard title="Bugün eklenen" value={stats.todayQuestions ?? 0} icon={Calendar} color="bg-emerald-600" />
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <h3 className="font-bold text-sm text-slate-600 dark:text-slate-300 mb-3 uppercase tracking-wider">
-                  Anketler
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <StatCard title="Anketler (sizin)" value={stats.totalSurveys ?? 0} icon={ClipboardList} color="bg-green-600" />
-                  <StatCard title="Bugün oluşturulan" value={stats.todaySurveys ?? 0} icon={ClipboardList} color="bg-green-700" />
-                </div>
-              </Card>
-
-              <Card className="p-6 lg:col-span-2">
-                <h3 className="font-bold text-sm text-slate-600 dark:text-slate-300 mb-3 uppercase tracking-wider">
-                  Sınavlar
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <StatCard title="Aktif sınavlar" value={stats.activeExams ?? 0} icon={BarChart3} color="bg-rose-600" />
-                  <StatCard title="Toplam sınav (sizin)" value={stats.totalExams ?? 0} icon={FileText} color="bg-orange-600" />
-                  <StatCard title="Bugün oluşturulan" value={stats.todayExams ?? 0} icon={Calendar} color="bg-orange-700" />
-                </div>
-              </Card>
-            </>
+            <Card className="p-4 sm:p-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                {KPI_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={item.key}
+                      className="flex items-center gap-3 min-w-0 rounded-xl p-2 sm:p-0"
+                    >
+                      <div className={`shrink-0 p-2.5 rounded-xl ${item.bg}`}>
+                        <Icon size={20} className={item.color} aria-hidden />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 truncate">
+                          {item.title}
+                        </p>
+                        <p className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white tabular-nums">
+                          {item.getValue(stats)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
           ) : dashboardError ? null : (
             <div className="col-span-full flex flex-col items-center gap-3 py-10 text-center">
               <p className="text-slate-600 dark:text-slate-300">Özet verisi henüz yok.</p>
@@ -388,12 +368,12 @@ const TeacherHome = () => {
 
             <div className="bg-gradient-to-br from-brand-600 to-brand-800 rounded-2xl p-6 text-white shadow-xl shadow-brand-900/20 dark:shadow-none">
               <h3 className="font-bold text-lg mb-2">Hızlı işlemler</h3>
-              <p className="text-brand-100 text-sm mb-6">Sınıfınızı yönetmek için kısayollar.</p>
+              <p className="text-brand-100 text-sm mb-5">En sık kullandığınız kısayollar.</p>
               <Button
                 type="button"
                 variant="secondary"
                 size="md"
-                className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20"
+                className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 min-h-[44px]"
                 onClick={() => navigate('/teacher/questions')}
               >
                 <div className="bg-white p-2 rounded text-brand-600">
@@ -405,31 +385,7 @@ const TeacherHome = () => {
                 type="button"
                 variant="secondary"
                 size="md"
-                className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 mt-3"
-                onClick={() => navigate('/teacher/questions?aiGenerate=1')}
-              >
-                <div className="bg-white p-2 rounded text-violet-600">
-                  <Wand2 size={16} />
-                </div>
-                <span>AI ile soru üret</span>
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="md"
-                className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 mt-3"
-                onClick={() => navigate('/teacher/pattern-builder')}
-              >
-                <div className="bg-white p-2 rounded text-violet-600">
-                  <Wand2 size={16} />
-                </div>
-                <span>Örüntü şablonu</span>
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="md"
-                className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 mt-3"
+                className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 mt-3 min-h-[44px]"
                 onClick={() => navigate('/teacher/exams')}
               >
                 <div className="bg-white p-2 rounded text-rose-600">
@@ -441,7 +397,7 @@ const TeacherHome = () => {
                 type="button"
                 variant="secondary"
                 size="md"
-                className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 mt-3"
+                className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 mt-3 min-h-[44px]"
                 onClick={() => navigate('/teacher/exercises')}
               >
                 <div className="bg-white p-2 rounded text-amber-500">
@@ -449,19 +405,56 @@ const TeacherHome = () => {
                 </div>
                 <span>Egzersiz oluştur</span>
               </Button>
-              <Button
+              <button
                 type="button"
-                variant="secondary"
-                size="md"
-                className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 mt-3"
-                onClick={() => navigate('/teacher/surveys')}
-                title="Sınıfa anket veya duyuru"
+                onClick={() => setShowMoreActions((v) => !v)}
+                className="mt-4 w-full flex items-center justify-center gap-2 text-sm font-semibold text-brand-100 hover:text-white min-h-[44px] rounded-xl hover:bg-white/10 transition-colors"
+                aria-expanded={showMoreActions}
               >
-                <div className="bg-white p-2 rounded text-brand-600">
-                  <Bell size={16} />
+                Diğer işlemler
+                <ChevronDown size={16} className={`transition-transform ${showMoreActions ? 'rotate-180' : ''}`} aria-hidden />
+              </button>
+              {showMoreActions && (
+                <div className="mt-2 space-y-2 pt-2 border-t border-white/15">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    className="w-full bg-white/5 hover:bg-white/15 text-white border-white/10 min-h-[44px]"
+                    onClick={() => navigate('/teacher/questions?aiGenerate=1')}
+                  >
+                    <div className="bg-white p-2 rounded text-violet-600">
+                      <Wand2 size={16} />
+                    </div>
+                    <span>AI ile soru üret</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    className="w-full bg-white/5 hover:bg-white/15 text-white border-white/10 min-h-[44px]"
+                    onClick={() => navigate('/teacher/pattern-builder')}
+                  >
+                    <div className="bg-white p-2 rounded text-violet-600">
+                      <Wand2 size={16} />
+                    </div>
+                    <span>Örüntü şablonu</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    className="w-full bg-white/5 hover:bg-white/15 text-white border-white/10 min-h-[44px]"
+                    onClick={() => navigate('/teacher/surveys')}
+                    title="Sınıfa anket veya duyuru"
+                  >
+                    <div className="bg-white p-2 rounded text-brand-600">
+                      <Bell size={16} />
+                    </div>
+                    <span>Anket / duyuru</span>
+                  </Button>
                 </div>
-                <span>Anket / duyuru</span>
-              </Button>
+              )}
             </div>
           </div>
         </div>
