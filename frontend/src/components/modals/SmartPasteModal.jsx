@@ -297,7 +297,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         base = enrichQuestionForm(base);
         setParsedData(base);
       }
-      const payload = { ...buildSavePayload(base, parseLayout), source: 'AI' };
+      const payload = { ...buildSavePayload(base, parseLayout), source: 'Manuel' };
       const useDiagramPath = Boolean(
         parseLayout?.diagramImagePath
         || payload.imagePath?.includes('/temp/crops/')

@@ -5,8 +5,7 @@ const Footer = ({ t }) => {
   const currentYear = new Date().getFullYear();
   const email = t.contact.email;
 
-  const legalMailto = (subject) =>
-    `mailto:${email}?subject=${encodeURIComponent(subject)}`;
+  const legalPath = (docType) => `/legal/${docType}`;
 
   return (
     <footer className="bg-gray-900 dark:bg-gray-950 text-gray-300 pt-16 pb-8 border-t border-gray-800 dark:border-gray-900 transition-colors duration-300">
@@ -69,25 +68,13 @@ const Footer = ({ t }) => {
         <div className="border-t border-gray-800 dark:border-gray-900 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 gap-4">
           <p>&copy; {currentYear} Edumath. {t.footer.rights}</p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-            <a
-              href={legalMailto(t.footer.privacy)}
-              className="hover:text-white transition-colors"
-              title={t.footer.legalMailHint}
-            >
+            <a href={legalPath('privacy')} className="hover:text-white transition-colors">
               {t.footer.privacy}
             </a>
-            <a
-              href={legalMailto(t.footer.terms)}
-              className="hover:text-white transition-colors"
-              title={t.footer.legalMailHint}
-            >
+            <a href={legalPath('terms')} className="hover:text-white transition-colors">
               {t.footer.terms}
             </a>
-            <a
-              href={legalMailto(t.footer.cookies)}
-              className="hover:text-white transition-colors"
-              title={t.footer.legalMailHint}
-            >
+            <a href={legalPath('cookies')} className="hover:text-white transition-colors">
               {t.footer.cookies}
             </a>
           </div>

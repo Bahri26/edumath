@@ -642,6 +642,25 @@ const STUDY_HUB = {
   },
 };
 
+const LEGAL = {
+  TR: {
+    backHome: 'Ana sayfa',
+    updated: 'Son güncelleme',
+    relatedDocs: 'İlgili belgeler',
+    privacy: 'Gizlilik & KVKK',
+    terms: 'Kullanım şartları',
+    cookies: 'Çerez politikası',
+  },
+  EN: {
+    backHome: 'Home',
+    updated: 'Last updated',
+    relatedDocs: 'Related documents',
+    privacy: 'Privacy & KVKK',
+    terms: 'Terms of use',
+    cookies: 'Cookie policy',
+  },
+};
+
 const COMMON = {
   TR: {
     loading: 'Yükleniyor…',
@@ -843,6 +862,7 @@ export const MESSAGES = {
   TR: {
     ...APP_SHELL.TR,
     common: COMMON.TR,
+    legal: LEGAL.TR,
     nav: NAV.TR,
     progress: PROGRESS.TR,
     settings: SETTINGS.TR,
@@ -857,6 +877,7 @@ export const MESSAGES = {
   EN: {
     ...APP_SHELL.EN,
     common: COMMON.EN,
+    legal: LEGAL.EN,
     nav: NAV.EN,
     progress: PROGRESS.EN,
     settings: SETTINGS.EN,

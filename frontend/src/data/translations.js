@@ -146,7 +146,7 @@ export const translations = {
       schoolTrack: 'Okul Matematiği Programları',
       researchTrack: 'Araştırma ve Doktora Modülleri',
       demoTrack: 'Demo ve Bilgi Talebi',
-      legalMailHint: 'Detaylı metin için bize yazın'
+      legalMailHint: 'Gizlilik ve KVKK metni'
     }
   },
   en: {
@@ -296,7 +296,7 @@ export const translations = {
       schoolTrack: 'School Mathematics Programs',
       researchTrack: 'Research and Doctoral Modules',
       demoTrack: 'Demo and Information Request',
-      legalMailHint: 'Contact us for the full document'
+      legalMailHint: 'Privacy and KVKK notice'
     }
   }
 };

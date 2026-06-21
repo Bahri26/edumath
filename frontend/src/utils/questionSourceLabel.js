@@ -48,7 +48,12 @@ export function getQuestionSourceMeta(question, lang = 'TR') {
   return {
     source: 'Manuel',
     label: lang === 'EN' ? 'Expert' : 'Uzman',
-    detail: lang === 'EN' ? 'Teacher verified' : 'Öğretmen doğruladı',
+    detail:
+      method === 'smart-parse'
+        ? methodMap['smart-parse']
+        : lang === 'EN'
+          ? 'Teacher verified'
+          : 'Öğretmen doğruladı',
     badgeClass:
       'bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-950/50 dark:text-teal-200 dark:border-teal-800/50',
     icon: 'user',

@@ -669,7 +669,7 @@ export default function QuestionBank() {
               correctAnswer: parsed.correctAnswer || '',
               solution: parsed.solution || '',
               options: Array.isArray(parsed.options) ? parsed.options.concat(Array(5).fill('')).slice(0,5) : ['', '', '', '', ''],
-              source: 'AI',
+              source: 'Manuel',
               assessmentMeta: parsed.assessmentMeta || { origin: 'smart-parse', parseMode: parsed.parseMode || 'smart-parse' },
             });
             setManualForm(enriched);

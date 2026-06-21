@@ -17,6 +17,7 @@ const ExamsPage = lazy(() => import('../pages/common/ExamsPage'));
 const SurveysPage = lazy(() => import('../pages/common/SurveysPage'));
 const ProfilePage = lazy(() => import('../pages/common/ProfilePage'));
 const ResetPassword = lazy(() => import('../pages/common/ResetPassword'));
+const LegalPage = lazy(() => import('../pages/common/LegalPage'));
 const AudienceLandingPage = lazy(() => import('../pages/AudienceLandingPage'));
 
 const TeacherHome = lazy(() => import('../pages/teacher/TeacherHome'));
@@ -72,6 +73,7 @@ export default function AppRoutes() {
         <Route path="/teachers" element={<AudienceLandingPage audience="teacher" />} />
         <Route path="/research" element={<AudienceLandingPage audience="research" />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/legal/:docType" element={<LegalPage />} />
 
         <Route
           path="/teacher"
