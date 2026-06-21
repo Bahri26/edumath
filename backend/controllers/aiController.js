@@ -227,7 +227,8 @@ exports.analyzeAndSuggest = async (req, res) => {
 const { GoogleGenerativeAI, SchemaType } = require("@google/generative-ai");
 const fs = require("fs");
 const pathLib = require('path');
-const Tesseract = require('tesseract.js');
+const { recognizeText } = require('../services/ocrImageService');
+const { cleanOcrText } = require('../services/questionImageParseService');
 const { generatePatternQuestions } = require('../services/aiQuestionGeneratorService');
 const { generateContentAsJson } = require('../services/geminiJsonGeneration');
 const { buildMebPromptBlock } = require('../constants/mebCurriculumContext');
@@ -356,16 +357,11 @@ function parseStructuredQuestionText(content, defaults = {}) {
 
 async function extractTextFromImageWithOcr(filePath) {
   try {
-    const result = await Tesseract.recognize(filePath, 'tur+eng', {
-      logger: () => {},
-    });
-    return String(result?.data?.text || '').trim();
+    const raw = await recognizeText(filePath);
+    return cleanOcrText(raw);
   } catch (primaryError) {
-    console.warn('smartParse OCR tur+eng failed, retrying with eng:', primaryError?.message);
-    const retryResult = await Tesseract.recognize(filePath, 'eng', {
-      logger: () => {},
-    });
-    return String(retryResult?.data?.text || '').trim();
+    console.warn('smartParse OCR failed:', primaryError?.message);
+    return '';
   }
 }
 

@@ -426,8 +426,49 @@ async function extractDiagramBufferFromFile(filePath, options = {}) {
   }
 }
 
+/**
+ * Diyagram bandını hariç tutarak üst (giriş) ve alt (soru+şık) OCR bölgelerini üretir.
+ */
+async function extractTextRegionsExcludingDiagram(filePath) {
+  const cropAssets = await extractQuestionImageRegions(filePath);
+  const meta = await sharp(filePath).metadata();
+  if (!meta.width || !meta.height) {
+    return { topTextBuffer: null, bottomTextBuffer: null, cropAssets };
+  }
+
+  const diagram = cropAssets?.cropRegions?.diagram;
+  if (!diagram || !diagram.height) {
+    return { topTextBuffer: null, bottomTextBuffer: null, cropAssets };
+  }
+
+  const gap = CROP_PADDING_PX + 4;
+  const topEnd = Math.max(0, Math.min(meta.height, diagram.top - gap));
+  const bottomStart = Math.min(meta.height, diagram.top + diagram.height + gap);
+  const bottomHeight = meta.height - bottomStart;
+
+  let topTextBuffer = null;
+  let bottomTextBuffer = null;
+
+  if (topEnd >= 48) {
+    topTextBuffer = await sharp(filePath)
+      .extract({ left: 0, top: 0, width: meta.width, height: topEnd })
+      .png()
+      .toBuffer();
+  }
+
+  if (bottomHeight >= 48) {
+    bottomTextBuffer = await sharp(filePath)
+      .extract({ left: 0, top: bottomStart, width: meta.width, height: bottomHeight })
+      .png()
+      .toBuffer();
+  }
+
+  return { topTextBuffer, bottomTextBuffer, cropAssets };
+}
+
 module.exports = {
   extractQuestionImageRegions,
+  extractTextRegionsExcludingDiagram,
   extractDiagramBufferFromFile,
   computeRowDensity,
   findContentBands,
