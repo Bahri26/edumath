@@ -25,6 +25,7 @@
     "tool:approve-branch": "node scripts/tools/approveBranch.js",
     "tool:make-token": "node scripts/tools/makeToken.js",
     "tool:purge-questions": "node scripts/tools/purgeAllQuestions.js",
+    "tool:cleanup-storage": "node scripts/tools/cleanupStorage.js",
     "migrate:fix-questions": "node scripts/migrations/fixQuestions.js",
     "migrate:normalize-subjects": "node scripts/migrations/normalizeQuestionSubjects.js",
     "migrate:backfill-exam-creator": "node scripts/migrations/backfillExamCreatedBy.js",

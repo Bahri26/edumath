@@ -10,6 +10,7 @@ ml-service/**/__pycache__/
 ml-service/.env
 frontend/dist/
 frontend/test-results/
+frontend/playwright-report/
 backend/dist/
 backend/tmp/
 tmp/
@@ -36,6 +37,11 @@ logs/
 backend/logs/
 backend/reports/
 backend/*.traineddata
+backend/data/pattern-pdf-import/
+!backend/data/README.md
+scripts/__pycache__/
+**/__pycache__/
+*.pyc
 .cache/
 
 # =============================
