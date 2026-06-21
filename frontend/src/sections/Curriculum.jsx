@@ -1,14 +1,30 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Target, Book, FileText, CheckCircle, ClipboardCheck, Layers, ArrowRight } from 'lucide-react';
 import FadeIn from '../components/ui/FadeIn';
 import { getCurriculumData } from '../data/curriculumData';
 
 const Curriculum = ({ lang, t }) => {
   const [activeGrade, setActiveGrade] = useState(1);
+
+  useEffect(() => {
+    const handler = (event) => {
+      const grade = Number(event.detail?.grade);
+      if (grade >= 1 && grade <= 12) {
+        setActiveGrade(grade);
+      }
+    };
+    window.addEventListener('edumath:curriculum-grade', handler);
+    return () => window.removeEventListener('edumath:curriculum-grade', handler);
+  }, []);
   
   // Örüntü odaklı veriyi çekiyoruz
   const curriculumList = useMemo(() => getCurriculumData(lang), [lang]);
-  const selectedCurriculum = curriculumList.find(c => c.grade === activeGrade) || curriculumList[0];
+  const selectedCurriculum =
+    curriculumList.find((c) => c.grade === activeGrade) || curriculumList[0];
+
+  if (!selectedCurriculum) {
+    return null;
+  }
 
   // Seviyeye göre dinamik renk belirleme (İlkokul: Turuncu, Ortaokul: Indigo, Lise: Mor)
   const getLevelColor = (grade) => {
@@ -18,7 +34,7 @@ const Curriculum = ({ lang, t }) => {
   };
 
   return (
-    <section id="curriculum" className="py-24 bg-gray-50 dark:bg-gray-900/50 scroll-mt-20 transition-colors duration-300">
+    <section id="curriculum" className="py-24 bg-gray-50 dark:bg-gray-900/50 scroll-mt-20 transition-colors duration-300 pb-28 sm:pb-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Başlık Alanı */}

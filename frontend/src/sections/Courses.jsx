@@ -1,10 +1,16 @@
 import React from 'react';
 import { Star, BookOpen, Users, ArrowRight, Zap } from 'lucide-react';
 import FadeIn from '../components/ui/FadeIn';
+import CourseCardVisual from '../components/ui/CourseCardVisual';
 import { getCourses } from '../data/coursesData';
 
 const Courses = ({ lang, t }) => {
   const courses = getCourses(lang, t);
+
+  const openCurriculumForGrade = (grade) => {
+    window.dispatchEvent(new CustomEvent('edumath:curriculum-grade', { detail: { grade } }));
+    document.getElementById('curriculum')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   const researchModules = lang === 'tr'
     ? [
         {
@@ -130,14 +136,10 @@ const Courses = ({ lang, t }) => {
                 
                 {/* Görsel Alanı */}
                 <div className="relative h-56 overflow-hidden">
-                  <img 
-                    src={course.image} 
-                    alt={course.title} 
-                    className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                  <CourseCardVisual category={course.category} title={course.title} lang={lang} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6 pointer-events-none">
                     <span className="text-white text-sm font-bold flex items-center gap-2">
-                      <Zap size={16} className="text-yellow-400 fill-yellow-400" /> 
+                      <Zap size={16} className="text-yellow-400 fill-yellow-400" />
                       {lang === 'tr' ? 'Hemen Öğrenmeye Başla' : 'Start Learning Now'}
                     </span>
                   </div>
@@ -178,7 +180,12 @@ const Courses = ({ lang, t }) => {
                   </div>
 
                   <div className="mt-auto flex items-center justify-end pt-6 border-t border-gray-50 dark:border-gray-800">
-                    <button className="bg-gray-900 dark:bg-indigo-600 text-white p-4 rounded-2xl hover:bg-indigo-600 dark:hover:bg-indigo-500 transition-all shadow-lg group-hover:shadow-indigo-200 dark:shadow-none">
+                    <button
+                      type="button"
+                      onClick={() => openCurriculumForGrade(course.scrollGrade)}
+                      className="bg-gray-900 dark:bg-indigo-600 text-white p-4 rounded-2xl hover:bg-indigo-600 dark:hover:bg-indigo-500 transition-all shadow-lg group-hover:shadow-indigo-200 dark:shadow-none"
+                      aria-label={lang === 'tr' ? `${course.title} müfredatını aç` : `Open ${course.title} curriculum`}
+                    >
                       <ArrowRight size={24} />
                     </button>
                   </div>

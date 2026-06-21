@@ -186,7 +186,7 @@ const LandingPage = () => {
       <Footer t={t} />
 
       {/* Yapay Zeka Destekli Örüntü Asistanı */}
-      <Chatbox lang={lang} />
+      <Chatbox lang={lang} onLoginClick={() => setIsLoginModalOpen(true)} />
 
     </div>
   );

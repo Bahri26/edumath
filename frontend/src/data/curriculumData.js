@@ -163,5 +163,9 @@ export const getCurriculumData = (lang) => {
     ]
   };
 
-  return data[lang] || data['tr'];
+  const list = data[lang];
+  if (Array.isArray(list) && list.length > 0) {
+    return list;
+  }
+  return data.tr;
 };
