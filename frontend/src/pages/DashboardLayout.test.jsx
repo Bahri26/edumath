@@ -29,7 +29,8 @@ describe('DashboardLayout', () => {
         </AuthContext.Provider>
       </MemoryRouter>
     );
-    expect(screen.getByText('Ana Sayfa')).toBeInTheDocument();
-    expect(screen.getByText('Derslerim')).toBeInTheDocument();
+    expect(screen.getAllByText('Ana Sayfa').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Derslerim').length).toBeGreaterThan(0);
+    expect(screen.queryByText('EduMath')).not.toBeInTheDocument();
   });
 });

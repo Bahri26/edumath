@@ -33,7 +33,53 @@ function mapStudentExerciseSubmissions(exerciseDocs, studentUserId) {
     .filter(Boolean);
 }
 
+/** Map teacher exams with results for one student userId. */
+function mapStudentExamResults(examDocs, studentUserId) {
+  const uid = String(studentUserId);
+  return (examDocs || [])
+    .map((exam) => {
+      const row = (exam.results || []).find((r) => String(r.studentId) === uid);
+      if (!row) return null;
+      return {
+        examId: exam._id,
+        title: exam.title,
+        classLevel: exam.classLevel || '',
+        duration: exam.duration || null,
+        score: row.score ?? 0,
+        correctCount: row.correctCount ?? 0,
+        wrongCount: row.wrongCount ?? 0,
+        totalTimeSpentSeconds: row.totalTimeSpentSeconds ?? null,
+        submittedAt: row.submittedAt || null,
+        weakTopics: row.weakTopics || [],
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+}
+
+/** userId string -> rounded average exam score for a teacher-visible exam set. */
+function buildExamAverageByUserId(examDocs) {
+  const sums = new Map();
+  const counts = new Map();
+  for (const exam of examDocs || []) {
+    for (const row of exam.results || []) {
+      const uid = String(row.studentId);
+      if (!uid) continue;
+      sums.set(uid, (sums.get(uid) || 0) + (Number(row.score) || 0));
+      counts.set(uid, (counts.get(uid) || 0) + 1);
+    }
+  }
+  const avgs = new Map();
+  for (const [uid, sum] of sums.entries()) {
+    const n = counts.get(uid) || 0;
+    avgs.set(uid, n > 0 ? Math.round(sum / n) : 0);
+  }
+  return avgs;
+}
+
 module.exports = {
   mapLessonProgressRows,
   mapStudentExerciseSubmissions,
+  mapStudentExamResults,
+  buildExamAverageByUserId,
 };

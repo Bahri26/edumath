@@ -15,6 +15,7 @@ import {
   Sparkles,
   X,
   Dumbbell,
+  FileText,
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import Card from '../../components/ui/Card.jsx';
@@ -61,6 +62,8 @@ export default function StudentProgressDashboard() {
   const [search, setSearch] = useState('');
   const [progress, setProgress] = useState([]);
   const [exercises, setExercises] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [detailAverageScore, setDetailAverageScore] = useState(null);
   const [progressLoading, setProgressLoading] = useState(false);
   const [progressError, setProgressError] = useState(null);
 
@@ -125,6 +128,8 @@ export default function StudentProgressDashboard() {
         if (!active) return;
         setProgress([]);
         setExercises([]);
+        setExams([]);
+        setDetailAverageScore(null);
         setProgressError(null);
         setProgressLoading(false);
       });
@@ -145,6 +150,8 @@ export default function StudentProgressDashboard() {
         if (!active) return;
         setProgress([]);
         setExercises([]);
+        setExams([]);
+        setDetailAverageScore(null);
         setProgressError(t.invalidStudent);
         setProgressLoading(false);
       });
@@ -165,11 +172,17 @@ export default function StudentProgressDashboard() {
         if (!active) return;
         setProgress(Array.isArray(res.data?.progress) ? res.data.progress : []);
         setExercises(Array.isArray(res.data?.exercises) ? res.data.exercises : []);
+        setExams(Array.isArray(res.data?.exams) ? res.data.exams : []);
+        setDetailAverageScore(
+          typeof res.data?.averageScore === 'number' ? res.data.averageScore : null,
+        );
       })
       .catch((err) => {
         if (!active) return;
         setProgress([]);
         setExercises([]);
+        setExams([]);
+        setDetailAverageScore(null);
         const msg = err?.response?.data?.message || t.progressError;
         setProgressError(msg);
         if (err?.response?.status !== 403) showToast(msg, 'error');
@@ -200,14 +213,33 @@ export default function StudentProgressDashboard() {
   }, [setSearchParams]);
 
   const totals = useMemo(() => {
-    const correct = progress.reduce((a, p) => a + (Number(p.correctCount) || 0), 0);
-    const wrong = progress.reduce((a, p) => a + (Number(p.wrongCount) || 0), 0);
+    const lessonCorrect = progress.reduce((a, p) => a + (Number(p.correctCount) || 0), 0);
+    const lessonWrong = progress.reduce((a, p) => a + (Number(p.wrongCount) || 0), 0);
+    const examCorrect = exams.reduce((a, e) => a + (Number(e.correctCount) || 0), 0);
+    const examWrong = exams.reduce((a, e) => a + (Number(e.wrongCount) || 0), 0);
+    const correct = lessonCorrect + examCorrect;
+    const wrong = lessonWrong + examWrong;
     const xp = progress.reduce((a, p) => a + (Number(p.xp) || 0), 0);
     const attempts = correct + wrong;
     const accuracy = attempts > 0 ? Math.round((100 * correct) / attempts) : null;
     const exerciseTime = exercises.reduce((a, e) => a + (Number(e.totalTimeSpent) || 0), 0);
-    return { correct, wrong, xp, accuracy, lessons: progress.length, exercises: exercises.length, exerciseTime };
-  }, [progress, exercises]);
+    const examAvg = exams.length
+      ? Math.round(exams.reduce((a, e) => a + (Number(e.score) || 0), 0) / exams.length)
+      : null;
+    return {
+      correct,
+      wrong,
+      xp,
+      accuracy,
+      lessons: progress.length,
+      exams: exams.length,
+      exercises: exercises.length,
+      exerciseTime,
+      examAvg,
+    };
+  }, [progress, exercises, exams]);
+
+  const displayAverage = detailAverageScore ?? selectedStudent?.averageScore ?? 0;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 animate-fade-in space-y-8">
@@ -387,9 +419,9 @@ export default function StudentProgressDashboard() {
                         </span>
                         <span className="inline-flex items-center gap-1.5">
                           <Target size={14} className="text-slate-400" aria-hidden />
-                          {t.avgShort}{' '}
+                          {t.avgExamHint}{' '}
                           <strong className="text-slate-900 dark:text-white">
-                            {selectedStudent.averageScore ?? 0}
+                            {displayAverage}
                           </strong>
                         </span>
                       </div>
@@ -416,6 +448,33 @@ export default function StudentProgressDashboard() {
                   </Card>
                 ))}
               </div>
+
+              {exams.length > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Card className="p-4">
+                    <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-700/80 p-2 text-violet-600 dark:text-violet-400">
+                      <FileText size={18} aria-hidden />
+                    </div>
+                    <p className="mt-3 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
+                      {totals.exams}
+                    </p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      {t.summaryExams}
+                    </p>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-700/80 p-2 text-brand-600 dark:text-brand-400">
+                      <BarChart3 size={18} aria-hidden />
+                    </div>
+                    <p className="mt-3 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
+                      {totals.examAvg != null ? `%${totals.examAvg}` : '—'}
+                    </p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      {t.avgExamHint}
+                    </p>
+                  </Card>
+                </div>
+              )}
 
               {exercises.length > 0 && (
                 <div className="grid grid-cols-2 gap-3">
@@ -528,6 +587,66 @@ export default function StudentProgressDashboard() {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+              </Card>
+
+              <Card className="p-0 overflow-hidden">
+                <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3 flex items-center gap-2">
+                  <FileText size={18} className="text-violet-500" aria-hidden />
+                  <h3 className="font-bold text-slate-800 dark:text-white">{t.exams}</h3>
+                </div>
+
+                {progressLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-16 text-slate-500 text-sm">
+                    <Loader2 className="animate-spin" size={18} aria-hidden />
+                    {t.loadingProgress}
+                  </div>
+                ) : exams.length === 0 ? (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 px-4 py-12 text-center">{t.noExams}</p>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                    {exams.map((ex) => (
+                      <div
+                        key={String(ex.examId)}
+                        className="px-4 py-4 hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-slate-900 dark:text-white truncate">{ex.title || '—'}</p>
+                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                              <span className="inline-flex items-center gap-1 font-medium text-brand-600 dark:text-brand-400">
+                                <Target size={12} aria-hidden />
+                                %{ex.score ?? 0} {t.examScore.toLowerCase()}
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                                {ex.correctCount ?? 0} {t.correctCol.toLowerCase()}
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 font-medium">
+                                {ex.wrongCount ?? 0} {t.wrongCol.toLowerCase()}
+                              </span>
+                              {ex.classLevel ? (
+                                <span className="inline-flex items-center gap-1">
+                                  <BookOpen size={12} aria-hidden />
+                                  {ex.classLevel}
+                                </span>
+                              ) : null}
+                              {ex.totalTimeSpentSeconds != null && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Clock size={12} aria-hidden />
+                                  {formatDuration(ex.totalTimeSpentSeconds, language)}
+                                </span>
+                              )}
+                              {ex.submittedAt && (
+                                <span className="inline-flex items-center gap-1">
+                                  {formatRelativeTime(ex.submittedAt, language)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </Card>

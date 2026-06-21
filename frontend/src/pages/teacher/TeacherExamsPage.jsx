@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { Link } from 'react-router-dom';
 import {
   Plus, FileText, Trash2, Eye, Search,
-  Clock, Award, Layers, Save, Sparkles,
+  Clock, Award, Layers, Save,
   ChevronLeft, ChevronRight, Calendar, ArrowLeft, GripVertical, BarChart3,
 } from 'lucide-react';
 import apiClient, { resolveAssetUrl } from '../../services/api';
@@ -585,72 +585,18 @@ export default function TeacherExamsPage() {
       </header>
 
       <Card className="p-5 border border-slate-200 dark:border-slate-600">
-        <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Sınav oluştur</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-slate-600 dark:text-slate-400 font-medium">Başlangıç</span>
-            <input
-              type="datetime-local"
-              value={schedStart}
-              onChange={(e) => setSchedStart(e.target.value)}
-              className="border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 dark:bg-slate-900 dark:text-white"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-slate-600 dark:text-slate-400 font-medium">Bitiş</span>
-            <input
-              type="datetime-local"
-              value={schedEnd}
-              onChange={(e) => setSchedEnd(e.target.value)}
-              className="border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 dark:bg-slate-900 dark:text-white"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-slate-600 dark:text-slate-400 font-medium">Süre (dk)</span>
-            <input
-              type="number"
-              min={10}
-              max={180}
-              value={durationMin}
-              onChange={(e) => setDurationMin(parseInt(e.target.value || '60', 10))}
-              className="border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 dark:bg-slate-900 dark:text-white"
-            />
-          </label>
-        </div>
-        <div className="flex flex-wrap gap-2 mt-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Sınav oluştur</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Soru bankasından 7 kolay, 7 orta, 7 zor soru seçerek sınav hazırlayın.
+            </p>
+          </div>
           <Button
             variant="primary"
             size="md"
-            icon={Sparkles}
-            onClick={async () => {
-              try {
-                if (profile.branchApproval !== 'approved') {
-                  showToast('Branş onayı sonrası sınav oluşturulabilir.', 'warning');
-                  return;
-                }
-                const title = `Sınav • ${profile.branch || 'Konu'} • ${classLevel}`;
-                await apiClient.post('/exams/auto-generate', {
-                  title,
-                  duration: durationMin || 25,
-                  classLevel,
-                  subject: profile.branch || 'Matematik',
-                  ...(schedStart ? { startAt: schedStart } : {}),
-                  ...(schedEnd ? { endAt: schedEnd } : {}),
-                });
-                showToast('Sınav oluşturuldu.', 'success');
-                fetchExams();
-              } catch (e) {
-                const msg = e?.response?.data?.message || 'Sınav oluşturulamadı';
-                showToast(msg, 'error');
-              }
-            }}
-          >
-            Otomatik oluştur
-          </Button>
-          <Button
-            variant="outline"
-            size="md"
             icon={Plus}
+            className="shrink-0 min-h-[44px]"
             onClick={() => {
               setExamName('');
               setEasyQ([]);
@@ -659,7 +605,7 @@ export default function TeacherExamsPage() {
               setView('studio');
             }}
           >
-            7-7-7 stüdyo
+            Sınav oluştur
           </Button>
         </div>
       </Card>
@@ -708,7 +654,7 @@ export default function TeacherExamsPage() {
               <EmptyState
                 icon={FileText}
                 title="Henüz sınav yok"
-                description="Hızlı sınav ile otomatik üretin veya 7-7-7 stüdyoda kolay / orta / zor sorulardan oluşturun."
+                description="7-7-7 stüdyoda kolay / orta / zor sorulardan sınav oluşturun."
                 className="py-12 border border-dashed border-slate-200 dark:border-slate-600 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20"
               />
             </div>
@@ -722,6 +668,9 @@ export default function TeacherExamsPage() {
                 <div className="flex gap-2 shrink-0">
                   <Button variant="outline" size="sm" onClick={() => setResultsId(exam._id)} aria-label="Sonuçlar">
                     <BarChart3 size={16} />
+                    <span className="hidden sm:inline">
+                      Sonuçlar{exam.participantCount > 0 ? ` (${exam.participantCount})` : ''}
+                    </span>
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => setPreviewId(exam._id)} aria-label="Önizle">
                     <Eye size={16} />
@@ -788,6 +737,19 @@ export default function TeacherExamsPage() {
                 </span>
                 <span className="normal-case">{exam.participantCount ?? (exam.results?.length || 0)} katılım</span>
               </div>
+              {(exam.recentParticipants?.length > 0 || exam.participantCount > 0) && (
+                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Son tamamlayanlar</p>
+                  <ul className="space-y-1">
+                    {(exam.recentParticipants || []).slice(-3).map((p, idx) => (
+                      <li key={`${p.studentName}-${idx}`} className="flex justify-between text-xs text-slate-600 dark:text-slate-300">
+                        <span className="truncate">{p.studentName}</span>
+                        <span className="font-bold text-brand-600 shrink-0 ml-2">%{p.score}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </Card>
           ))}
         </div>

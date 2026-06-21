@@ -13,13 +13,43 @@ const {
   attachExamScheduleMeta,
   buildTopicAnalysis,
 } = require('../utils/examSchedule');
-const { canManageExam } = require('../utils/examAccess');
+const { canManageExam, canViewExamResults } = require('../utils/examAccess');
 const {
   mapLessonProgressRows,
   mapStudentExerciseSubmissions,
+  mapStudentExamResults,
+  buildExamAverageByUserId,
 } = require('../utils/studentProgress');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+function buildTeacherExamFilter(teacherId, teacher) {
+  const tid = new mongoose.Types.ObjectId(String(teacherId));
+  if (teacher?.branchApproval === 'approved' && teacher.branch) {
+    return {
+      $or: [{ createdBy: tid }, { subject: teacher.branch }],
+    };
+  }
+  return { createdBy: tid };
+}
+
+function mapExamForTeacherList(teacher, teacherId, syncedDoc) {
+  const raw = syncedDoc?.toObject ? syncedDoc.toObject() : { ...syncedDoc };
+  const results = raw.results || [];
+  const meta = attachExamScheduleMeta(raw);
+  delete meta.results;
+  delete meta.questions;
+  return {
+    ...meta,
+    canManage: canManageExam({ ...teacher, id: teacherId }, raw),
+    participantCount: results.length,
+    recentParticipants: results.slice(-5).map((r) => ({
+      studentName: r.studentName,
+      score: r.score,
+      submittedAt: r.submittedAt,
+    })),
+  };
+}
 
 function applyQuestionTypeFilter(query, typesRaw) {
   if (!typesRaw) return;
@@ -383,15 +413,26 @@ exports.getClassStudents = async (req, res) => {
       .populate('userId', 'name email status')
       .sort({ averageScore: -1 });
 
-    const normalizedStudents = students.map((student) => ({
-      _id: student._id,
-      userId: student.userId?._id || null,
-      name: student.userId?.name || '',
-      email: student.userId?.email || '',
-      status: student.userId?.status || 'active',
-      grade: student.grade,
-      averageScore: student.averageScore || 0,
-    }));
+    const teacher = await User.findById(teacherId).select('role branch branchApproval').lean();
+    const examDocs = await Exam.find(buildTeacherExamFilter(teacherId, teacher))
+      .select('results createdBy subject')
+      .lean();
+    const actor = { ...teacher, id: teacherId };
+    const visibleExams = examDocs.filter((ex) => canManageExam(actor, ex));
+    const avgMap = buildExamAverageByUserId(visibleExams);
+
+    const normalizedStudents = students.map((student) => {
+      const uid = String(student.userId?._id || student.userId || '');
+      return {
+        _id: student._id,
+        userId: student.userId?._id || null,
+        name: student.userId?.name || '',
+        email: student.userId?.email || '',
+        status: student.userId?.status || 'active',
+        grade: student.grade,
+        averageScore: avgMap.has(uid) ? avgMap.get(uid) : 0,
+      };
+    });
 
     res.json({
       totalStudents: normalizedStudents.length,
@@ -458,6 +499,9 @@ exports.getStudentProgress = async (req, res) => {
       return res.status(403).json({ message: 'Bu öğrenciye erişim izniniz yok' });
     }
 
+    const teacher = await User.findById(teacherId).select('role branch branchApproval').lean();
+    const actor = { ...teacher, id: teacherId };
+
     const rows = await UserProgress.find({ userId: student.userId })
       .populate('lessonId', 'title')
       .sort({ lastAttempt: -1 })
@@ -475,7 +519,21 @@ exports.getStudentProgress = async (req, res) => {
 
     const exercises = mapStudentExerciseSubmissions(exerciseDocs, student.userId);
 
-    return res.json({ progress, exercises });
+    const examDocs = await Exam.find({
+      ...buildTeacherExamFilter(teacherId, teacher),
+      'results.studentId': student.userId,
+    })
+      .select('title classLevel duration results createdAt createdBy subject')
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    const visibleExams = examDocs.filter((ex) => canManageExam(actor, ex));
+    const exams = mapStudentExamResults(visibleExams, student.userId);
+    const averageScore = exams.length
+      ? Math.round(exams.reduce((sum, e) => sum + (Number(e.score) || 0), 0) / exams.length)
+      : 0;
+
+    return res.json({ progress, exercises, exams, averageScore });
   } catch (err) {
     return res.status(500).json({ message: 'İlerleme alınamadı', error: err.message });
   }
@@ -651,6 +709,7 @@ exports.getDashboardSummary = async (req, res) => {
 exports.getMyExams = async (req, res) => {
   try {
     const teacherId = req.user.id;
+    await syncTeacherRosterFromTeacherContent(teacherId);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 9;
     const search = String(req.query.search || '').trim();
@@ -672,16 +731,11 @@ exports.getMyExams = async (req, res) => {
       .limit(limit)
       .lean();
     const teacher = await User.findById(teacherId).select('role branch branchApproval').lean();
-    const { attachExamAccess } = require('../utils/examAccess');
     const enriched = [];
     for (const exam of exams) {
       const doc = await Exam.findById(exam._id);
       if (doc) await syncExamStatusIfNeeded(doc);
-      enriched.push({
-        ...attachExamAccess({ ...teacher, id: teacherId }, exam),
-        ...attachExamScheduleMeta(doc || exam),
-        participantCount: (exam.results || []).length,
-      });
+      enriched.push(mapExamForTeacherList(teacher, teacherId, doc || exam));
     }
     return res.json({
       data: enriched,
@@ -849,6 +903,7 @@ exports.getSubjectTopics = async (req, res) => {
 // ✅ 12. Branşa göre sınavlar
 exports.getSubjectExams = async (req, res) => {
   try {
+    await syncTeacherRosterFromTeacherContent(req.user.id);
     const subject = req.userBranch;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 9;
@@ -866,16 +921,11 @@ exports.getSubjectExams = async (req, res) => {
     const total = await Exam.countDocuments(query);
     const exams = await Exam.find(query).sort(sort).skip((page - 1) * limit).limit(limit).lean();
     const teacher = await User.findById(req.user.id).select('role branch branchApproval').lean();
-    const { attachExamAccess } = require('../utils/examAccess');
     const enriched = [];
     for (const exam of exams) {
       const doc = await Exam.findById(exam._id);
       if (doc) await syncExamStatusIfNeeded(doc);
-      enriched.push({
-        ...attachExamAccess({ ...teacher, id: req.user.id }, exam),
-        ...attachExamScheduleMeta(doc || exam),
-        participantCount: (exam.results || []).length,
-      });
+      enriched.push(mapExamForTeacherList(teacher, req.user.id, doc || exam));
     }
     res.json({
       data: enriched,
@@ -1011,7 +1061,7 @@ exports.getExamResults = async (req, res) => {
 
     await syncExamStatusIfNeeded(exam);
     const actor = await User.findById(req.user.id).select('role branch branchApproval').lean();
-    if (!canManageExam({ ...actor, id: req.user.id }, exam)) {
+    if (!await canViewExamResults(req.user.id, actor, exam)) {
       return res.status(403).json({ message: 'Bu sınavın sonuçlarını görme yetkiniz yok' });
     }
 

@@ -25,3 +25,12 @@ test('admin can manage any exam', () => {
   const user = { id: 'admin1', role: 'admin' };
   assert.equal(canManageExam(user, exam), true);
 });
+
+test('attachExamAccess returns array of enriched exams', () => {
+  const { attachExamAccess } = require('../../utils/examAccess');
+  const exam = { _id: '1', title: 'Test', createdBy: 'abc', subject: 'Matematik' };
+  const user = { id: 'abc', role: 'teacher', branch: 'Matematik', branchApproval: 'approved' };
+  const [enriched] = attachExamAccess(user, exam);
+  assert.equal(enriched.title, 'Test');
+  assert.equal(enriched.canManage, true);
+});

@@ -29,13 +29,36 @@ function canManageExam(user, exam) {
 
 function attachExamAccess(user, exams) {
   const list = Array.isArray(exams) ? exams : [exams];
-  return list.map((exam) => ({
-    ...exam,
+  return list.map((exam) => attachExamAccessSingle(user, exam));
+}
+
+function attachExamAccessSingle(user, exam) {
+  return {
+    ...(exam?.toObject ? exam.toObject() : exam),
     canManage: canManageExam(user, exam),
-  }));
+  };
+}
+
+/**
+ * Sınav sonuçlarını görüntüleme: sahip / branş yöneticisi veya kendi öğrencisi katıldıysa.
+ */
+async function canViewExamResults(userId, user, exam) {
+  if (canManageExam({ ...user, id: userId }, exam)) {
+    return true;
+  }
+  const results = exam.results || [];
+  if (results.length === 0) {
+    return false;
+  }
+  const Student = require('../models/Student');
+  const roster = await Student.find({ teacherId: userId }).select('userId').lean();
+  const rosterSet = new Set(roster.map((s) => String(s.userId)));
+  return results.some((r) => rosterSet.has(String(r.studentId)));
 }
 
 module.exports = {
   canManageExam,
   attachExamAccess,
+  attachExamAccessSingle,
+  canViewExamResults,
 };

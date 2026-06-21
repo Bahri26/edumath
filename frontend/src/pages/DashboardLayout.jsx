@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { LogOut, Moon, Sun, User, Settings, Menu, X, Globe } from 'lucide-react';
 import NotificationDropdown from '../components/ui/NotificationDropdown.jsx';
+import DashboardLogoMark from '../components/ui/DashboardLogoMark.jsx';
 import SkipLink from '../components/ui/SkipLink.jsx';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -28,7 +29,6 @@ const DashboardLayout = ({
   role = 'student',
   children,
   extraHeader,
-  /** Profil satırının hemen altında gösterilecek ek bağlantılar (ör. öğretmen: Örüntü, Anketler) */
   profileMenuExtras = [],
 }) => {
   const navigate = useNavigate();
@@ -42,25 +42,25 @@ const DashboardLayout = ({
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const profileRef = useRef(null);
-  const sidebarRef = useRef(null);
-  const sidebarToggleRef = useRef(null);
+  const drawerRef = useRef(null);
+  const menuToggleRef = useRef(null);
 
-  const sidebarVisible = isDesktopNav || isNavMenuOpen;
+  const homePath = role === 'teacher' ? '/teacher/overview' : '/student/home';
 
   const handleLogout = () => {
     logout('logout');
   };
 
-  const closeSidebar = useCallback(() => {
+  const closeDrawer = useCallback(() => {
     setIsNavMenuOpen(false);
-    requestAnimationFrame(() => sidebarToggleRef.current?.focus());
+    requestAnimationFrame(() => menuToggleRef.current?.focus());
   }, []);
 
-  const toggleSidebar = useCallback(() => {
+  const toggleDrawer = useCallback(() => {
     setIsNavMenuOpen((open) => {
       const next = !open;
       if (!next) {
-        requestAnimationFrame(() => sidebarToggleRef.current?.focus());
+        requestAnimationFrame(() => menuToggleRef.current?.focus());
       }
       return next;
     });
@@ -71,14 +71,12 @@ const DashboardLayout = ({
     [location.pathname],
   );
 
-  // Sayfa değişince mobil menüyü kapat
   useEffect(() => {
     if (!isDesktopNav) {
       setIsNavMenuOpen(false);
     }
   }, [location.pathname, isDesktopNav]);
 
-  // Menü açıkken arka plan kaydırmasını kilitle (yalnızca mobil)
   useEffect(() => {
     if (!isNavMenuOpen || isDesktopNav) return undefined;
     const prevOverflow = document.body.style.overflow;
@@ -88,18 +86,16 @@ const DashboardLayout = ({
     };
   }, [isNavMenuOpen, isDesktopNav]);
 
-  // Escape ile menüleri kapat
   useEffect(() => {
     const onKey = (event) => {
       if (event.key !== 'Escape') return;
-      if (isNavMenuOpen && !isDesktopNav) closeSidebar();
+      if (isNavMenuOpen && !isDesktopNav) closeDrawer();
       if (isProfileOpen) setIsProfileOpen(false);
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [isNavMenuOpen, isProfileOpen, closeSidebar, isDesktopNav]);
+  }, [isNavMenuOpen, isProfileOpen, closeDrawer, isDesktopNav]);
 
-  // Profil panelinin dışına tıklayınca kapat
   useEffect(() => {
     if (!isProfileOpen) return;
     const onClick = (event) => {
@@ -111,148 +107,149 @@ const DashboardLayout = ({
     return () => document.removeEventListener('mousedown', onClick);
   }, [isProfileOpen]);
 
-  // Açıldıktan hemen sonra sidebar'ın ilk öğesine odaklan (mobil)
   useEffect(() => {
     if (!isNavMenuOpen || isDesktopNav) return;
-    const first = sidebarRef.current?.querySelector('button[data-nav-item]');
+    const first = drawerRef.current?.querySelector('button[data-nav-item]');
     first?.focus();
   }, [isNavMenuOpen, isDesktopNav]);
 
-  const sidebarShellClass = studentKid
-    ? 'bg-white/95 dark:bg-surface-800/95 backdrop-blur-md border-r border-kid-rail/80 dark:border-surface-700'
-    : 'bg-white dark:bg-surface-800 border-r border-surface-200 dark:border-surface-700';
+  const navItemClass = (active, compact = false) => {
+    const base = compact
+      ? 'inline-flex items-center gap-2 px-3.5 py-2 min-h-[40px] rounded-full text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500'
+      : `flex items-center w-full gap-3 px-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
+          studentKid ? 'py-3.5 min-h-[48px] rounded-2xl text-base font-semibold' : 'py-3 min-h-[44px] rounded-xl text-sm font-medium'
+        }`;
 
-  const renderNavItems = () =>
-    navMenuItems.map((item) => {
-      const active = isNavItemActive(item.path);
-      return (
-        <button
-          key={item.id}
-          data-nav-item
-          type="button"
-          className={`flex items-center w-full px-6 gap-3 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
-            studentKid ? 'py-4 min-h-[3rem] rounded-2xl text-base font-semibold' : 'py-3 rounded-lg'
-          } ${
-            active
-              ? studentKid
-                ? 'bg-brand-100 dark:bg-brand-900/40 text-brand-800 dark:text-brand-200 font-bold'
-                : 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-200 font-semibold'
-              : 'text-surface-700 dark:text-surface-200 hover:bg-brand-50 dark:hover:bg-surface-700'
-          }`}
-          onClick={() => {
-            if (!isDesktopNav) closeSidebar();
-            navigate(item.path);
-          }}
-          aria-current={active ? 'page' : undefined}
-        >
-          <item.icon size={20} aria-hidden="true" />
-          <span>{item.label}</span>
-        </button>
-      );
-    });
+    if (active) {
+      return `${base} ${
+        studentKid
+          ? 'bg-gradient-to-r from-brand-500 to-teal-500 text-white shadow-md shadow-brand-500/25'
+          : 'bg-brand-600 text-white shadow-sm shadow-brand-500/20'
+      }`;
+    }
+
+    return `${base} ${
+      studentKid
+        ? 'text-surface-700 dark:text-surface-200 hover:bg-white/80 dark:hover:bg-surface-700/80'
+        : 'text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700/80'
+    }`;
+  };
+
+  const renderNavButton = (item, { compact = false, onNavigate } = {}) => {
+    const active = isNavItemActive(item.path);
+    return (
+      <button
+        key={item.id}
+        data-nav-item
+        type="button"
+        className={navItemClass(active, compact)}
+        onClick={() => {
+          onNavigate?.();
+          navigate(item.path);
+        }}
+        aria-current={active ? 'page' : undefined}
+      >
+        <item.icon size={compact ? 16 : 20} aria-hidden="true" className={compact ? 'shrink-0' : ''} />
+        <span>{item.label}</span>
+      </button>
+    );
+  };
+
+  const shellBg = studentKid
+    ? 'bg-gradient-to-b from-kid-canvasFrom via-kid-canvasVia to-kid-canvasTo dark:from-kid-canvasFromDark dark:via-kid-canvasViaDark dark:to-kid-canvasToDark'
+    : 'bg-surface-50 dark:bg-surface-900';
+
+  const headerBg = studentKid
+    ? 'bg-white/85 dark:bg-surface-900/90 backdrop-blur-xl border-kid-rail/60 dark:border-surface-700/80'
+    : 'bg-white/90 dark:bg-surface-900/95 backdrop-blur-xl border-surface-200/80 dark:border-surface-700/80';
 
   return (
-    <div
-      className={`min-h-screen flex transition-colors duration-300 ${
-        studentKid
-          ? 'bg-gradient-to-b from-kid-canvasFrom via-kid-canvasVia to-kid-canvasTo dark:from-kid-canvasFromDark dark:via-kid-canvasViaDark dark:to-kid-canvasToDark'
-          : 'bg-surface-50 dark:bg-surface-900'
-      }`}
-    >
+    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${shellBg}`}>
       <SkipLink>{t('skipToContent')}</SkipLink>
 
+      {/* Mobil / tablet: sürgülü menü */}
       {isNavMenuOpen && !isDesktopNav && (
         <div
-          className="fixed inset-0 z-20 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-surface-900/40 backdrop-blur-[2px] lg:hidden transition-opacity duration-300"
           onPointerDown={(event) => {
-            if (event.target === event.currentTarget) {
-              closeSidebar();
-            }
+            if (event.target === event.currentTarget) closeDrawer();
           }}
           aria-hidden="true"
         />
       )}
 
       <aside
-        ref={sidebarRef}
-        className={`fixed lg:sticky top-0 left-0 z-30 h-full lg:h-screen w-64 max-w-[85vw] shrink-0 shadow-lg lg:shadow-none transition-transform duration-300 ease-out ${sidebarShellClass} ${
-          sidebarVisible ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none lg:translate-x-0 lg:pointer-events-auto'
-        }`}
+        ref={drawerRef}
+        className={`fixed top-0 left-0 z-50 h-full w-[min(18rem,88vw)] shadow-2xl lg:hidden transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          studentKid
+            ? 'bg-white/98 dark:bg-surface-900/98 backdrop-blur-xl border-r border-kid-rail/70 dark:border-surface-700'
+            : 'bg-white dark:bg-surface-900 border-r border-surface-200 dark:border-surface-700'
+        } ${isNavMenuOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}
         aria-label={t('sidebar')}
-        aria-hidden={!sidebarVisible}
-        {...(!sidebarVisible ? { inert: true } : {})}
+        aria-hidden={!isNavMenuOpen}
+        {...(!isNavMenuOpen ? { inert: true } : {})}
       >
-        <div
-          className={`flex items-center justify-between p-6 border-b ${
-            studentKid
-              ? 'border-kid-rail/80 dark:border-surface-700'
-              : 'border-surface-200 dark:border-surface-700'
-          }`}
-        >
-          <span
-            className={`font-bold text-lg tracking-tight ${
-              studentKid
-                ? 'bg-gradient-to-r from-kid-titleFrom via-kid-titleVia to-kid-titleTo bg-clip-text text-transparent'
-                : 'text-brand-600'
-            }`}
-          >
-            EduMath
-          </span>
+        <div className="flex items-center justify-between p-4 border-b border-surface-100 dark:border-surface-800">
+          <DashboardLogoMark size="sm" onClick={() => { closeDrawer(); navigate(homePath); }} />
           <button
             type="button"
-            onClick={closeSidebar}
+            onClick={closeDrawer}
             aria-label={t('closeMenu')}
-            className="lg:hidden p-1 rounded-md hover:bg-surface-100 dark:hover:bg-surface-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl hover:bg-surface-100 dark:hover:bg-surface-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           >
             <X size={20} />
           </button>
         </div>
         <nav
           id="primary-nav"
-          className="mt-6 space-y-2 overflow-y-auto overscroll-contain pb-8 px-0"
+          className="p-3 space-y-1 overflow-y-auto overscroll-contain max-h-[calc(100vh-4.5rem)]"
           aria-label={role === 'teacher' ? t('teacherNav') : t('studentNav')}
         >
-          {renderNavItems()}
+          {navMenuItems.map((item) => renderNavButton(item, { onNavigate: closeDrawer }))}
         </nav>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header
-          className={`relative z-40 flex items-center justify-between px-4 sm:px-6 py-4 border-b ${
-            studentKid
-              ? 'border-kid-rail/80 dark:border-surface-700 bg-white/90 dark:bg-surface-800/90 backdrop-blur-md'
-              : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800'
-          }`}
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <button
-              ref={sidebarToggleRef}
-              type="button"
-              onClick={toggleSidebar}
-              className="lg:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-surface-200 dark:hover:bg-surface-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              aria-label={isNavMenuOpen ? t('closeMenu') : t('openMenu')}
-              aria-expanded={isNavMenuOpen}
-              aria-controls="primary-nav"
-            >
-              {isNavMenuOpen ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
-            </button>
-            <span
-              className={`font-bold text-lg truncate ${
-                studentKid
-                  ? 'bg-gradient-to-r from-kid-headerFrom to-kid-headerTo bg-clip-text text-transparent dark:from-kid-headerFromDark dark:to-kid-headerToDark'
-                  : 'text-brand-600'
-              }`}
-            >
-              {role === 'teacher' ? t('teacherPanel') : t('studentPanel')}
-            </span>
-            {extraHeader}
-          </div>
+      {/* Üst bar: logo + yatay menü (masaüstü) + araçlar */}
+      <header className={`sticky top-0 z-30 border-b ${headerBg}`}>
+        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-5 h-[3.75rem]">
+          <button
+            ref={menuToggleRef}
+            type="button"
+            onClick={toggleDrawer}
+            className="lg:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl hover:bg-surface-100 dark:hover:bg-surface-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            aria-label={isNavMenuOpen ? t('closeMenu') : t('openMenu')}
+            aria-expanded={isNavMenuOpen}
+            aria-controls="primary-nav"
+          >
+            {isNavMenuOpen ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
+          </button>
 
-          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+          <DashboardLogoMark onClick={() => navigate(homePath)} />
+
+          <span
+            className={`hidden sm:inline text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-lg shrink-0 ${
+              studentKid
+                ? 'text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40'
+                : 'text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/40'
+            }`}
+          >
+            {role === 'teacher' ? t('teacherPanel') : t('studentPanel')}
+          </span>
+
+          {extraHeader}
+
+          <nav
+            className="hidden lg:flex flex-1 items-center gap-1.5 px-2 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-300 dark:scrollbar-thumb-surface-600"
+            aria-label={role === 'teacher' ? t('teacherNav') : t('studentNav')}
+          >
+            {navMenuItems.map((item) => renderNavButton(item, { compact: true }))}
+          </nav>
+
+          <div className="flex items-center gap-0.5 sm:gap-1 ml-auto shrink-0">
             <button
               type="button"
               onClick={() => setLanguage(language === 'EN' ? 'TR' : 'EN')}
-              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-surface-200 dark:hover:bg-surface-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl hover:bg-surface-100 dark:hover:bg-surface-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
               aria-label={language === 'EN' ? t('switchToTr') : t('switchToEn')}
               title={language === 'EN' ? 'Türkçe' : 'English'}
             >
@@ -262,7 +259,7 @@ const DashboardLayout = ({
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-surface-200 dark:hover:bg-surface-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl hover:bg-surface-100 dark:hover:bg-surface-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
               aria-label={isDarkMode ? t('lightTheme') : t('darkTheme')}
               title={isDarkMode ? t('lightTheme') : t('darkTheme')}
             >
@@ -275,7 +272,7 @@ const DashboardLayout = ({
               <button
                 type="button"
                 onClick={() => setIsProfileOpen((v) => !v)}
-                className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-surface-200 dark:hover:bg-surface-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl hover:bg-surface-100 dark:hover:bg-surface-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                 aria-label={t('profileMenu')}
                 aria-haspopup="menu"
                 aria-expanded={isProfileOpen}
@@ -340,12 +337,20 @@ const DashboardLayout = ({
               )}
             </div>
           </div>
-        </header>
+        </div>
 
-        <main id="main-content" tabIndex={-1} className={`flex-1 ${studentKid ? 'p-4 sm:p-6 pb-10' : 'p-4 sm:p-6'}`}>
-          {children ? children : <Outlet />}
-        </main>
-      </div>
+        {/* Tablet: yatay kaydırmalı menü şeridi */}
+        <nav
+          className="lg:hidden flex items-center gap-2 px-3 pb-3 overflow-x-auto scrollbar-thin border-t border-surface-100/80 dark:border-surface-800/80 pt-2"
+          aria-label={role === 'teacher' ? t('teacherNav') : t('studentNav')}
+        >
+          {navMenuItems.map((item) => renderNavButton(item, { compact: true }))}
+        </nav>
+      </header>
+
+      <main id="main-content" tabIndex={-1} className={`flex-1 w-full max-w-[1600px] mx-auto ${studentKid ? 'p-4 sm:p-6 pb-10' : 'p-4 sm:p-6'}`}>
+        {children ? children : <Outlet />}
+      </main>
     </div>
   );
 };
