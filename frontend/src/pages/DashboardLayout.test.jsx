@@ -17,7 +17,7 @@ const navMenuItems = [
 ];
 
 describe('DashboardLayout', () => {
-  it('renders menu items', () => {
+  it('renders menu items without home link in top nav', () => {
     render(
       <MemoryRouter>
         <AuthContext.Provider value={mockAuth}>
@@ -29,8 +29,8 @@ describe('DashboardLayout', () => {
         </AuthContext.Provider>
       </MemoryRouter>
     );
-    expect(screen.getAllByText('Ana Sayfa').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Derslerim').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Ana Sayfa')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Derslerim' }).length).toBeGreaterThan(0);
     expect(screen.queryByText('EduMath')).not.toBeInTheDocument();
   });
 });

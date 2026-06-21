@@ -142,6 +142,28 @@ function buildSeparatedStemContent(questionTextLines) {
   return { introText, questionText, stepLabels, text, visualPrompt };
 }
 
+/** OCR birleşik metni giriş + soru cümlesine ayırır */
+function normalizeStemFields(introText = '', questionText = '') {
+  let intro = stripLeadingOcrGarbage(String(introText || '').trim());
+  let question = stripLeadingOcrGarbage(String(questionText || '').trim());
+
+  if (!question && intro) {
+    const askMatch = intro.match(
+      /((?:İlk|Bu|Verilen|Buna|Aşağı|Yukarı)[^?\n]{8,300}[?？])|([^?\n]{12,300}(?:kaç|hangi|bulun|hesapla)[^?\n]*[?？])/i
+    );
+    if (askMatch) {
+      question = (askMatch[1] || askMatch[2] || '').trim();
+      intro = intro.replace(askMatch[0], '').trim();
+    }
+  }
+
+  if (intro && question && intro.includes(question)) {
+    intro = intro.replace(question, '').trim();
+  }
+
+  return { introText: intro, questionText: question };
+}
+
 function buildParseLayout(questionTextLines, normalizedOptions, separated) {
   const introText = separated.introText || '';
   const questionLine = separated.questionText || '';
@@ -334,14 +356,12 @@ async function extractTextFromImageWithOcr(filePath) {
 }
 
 async function finalizeImageParseResult(parsed, filePath, imageUrl, { parseMode, message, ocrPreview = '' }) {
-  const enriched = await enrichParsedQuestionAsync(parsed);
-  const options = normalizeOptions(enriched.options || parsed.options);
-  const text = enriched.text || parsed.text || '';
-
-  let layout = parsed.layout || enriched.layout || null;
-  let introText = enriched.introText ?? parsed.introText ?? '';
-  let questionText = enriched.questionText ?? parsed.questionText ?? '';
-  let stepLabels = enriched.stepLabels ?? parsed.stepLabels ?? [];
+  const options = normalizeOptions(parsed.options || []);
+  let layout = parsed.layout || null;
+  let introText = parsed.introText ?? '';
+  let questionText = parsed.questionText ?? '';
+  let stepLabels = parsed.stepLabels ?? [];
+  const text = parsed.text || '';
 
   if (!layout && text) {
     const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean);
@@ -352,40 +372,72 @@ async function finalizeImageParseResult(parsed, filePath, imageUrl, { parseMode,
     stepLabels = stepLabels.length ? stepLabels : separated.stepLabels;
   }
 
-  const assessmentMeta = {
-    ...(parsed.assessmentMeta || enriched.assessmentMeta || {}),
-    parseLayout: layout || parsed.assessmentMeta?.parseLayout || {},
-    source: 'smart-parse',
-  };
+  const stem = normalizeStemFields(introText, questionText);
+  introText = stem.introText;
+  questionText = stem.questionText;
+  const combinedText = [introText, questionText].filter(Boolean).join('\n\n').trim() || text;
+
+  const enriched = await enrichParsedQuestionAsync({
+    ...parsed,
+    options,
+    introText,
+    questionText,
+    text: combinedText,
+    ocrPreview,
+  });
 
   const cropAssets = await extractQuestionImageRegions(filePath);
   const mergedLayout = {
     ...(layout || {}),
     ...(cropAssets || {}),
     hasDiagram: Boolean(layout?.hasDiagram || cropAssets?.diagramImagePath),
+    introText,
+    questionLine: questionText,
+    stepLabels: Array.isArray(stepLabels) ? stepLabels : [],
+    stemText: combinedText,
   };
   const mergedMeta = {
-    ...assessmentMeta,
+    ...(parsed.assessmentMeta || enriched.assessmentMeta || {}),
     parseLayout: mergedLayout,
+    source: 'smart-parse',
   };
+
+  const diagramPath = cropAssets?.diagramImagePath || mergedLayout.diagramImagePath || '';
+  const questionImagePath = diagramPath || imageUrl;
 
   const data = {
     ...enriched,
-    options,
-    introText: introText || mergedLayout.introText || '',
-    questionText: questionText || mergedLayout.questionLine || '',
-    stepLabels: stepLabels.length ? stepLabels : (mergedLayout.stepLabels || []),
-    imagePath: imageUrl,
+    options: normalizeOptions(enriched.options || options),
+    introText,
+    questionText,
+    text: combinedText,
+    stepLabels: Array.isArray(stepLabels) && stepLabels.length
+      ? stepLabels
+      : (mergedLayout.stepLabels || []),
+    imagePath: questionImagePath,
+    sourceImagePath: imageUrl,
     assessmentMeta: mergedMeta,
+    ocrPreview,
   };
 
   delete data.layout;
 
+  const hasAnswer = Boolean(String(data.correctAnswer || '').trim());
+  const cropped = Boolean(diagramPath);
+  let finalMessage = message;
+  if (hasAnswer && cropped) {
+    finalMessage = 'Diyagram kırpıldı, metin okundu ve doğru şık hesaplandı. Lütfen kontrol edin.';
+  } else if (hasAnswer) {
+    finalMessage = 'Metin okundu ve doğru şık hesaplandı. Lütfen kontrol edin.';
+  } else if (cropped) {
+    finalMessage = 'Diyagram ayrıldı; doğru şık için «Çöz ve işaretle» deneyin.';
+  }
+
   return {
     data,
     layout: mergedLayout,
-    parseMode,
-    message,
+    parseMode: cropped ? `${parseMode}+diagram` : parseMode,
+    message: finalMessage,
     ocrPreview,
   };
 }
@@ -532,6 +584,7 @@ module.exports = {
   extractTextFromImageWithOcr,
   cleanOcrText,
   stripLeadingOcrGarbage,
+  normalizeStemFields,
   buildDefaultParsedQuestion,
   normalizeOptions,
   buildParseLayout,

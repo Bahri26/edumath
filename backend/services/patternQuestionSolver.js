@@ -46,6 +46,7 @@ function buildSolutionLines(steps) {
 /** Altıgen / katlanarak büyüyen örüntü: n. adımda 2n altıgen */
 function solveHexagonCountPattern(text, options) {
   const lower = String(text || '').toLowerCase().replace(/al-\s*tigen/g, 'altıgen');
+  if (/kare/.test(lower)) return null;
   const step = extractTargetStep(lower);
   if (!step) return null;
   if (!/altıgen|altigen|hexagon/.test(lower) && !(/örüntü|oruntu/.test(lower) && /adım/.test(lower))) {
@@ -245,6 +246,30 @@ function solveAlgebraicRulePattern(text, options, extraText = '') {
   };
 }
 
+/** Kare sayısı örüntüsü (1, 3, 5, 7 …): n. adımda 2n−1 kare */
+function solveSquareCountPattern(text, options) {
+  const lower = String(text || '').toLowerCase();
+  const step = extractTargetStep(lower);
+  if (!step) return null;
+  if (!/kare/.test(lower)) return null;
+  if (!/(örüntü|oruntu|ad[ıi]m|şekil|sekil)/.test(lower)) return null;
+
+  const predicted = 2 * step - 1;
+  const match = findOptionByValue(options, predicted);
+  if (!match) return null;
+
+  const letter = String.fromCharCode(65 + match.index);
+  return {
+    correctAnswer: match.value,
+    correctIndex: match.index,
+    solution: buildSolutionLines([
+      `Kare sayısı örüntüsü: 1., 2., 3. adımlarda 1, 3, 5 kare (her adımda +2).`,
+      `${step}. adım: 2 × ${step} − 1 = ${predicted} kare.`,
+      `Doğru cevap ${letter}) ${match.value} şıkkıdır.`,
+    ]),
+  };
+}
+
 /** Şıklarda aritmetik dizi varsa ve adım numarası şık sayısıyla uyumluysa */
 function solveArithmeticFromOptions(text, options) {
   const step = extractTargetStep(text);
@@ -303,7 +328,9 @@ function solvePatternQuestion(input = {}) {
 
   const solvers = [
     (t, opts) => solveAlgebraicRulePattern(t, opts, extra),
-    solveHexagonCountPattern,
+    solveSquareCountPattern,
+    solveSquareCountPattern,
+  solveHexagonCountPattern,
     solveTrianglePerimeterPattern,
     solveArithmeticFromOptions,
   ];

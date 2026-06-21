@@ -5,7 +5,6 @@ import { useTheme } from '../context/ThemeContext';
 import { LogOut, Moon, Sun, User, Settings, Menu, X, Globe } from 'lucide-react';
 import NotificationDropdown from '../components/ui/NotificationDropdown.jsx';
 import DashboardLogoMark from '../components/ui/DashboardLogoMark.jsx';
-import DashboardPanelMark from '../components/ui/DashboardPanelMark.jsx';
 import SkipLink from '../components/ui/SkipLink.jsx';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -47,7 +46,9 @@ const DashboardLayout = ({
   const menuToggleRef = useRef(null);
 
   const panelHomePath = role === 'teacher' ? '/teacher/overview' : '/student/home';
-  const landingPath = '/';
+  const panelLabel = role === 'teacher' ? t('teacherPanel') : t('studentPanelNav');
+
+  const visibleNavItems = navMenuItems.filter((item) => item.id !== 'overview' && item.id !== 'home');
 
   const handleLogout = () => {
     logout('logout');
@@ -115,9 +116,11 @@ const DashboardLayout = ({
     first?.focus();
   }, [isNavMenuOpen, isDesktopNav]);
 
-  const navItemClass = (active, compact = false) => {
+  const navItemClass = (active, { compact = false, iconOnly = false } = {}) => {
     const base = compact
-      ? 'inline-flex items-center gap-2 px-3.5 py-2 min-h-[40px] rounded-full text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500'
+      ? iconOnly
+        ? 'relative group inline-flex items-center justify-center p-2.5 min-h-[40px] min-w-[40px] rounded-xl text-sm font-semibold shrink-0 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500'
+        : 'inline-flex items-center gap-2 px-3.5 py-2 min-h-[40px] rounded-full text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500'
       : `flex items-center w-full gap-3 px-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
           studentKid ? 'py-3.5 min-h-[48px] rounded-2xl text-base font-semibold' : 'py-3 min-h-[44px] rounded-xl text-sm font-medium'
         }`;
@@ -137,22 +140,33 @@ const DashboardLayout = ({
     }`;
   };
 
-  const renderNavButton = (item, { compact = false, onNavigate } = {}) => {
+  const renderNavButton = (item, { compact = false, iconOnly = false, onNavigate } = {}) => {
     const active = isNavItemActive(item.path);
     return (
       <button
         key={item.id}
         data-nav-item
         type="button"
-        className={navItemClass(active, compact)}
+        className={navItemClass(active, { compact, iconOnly })}
         onClick={() => {
           onNavigate?.();
           navigate(item.path);
         }}
         aria-current={active ? 'page' : undefined}
+        aria-label={item.label}
+        title={iconOnly ? item.label : undefined}
       >
-        <item.icon size={compact ? 16 : 20} aria-hidden="true" className={compact ? 'shrink-0' : ''} />
-        <span>{item.label}</span>
+        <item.icon size={compact ? 18 : 20} aria-hidden="true" className="shrink-0" />
+        {iconOnly ? (
+          <span
+            role="tooltip"
+            className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 dark:bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-white dark:text-slate-900 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+          >
+            {item.label}
+          </span>
+        ) : (
+          <span>{item.label}</span>
+        )}
       </button>
     );
   };
@@ -192,18 +206,11 @@ const DashboardLayout = ({
         {...(!isNavMenuOpen ? { inert: true } : {})}
       >
         <div className="flex items-center justify-between p-4 border-b border-surface-100 dark:border-surface-800">
-          <div className="flex items-center gap-2">
-            <DashboardLogoMark
-              size="sm"
-              title={t('landingHome') || 'Edumath ana sayfa'}
-              onClick={() => { closeDrawer(); navigate(landingPath); }}
-            />
-            <DashboardPanelMark
-              role={role}
-              label={role === 'teacher' ? t('teacherPanel') : t('studentPanelNav')}
-              onClick={() => { closeDrawer(); navigate(panelHomePath); }}
-            />
-          </div>
+          <DashboardLogoMark
+            size="sm"
+            title={panelLabel}
+            onClick={() => { closeDrawer(); navigate(panelHomePath); }}
+          />
           <button
             type="button"
             onClick={closeDrawer}
@@ -218,7 +225,7 @@ const DashboardLayout = ({
           className="p-3 space-y-1 overflow-y-auto overscroll-contain max-h-[calc(100vh-4.5rem)]"
           aria-label={role === 'teacher' ? t('teacherNav') : t('studentNav')}
         >
-          {navMenuItems.map((item) => renderNavButton(item, { onNavigate: closeDrawer }))}
+          {visibleNavItems.map((item) => renderNavButton(item, { onNavigate: closeDrawer }))}
         </nav>
       </aside>
 
@@ -237,17 +244,10 @@ const DashboardLayout = ({
             {isNavMenuOpen ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
           </button>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <DashboardLogoMark
-              title={t('landingHome') || 'Edumath ana sayfa'}
-              onClick={() => navigate(landingPath)}
-            />
-            <DashboardPanelMark
-              role={role}
-              label={role === 'teacher' ? t('teacherPanel') : t('studentPanelNav')}
-              onClick={() => navigate(panelHomePath)}
-            />
-          </div>
+          <DashboardLogoMark
+            title={panelLabel}
+            onClick={() => navigate(panelHomePath)}
+          />
 
           {extraHeader}
 
@@ -255,7 +255,7 @@ const DashboardLayout = ({
             className="hidden lg:flex flex-1 items-center gap-1.5 px-2 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-300 dark:scrollbar-thumb-surface-600"
             aria-label={role === 'teacher' ? t('teacherNav') : t('studentNav')}
           >
-            {navMenuItems.map((item) => renderNavButton(item, { compact: true }))}
+            {visibleNavItems.map((item) => renderNavButton(item, { compact: true, iconOnly: true }))}
           </nav>
 
           <div className="flex items-center gap-0.5 sm:gap-1 ml-auto shrink-0">
@@ -357,7 +357,7 @@ const DashboardLayout = ({
           className="lg:hidden flex items-center gap-2 px-3 pb-3 overflow-x-auto scrollbar-thin border-t border-surface-100/80 dark:border-surface-800/80 pt-2"
           aria-label={role === 'teacher' ? t('teacherNav') : t('studentNav')}
         >
-          {navMenuItems.map((item) => renderNavButton(item, { compact: true }))}
+          {visibleNavItems.map((item) => renderNavButton(item, { compact: true, iconOnly: true }))}
         </nav>
       </header>
 

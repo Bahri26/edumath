@@ -6,6 +6,7 @@ import apiClient, { resolveAssetUrl } from '../../services/api';
 import { smartParseImage } from '../../services/aiService';
 import Button from '../ui/Button.jsx';
 import { enrichQuestionForm, optionMatchesCorrect } from '../../utils/patternQuestionSolver';
+import { normalizeStemFields } from '../../utils/normalizeStemFields';
 
 const stripDiagramPlaceholder = (text) =>
   String(text || '').replace(/\n*\[Şekil:[^\]]+\]\s*/gi, '').trim();
@@ -22,12 +23,15 @@ const padOptions = (options, size = 5) => {
 const mapServerParseToForm = (data = {}, layout = null) => {
   const intro = data.introText ?? layout?.introText ?? '';
   const question = data.questionText ?? layout?.questionLine ?? stripDiagramPlaceholder(data.text);
+  const stem = normalizeStemFields(intro, question);
   const steps = Array.isArray(data.stepLabels) ? data.stepLabels : (layout?.stepLabels || []);
   const stepLabels = steps.join(' · ');
+  const diagramImagePath = layout?.diagramImagePath || data.assessmentMeta?.parseLayout?.diagramImagePath || '';
+  const questionImagePath = diagramImagePath || data.imagePath || '';
   const base = {
-    text: buildCombinedQuestionText({ introText: intro, questionText: question }),
-    introText: intro,
-    questionText: question,
+    text: buildCombinedQuestionText({ introText: stem.introText, questionText: stem.questionText }),
+    introText: stem.introText,
+    questionText: stem.questionText,
     stepLabels,
     visualPrompt: data.visualPrompt || stepLabels || '',
     options: padOptions(data.options),
@@ -37,7 +41,7 @@ const mapServerParseToForm = (data = {}, layout = null) => {
     subject: data.subject || 'Matematik',
     classLevel: data.classLevel || '9. Sınıf',
     difficulty: data.difficulty || 'Orta',
-    imagePath: data.imagePath || '',
+    imagePath: questionImagePath,
     assessmentMeta: data.assessmentMeta || null,
   };
   return enrichQuestionForm(base);
@@ -156,7 +160,9 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
 
       if (form.correctAnswer?.trim()) {
         showToast(
-          `Soru analiz edildi ve çözüldü. Doğru şık: ${correctOptionLabel(form.options, form.correctAnswer)}`,
+          layout?.diagramImagePath
+            ? `Diyagram kırpıldı ve çözüldü. Doğru şık: ${correctOptionLabel(form.options, form.correctAnswer)}`
+            : `Soru analiz edildi ve çözüldü. Doğru şık: ${correctOptionLabel(form.options, form.correctAnswer)}`,
           'success'
         );
       } else if (mode === 'manual') {
@@ -236,7 +242,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   const parseModeLabel = (mode) => {
     if (mode === 'ai') return 'Bulut AI (Gemini)';
     if (mode === 'ollama-vision') return 'Yerel Ollama görsel';
-    if (mode === 'ocr+crop') return 'Yerel OCR + diyagram kırpma';
+    if (mode === 'ocr+crop' || mode === 'ocr-regional+crop' || String(mode).includes('diagram')) return 'Yerel OCR + diyagram kırpma';
     if (mode === 'ocr') return 'Yerel OCR + ayrıştırma';
     if (mode === 'manual') return 'Manuel düzenleme';
     return 'Analiz';
@@ -263,11 +269,14 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   };
 
   const handleAutoSolve = () => {
+    const stem = normalizeStemFields(parsedData.introText, parsedData.questionText);
     const enriched = enrichQuestionForm({
       ...parsedData,
+      introText: stem.introText,
+      questionText: stem.questionText,
       text: buildCombinedQuestionText({
-        introText: parsedData.introText,
-        questionText: parsedData.questionText || parsedData.text,
+        introText: stem.introText,
+        questionText: stem.questionText || parsedData.text,
       }),
       stepLabels: parsedData.stepLabels,
       ocrPreview,
@@ -289,6 +298,11 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         setParsedData(base);
       }
       const payload = { ...buildSavePayload(base, parseLayout), source: 'AI' };
+      const useDiagramPath = Boolean(
+        parseLayout?.diagramImagePath
+        || payload.imagePath?.includes('/temp/crops/')
+        || payload.assessmentMeta?.parseLayout?.diagramImagePath
+      );
 
       if (!payload.text?.trim()) {
         showToast('Soru metni boş olamaz.', 'error');
@@ -299,7 +313,9 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         return;
       }
 
-      if (uploadedFile) {
+      if (useDiagramPath && payload.imagePath) {
+        await apiClient.post('/questions', payload);
+      } else if (uploadedFile) {
         const form = new FormData();
         appendQuestionFormFields(form, payload);
         form.append('image', uploadedFile);
