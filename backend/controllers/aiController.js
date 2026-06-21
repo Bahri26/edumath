@@ -6,6 +6,11 @@ const {
   resolveSelfStudentUserId,
 } = require('../utils/teacherStudentAccess');
 const {
+  assertSafeAiUserText,
+  HINT_FIELD_MAX_LEN,
+  ANALYSIS_ANSWER_MAX_LEN,
+} = require('../utils/aiPromptSafety');
+const {
   buildInteractivePracticeQuestions,
   buildFallbackPracticeQuestions,
 } = require('../services/practiceQuestionBank');
@@ -163,13 +168,31 @@ exports.getHint = async (req, res) => {
       }
     }
 
+    const safeQuestion = assertSafeAiUserText(resolvedText, {
+      maxLength: HINT_FIELD_MAX_LEN,
+      required: Boolean(!questionId),
+      emptyMessage: 'Soru metni gerekli.',
+    });
+    if (!safeQuestion.ok) {
+      return res.status(safeQuestion.status).json({ message: safeQuestion.message });
+    }
+    resolvedText = safeQuestion.text || resolvedText;
+
+    const safeAnswer = assertSafeAiUserText(studentAnswer, {
+      maxLength: HINT_FIELD_MAX_LEN,
+    });
+    if (!safeAnswer.ok) {
+      return res.status(safeAnswer.status).json({ message: safeAnswer.message });
+    }
+    const sanitizedAnswer = safeAnswer.text;
+
     let hintText;
     if (isLocalAi()) {
-      hintText = localText.buildHint({ questionText: resolvedText, studentAnswer });
+      hintText = localText.buildHint({ questionText: resolvedText, studentAnswer: sanitizedAnswer });
     } else {
       const model = genAI.getGenerativeModel({ model: MODEL_NAME });
       const prompt = `Bir öğrenci şu soruyu çözüyor: ${resolvedText || '(soru metni alınamadı)'}\n` +
-        `Öğrencinin cevabı: ${studentAnswer || 'Henüz cevap yok'}\n` +
+        `Öğrencinin cevabı: ${sanitizedAnswer || 'Henüz cevap yok'}\n` +
         `Kısa, yol gösterici bir ipucu ver. Cevabı açıkça söyleme. 1-3 cümle yeterli.`;
       const result = await model.generateContent(prompt);
       hintText = result.response.text();
@@ -187,7 +210,7 @@ exports.getHint = async (req, res) => {
           meta: {
             questionId: questionId || null,
             questionPreview: (resolvedText || '').slice(0, 160),
-            studentAnswer: String(studentAnswer || '').slice(0, 160),
+            studentAnswer: String(sanitizedAnswer || '').slice(0, 160),
             hintPreview: String(hintText || '').slice(0, 200),
           },
         });
@@ -222,6 +245,15 @@ exports.analyzeAndSuggest = async (req, res) => {
       return res.status(400).json({ message: "Eksik parametre." });
     }
 
+    const safeAnswer = assertSafeAiUserText(answer, {
+      maxLength: ANALYSIS_ANSWER_MAX_LEN,
+      required: true,
+      emptyMessage: 'Cevap metni gerekli.',
+    });
+    if (!safeAnswer.ok) {
+      return res.status(safeAnswer.status).json({ message: safeAnswer.message });
+    }
+
     const access = await assertTeacherCanAccessStudentUser(
       req.user.id,
       studentId,
@@ -231,7 +263,7 @@ exports.analyzeAndSuggest = async (req, res) => {
       return res.status(access.status || 403).json({ message: access.message });
     }
 
-    const result = await analyzeAndSuggest(answer, topic, studentId);
+    const result = await analyzeAndSuggest(safeAnswer.text, topic, studentId);
     res.json(result);
   } catch (error) {
     console.error("analyzeAndSuggest Hatası:", error);

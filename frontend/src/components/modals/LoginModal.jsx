@@ -24,8 +24,9 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess, lang = 'tr' }) => {
     email: '',
     password: '',
     role: 'student', 
-    grade: '9. Sınıf', // Varsayılan sınıf
-    schoolType: 'lise' // Varsayılan kademe
+    grade: '9. Sınıf',
+    schoolType: 'lise',
+    acceptPrivacy: false,
   });
 
   const { login } = useContext(AuthContext);
@@ -51,7 +52,11 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess, lang = 'tr' }) => {
   }, [isOpen, isLoginView]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value,
+    });
     setError(null); 
     setSuccess(null); 
   };
@@ -120,6 +125,11 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess, lang = 'tr' }) => {
         if (onLoginSuccess) onLoginSuccess(user.role);
         onClose();
       } else {
+        if (!formData.acceptPrivacy) {
+          setError(ui.acceptPrivacyRequired);
+          setLoading(false);
+          return;
+        }
         // --- KAYIT OL ---
         await apiClient.post('/auth/register', {
           name: formData.name,
@@ -127,7 +137,8 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess, lang = 'tr' }) => {
           password: formData.password,
           role: formData.role,
           grade: formData.role === 'student' ? formData.grade : undefined,
-          schoolType: formData.role === 'student' ? formData.schoolType : undefined
+          schoolType: formData.role === 'student' ? formData.schoolType : undefined,
+          acceptPrivacy: true,
         });
         setSuccess(ui.registerSuccess);
         setIsLoginView(true); 
@@ -149,6 +160,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess, lang = 'tr' }) => {
     setIsLoginView(!isLoginView);
     setError(null);
     setSuccess(null);
+    setFormData((prev) => ({ ...prev, acceptPrivacy: false }));
   };
 
   if (!isOpen) return null;
@@ -318,7 +330,31 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess, lang = 'tr' }) => {
               </div>
             )}
 
-            <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-200/60 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+            {!isLoginView && (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 space-y-2">
+                <label className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="acceptPrivacy"
+                    checked={formData.acceptPrivacy}
+                    onChange={handleChange}
+                    required
+                    className="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                  />
+                  <span>
+                    {ui.acceptPrivacyPrefix}{' '}
+                    <a href="/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-brand-600 font-semibold hover:underline">{ui.acceptPrivacyLabel}</a>
+                    {' '}{lang === 'tr' ? 've' : 'and'}{' '}
+                    <a href="/legal/terms" target="_blank" rel="noopener noreferrer" className="text-brand-600 font-semibold hover:underline">{ui.acceptTermsLabel}</a>.
+                  </span>
+                </label>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug pl-6">
+                  {ui.acceptPrivacyAiNote}
+                </p>
+              </div>
+            )}
+
+            <button type="submit" disabled={loading || (!isLoginView && !formData.acceptPrivacy)} className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-200/60 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
               {loading ? <Loader2 className="animate-spin" size={20} aria-hidden /> : <>{isLoginView ? ui.btnLogin : ui.btnRegister} <ArrowRight size={20} aria-hidden /></>}
             </button>
             {loading && loadingHint && (

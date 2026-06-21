@@ -36,7 +36,9 @@ const UserSchema = new mongoose.Schema({
   ,
   // Hesap durumu ve zorunlu şifre değişimi
   status: { type: String, enum: ['active', 'pending', 'disabled'], default: 'active' },
-  mustChangePassword: { type: Boolean, default: false }
+  mustChangePassword: { type: Boolean, default: false },
+  privacyConsentAt: { type: Date },
+  privacyConsentVersion: { type: String, default: '' },
 
 }, { timestamps: true, collection: 'users' });
 

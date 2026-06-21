@@ -27,6 +27,8 @@ const generateAccessToken = (user) => jwt.sign({ id: user._id, role: user.role }
 const generateRefreshToken = (user) => jwt.sign({ id: user._id }, JWT_REFRESH_SECRET, { expiresIn: `${REFRESH_TOKEN_EXPIRES_IN_DAYS}d` });
 
 // Joi şemaları
+const PRIVACY_CONSENT_VERSION = '2026-05';
+
 const registerSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
   username: Joi.string().trim().min(3).max(50).optional(),
@@ -34,7 +36,11 @@ const registerSchema = Joi.object({
   password: Joi.string().min(6).max(128).required(),
   role: Joi.string().valid('student', 'teacher').default('student'),
   grade: Joi.string().optional(),
-  schoolType: Joi.string().valid('ilkokul', 'ortaokul', 'lise').default('ilkokul')
+  schoolType: Joi.string().valid('ilkokul', 'ortaokul', 'lise').default('ilkokul'),
+  acceptPrivacy: Joi.boolean().valid(true).required().messages({
+    'any.only': 'Gizlilik politikasını ve kullanım koşullarını kabul etmelisiniz.',
+    'any.required': 'Gizlilik politikasını ve kullanım koşullarını kabul etmelisiniz.',
+  }),
 });
 
 const loginSchema = Joi.object({
@@ -162,7 +168,19 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     }
 
     // Kayıt (hashleme User pre-save hook'unda yapılır)
-    const newUser = new User({ name, username, email, password, role: safeRole, grade, schoolType, status: autoApprove ? 'active' : 'pending', mustChangePassword: false });
+    const newUser = new User({
+      name,
+      username,
+      email,
+      password,
+      role: safeRole,
+      grade,
+      schoolType,
+      status: autoApprove ? 'active' : 'pending',
+      mustChangePassword: false,
+      privacyConsentAt: new Date(),
+      privacyConsentVersion: PRIVACY_CONSENT_VERSION,
+    });
     await newUser.save();
 
     await recordUserActivity(req, {

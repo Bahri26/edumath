@@ -133,6 +133,11 @@ export const translations = {
       resetNeedValidEmail: 'Şifre sıfırlama için e-posta adresi girmeniz gerekir.',
       resetSuccess: 'Şifre sıfırlama talebiniz alındı. Yönetici onayı sonrası /reset-password sayfasından güncelleyebilirsiniz.',
       resetFail: 'Talep oluşturulamadı',
+      acceptPrivacyLabel: 'Gizlilik Politikası',
+      acceptTermsLabel: 'Kullanım Şartları',
+      acceptPrivacyPrefix: 'Okudum ve kabul ediyorum:',
+      acceptPrivacyAiNote: 'AI özellikleri kişisel verilerinizi model eğitiminde kullanmaz.',
+      acceptPrivacyRequired: 'Kayıt için gizlilik politikasını kabul etmelisiniz.',
     },
     footer: {
       desc: 'Edumath; öğrenci, öğretmen ve araştırmacı için matematik öğrenme ve değerlendirme platformu.',
@@ -283,6 +288,11 @@ export const translations = {
       resetNeedValidEmail: 'Password reset requires a valid email address.',
       resetSuccess: 'Reset request received. After admin approval, update your password at /reset-password.',
       resetFail: 'Could not submit request',
+      acceptPrivacyLabel: 'Privacy Policy',
+      acceptTermsLabel: 'Terms of Use',
+      acceptPrivacyPrefix: 'I have read and accept the',
+      acceptPrivacyAiNote: 'AI features do not use your personal data for model training.',
+      acceptPrivacyRequired: 'You must accept the privacy policy to register.',
     },
     footer: {
       desc: 'Edumath is a math learning and assessment platform for students, teachers, and researchers.',
