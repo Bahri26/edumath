@@ -12,6 +12,14 @@ describe('solveSquareCountPattern', () => {
     assert.equal(result?.correctAnswer, '7');
     assert.match(result?.solution || '', /7 kare/);
   });
+
+  it('does not treat kare pattern as hexagon doubling', () => {
+    const result = solvePatternQuestion({
+      questionText: '4. adımda kaç kare kullanılır? örüntü karelerden oluşur.',
+      options: ['6', '7', '8', '9'],
+    });
+    assert.equal(result?.correctAnswer, '7');
+  });
 });
 
 describe('normalizeStemFields', () => {

@@ -160,8 +160,35 @@ def _to_result(match: dict[str, Any], steps: list[str], solver_name: str) -> Sol
     )
 
 
+def solve_square_count_pattern(text: str, options: list[str]) -> SolveResult | None:
+    """Kare sayısı örüntüsü (1, 3, 5, 7 …): n. adımda 2n−1 kare."""
+    lower = (text or "").lower()
+    step = extract_target_step(lower)
+    if not step:
+        return None
+    if not re.search(r"kare", lower):
+        return None
+    if not re.search(r"örüntü|oruntu|ad[ıi]m|şekil|sekil", lower):
+        return None
+    predicted = 2 * step - 1
+    match = find_option_by_value(options, predicted)
+    if not match:
+        return None
+    return _to_result(
+        match,
+        [
+            "Kare sayısı örüntüsü: 1., 2., 3. adımlarda 1, 3, 5 kare (her adımda +2).",
+            f"{step}. adım: 2 × {step} − 1 = {predicted} kare.",
+            f"Doğru cevap {chr(65 + match['index'])}) {match['value']} şıkkıdır.",
+        ],
+        "square-count",
+    )
+
+
 def solve_hexagon_count_pattern(text: str, options: list[str]) -> SolveResult | None:
     lower = re.sub(r"al-\s*tigen", "altıgen", text or "", flags=re.I).lower()
+    if re.search(r"kare", lower):
+        return None
     step = extract_target_step(lower)
     if not step:
         return None
@@ -534,6 +561,7 @@ def solve_pattern_question(payload: dict[str, Any]) -> dict[str, Any] | None:
 
     solvers: list[Callable[..., SolveResult | None]] = [
         lambda t, o: solve_algebraic_rule_pattern(t, o, extra),
+        solve_square_count_pattern,
         solve_hexagon_count_pattern,
         solve_triangle_perimeter_pattern,
         solve_square_numbers_pattern,

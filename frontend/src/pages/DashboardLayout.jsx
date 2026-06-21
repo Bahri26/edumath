@@ -11,11 +11,11 @@ import { useTranslation } from '../i18n/useTranslation';
 function useIsDesktopNav() {
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return window.matchMedia('(min-width: 1024px)').matches;
+    return window.matchMedia('(min-width: 768px)').matches;
   });
 
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 1024px)');
+    const mq = window.matchMedia('(min-width: 768px)');
     const onChange = () => setIsDesktop(mq.matches);
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
@@ -160,7 +160,7 @@ const DashboardLayout = ({
         {iconOnly ? (
           <span
             role="tooltip"
-            className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 dark:bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-white dark:text-slate-900 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+            className="pointer-events-none absolute left-[calc(100%+0.5rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-lg bg-slate-900 dark:bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-white dark:text-slate-900 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
           >
             {item.label}
           </span>
@@ -186,7 +186,7 @@ const DashboardLayout = ({
       {/* Mobil / tablet: sürgülü menü */}
       {isNavMenuOpen && !isDesktopNav && (
         <div
-          className="fixed inset-0 z-40 bg-surface-900/40 backdrop-blur-[2px] lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 z-40 bg-surface-900/40 backdrop-blur-[2px] md:hidden transition-opacity duration-300"
           onPointerDown={(event) => {
             if (event.target === event.currentTarget) closeDrawer();
           }}
@@ -196,7 +196,7 @@ const DashboardLayout = ({
 
       <aside
         ref={drawerRef}
-        className={`fixed top-0 left-0 z-50 h-full w-[min(18rem,88vw)] shadow-2xl lg:hidden transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`fixed top-0 left-0 z-50 h-full w-[min(18rem,88vw)] shadow-2xl md:hidden transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
           studentKid
             ? 'bg-white/98 dark:bg-surface-900/98 backdrop-blur-xl border-r border-kid-rail/70 dark:border-surface-700'
             : 'bg-white dark:bg-surface-900 border-r border-surface-200 dark:border-surface-700'
@@ -230,13 +230,13 @@ const DashboardLayout = ({
       </aside>
 
       {/* Üst bar: logo + yatay menü (masaüstü) + araçlar */}
-      <header className={`sticky top-0 z-30 border-b ${headerBg}`}>
+      <header className={`sticky top-0 z-30 ${headerBg}`}>
         <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-5 h-[3.75rem]">
           <button
             ref={menuToggleRef}
             type="button"
             onClick={toggleDrawer}
-            className="lg:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl hover:bg-surface-100 dark:hover:bg-surface-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            className="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl hover:bg-surface-100 dark:hover:bg-surface-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             aria-label={isNavMenuOpen ? t('closeMenu') : t('openMenu')}
             aria-expanded={isNavMenuOpen}
             aria-controls="primary-nav"
@@ -252,7 +252,7 @@ const DashboardLayout = ({
           {extraHeader}
 
           <nav
-            className="hidden lg:flex flex-1 items-center gap-1.5 px-2 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-300 dark:scrollbar-thumb-surface-600"
+            className="hidden md:flex flex-1 items-center gap-1.5 px-2 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-300 dark:scrollbar-thumb-surface-600"
             aria-label={role === 'teacher' ? t('teacherNav') : t('studentNav')}
           >
             {visibleNavItems.map((item) => renderNavButton(item, { compact: true, iconOnly: true }))}
@@ -351,14 +351,6 @@ const DashboardLayout = ({
             </div>
           </div>
         </div>
-
-        {/* Tablet: yatay kaydırmalı menü şeridi */}
-        <nav
-          className="lg:hidden flex items-center gap-2 px-3 pb-3 overflow-x-auto scrollbar-thin border-t border-surface-100/80 dark:border-surface-800/80 pt-2"
-          aria-label={role === 'teacher' ? t('teacherNav') : t('studentNav')}
-        >
-          {visibleNavItems.map((item) => renderNavButton(item, { compact: true, iconOnly: true }))}
-        </nav>
       </header>
 
       <main id="main-content" tabIndex={-1} className={`flex-1 w-full max-w-[1600px] mx-auto ${studentKid ? 'p-4 sm:p-6 pb-10' : 'p-4 sm:p-6'}`}>

@@ -1,10 +1,21 @@
 from services.question_solver import (
     solve_hexagon_count_pattern,
     solve_pattern_question,
+    solve_square_count_pattern,
     solve_square_numbers_pattern,
     solve_triangular_numbers_pattern,
     solve_two_step_pattern,
 )
+
+
+def test_square_count_step_pattern():
+    result = solve_square_count_pattern(
+        "İlk üç adımı verilen karelerden oluşan şekil örüntüsünde 4. adımda kaç kare kullanılır?",
+        ["6", "7", "9", "10"],
+    )
+    assert result is not None
+    assert result.correct_answer == "7"
+    assert result.solver_name == "square-count"
 
 
 def test_hexagon_count():
