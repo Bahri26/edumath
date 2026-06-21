@@ -14,8 +14,7 @@ export const translations = {
       titleStart: 'Edumath ile',
       titleHighlight: 'Matematiği',
       titleEnd: 'Keşfet',
-      desc: 'Yapay zeka destekli öğrenme altyapısı ile okul matematiğinden ileri akademik çalışmaya uzanan net ve ölçülebilir bir gelişim alanı sunuyoruz.',
-      scope: 'İlkokuldan liseye uzanan öğrenme yolu ile yüksek lisans ve doktora düzeyi araştırma akışlarını aynı platformda ayrışmış şekilde sunar.',
+      desc: 'Okul matematiğinden akademik araştırmaya uzanan yapay zeka destekli öğrenme platformu — öğrenci, öğretmen ve araştırmacı akışları ayrı panellerde.',
       btnStart: 'Hemen Başla',
       btnMore: 'Programları İncele',
       audienceStudentBadge: 'Öğrenci Girişi',
@@ -37,18 +36,22 @@ export const translations = {
       mainTitleHighlight: 'Yeni Nesil Eğitim',
       desc1: 'Edumath olarak, matematiğin sadece karmaşık formüllerden ibaret olmadığını, evrenin dili olduğunu biliyoruz. 2020 yılından bu yana, teknolojinin gücünü pedagojik uzmanlıkla birleştirerek öğrencilerimize eşsiz bir öğrenme deneyimi sunuyoruz.',
       desc2: 'Yapay zeka destekli analiz sistemimiz sayesinde, her öğrencinin güçlü ve zayıf yönlerini tespit ediyor, onlara özel kişiselleştirilmiş rotalar oluşturuyoruz.',
-      statGrads: '10.000+ Mezun',
-      statRating: 'Öğrenci Memnuniyeti',
+      statGrads: '1–12. sınıf · MEB uyumlu program',
+      statPlatform: 'Yapay zeka destekli',
+      statPlatformDesc: 'Kişiselleştirilmiş yönlendirme',
       featureStaff: 'Uzman Kadro',
       featureStaffDesc: 'Alanında derece yapmış eğitmenler.',
       featureAccess: '7/24 Erişim',
       featureAccessDesc: 'İstediğin zaman, istediğin yerden öğren.',
-      btnStory: 'Hikayemizi Oku'
+      btnStory: 'Hikayemizi Oku',
+      btnStoryAria: 'İletişim bölümüne git'
     },
     curriculum: {
       title: 'MEB Uyumlu',
       titleHighlight: 'Müfredat & Kazanımlar',
       desc: '1. sınıftan 12. sınıfa kadar tüm sınıf seviyeleri için yapılandırılmış kapsamlı matematik yolculuğu.',
+      levelsSubtitle: 'İlkokul, ortaokul ve lise seviyelerine özel içerikler',
+      scrollHint: 'Sınıfları kaydırarak gezin →',
       selectGrade: 'Sınıf Seçiniz',
       programTitle: 'Matematik Programı',
       topics: 'Konu Başlıkları',
@@ -85,9 +88,15 @@ export const translations = {
       formMessage: 'Mesajınız',
       btnSend: 'Mesajı Gönder',
       infoTitle: 'İletişim Bilgileri',
-      address: 'Teknoloji Vadisi, Eğitim Blokları No: 42',
-      phone: '+90 (212) 555 00 00',
-      email: 'info@edumath.com'
+      addressLabel: 'Adres',
+      phoneLabel: 'Telefon',
+      emailLabel: 'E-posta',
+      address: 'Türkiye · Uzaktan erişim',
+      phone: 'İletişim formu üzerinden',
+      email: 'info@edumath.com',
+      formSuccess: 'Mesajınız alındı! En kısa sürede dönüş yapacağız.',
+      socialHint: 'Sosyal medya hesaplarımız yakında. Şimdilik e-posta ile ulaşabilirsiniz.',
+      emailUs: 'E-posta gönder'
     },
     login: {
       title: 'Hoş Geldiniz',
@@ -136,7 +145,8 @@ export const translations = {
       cookies: 'Çerez Politikası',
       schoolTrack: 'Okul Matematiği Programları',
       researchTrack: 'Araştırma ve Doktora Modülleri',
-      demoTrack: 'Demo ve Bilgi Talebi'
+      demoTrack: 'Demo ve Bilgi Talebi',
+      legalMailHint: 'Detaylı metin için bize yazın'
     }
   },
   en: {
@@ -154,8 +164,7 @@ export const translations = {
       titleStart: 'Discover Math with',
       titleHighlight: 'Edumath',
       titleEnd: '',
-      desc: 'We provide a clear, measurable development path from school mathematics to advanced academic study with AI-supported learning infrastructure.',
-      scope: 'The platform separates school-level learning journeys from graduate and doctoral research workflows while keeping them under one product vision.',
+      desc: 'An AI-supported learning platform from school math to academic research — with separate journeys for students, teachers, and researchers.',
       btnStart: 'Get Started',
       btnMore: 'Explore Programs',
       audienceStudentBadge: 'Student Entry',
@@ -177,18 +186,22 @@ export const translations = {
       mainTitleHighlight: 'Loving Math',
       desc1: 'At Edumath, we know that mathematics is not just complex formulas, but the language of the universe. Since 2020, we have been offering a unique learning experience.',
       desc2: 'Thanks to our AI-supported analysis system, we identify the strengths and weaknesses of each student and create personalized routes for them.',
-      statGrads: '10,000+ Graduates',
-      statRating: 'Student Satisfaction',
+      statGrads: 'Grades 1–12 · Curriculum-aligned',
+      statPlatform: 'AI-supported',
+      statPlatformDesc: 'Personalized guidance',
       featureStaff: 'Expert Staff',
       featureStaffDesc: 'Award-winning instructors.',
       featureAccess: '24/7 Access',
       featureAccessDesc: 'Learn anytime, anywhere.',
-      btnStory: 'Read Our Story'
+      btnStory: 'Read Our Story',
+      btnStoryAria: 'Go to contact section'
     },
     curriculum: {
       title: 'Curriculum &',
       titleHighlight: 'Outcomes',
       desc: 'A comprehensive mathematics journey structured for all grade levels from 1st to 12th grade.',
+      levelsSubtitle: 'Content tailored for primary, middle, and high school levels',
+      scrollHint: 'Swipe to browse grades →',
       selectGrade: 'Select Grade',
       programTitle: 'Math Program',
       topics: 'Topics',
@@ -225,9 +238,15 @@ export const translations = {
       formMessage: 'Your Message',
       btnSend: 'Send Message',
       infoTitle: 'Contact Information',
-      address: 'Tech Valley, Education Blocks No: 42',
-      phone: '+90 (212) 555 00 00',
-      email: 'info@edumath.com'
+      addressLabel: 'Address',
+      phoneLabel: 'Phone',
+      emailLabel: 'Email',
+      address: 'Turkey · Remote access',
+      phone: 'Via contact form',
+      email: 'info@edumath.com',
+      formSuccess: 'Your message was received! We will get back to you soon.',
+      socialHint: 'Social accounts coming soon. Reach us by email for now.',
+      emailUs: 'Send email'
     },
     login: {
       title: 'Welcome Back',
@@ -276,7 +295,8 @@ export const translations = {
       cookies: 'Cookie Policy',
       schoolTrack: 'School Mathematics Programs',
       researchTrack: 'Research and Doctoral Modules',
-      demoTrack: 'Demo and Information Request'
+      demoTrack: 'Demo and Information Request',
+      legalMailHint: 'Contact us for the full document'
     }
   }
 };

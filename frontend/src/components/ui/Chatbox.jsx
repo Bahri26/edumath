@@ -112,9 +112,22 @@ const Chatbox = ({ lang: langProp }) => {
   const statusLabel = isGuest ? t('chat.guestMode') : t('chat.online');
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div
+      className={`fixed z-50 flex flex-col ${
+        isOpen
+          ? 'inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:items-end justify-end sm:justify-start'
+          : 'bottom-4 right-4 sm:bottom-6 sm:right-6 items-end'
+      }`}
+    >
       {isOpen && (
-        <div className="mb-4 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col animate-scale-in origin-bottom-right">
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 bg-black/40 sm:hidden cursor-default"
+            onClick={() => setIsOpen(false)}
+            aria-label={locale === 'EN' ? 'Close chat' : 'Sohbeti kapat'}
+          />
+          <div className="relative z-10 mx-3 mb-3 sm:mx-0 sm:mb-4 w-auto sm:w-80 md:w-96 max-h-[min(85vh,640px)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col animate-scale-in origin-bottom-right flex-1 sm:flex-none min-h-0">
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 flex justify-between items-center text-white">
             <div className="flex items-center gap-2 min-w-0">
               <div className="bg-white/20 p-1.5 rounded-lg shrink-0">
@@ -142,7 +155,7 @@ const Chatbox = ({ lang: langProp }) => {
             </button>
           </div>
 
-          <div className="h-80 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950">
+          <div className="flex-1 min-h-[12rem] sm:flex-none sm:h-80 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
@@ -202,12 +215,13 @@ const Chatbox = ({ lang: langProp }) => {
             </button>
           </form>
         </div>
+        </>
       )}
 
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`group flex items-center justify-center w-14 h-14 rounded-full shadow-lg hover:shadow-indigo-500/30 transition-all duration-300 ${
+        className={`relative z-20 self-end mr-3 mb-3 sm:mr-0 sm:mb-0 group flex items-center justify-center w-14 h-14 min-h-[56px] min-w-[56px] rounded-full shadow-lg hover:shadow-indigo-500/30 transition-all duration-300 ${
           isOpen ? 'bg-slate-800 rotate-90' : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:scale-110'
         }`}
         aria-label={isOpen ? (locale === 'EN' ? 'Close assistant' : 'Asistanı kapat') : t('chat.title')}

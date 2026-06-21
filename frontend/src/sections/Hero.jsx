@@ -87,11 +87,8 @@ const Hero = ({
 
       {/* 4. AÇIKLAMA METNİ */}
       <FadeIn delay={300}>
-        <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 mb-4 max-w-3xl mx-auto leading-relaxed font-medium">
+        <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed font-medium">
           {t.hero.desc}
-        </p>
-        <p className="text-base sm:text-lg text-brand-700 dark:text-brand-300 font-semibold mb-12 max-w-2xl mx-auto">
-          {t.hero.scope}
         </p>
       </FadeIn>
 

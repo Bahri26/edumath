@@ -533,7 +533,7 @@ export default function QuestionBank() {
             className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border-none rounded-2xl focus:ring-4 focus:ring-indigo-500/10 font-medium outline-none"
           />
         </div>
-        <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+        <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 overflow-x-auto pb-1 lg:pb-0 snap-x snap-mandatory lg:snap-none">
           <FilterSelect 
             icon={<Layers size={14}/>} 
             value={profile.branch && profile.branchApproval === 'approved' ? profile.branch : filters.subject}
@@ -558,31 +558,32 @@ export default function QuestionBank() {
           <FilterSelect icon={<Sparkles size={14}/>} value={filters.source} onChange={(v) => { setFilters({ ...filters, source: v }); setPage(1); }} options={sourceFilterOptions()} />
         </div>
       </div>
+      <p className="text-xs text-slate-400 px-1 lg:hidden">{t('questionBank.filterScrollHint')}</p>
 
       {(filters.subject === 'Matematik' || (profile.branchApproval === 'approved' && profile.branch === 'Matematik')) && (
         <div className="flex flex-wrap items-center gap-2 px-2">
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hızlı filtre</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('questionBank.quickFilter')}</span>
           <button
             type="button"
             onClick={() => { setFilters((f) => ({ ...f, topic: 'Örüntüler' })); setPage(1); }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+            className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold border transition-all ${
               filters.topic === 'Örüntüler' || filters.topic === PATTERN_TOPIC_ALL_UNDER
                 ? 'border-indigo-600 bg-indigo-50 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200'
                 : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300'
             }`}
           >
-            Yalnız örüntü
+            {t('questionBank.patternsOnly')}
           </button>
           <button
             type="button"
             onClick={() => { setFilters((f) => ({ ...f, topic: 'Tümü' })); setPage(1); }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+            className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold border transition-all ${
               filters.topic === 'Tümü'
                 ? 'border-slate-500 bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-100'
                 : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 dark:bg-slate-800 dark:border-slate-600'
             }`}
           >
-            Tüm alt konular
+            {t('questionBank.allSubtopics')}
           </button>
         </div>
       )}
@@ -590,7 +591,7 @@ export default function QuestionBank() {
       {/* Approval gate */}
       {profile.branchApproval !== 'approved' && (
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 mb-4">
-          Branş onayı bekleniyor. Onaylanınca branşınızdaki tüm sorulara erişebileceksiniz.
+          {t('questionBank.branchPendingBanner')}
         </div>
       )}
 
@@ -605,20 +606,16 @@ export default function QuestionBank() {
         ) : questions.length === 0 ? (
           <EmptyState
             icon={FileText}
-            title="Aranan kriterlere uygun soru yok"
-            description={
-              hasActiveFilters
-                ? 'Filtreleri veya arama metnini değiştirin; gerekirse tüm filtreleri temizleyerek tekrar deneyin.'
-                : 'Henüz soru bankanızda kayıt yok. Yeni soru ekleyebilir veya AI ile üretebilirsiniz.'
-            }
+            title={hasActiveFilters ? t('questionBank.emptyFilteredTitle') : t('questionBank.emptyTitle')}
+            description={hasActiveFilters ? t('questionBank.emptyFilteredDesc') : t('questionBank.emptyNoDataDesc')}
             action={
               hasActiveFilters ? (
                 <Button variant="outline" size="md" onClick={clearAllFilters}>
-                  Filtreleri temizle
+                  {t('questionBank.clearFilters')}
                 </Button>
               ) : profile.branchApproval === 'approved' ? (
                 <Button variant="primary" size="md" onClick={openNewQuestionModal}>
-                  <Plus size={18} /> İlk soruyu ekle
+                  <Plus size={18} /> {t('questionBank.addFirstQuestion')}
                 </Button>
               ) : null
             }

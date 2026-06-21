@@ -23,6 +23,6 @@ vi.mock('../../services/api', () => ({
 describe('TeacherExamsPage', () => {
   it('renders main section', async () => {
     renderWithProviders(<TeacherExamsPage />);
-    expect(await screen.findByText(/sınav yönetimi/i)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /sınavlar/i })).toBeInTheDocument();
   });
 });

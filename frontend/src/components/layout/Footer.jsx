@@ -3,12 +3,16 @@ import { GraduationCap, Phone, MapPin, Mail, ChevronRight } from 'lucide-react';
 
 const Footer = ({ t }) => {
   const currentYear = new Date().getFullYear();
+  const email = t.contact.email;
+
+  const legalMailto = (subject) =>
+    `mailto:${email}?subject=${encodeURIComponent(subject)}`;
 
   return (
     <footer className="bg-gray-900 dark:bg-gray-950 text-gray-300 pt-16 pb-8 border-t border-gray-800 dark:border-gray-900 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-          
+
           <div>
             <div className="flex items-center text-white mb-4">
               <div className="bg-indigo-600 p-1.5 rounded-lg mr-2">
@@ -46,26 +50,46 @@ const Footer = ({ t }) => {
             <div className="space-y-4 text-sm">
               <div className="flex items-start gap-3">
                 <MapPin className="mt-1 text-indigo-500 shrink-0" size={18} />
-                <span>Teknoloji Vadisi, Eğitim Blokları No: 42</span>
+                <span>{t.contact.address}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="text-indigo-500 shrink-0" size={18} />
-                <span>+90 (212) 555 00 00</span>
+                <span>{t.contact.phone}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="text-indigo-500 shrink-0" size={18} />
-                <span>info@edumath.com</span>
+                <a href={`mailto:${email}`} className="hover:text-indigo-400 transition-colors">
+                  {email}
+                </a>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 dark:border-gray-900 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
+        <div className="border-t border-gray-800 dark:border-gray-900 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 gap-4">
           <p>&copy; {currentYear} Edumath. {t.footer.rights}</p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-white transition-colors">{t.footer.privacy}</a>
-            <a href="#" className="hover:text-white transition-colors">{t.footer.terms}</a>
-            <a href="#" className="hover:text-white transition-colors">{t.footer.cookies}</a>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            <a
+              href={legalMailto(t.footer.privacy)}
+              className="hover:text-white transition-colors"
+              title={t.footer.legalMailHint}
+            >
+              {t.footer.privacy}
+            </a>
+            <a
+              href={legalMailto(t.footer.terms)}
+              className="hover:text-white transition-colors"
+              title={t.footer.legalMailHint}
+            >
+              {t.footer.terms}
+            </a>
+            <a
+              href={legalMailto(t.footer.cookies)}
+              className="hover:text-white transition-colors"
+              title={t.footer.legalMailHint}
+            >
+              {t.footer.cookies}
+            </a>
           </div>
         </div>
       </div>

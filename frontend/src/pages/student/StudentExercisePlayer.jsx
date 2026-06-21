@@ -398,11 +398,6 @@ export default function StudentExercisePlayer() {
 
       {currentQ && (
         <div className="rounded-[1.25rem] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm space-y-4">
-          <div className="flex gap-2 items-center">
-            <span className="text-xs font-bold uppercase px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-              {currentQ.difficulty || 'Soru'}
-            </span>
-          </div>
           <QuestionTextWithPattern
             text={currentQ.text}
             mainClassName="text-lg font-medium text-slate-800 dark:text-white"

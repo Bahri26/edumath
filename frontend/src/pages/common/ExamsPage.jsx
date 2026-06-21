@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, FileText, Plus, Trash2, Play, CheckCircle, AlertTriangle, X, Brain, Sparkles, GripVertical } from 'lucide-react';
+import { Clock, FileText, Plus, Trash2, Play, CheckCircle, AlertTriangle, X, Brain, Sparkles, GripVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import apiClient from '../../services/api';
 import { generatePracticeQuestions } from '../../services/aiService';
 import { useToast } from '../../context/ToastContext';
@@ -14,6 +14,7 @@ import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
 import QuestionTextWithPattern from '../../components/questions/QuestionTextWithPattern.jsx';
 import { MatchingPracticeCard, SequencePracticeCard } from '../../components/exams/InteractivePracticeCards.jsx';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';
+import EmptyState from '../../components/ui/EmptyState.jsx';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
 import StudentHint from '../../components/StudentHint.jsx';
 import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
@@ -39,6 +40,7 @@ const ExamsPage = ({ role }) => {
 
   // --- ÖĞRENCİ STATE ---
   const [activeExam, setActiveExam] = useState(null);
+  const [examQuestionIndex, setExamQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
   
@@ -136,6 +138,7 @@ const ExamsPage = ({ role }) => {
       const res = await apiClient.get(`/exams/${examId}/take`);
       const examData = res.data;
       setActiveExam(examData);
+      setExamQuestionIndex(0);
       setTimeLeft(examData.duration * 60);
       examDurationRef.current = examData.duration;
       setUserAnswers({});
@@ -191,6 +194,22 @@ const ExamsPage = ({ role }) => {
       const msg = err?.response?.data?.message || 'Sınav gönderilirken hata oluştu.';
       showToast(msg, 'error');
     }
+  };
+
+  const confirmFinishExam = async (early = false) => {
+    if (!activeExam) return;
+    const totalQuestions = activeExam.questions.length;
+    const answeredCount = activeExam.questions.filter((item) => userAnswers[item._id]).length;
+    const unanswered = totalQuestions - answeredCount;
+
+    const confirmed = await askConfirm({
+      title: early ? 'Sınavı erken bitir?' : 'Sınavı bitir?',
+      description:
+        unanswered > 0
+          ? `${unanswered} soru cevaplanmadı. Sınavı şimdi göndermek istiyor musun? Cevapladığın sorular kaydedilecek.`
+          : 'Sınavı göndermek istiyor musun? Tüm cevapların kaydedilecek.',
+    });
+    if (confirmed) finishExam();
   };
 
   // --- STUDENT: KENDİ SONUCUMU GÖR ---
@@ -293,70 +312,156 @@ const ExamsPage = ({ role }) => {
 
   // --- EKRAN 1: SINAV ANI (Öğrenci) ---
   if (activeExam && !examResult) {
+    const totalQuestions = activeExam.questions.length;
+    const idx = Math.min(examQuestionIndex, Math.max(0, totalQuestions - 1));
+    const q = activeExam.questions[idx];
+    const isFirst = idx === 0;
+    const isLast = idx >= totalQuestions - 1;
+    const answeredCount = activeExam.questions.filter((item) => userAnswers[item._id]).length;
+
+    const recordAnswer = (questionId, optionText) => {
+      const next = { ...userAnswers, [questionId]: optionText };
+      setUserAnswers(next);
+      answersRef.current = next;
+      questionTimesRef.current = {
+        ...questionTimesRef.current,
+        [questionId]: computeExamTotalTimeSpent(
+          examDurationRef.current || activeExam.duration,
+          timeLeft,
+        ),
+      };
+    };
+
     return (
-      <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-slate-900 overflow-y-auto">
-        <div className="bg-white dark:bg-slate-800 p-4 shadow-md sticky top-0 z-10 flex justify-between items-center px-8 border-b border-slate-200 dark:border-slate-700">
-          <div>
-            <h2 className="text-xl font-bold dark:text-white">{activeExam.title}</h2>
-            <p className="text-sm text-slate-500">Toplam {activeExam.questions.length} Soru</p>
+      <>
+      <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-slate-900 flex flex-col">
+        <div className="bg-white dark:bg-slate-800 p-3 sm:p-4 shadow-md sticky top-0 z-10 flex flex-wrap justify-between items-center gap-3 px-4 sm:px-8 border-b border-slate-200 dark:border-slate-700">
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl font-bold dark:text-white truncate">{activeExam.title}</h2>
+            <p className="text-sm text-slate-500">
+              Soru {idx + 1} / {totalQuestions}
+              {answeredCount > 0 && ` · ${answeredCount} cevaplandı`}
+            </p>
           </div>
-          <div className={`text-2xl font-mono font-bold px-4 py-2 rounded-lg ${timeLeft < 300 ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>{formatTime(timeLeft)}</div>
-          <button type="button" onClick={() => finishExam()} className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700">Bitir</button>
+          <div className={`text-xl sm:text-2xl font-mono font-bold px-3 sm:px-4 py-2 rounded-lg shrink-0 ${timeLeft < 300 ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
+            {formatTime(timeLeft)}
+          </div>
         </div>
-        <div className="max-w-4xl mx-auto p-6 space-y-8">
-          {activeExam.questions.map((q, idx) => (
-            <div key={q._id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
-              <div className="flex gap-3 mb-4">
-                <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold px-3 py-1 rounded-lg">Soru {idx + 1}</span>
-              </div>
-              <QuestionTextWithPattern
-                text={q.text}
-                mainClassName="text-lg font-medium text-slate-800 dark:text-white"
-                className="mb-4"
-              />
-              <QuestionVisual src={q.image} alt={`Soru ${idx + 1} gorseli`} className="mb-4" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {(Array.isArray(q.options) ? q.options : []).map((opt, i) => {
-                  const optionText = opt?.text || '';
-                  const isSelected = userAnswers[q._id] === optionText;
-                  const letter = String.fromCharCode(65 + i);
-                  return (
-                    <label
-                      key={i}
-                      className={`flex items-start gap-3 p-4 border rounded-2xl cursor-pointer transition-all ${isSelected ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500' : 'hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'}`}
-                    >
-                      <input
-                        type="radio"
-                        name={`q-${q._id}`}
-                        value={optionText}
-                        onChange={() => {
-                          const next = { ...userAnswers, [q._id]: optionText };
-                          setUserAnswers(next);
-                          answersRef.current = next;
-                          questionTimesRef.current = {
-                            ...questionTimesRef.current,
-                            [q._id]: computeExamTotalTimeSpent(
-                              examDurationRef.current || activeExam.duration,
-                              timeLeft,
-                            ),
-                          };
-                        }}
-                        className="mt-1 w-5 h-5 text-indigo-600"
-                      />
-                      <div className="flex-1">
-                        <div className="text-slate-700 dark:text-slate-200">
-                          <span className="font-bold mr-2">{letter})</span>
-                          {renderWithLatex(optionText)}
+
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl mx-auto p-4 sm:p-6">
+            {q && (
+              <div className="bg-white dark:bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                <div className="flex gap-3 mb-4">
+                  <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold px-3 py-1 rounded-lg">
+                    Soru {idx + 1}
+                  </span>
+                </div>
+                <QuestionTextWithPattern
+                  text={q.text}
+                  mainClassName="text-lg font-medium text-slate-800 dark:text-white"
+                  className="mb-4"
+                />
+                <QuestionVisual src={q.image} alt={`Soru ${idx + 1} gorseli`} className="mb-4" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {(Array.isArray(q.options) ? q.options : []).map((opt, i) => {
+                    const optionText = opt?.text || '';
+                    const isSelected = userAnswers[q._id] === optionText;
+                    const letter = String.fromCharCode(65 + i);
+                    return (
+                      <label
+                        key={i}
+                        className={`flex items-start gap-3 p-4 min-h-[52px] border rounded-2xl cursor-pointer transition-all ${isSelected ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500' : 'hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'}`}
+                      >
+                        <input
+                          type="radio"
+                          name={`q-${q._id}`}
+                          value={optionText}
+                          checked={isSelected}
+                          onChange={() => recordAnswer(q._id, optionText)}
+                          className="mt-1 w-5 h-5 text-indigo-600 shrink-0"
+                        />
+                        <div className="flex-1">
+                          <div className="text-slate-700 dark:text-slate-200">
+                            <span className="font-bold mr-2">{letter})</span>
+                            {renderWithLatex(optionText)}
+                          </div>
                         </div>
-                      </div>
-                    </label>
-                  );
-                })}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
+            )}
+
+            <div className="flex flex-wrap gap-2 justify-center mt-6 px-1">
+              {activeExam.questions.map((item, qIdx) => {
+                const answered = !!userAnswers[item._id];
+                const current = qIdx === idx;
+                return (
+                  <button
+                    key={item._id}
+                    type="button"
+                    onClick={() => setExamQuestionIndex(qIdx)}
+                    className={`w-9 h-9 min-w-[36px] rounded-lg text-sm font-bold transition-all ${
+                      current
+                        ? 'bg-indigo-600 text-white ring-2 ring-indigo-300'
+                        : answered
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
+                          : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                    }`}
+                    aria-label={`Soru ${qIdx + 1}${answered ? ', cevaplandı' : ''}`}
+                    aria-current={current ? 'step' : undefined}
+                  >
+                    {qIdx + 1}
+                  </button>
+                );
+              })}
             </div>
-          ))}
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 flex flex-wrap items-center justify-between gap-3">
+          <button
+            type="button"
+            disabled={isFirst}
+            onClick={() => setExamQuestionIndex((n) => Math.max(0, n - 1))}
+            className="inline-flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl font-semibold border border-slate-200 dark:border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700"
+          >
+            <ChevronLeft size={18} aria-hidden /> Önceki
+          </button>
+          <div className="flex gap-2">
+            {!isLast ? (
+              <button
+                type="button"
+                onClick={() => setExamQuestionIndex((n) => Math.min(totalQuestions - 1, n + 1))}
+                className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Sonraki <ChevronRight size={18} aria-hidden />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => confirmFinishExam(false)}
+                className="px-5 py-2.5 min-h-[44px] rounded-xl font-bold bg-green-600 text-white hover:bg-green-700"
+              >
+                Bitir
+              </button>
+            )}
+            {!isLast && (
+              <button
+                type="button"
+                onClick={() => confirmFinishExam(true)}
+                className="px-4 py-2.5 min-h-[44px] rounded-xl font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Erken bitir
+              </button>
+            )}
+          </div>
         </div>
       </div>
+      <ConfirmDialog />
+      </>
     );
   }
 
@@ -547,7 +652,31 @@ const ExamsPage = ({ role }) => {
   // --- EKRAN 3: SINAV LİSTESİ (Ana Ekran) ---
   const examListGrid = (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {exams.length === 0 ? <div className="col-span-full text-center py-10 text-slate-500 dark:text-slate-400 rounded-[1.25rem] border border-dashed border-sky-200/60 dark:border-slate-600 bg-white/40 dark:bg-slate-800/30">Henüz sınav oluşturulmamış.</div> : exams.map(exam => (
+        {exams.length === 0 ? (
+          role === 'student' ? (
+            <EmptyState
+              icon={FileText}
+              title="Henüz sınav yok"
+              description="Öğretmeniniz sınav paylaştığında burada görünecek. Bu arada derslerinden çalışmaya devam edebilirsin."
+              action={
+                <Link to="/student/courses" className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700">
+                  Derslere git
+                </Link>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={FileText}
+              title="Henüz sınav oluşturulmamış"
+              description="İlk sınavınızı oluşturarak öğrencilerinize paylaşabilirsiniz."
+              action={
+                <Button variant="primary" size="md" onClick={() => setShowCreateModal(true)} icon={Plus}>
+                  Sınav oluştur
+                </Button>
+              }
+            />
+          )
+        ) : exams.map(exam => (
             <Card key={exam._id}>
               <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-xl"><FileText size={24} /></div>

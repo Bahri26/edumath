@@ -33,7 +33,7 @@ const Curriculum = ({ lang, t }) => {
               {t.curriculum.title} <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">{t.curriculum.titleHighlight}</span>
             </h2>
             <p className="text-base sm:text-lg text-indigo-700 dark:text-indigo-300 font-semibold mb-2">
-              İlkokul, Ortaokul ve Lise seviyelerine özel içerikler!
+              {t.curriculum.levelsSubtitle}
             </p>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
               {t.curriculum.desc}
@@ -51,13 +51,15 @@ const Curriculum = ({ lang, t }) => {
                   <Layers className="text-indigo-600" size={24} /> {t.curriculum.selectGrade}
                 </h3>
                 
-                {/* Scroll edilebilir sınıf butonları alanı */}
-                <div className="flex lg:flex-col overflow-x-auto lg:overflow-y-auto pb-4 lg:pb-0 gap-3 no-scrollbar max-h-[60vh]">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 lg:hidden">{t.curriculum.scrollHint}</p>
+                
+                {/* Mobil: 2 sütun grid; tablet+: yatay kaydırma; lg: dikey liste */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 lg:flex lg:flex-col lg:overflow-y-auto lg:max-h-[60vh] pb-2 lg:pb-0 snap-x snap-mandatory lg:snap-none overflow-x-auto lg:overflow-x-visible no-scrollbar">
                   {curriculumList.map((item) => (
                     <button
                       key={item.grade}
                       onClick={() => setActiveGrade(item.grade)}
-                      className={`group relative flex-shrink-0 lg:flex-shrink-1 flex items-center gap-4 p-4 rounded-2xl font-bold transition-all duration-300 border-2 ${
+                      className={`group relative flex-shrink-0 snap-start flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-2xl font-bold transition-all duration-300 border-2 ${
                         activeGrade === item.grade
                           ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none'
                           : 'bg-gray-50 dark:bg-gray-700/50 border-transparent text-gray-600 dark:text-gray-400 hover:border-indigo-200 dark:hover:border-indigo-800 hover:bg-white dark:hover:bg-gray-700'
@@ -85,7 +87,7 @@ const Curriculum = ({ lang, t }) => {
           {/* Sağ Panel: Müfredat Detayları */}
           <div className="lg:w-2/3 xl:w-3/4">
             <FadeIn delay={300} key={activeGrade}> {/* Grade değişiminde animasyonu tetikler */}
-              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl shadow-indigo-100/20 dark:shadow-none border border-gray-100 dark:border-gray-700 overflow-hidden min-h-[600px] flex flex-col">
+              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl shadow-indigo-100/20 dark:shadow-none border border-gray-100 dark:border-gray-700 overflow-hidden min-h-0 lg:min-h-[480px] flex flex-col">
                 
                 {/* Header Banner */}
                 <div className={`bg-gradient-to-br ${getLevelColor(activeGrade)} p-8 md:p-12 text-white relative transition-all duration-500`}>

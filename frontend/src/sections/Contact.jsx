@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Phone, Mail, Facebook, Twitter, Instagram, Linkedin, Send } from 'lucide-react';
+import { MapPin, Phone, Mail, Send } from 'lucide-react';
 import FadeIn from '../components/ui/FadeIn';
 import { useToast } from '../context/ToastContext';
 import FormField from '../components/ui/FormField.jsx';
@@ -17,7 +17,7 @@ const Contact = ({ t }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    showToast?.('Mesajınız başarıyla gönderildi! En kısa sürede dönüş yapacağız.', 'success', 3500);
+    showToast?.(t.contact.formSuccess, 'success', 3500);
     setForm({ fullName: '', email: '', subject: '', message: '' });
   };
 
@@ -51,7 +51,7 @@ const Contact = ({ t }) => {
                       <MapPin size={24} aria-hidden />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-surface-900 dark:text-white">Adres</h4>
+                      <h4 className="font-semibold text-surface-900 dark:text-white">{t.contact.addressLabel}</h4>
                       <p className="text-surface-600 dark:text-surface-300 mt-1">{t.contact.address}</p>
                     </div>
                   </div>
@@ -61,7 +61,7 @@ const Contact = ({ t }) => {
                       <Phone size={24} aria-hidden />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-surface-900 dark:text-white">Telefon</h4>
+                      <h4 className="font-semibold text-surface-900 dark:text-white">{t.contact.phoneLabel}</h4>
                       <p className="text-surface-600 dark:text-surface-300 mt-1">{t.contact.phone}</p>
                     </div>
                   </div>
@@ -71,27 +71,21 @@ const Contact = ({ t }) => {
                       <Mail size={24} aria-hidden />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-surface-900 dark:text-white">E-posta</h4>
+                      <h4 className="font-semibold text-surface-900 dark:text-white">{t.contact.emailLabel}</h4>
                       <p className="text-surface-600 dark:text-surface-300 mt-1">{t.contact.email}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-8 pt-8 border-t border-surface-200 dark:border-surface-700">
-                  <div className="flex gap-4">
-                    <a href="#" className="bg-white dark:bg-surface-700 p-3 rounded-lg text-surface-500 hover:text-brand-600 dark:hover:text-brand-400 shadow-sm transition-colors border border-surface-200 dark:border-surface-600" aria-label="Facebook">
-                      <Facebook size={20} />
-                    </a>
-                    <a href="#" className="bg-white dark:bg-surface-700 p-3 rounded-lg text-surface-500 hover:text-brand-600 dark:hover:text-brand-400 shadow-sm transition-colors border border-surface-200 dark:border-surface-600" aria-label="Twitter">
-                      <Twitter size={20} />
-                    </a>
-                    <a href="#" className="bg-white dark:bg-surface-700 p-3 rounded-lg text-surface-500 hover:text-brand-600 dark:hover:text-brand-400 shadow-sm transition-colors border border-surface-200 dark:border-surface-600" aria-label="Instagram">
-                      <Instagram size={20} />
-                    </a>
-                    <a href="#" className="bg-white dark:bg-surface-700 p-3 rounded-lg text-surface-500 hover:text-brand-600 dark:hover:text-brand-400 shadow-sm transition-colors border border-surface-200 dark:border-surface-600" aria-label="LinkedIn">
-                      <Linkedin size={20} />
-                    </a>
-                  </div>
+                  <p className="text-sm text-surface-500 dark:text-surface-400 mb-3">{t.contact.socialHint}</p>
+                  <a
+                    href={`mailto:${t.contact.email}`}
+                    className="inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-4 py-2.5 text-sm font-semibold hover:bg-brand-700 transition-colors min-h-[44px]"
+                  >
+                    <Mail size={18} aria-hidden />
+                    {t.contact.emailUs}
+                  </a>
                 </div>
               </div>
             </div>
