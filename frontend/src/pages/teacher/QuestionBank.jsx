@@ -4,7 +4,7 @@ import QuestionFormModal from '../../components/exams/QuestionFormModal';
 import SmartPasteModal from '../../components/modals/SmartPasteModal';
 import AiGenerateQuizModal from '../../components/modals/AiGenerateQuizModal';
 import {
-  Plus, Edit2, Trash2, Search, FileText, Layers,
+  Plus, Edit2, Trash2, Search, FileText,
   ChevronLeft, ChevronRight, Star,
   Sparkles, Hash,
   LayoutGrid, Wand2,
@@ -533,60 +533,13 @@ export default function QuestionBank() {
             className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border-none rounded-2xl focus:ring-4 focus:ring-indigo-500/10 font-medium outline-none"
           />
         </div>
-        <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 overflow-x-auto pb-1 lg:pb-0 snap-x snap-mandatory lg:snap-none">
-          <FilterSelect 
-            icon={<Layers size={14}/>} 
-            value={profile.branch && profile.branchApproval === 'approved' ? profile.branch : filters.subject}
-            onChange={(v) => setFilters({...filters, subject: v})}
-            options={profile.branch && profile.branchApproval === 'approved' ? [profile.branch] : ['Tümü', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji']}
-            disabled={profile.branchApproval === 'approved'}
-          />
-          <FilterSelect
-            icon={<Layers size={14} />}
-            value={filters.topic}
-            onChange={(v) => { setFilters({ ...filters, topic: v }); setPage(1); }}
-            options={
-              filters.subject === 'Matematik' || (profile.branchApproval === 'approved' && profile.branch === 'Matematik')
-                ? (topics.length > 0
-                    ? ['Tümü', PATTERN_TOPIC_ALL_UNDER, ...sortPatternTopicsUi(topics)]
-                    : MATH_TOPIC_OPTIONS_FALLBACK)
-                : ['Tümü', ...sortPatternTopicsUi(topics)]
-            }
-          />
+        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
           <FilterSelect icon={<Hash size={14}/>} value={filters.classLevel} onChange={(v) => setFilters({...filters, classLevel: v})} options={['Tümü', ...Array.from({length:12}, (_,i)=>`${i+1}. Sınıf`)]} />
           <FilterSelect icon={<Star size={14}/>} value={filters.difficulty} onChange={(v) => setFilters({...filters, difficulty: v})} options={['Tümü', 'Kolay', 'Orta', 'Zor']} />
           <FilterSelect icon={<Sparkles size={14}/>} value={filters.source} onChange={(v) => { setFilters({ ...filters, source: v }); setPage(1); }} options={sourceFilterOptions()} />
         </div>
       </div>
       <p className="text-xs text-slate-400 px-1 lg:hidden">{t('questionBank.filterScrollHint')}</p>
-
-      {(filters.subject === 'Matematik' || (profile.branchApproval === 'approved' && profile.branch === 'Matematik')) && (
-        <div className="flex flex-wrap items-center gap-2 px-2">
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('questionBank.quickFilter')}</span>
-          <button
-            type="button"
-            onClick={() => { setFilters((f) => ({ ...f, topic: 'Örüntüler' })); setPage(1); }}
-            className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold border transition-all ${
-              filters.topic === 'Örüntüler' || filters.topic === PATTERN_TOPIC_ALL_UNDER
-                ? 'border-indigo-600 bg-indigo-50 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200'
-                : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300'
-            }`}
-          >
-            {t('questionBank.patternsOnly')}
-          </button>
-          <button
-            type="button"
-            onClick={() => { setFilters((f) => ({ ...f, topic: 'Tümü' })); setPage(1); }}
-            className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold border transition-all ${
-              filters.topic === 'Tümü'
-                ? 'border-slate-500 bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-100'
-                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 dark:bg-slate-800 dark:border-slate-600'
-            }`}
-          >
-            {t('questionBank.allSubtopics')}
-          </button>
-        </div>
-      )}
 
       {/* Approval gate */}
       {profile.branchApproval !== 'approved' && (

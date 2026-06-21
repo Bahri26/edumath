@@ -33,7 +33,7 @@ test('mapStudentExamResults picks matching student only', () => {
       duration: 20,
       results: [
         { studentId: 'stu-2', score: 50, correctCount: 10, wrongCount: 11 },
-        { studentId: studentId, score: 71, correctCount: 15, wrongCount: 6, submittedAt: '2026-01-02T00:00:00.000Z' },
+        { studentId: studentId, score: 71, correctCount: 15, wrongCount: 6, submittedAt: '2026-01-02T00:00:00.000Z', answerDetails: [{ isCorrect: true }, { isCorrect: false }] },
       ],
     },
   ];
@@ -41,6 +41,26 @@ test('mapStudentExamResults picks matching student only', () => {
   assert.equal(out.length, 1);
   assert.equal(out[0].score, 71);
   assert.equal(out[0].correctCount, 15);
+  assert.equal(out[0].analysis?.correct, 15);
+  assert.equal(out[0].answerDetails?.length, 2);
+});
+
+test('buildStudentExamAnalysis aggregates difficulty and topics', () => {
+  const { buildStudentExamAnalysis } = require('../../utils/studentProgress');
+  const analysis = buildStudentExamAnalysis({
+    correctCount: 2,
+    wrongCount: 1,
+    topicStats: [{ topic: 'Örüntüler', wrong: 1 }],
+    answerDetails: [
+      { difficulty: 'Kolay', isCorrect: true, topic: 'Örüntüler', timeSpentSeconds: 30 },
+      { difficulty: 'Kolay', isCorrect: true, topic: 'Örüntüler', timeSpentSeconds: 20 },
+      { difficulty: 'Zor', isCorrect: false, topic: 'Örüntüler', timeSpentSeconds: 45 },
+    ],
+  });
+  assert.equal(analysis.correct, 2);
+  assert.equal(analysis.difficultyBreakdown.find((d) => d.difficulty === 'Kolay').correct, 2);
+  assert.equal(analysis.topicWrong[0].wrongCount, 1);
+  assert.equal(analysis.questionTimes.length, 3);
 });
 
 test('buildExamAverageByUserId averages per student', () => {

@@ -33,6 +33,77 @@ function mapStudentExerciseSubmissions(exerciseDocs, studentUserId) {
     .filter(Boolean);
 }
 
+/** Build per-exam analytics from a student result row. */
+function buildStudentExamAnalysis(row) {
+  const answerDetails = row.answerDetails || [];
+  const difficultyBuckets = {
+    Kolay: { correct: 0, wrong: 0 },
+    Orta: { correct: 0, wrong: 0 },
+    Zor: { correct: 0, wrong: 0 },
+  };
+
+  for (const ad of answerDetails) {
+    const key = difficultyBuckets[ad.difficulty] ? ad.difficulty : 'Orta';
+    if (ad.isCorrect) difficultyBuckets[key].correct += 1;
+    else difficultyBuckets[key].wrong += 1;
+  }
+
+  const difficultyBreakdown = Object.entries(difficultyBuckets).map(([difficulty, v]) => ({
+    difficulty,
+    correct: v.correct,
+    wrong: v.wrong,
+    total: v.correct + v.wrong,
+  }));
+
+  const topicMap = new Map();
+  if (answerDetails.length > 0) {
+    for (const ad of answerDetails) {
+      if (!ad.isCorrect && ad.topic) {
+        topicMap.set(ad.topic, (topicMap.get(ad.topic) || 0) + 1);
+      }
+    }
+  } else {
+    for (const ts of row.topicStats || []) {
+      if (ts.topic) topicMap.set(ts.topic, ts.wrong || 0);
+    }
+  }
+  const topicWrong = Array.from(topicMap.entries())
+    .map(([topic, wrongCount]) => ({ topic, wrongCount }))
+    .sort((a, b) => b.wrongCount - a.wrongCount)
+    .slice(0, 10);
+
+  const questionTimes = answerDetails
+    .map((ad, idx) => ({
+      question: idx + 1,
+      seconds: ad.timeSpentSeconds ?? null,
+      difficulty: ad.difficulty || '',
+      isCorrect: ad.isCorrect,
+    }))
+    .filter((q) => q.seconds != null && q.seconds >= 0);
+
+  return {
+    difficultyBreakdown,
+    topicWrong,
+    questionTimes,
+    correct: row.correctCount ?? 0,
+    wrong: row.wrongCount ?? 0,
+  };
+}
+
+function mapAnswerDetail(ad) {
+  return {
+    questionId: ad.questionId,
+    questionText: ad.questionText || '',
+    topic: ad.topic || '',
+    learningOutcome: ad.learningOutcome || '',
+    difficulty: ad.difficulty || '',
+    questionType: ad.questionType || '',
+    studentAnswer: ad.studentAnswer || '',
+    isCorrect: Boolean(ad.isCorrect),
+    timeSpentSeconds: ad.timeSpentSeconds ?? null,
+  };
+}
+
 /** Map teacher exams with results for one student userId. */
 function mapStudentExamResults(examDocs, studentUserId) {
   const uid = String(studentUserId);
@@ -40,7 +111,8 @@ function mapStudentExamResults(examDocs, studentUserId) {
     .map((exam) => {
       const row = (exam.results || []).find((r) => String(r.studentId) === uid);
       if (!row) return null;
-      return {
+      const answerDetails = (row.answerDetails || []).map(mapAnswerDetail);
+      const base = {
         examId: exam._id,
         title: exam.title,
         classLevel: exam.classLevel || '',
@@ -51,6 +123,12 @@ function mapStudentExamResults(examDocs, studentUserId) {
         totalTimeSpentSeconds: row.totalTimeSpentSeconds ?? null,
         submittedAt: row.submittedAt || null,
         weakTopics: row.weakTopics || [],
+        topicStats: row.topicStats || [],
+        answerDetails,
+      };
+      return {
+        ...base,
+        analysis: buildStudentExamAnalysis({ ...row, answerDetails }),
       };
     })
     .filter(Boolean)
@@ -82,4 +160,5 @@ module.exports = {
   mapStudentExerciseSubmissions,
   mapStudentExamResults,
   buildExamAverageByUserId,
+  buildStudentExamAnalysis,
 };

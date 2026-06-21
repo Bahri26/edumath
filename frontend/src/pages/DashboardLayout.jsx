@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { LogOut, Moon, Sun, User, Settings, Menu, X, Globe } from 'lucide-react';
 import NotificationDropdown from '../components/ui/NotificationDropdown.jsx';
 import DashboardLogoMark from '../components/ui/DashboardLogoMark.jsx';
+import DashboardPanelMark from '../components/ui/DashboardPanelMark.jsx';
 import SkipLink from '../components/ui/SkipLink.jsx';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -45,7 +46,8 @@ const DashboardLayout = ({
   const drawerRef = useRef(null);
   const menuToggleRef = useRef(null);
 
-  const homePath = role === 'teacher' ? '/teacher/overview' : '/student/home';
+  const panelHomePath = role === 'teacher' ? '/teacher/overview' : '/student/home';
+  const landingPath = '/';
 
   const handleLogout = () => {
     logout('logout');
@@ -190,7 +192,18 @@ const DashboardLayout = ({
         {...(!isNavMenuOpen ? { inert: true } : {})}
       >
         <div className="flex items-center justify-between p-4 border-b border-surface-100 dark:border-surface-800">
-          <DashboardLogoMark size="sm" onClick={() => { closeDrawer(); navigate(homePath); }} />
+          <div className="flex items-center gap-2">
+            <DashboardLogoMark
+              size="sm"
+              title={t('landingHome') || 'Edumath ana sayfa'}
+              onClick={() => { closeDrawer(); navigate(landingPath); }}
+            />
+            <DashboardPanelMark
+              role={role}
+              label={role === 'teacher' ? t('teacherPanel') : t('studentPanelNav')}
+              onClick={() => { closeDrawer(); navigate(panelHomePath); }}
+            />
+          </div>
           <button
             type="button"
             onClick={closeDrawer}
@@ -224,17 +237,17 @@ const DashboardLayout = ({
             {isNavMenuOpen ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
           </button>
 
-          <DashboardLogoMark onClick={() => navigate(homePath)} />
-
-          <span
-            className={`hidden sm:inline text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-lg shrink-0 ${
-              studentKid
-                ? 'text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40'
-                : 'text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/40'
-            }`}
-          >
-            {role === 'teacher' ? t('teacherPanel') : t('studentPanel')}
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <DashboardLogoMark
+              title={t('landingHome') || 'Edumath ana sayfa'}
+              onClick={() => navigate(landingPath)}
+            />
+            <DashboardPanelMark
+              role={role}
+              label={role === 'teacher' ? t('teacherPanel') : t('studentPanelNav')}
+              onClick={() => navigate(panelHomePath)}
+            />
+          </div>
 
           {extraHeader}
 

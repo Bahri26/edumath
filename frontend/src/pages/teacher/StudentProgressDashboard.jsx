@@ -19,9 +19,19 @@ import {
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import Card from '../../components/ui/Card.jsx';
+import StudentExamAnalysisPanel from '../../components/teacher/StudentExamAnalysisPanel.jsx';
 import { useProgressLabels } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
 import { formatDuration } from '../../utils/formatDuration';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 const formatRelativeTime = (value, lang) => {
   if (!value) return '—';
@@ -240,6 +250,30 @@ export default function StudentProgressDashboard() {
   }, [progress, exercises, exams]);
 
   const displayAverage = detailAverageScore ?? selectedStudent?.averageScore ?? 0;
+
+  const examTrendData = useMemo(
+    () =>
+      [...exams]
+        .sort((a, b) => new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0))
+        .map((ex, idx) => ({
+          label: ex.title?.length > 18 ? `${ex.title.slice(0, 16)}…` : ex.title || `#${idx + 1}`,
+          score: ex.score ?? 0,
+        })),
+    [exams],
+  );
+
+  const chartLabels = useMemo(
+    () => ({
+      chartScoreSplit: t.chartScoreSplit,
+      chartDifficulty: t.chartDifficulty,
+      chartTopics: t.chartTopics,
+      chartQuestionTime: t.chartQuestionTime,
+      weakTopics: t.weakTopics,
+      questionDetails: t.questionDetails,
+      answer: t.answer,
+    }),
+    [t],
+  );
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 animate-fade-in space-y-8">
@@ -518,6 +552,45 @@ export default function StudentProgressDashboard() {
                 </Card>
               )}
 
+              {exams.length > 0 && (
+                <div className="space-y-4">
+                  {exams.length > 1 && (
+                    <Card className="p-5">
+                      <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                        <BarChart3 size={18} className="text-brand-500" aria-hidden />
+                        {t.examTrendTitle}
+                      </h3>
+                      <ResponsiveContainer width="100%" height={220}>
+                        <LineChart data={examTrendData} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
+                          <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={56} />
+                          <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
+                          <Tooltip formatter={(v) => [`%${v}`, t.examScore]} />
+                          <Line type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 4, fill: '#6366f1' }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </Card>
+                  )}
+
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 px-1">
+                      <FileText size={18} className="text-violet-500" aria-hidden />
+                      {t.examAnalysisTitle}
+                    </h3>
+                    <div className="space-y-4">
+                      {exams.map((ex) => (
+                        <StudentExamAnalysisPanel
+                          key={String(ex.examId)}
+                          exam={ex}
+                          labels={chartLabels}
+                          language={language}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <Card className="p-0 overflow-hidden">
                 <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3 flex items-center gap-2">
                   <BarChart3 size={18} className="text-indigo-500" aria-hidden />
@@ -587,66 +660,6 @@ export default function StudentProgressDashboard() {
                         </div>
                       );
                     })}
-                  </div>
-                )}
-              </Card>
-
-              <Card className="p-0 overflow-hidden">
-                <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3 flex items-center gap-2">
-                  <FileText size={18} className="text-violet-500" aria-hidden />
-                  <h3 className="font-bold text-slate-800 dark:text-white">{t.exams}</h3>
-                </div>
-
-                {progressLoading ? (
-                  <div className="flex items-center justify-center gap-2 py-16 text-slate-500 text-sm">
-                    <Loader2 className="animate-spin" size={18} aria-hidden />
-                    {t.loadingProgress}
-                  </div>
-                ) : exams.length === 0 ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 px-4 py-12 text-center">{t.noExams}</p>
-                ) : (
-                  <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                    {exams.map((ex) => (
-                      <div
-                        key={String(ex.examId)}
-                        className="px-4 py-4 hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-slate-900 dark:text-white truncate">{ex.title || '—'}</p>
-                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                              <span className="inline-flex items-center gap-1 font-medium text-brand-600 dark:text-brand-400">
-                                <Target size={12} aria-hidden />
-                                %{ex.score ?? 0} {t.examScore.toLowerCase()}
-                              </span>
-                              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-                                {ex.correctCount ?? 0} {t.correctCol.toLowerCase()}
-                              </span>
-                              <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 font-medium">
-                                {ex.wrongCount ?? 0} {t.wrongCol.toLowerCase()}
-                              </span>
-                              {ex.classLevel ? (
-                                <span className="inline-flex items-center gap-1">
-                                  <BookOpen size={12} aria-hidden />
-                                  {ex.classLevel}
-                                </span>
-                              ) : null}
-                              {ex.totalTimeSpentSeconds != null && (
-                                <span className="inline-flex items-center gap-1">
-                                  <Clock size={12} aria-hidden />
-                                  {formatDuration(ex.totalTimeSpentSeconds, language)}
-                                </span>
-                              )}
-                              {ex.submittedAt && (
-                                <span className="inline-flex items-center gap-1">
-                                  {formatRelativeTime(ex.submittedAt, language)}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 )}
               </Card>

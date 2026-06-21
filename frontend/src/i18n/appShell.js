@@ -2,7 +2,9 @@
 export const APP_SHELL = {
   TR: {
     teacherPanel: 'Öğretmen Paneli',
+    landingHome: 'Edumath ana sayfa',
     studentPanel: 'Matematik Maceram',
+    studentPanelNav: 'Öğrenci Paneli',
     profile: 'Profil',
     settings: 'Ayarlar',
     logout: 'Çıkış Yap',
@@ -21,7 +23,9 @@ export const APP_SHELL = {
   },
   EN: {
     teacherPanel: 'Teacher dashboard',
+    landingHome: 'Edumath home',
     studentPanel: 'My math adventure',
+    studentPanelNav: 'Student dashboard',
     profile: 'Profile',
     settings: 'Settings',
     logout: 'Log out',
