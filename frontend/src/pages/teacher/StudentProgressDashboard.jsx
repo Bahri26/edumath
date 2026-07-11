@@ -23,6 +23,7 @@ import StudentExamAnalysisPanel from '../../components/teacher/StudentExamAnalys
 import { useProgressLabels } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
 import { formatDuration } from '../../utils/formatDuration';
+import TeacherPageShell from '../../components/teacher/TeacherPageShell.jsx';
 import {
   LineChart,
   Line,
@@ -276,22 +277,15 @@ export default function StudentProgressDashboard() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 animate-fade-in space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-950/50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-3">
-            <Sparkles size={14} aria-hidden />
-            {language === 'EN' ? 'Live class data' : 'Canlı sınıf verisi'}
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            {t.title}
-          </h1>
-          <p className="mt-1 text-slate-600 dark:text-slate-400 text-sm max-w-xl">{t.subtitle}</p>
-        </div>
-        {!listLoading && students.length > 0 && (
+    <TeacherPageShell
+      maxWidthClass="max-w-6xl"
+      title={t.title}
+      subtitle={t.subtitle}
+      headerAside={
+        !listLoading && students.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
-              <Users size={16} className="text-indigo-500 shrink-0" aria-hidden />
+              <Users size={16} className="text-teal-500 shrink-0" aria-hidden />
               {t.studentsCount(students.length)}
             </span>
             {classAverage != null && (
@@ -301,7 +295,12 @@ export default function StudentProgressDashboard() {
               </span>
             )}
           </div>
-        )}
+        ) : null
+      }
+    >
+      <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 dark:bg-teal-950/50 px-3 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 -mt-2">
+        <Sparkles size={14} aria-hidden />
+        {language === 'EN' ? 'Live class data' : 'Canlı sınıf verisi'}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
@@ -309,14 +308,14 @@ export default function StudentProgressDashboard() {
           <Card className="p-0 overflow-hidden">
             <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3 flex items-center justify-between gap-2">
               <h2 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 text-sm uppercase tracking-wide">
-                <Users size={18} className="text-indigo-500" aria-hidden />
+                <Users size={18} className="text-teal-500" aria-hidden />
                 {t.classList}
               </h2>
               {queryStudent && (
                 <button
                   type="button"
                   onClick={clearSelection}
-                  className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline shrink-0"
+                  className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline shrink-0"
                 >
                   {t.clearSelection}
                 </button>
@@ -334,7 +333,7 @@ export default function StudentProgressDashboard() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={t.searchPlaceholder}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/80 pl-9 pr-3 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/80 pl-9 pr-3 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500"
                 />
               </label>
             </div>
@@ -366,7 +365,7 @@ export default function StudentProgressDashboard() {
                           onClick={() => selectStudent(s._id)}
                           className={`w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-all ${
                             active
-                              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25 ring-1 ring-indigo-500/30'
+                              ? 'bg-teal-600 text-white shadow-md shadow-teal-500/25 ring-1 ring-teal-500/30'
                               : 'hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-800 dark:text-slate-100'
                           }`}
                         >
@@ -374,7 +373,7 @@ export default function StudentProgressDashboard() {
                             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
                               active
                                 ? 'bg-white/20 text-white'
-                                : 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-200'
+                                : 'bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-200'
                             }`}
                           >
                             {initials(s.name)}
@@ -383,7 +382,7 @@ export default function StudentProgressDashboard() {
                             <span className="block font-semibold truncate">{s.name || '—'}</span>
                             <span
                               className={`block text-xs truncate ${
-                                active ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'
+                                active ? 'text-teal-100' : 'text-slate-500 dark:text-slate-400'
                               }`}
                             >
                               {s.grade || '—'} · {t.avgShort} {s.averageScore ?? 0}
@@ -420,7 +419,7 @@ export default function StudentProgressDashboard() {
                   <button
                     type="button"
                     onClick={clearSelection}
-                    className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                    className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-teal-600 dark:text-teal-400 hover:underline"
                   >
                     <X size={14} aria-hidden />
                     {t.clearSelection}
@@ -431,9 +430,9 @@ export default function StudentProgressDashboard() {
           ) : (
             <>
               {selectedStudent && (
-                <Card className="p-5 sm:p-6 bg-gradient-to-br from-white to-indigo-50/50 dark:from-slate-800 dark:to-indigo-950/20 border-indigo-100 dark:border-indigo-900/40">
+                <Card className="p-5 sm:p-6 bg-gradient-to-br from-white to-teal-50/50 dark:from-slate-800 dark:to-teal-950/20 border-teal-100 dark:border-teal-900/40">
                   <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-lg font-bold text-white shadow-lg shadow-indigo-600/30">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-600 text-lg font-bold text-white shadow-lg shadow-teal-600/30">
                       {initials(selectedStudent.name)}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -466,7 +465,7 @@ export default function StudentProgressDashboard() {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: t.summaryLessons, value: totals.lessons, icon: BookOpen, tone: 'text-violet-600 dark:text-violet-400' },
+                  { label: t.summaryLessons, value: totals.lessons, icon: BookOpen, tone: 'text-sky-600 dark:text-sky-400' },
                   { label: t.summaryCorrect, value: totals.correct, icon: Target, tone: 'text-emerald-600 dark:text-emerald-400' },
                   { label: t.summaryWrong, value: totals.wrong, icon: AlertCircle, tone: 'text-rose-600 dark:text-rose-400' },
                   { label: t.summaryXp, value: totals.xp, icon: Zap, tone: 'text-amber-600 dark:text-amber-400' },
@@ -486,7 +485,7 @@ export default function StudentProgressDashboard() {
               {exams.length > 0 && (
                 <div className="grid grid-cols-2 gap-3">
                   <Card className="p-4">
-                    <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-700/80 p-2 text-violet-600 dark:text-violet-400">
+                    <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-700/80 p-2 text-sky-600 dark:text-sky-400">
                       <FileText size={18} aria-hidden />
                     </div>
                     <p className="mt-3 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
@@ -524,7 +523,7 @@ export default function StudentProgressDashboard() {
                     </p>
                   </Card>
                   <Card className="p-4">
-                    <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-700/80 p-2 text-indigo-600 dark:text-indigo-400">
+                    <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-700/80 p-2 text-teal-600 dark:text-teal-400">
                       <Clock size={18} aria-hidden />
                     </div>
                     <p className="mt-3 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
@@ -541,11 +540,11 @@ export default function StudentProgressDashboard() {
                 <Card className="p-5">
                   <div className="flex items-center justify-between gap-3 mb-2">
                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t.accuracy}</span>
-                    <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{totals.accuracy}%</span>
+                    <span className="text-sm font-bold text-teal-600 dark:text-teal-400">{totals.accuracy}%</span>
                   </div>
                   <div className="h-2.5 w-full rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-500"
+                      className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500"
                       style={{ width: `${Math.min(100, totals.accuracy)}%` }}
                     />
                   </div>
@@ -566,7 +565,7 @@ export default function StudentProgressDashboard() {
                           <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={56} />
                           <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
                           <Tooltip formatter={(v) => [`%${v}`, t.examScore]} />
-                          <Line type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 4, fill: '#6366f1' }} />
+                          <Line type="monotone" dataKey="score" stroke="#0d9488" strokeWidth={2.5} dot={{ r: 4, fill: '#0d9488' }} />
                         </LineChart>
                       </ResponsiveContainer>
                     </Card>
@@ -574,7 +573,7 @@ export default function StudentProgressDashboard() {
 
                   <div className="space-y-1">
                     <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 px-1">
-                      <FileText size={18} className="text-violet-500" aria-hidden />
+                      <FileText size={18} className="text-sky-500" aria-hidden />
                       {t.examAnalysisTitle}
                     </h3>
                     <div className="space-y-4">
@@ -593,7 +592,7 @@ export default function StudentProgressDashboard() {
 
               <Card className="p-0 overflow-hidden">
                 <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-3 flex items-center gap-2">
-                  <BarChart3 size={18} className="text-indigo-500" aria-hidden />
+                  <BarChart3 size={18} className="text-teal-500" aria-hidden />
                   <h3 className="font-bold text-slate-800 dark:text-white">{t.lessons}</h3>
                 </div>
 
@@ -720,6 +719,6 @@ export default function StudentProgressDashboard() {
           )}
         </section>
       </div>
-    </div>
+    </TeacherPageShell>
   );
 }

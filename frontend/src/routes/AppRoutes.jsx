@@ -23,16 +23,19 @@ const AudienceLandingPage = lazy(() => import('../pages/AudienceLandingPage'));
 const TeacherHome = lazy(() => import('../pages/teacher/TeacherHome'));
 const QuestionBank = lazy(() => import('../pages/teacher/QuestionBank'));
 const TeacherExamsPage = lazy(() => import('../pages/teacher/TeacherExamsPage'));
+const TeacherAssignmentsPage = lazy(() => import('../pages/teacher/TeacherAssignmentsPage'));
 const TeacherExerciseCreator = lazy(() => import('../pages/teacher/TeacherExerciseCreator'));
 const SkillTreeBuilder = lazy(() => import('../pages/teacher/SkillTreeBuilder'));
 const StudentProgressDashboard = lazy(() => import('../pages/teacher/StudentProgressDashboard'));
 const TeacherReports = lazy(() => import('../pages/teacher/TeacherReports'));
 const PatternTemplateBuilder = lazy(() => import('../pages/teacher/PatternTemplateBuilder'));
+const TeacherMessaging = lazy(() => import('../pages/teacher/TeacherMessaging'));
 
 const StudentHome = lazy(() => import('../pages/student/StudentHome'));
 const StudentCourses = lazy(() => import('../pages/student/StudentCourses'));
 const StudentAssignments = lazy(() => import('../pages/student/StudentAssignments'));
 const StudentStudyHub = lazy(() => import('../pages/student/StudentStudyHub'));
+const StudentFlashcards = lazy(() => import('../pages/student/StudentFlashcards'));
 const StudentExercisePlayer = lazy(() => import('../pages/student/StudentExercisePlayer'));
 const LessonQuiz = lazy(() => import('../pages/student/LessonQuiz'));
 const StudentCalendar = lazy(() => import('../pages/student/StudentCalendar'));
@@ -87,11 +90,13 @@ export default function AppRoutes() {
           <Route path="overview" element={<TeacherHome />} />
           <Route path="questions" element={<QuestionBank />} />
           <Route path="exams" element={<TeacherExamsPage />} />
+          <Route path="assignments" element={<TeacherAssignmentsPage />} />
           <Route path="exercises" element={<TeacherExerciseCreator />} />
           <Route path="skill-tree" element={<SkillTreeBuilder />} />
           <Route path="student-progress" element={<StudentProgressDashboard />} />
           <Route path="reports" element={<TeacherReports />} />
           <Route path="pattern-builder" element={<PatternTemplateBuilder />} />
+          <Route path="messages" element={<TeacherMessaging />} />
           <Route path="surveys" element={<SurveysPage role="teacher" />} />
           <Route path="settings" element={<SettingsPage role="teacher" />} />
           <Route path="profile" element={<ProfilePage role="teacher" />} />
@@ -110,6 +115,7 @@ export default function AppRoutes() {
           <Route path="courses" element={<StudentCourses />} />
           <Route path="assignments" element={<StudentAssignments />} />
           <Route path="exercises" element={<StudentStudyHub />} />
+          <Route path="flashcards" element={<StudentFlashcards />} />
           <Route path="exercises/:exerciseId" element={<StudentExercisePlayer />} />
           <Route path="lesson/:lessonId" element={<LessonQuiz />} />
           <Route path="calendar" element={<StudentCalendar />} />

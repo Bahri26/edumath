@@ -24,7 +24,7 @@ const AIPractice = ({ questions, sourceLabel }) => {
   return (
     <div className="animate-slide-up mt-8">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-purple-100 text-purple-600 rounded-xl">
+        <div className="p-3 bg-sky-100 text-sky-600 rounded-xl">
           <Brain size={28} />
         </div>
         <div>
@@ -47,7 +47,7 @@ const AIPractice = ({ questions, sourceLabel }) => {
           return (
             <div key={idx} className={`bg-white dark:bg-slate-800 p-6 rounded-2xl border-2 transition-all ${isAnswered ? (state.isCorrect ? 'border-green-200' : 'border-red-200') : 'border-transparent shadow-sm'}`}>
               <div className="flex justify-between items-start mb-4">
-                <span className="bg-purple-50 text-purple-700 font-bold px-3 py-1 rounded-lg text-sm">Soru {idx + 1}</span>
+                <span className="bg-sky-50 text-sky-700 font-bold px-3 py-1 rounded-lg text-sm">Soru {idx + 1}</span>
               </div>
               
               <QuestionTextWithPattern
@@ -68,7 +68,7 @@ const AIPractice = ({ questions, sourceLabel }) => {
                     else if (isSelected) btnClass = "bg-red-100 border-red-500 text-red-800"; // Incorrect selection
                     else btnClass = "opacity-50"; // Others
                   } else if (isSelected) {
-                      btnClass = "border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50 dark:bg-indigo-900/20";
+                      btnClass = "border-teal-500 ring-1 ring-teal-500 bg-teal-50 dark:bg-teal-900/20";
                   }
 
                   return (

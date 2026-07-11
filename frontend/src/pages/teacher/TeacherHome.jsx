@@ -19,6 +19,7 @@ import apiClient from '../../services/api';
 import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
 import GuideDrawer from '../../components/help/GuideDrawer.jsx';
+import TeacherPageShell from '../../components/teacher/TeacherPageShell.jsx';
 import { AuthContext } from '../../context/AuthContext';
 
 const formatRelativeTime = (value) => {
@@ -61,10 +62,10 @@ const KpiStripSkeleton = () => (
 );
 
 const KPI_ITEMS = [
-  { key: 'students', title: 'Toplam öğrenci', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/30', getValue: (s) => s.totalStudents ?? 0 },
-  { key: 'average', title: 'Sınıf ortalaması', icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/30', getValue: (s) => `${s.classAverage ?? 0}%` },
-  { key: 'exams', title: 'Aktif sınavlar', icon: BarChart3, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/30', getValue: (s) => s.activeExams ?? 0 },
-  { key: 'questions', title: 'Soru bankası', icon: FileText, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/30', getValue: (s) => s.totalQuestions ?? 0 },
+  { key: 'students', title: 'Toplam öğrenci', icon: Users, color: 'text-sky-700 dark:text-sky-300', bg: 'bg-sky-50 dark:bg-sky-900/30', getValue: (s) => s.totalStudents ?? 0 },
+  { key: 'average', title: 'Sınıf ortalaması', icon: TrendingUp, color: 'text-teal-700 dark:text-teal-300', bg: 'bg-teal-50 dark:bg-teal-900/30', getValue: (s) => `${s.classAverage ?? 0}%` },
+  { key: 'exams', title: 'Aktif sınavlar', icon: BarChart3, color: 'text-rose-700 dark:text-rose-300', bg: 'bg-rose-50 dark:bg-rose-900/30', getValue: (s) => s.activeExams ?? 0 },
+  { key: 'questions', title: 'Soru bankası', icon: FileText, color: 'text-amber-700 dark:text-amber-300', bg: 'bg-amber-50 dark:bg-amber-900/30', getValue: (s) => s.totalQuestions ?? 0 },
 ];
 
 const TeacherHome = () => {
@@ -162,39 +163,34 @@ const TeacherHome = () => {
 
   return (
     <>
-      <div className="animate-fade-in space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-              Hoş geldiniz, {displayName}
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400">
-              {dashboardLoading
-                ? 'Özet yükleniyor...'
-                : dashboardError
-                  ? 'Özet şu an gösterilemiyor. Aşağıdan tekrar deneyin.'
-                  : stats
-                    ? `${stats.totalStudents ?? 0} öğrenciniz var; sınıf ortalaması: ${stats.classAverage ?? 0}`
-                    : 'Henüz özet yok.'}
-            </p>
-            {!dashboardLoading && stats && (
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                Soru, sınav ve anket sayıları yalnızca sizin oluşturduğunuz kayıtları içerir.
-              </p>
-            )}
-          </div>
+      <TeacherPageShell
+        maxWidthClass="max-w-[1600px]"
+        title={`Hoş geldiniz, ${displayName}`}
+        subtitle={
+          dashboardLoading
+            ? 'Özet yükleniyor...'
+            : dashboardError
+              ? 'Özet şu an gösterilemiyor. Aşağıdan tekrar deneyin.'
+              : stats
+                ? `${stats.totalStudents ?? 0} öğrenciniz var; sınıf ortalaması: ${stats.classAverage ?? 0}`
+                : 'Henüz özet yok.'
+        }
+        headerAside={(
           <Button
             variant="secondary"
             size="md"
-            className="self-start lg:self-auto"
             onClick={() => setIsGuideOpen(true)}
+            icon={BookOpen}
           >
-            <div className="bg-brand-100 dark:bg-brand-900/40 p-2 rounded text-brand-600 dark:text-brand-300">
-              <BookOpen size={16} />
-            </div>
-            <span>Kullanım Kılavuzu</span>
+            Kullanım Kılavuzu
           </Button>
-        </div>
+        )}
+      >
+        {!dashboardLoading && stats ? (
+          <p className="text-xs text-surface-400 -mt-4">
+            Soru, sınav ve anket sayıları yalnızca sizin oluşturduğunuz kayıtları içerir.
+          </p>
+        ) : null}
 
         <div className="grid grid-cols-1 gap-6">
           {dashboardError && !dashboardLoading && (
@@ -208,23 +204,23 @@ const TeacherHome = () => {
           {dashboardLoading ? (
             <KpiStripSkeleton />
           ) : stats ? (
-            <Card className="p-4 sm:p-6">
+            <Card className="p-4 sm:p-6" interactive>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {KPI_ITEMS.map((item) => {
                   const Icon = item.icon;
                   return (
                     <div
                       key={item.key}
-                      className="flex items-center gap-3 min-w-0 rounded-xl p-2 sm:p-0"
+                      className="flex items-center gap-3 min-w-0 rounded-2xl p-2 sm:p-3 bg-surface-50/80 dark:bg-surface-900/30"
                     >
                       <div className={`shrink-0 p-2.5 rounded-xl ${item.bg}`}>
                         <Icon size={20} className={item.color} aria-hidden />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 truncate">
+                        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-surface-500 dark:text-surface-400 truncate">
                           {item.title}
                         </p>
-                        <p className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white tabular-nums">
+                        <p className="font-display text-xl sm:text-2xl font-semibold text-surface-900 dark:text-white tabular-nums">
                           {item.getValue(stats)}
                         </p>
                       </div>
@@ -235,7 +231,7 @@ const TeacherHome = () => {
             </Card>
           ) : dashboardError ? null : (
             <div className="col-span-full flex flex-col items-center gap-3 py-10 text-center">
-              <p className="text-slate-600 dark:text-slate-300">Özet verisi henüz yok.</p>
+              <p className="text-surface-600 dark:text-surface-300">Özet verisi henüz yok.</p>
               <Button variant="primary" size="md" onClick={handleRetryAll}>
                 <RefreshCw size={16} /> Yeniden dene
               </Button>
@@ -248,14 +244,14 @@ const TeacherHome = () => {
             {topicRows.length > 0 && (
               <Card className="p-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <BarChart3 className="text-brand-600 dark:text-brand-400" size={20} aria-hidden />
-                  <h3 className="font-bold text-lg text-slate-800 dark:text-white">Konu dağılımı (tüm sorularınız)</h3>
+                  <BarChart3 className="text-teal-600 dark:text-teal-400" size={20} aria-hidden />
+                  <h3 className="font-display font-semibold text-lg text-surface-900 dark:text-white">Konu dağılımı (tüm sorularınız)</h3>
                 </div>
-                <ul className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
+                <ul className="divide-y divide-surface-100 dark:divide-surface-700 text-sm">
                   {topicRows.map((row) => (
-                    <li key={row._id} className="flex justify-between gap-3 py-2.5 text-slate-700 dark:text-slate-200">
+                    <li key={row._id} className="flex justify-between gap-3 py-2.5 text-surface-700 dark:text-surface-200">
                       <span className="font-medium truncate">{row._id || '—'}</span>
-                      <span className="text-slate-500 dark:text-slate-400 shrink-0">
+                      <span className="text-surface-500 dark:text-surface-400 shrink-0">
                         {row.total ?? 0} soru · ort. zorluk: {difficultyLabel(row.avgDifficulty)}
                       </span>
                     </li>
@@ -266,14 +262,14 @@ const TeacherHome = () => {
             {trendRows.length > 0 && (
               <Card className="p-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <LineChart className="text-brand-600 dark:text-brand-400" size={20} aria-hidden />
-                  <h3 className="font-bold text-lg text-slate-800 dark:text-white">Son 7 gün — sınavlarınız</h3>
+                  <LineChart className="text-sky-600 dark:text-sky-400" size={20} aria-hidden />
+                  <h3 className="font-display font-semibold text-lg text-surface-900 dark:text-white">Son 7 gün — sınavlarınız</h3>
                 </div>
-                <ul className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
+                <ul className="divide-y divide-surface-100 dark:divide-surface-700 text-sm">
                   {trendRows.map((row) => (
-                    <li key={row._id} className="flex justify-between gap-3 py-2.5 text-slate-700 dark:text-slate-200">
-                      <span className="font-mono text-xs sm:text-sm text-slate-600 dark:text-slate-300">{row._id}</span>
-                      <span className="text-slate-500 dark:text-slate-400 shrink-0">{row.count ?? 0} sınav</span>
+                    <li key={row._id} className="flex justify-between gap-3 py-2.5 text-surface-700 dark:text-surface-200">
+                      <span className="font-mono text-xs sm:text-sm text-surface-600 dark:text-surface-300">{row._id}</span>
+                      <span className="text-surface-500 dark:text-surface-400 shrink-0">{row.count ?? 0} sınav</span>
                     </li>
                   ))}
                 </ul>
@@ -285,7 +281,7 @@ const TeacherHome = () => {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <Card className="p-6 xl:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-              <h3 className="font-bold text-lg text-slate-800 dark:text-white">Son aktiviteler</h3>
+              <h3 className="font-display font-semibold text-lg text-surface-900 dark:text-white">Son aktiviteler</h3>
               {!dashboardLoading && (
                 <Button variant="outline" size="sm" onClick={loadDashboard} aria-label="Aktiviteleri yenile">
                   <RefreshCw size={14} /> Güncelle
@@ -294,7 +290,7 @@ const TeacherHome = () => {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-xs uppercase">
+                <thead className="bg-surface-50 dark:bg-surface-800 text-surface-500 dark:text-surface-300 text-xs uppercase">
                   <tr>
                     <th className="py-3 pl-4">Kayıt</th>
                     <th className="py-3 hidden sm:table-cell">İşlem</th>
@@ -302,10 +298,10 @@ const TeacherHome = () => {
                     <th className="py-3 text-right pr-4">Zaman</th>
                   </tr>
                 </thead>
-                <tbody className="text-slate-700 dark:text-slate-300">
+                <tbody className="text-surface-700 dark:text-surface-300">
                   {recentActivities.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                      <td colSpan={4} className="py-6 text-center text-sm text-surface-500 dark:text-surface-400">
                         Henüz gösterilecek aktivite yok
                       </td>
                     </tr>
@@ -320,7 +316,7 @@ const TeacherHome = () => {
           <div className="space-y-6">
             <Card className="p-6">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                <h3 className="font-bold text-lg text-slate-800 dark:text-white">Öğrenci önizleme</h3>
+                <h3 className="font-display font-semibold text-lg text-surface-900 dark:text-white">Öğrenci önizleme</h3>
                 {!studentsLoading && (
                   <Button variant="outline" size="sm" onClick={loadStudents} aria-label="Öğrenci listesini yenile">
                     <RefreshCw size={14} />
@@ -366,9 +362,9 @@ const TeacherHome = () => {
               )}
             </Card>
 
-            <div className="bg-gradient-to-br from-brand-600 to-brand-800 rounded-2xl p-6 text-white shadow-xl shadow-brand-900/20 dark:shadow-none">
-              <h3 className="font-bold text-lg mb-2">Hızlı işlemler</h3>
-              <p className="text-brand-100 text-sm mb-5">En sık kullandığınız kısayollar.</p>
+            <div className="bg-gradient-to-br from-teal-700 via-sky-700 to-surface-800 rounded-2xl p-6 text-white shadow-soft">
+              <h3 className="font-display font-semibold text-lg mb-2">Hızlı işlemler</h3>
+              <p className="text-teal-100/90 text-sm mb-5">En sık kullandığınız kısayollar.</p>
               <Button
                 type="button"
                 variant="secondary"
@@ -376,7 +372,7 @@ const TeacherHome = () => {
                 className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 min-h-[44px]"
                 onClick={() => navigate('/teacher/questions')}
               >
-                <div className="bg-white p-2 rounded text-brand-600">
+                <div className="bg-white p-2 rounded text-teal-700">
                   <Plus size={16} />
                 </div>
                 <span>Soru bankasına git</span>
@@ -408,7 +404,7 @@ const TeacherHome = () => {
               <button
                 type="button"
                 onClick={() => setShowMoreActions((v) => !v)}
-                className="mt-4 w-full flex items-center justify-center gap-2 text-sm font-semibold text-brand-100 hover:text-white min-h-[44px] rounded-xl hover:bg-white/10 transition-colors"
+                className="mt-4 w-full flex items-center justify-center gap-2 text-sm font-semibold text-teal-100 hover:text-white min-h-[44px] rounded-xl hover:bg-white/10 transition-colors"
                 aria-expanded={showMoreActions}
               >
                 Diğer işlemler
@@ -423,7 +419,7 @@ const TeacherHome = () => {
                     className="w-full bg-white/5 hover:bg-white/15 text-white border-white/10 min-h-[44px]"
                     onClick={() => navigate('/teacher/questions?aiGenerate=1')}
                   >
-                    <div className="bg-white p-2 rounded text-violet-600">
+                    <div className="bg-white p-2 rounded text-sky-600">
                       <Wand2 size={16} />
                     </div>
                     <span>AI ile soru üret</span>
@@ -435,7 +431,7 @@ const TeacherHome = () => {
                     className="w-full bg-white/5 hover:bg-white/15 text-white border-white/10 min-h-[44px]"
                     onClick={() => navigate('/teacher/pattern-builder')}
                   >
-                    <div className="bg-white p-2 rounded text-violet-600">
+                    <div className="bg-white p-2 rounded text-amber-600">
                       <Wand2 size={16} />
                     </div>
                     <span>Örüntü şablonu</span>
@@ -448,7 +444,7 @@ const TeacherHome = () => {
                     onClick={() => navigate('/teacher/surveys')}
                     title="Sınıfa anket veya duyuru"
                   >
-                    <div className="bg-white p-2 rounded text-brand-600">
+                    <div className="bg-white p-2 rounded text-teal-700">
                       <Bell size={16} />
                     </div>
                     <span>Anket / duyuru</span>
@@ -458,7 +454,7 @@ const TeacherHome = () => {
             </div>
           </div>
         </div>
-      </div>
+      </TeacherPageShell>
       <GuideDrawer audience="teacher" open={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
     </>
   );

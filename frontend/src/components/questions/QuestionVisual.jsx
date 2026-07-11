@@ -18,7 +18,7 @@ function QuestionVisualInner({
 
   return (
     <div
-      className={`flex items-center justify-center overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-600 bg-gradient-to-br from-slate-50 via-white to-indigo-50/60 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/40 px-4 py-3 max-h-[min(420px,calc(70vh-8rem))] shadow-inner ${className}`}
+      className={`flex items-center justify-center overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-600 bg-gradient-to-br from-slate-50 via-white to-teal-50/60 dark:from-slate-900 dark:via-slate-900 dark:to-teal-950/40 px-4 py-3 max-h-[min(420px,calc(70vh-8rem))] shadow-inner ${className}`}
     >
       <img
         src={resolved}

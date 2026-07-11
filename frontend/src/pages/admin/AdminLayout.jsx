@@ -37,11 +37,11 @@ function AdminSidebar({ onNavigate, className = '' }) {
     <aside className={className}>
       <div className="border-b border-white/10 px-5 py-6 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/30">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/30">
             <Sparkles className="h-4 w-4" strokeWidth={2.5} aria-hidden />
           </span>
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-violet-300/90">{t('admin.nav.control')}</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-teal-300/90">{t('admin.nav.control')}</div>
             <h1 className="text-lg font-bold tracking-tight text-white">{t('admin.nav.brand')}</h1>
           </div>
         </div>
@@ -118,7 +118,7 @@ const AdminLayout = () => {
   }, [mobileNavOpen]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/30">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-teal-950/30">
       <SkipLink>{t('skipToContent')}</SkipLink>
 
       <div className="lg:hidden sticky top-0 z-40 flex items-center gap-3 border-b border-slate-200/80 bg-white/95 px-4 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
@@ -142,7 +142,7 @@ const AdminLayout = () => {
         >
           <div className="absolute inset-0 bg-black/50" aria-hidden />
           <div
-            className="absolute inset-y-0 left-0 flex w-[min(280px,88vw)] flex-col border-r border-white/10 bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 text-slate-200 shadow-xl"
+            className="absolute inset-y-0 left-0 flex w-[min(280px,88vw)] flex-col border-r border-white/10 bg-gradient-to-b from-slate-900 via-slate-900 to-teal-950 text-slate-200 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <AdminSidebar onNavigate={closeMobileNav} className="flex h-full flex-col" />
@@ -151,7 +151,7 @@ const AdminLayout = () => {
       )}
 
       <div className="mx-auto flex min-h-screen max-w-[1920px]">
-        <AdminSidebar className="sticky top-0 hidden h-screen w-[260px] shrink-0 flex-col border-r border-white/10 bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 text-slate-200 shadow-xl shadow-slate-900/20 lg:flex" />
+        <AdminSidebar className="sticky top-0 hidden h-screen w-[260px] shrink-0 flex-col border-r border-white/10 bg-gradient-to-b from-slate-900 via-slate-900 to-teal-950 text-slate-200 shadow-xl shadow-slate-900/20 lg:flex" />
 
         <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overflow-x-hidden">
           <div className="min-h-screen">

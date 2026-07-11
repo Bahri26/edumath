@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'edumath.language';
+const STORAGE_KEY = 'matova.language';
 
 /** App screens use TR | EN */
 export function normalizeAppLocale(value) {

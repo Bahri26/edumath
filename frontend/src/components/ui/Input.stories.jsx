@@ -23,7 +23,7 @@ export const Text = {
 export const Email = {
   args: {
     type: 'email',
-    placeholder: 'ornek@edumath.com',
+    placeholder: 'ornek@matova.app',
     autoComplete: 'email',
   },
 };

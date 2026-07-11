@@ -71,14 +71,14 @@ const Hero = ({
       
       {/* 3. ANA BAŞLIK (H1) */}
       <FadeIn delay={150}>
-        <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-gray-900 dark:text-white mb-6 leading-[1.1] tracking-tight">
+        <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-semibold text-gray-900 dark:text-white mb-6 leading-[1.1] tracking-tight">
           {t.hero.titleStart} 
           <span className="relative inline-block mx-2">
-            <span className="relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-violet-600 dark:from-brand-400 dark:to-violet-400">
+            <span className="relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-sky-600 to-amber-500 dark:from-teal-400 dark:via-sky-400 dark:to-amber-300">
               {t.hero.titleHighlight}
             </span>
             {/* Vurgu çizgisi */}
-            <span className="absolute bottom-2 left-0 w-full h-3 bg-brand-100 dark:bg-brand-900/40 -z-10 rounded-sm"></span>
+            <span className="absolute bottom-2 left-0 w-full h-3 bg-teal-100/80 dark:bg-teal-900/40 -z-10 rounded-sm"></span>
           </span>
           <br className="hidden md:block" />
           {t.hero.titleEnd}
@@ -144,7 +144,7 @@ const Hero = ({
         {patternDots.map((i) => (
           <div 
             key={i} 
-            className="w-4 sm:w-6 bg-gradient-to-t from-brand-500 to-violet-400 rounded-t-lg transition-all duration-1000 animate-pulse"
+            className="w-4 sm:w-6 bg-gradient-to-t from-brand-500 to-teal-400 rounded-t-lg transition-all duration-1000 animate-pulse"
             style={{ 
               height: `${i * 12}px`, 
               animationDelay: `${i * 150}ms`,

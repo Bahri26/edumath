@@ -35,7 +35,7 @@ const AdminBranchRequests = () => {
   return (
     <div className={a.pageWrap}>
       <header className="flex flex-wrap items-start gap-4">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white shadow-lg shadow-sky-500/25">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-teal-600 text-white shadow-lg shadow-sky-500/25">
           <GraduationCap className="h-6 w-6" />
         </span>
         <div>
@@ -65,7 +65,7 @@ const AdminBranchRequests = () => {
 
       {loading ? (
         <div className={a.loadingBox}>
-          <Loader2 className="mr-2 h-5 w-5 animate-spin text-violet-600" />
+          <Loader2 className="mr-2 h-5 w-5 animate-spin text-teal-600" />
           Liste yükleniyor…
         </div>
       ) : (
@@ -88,7 +88,7 @@ const AdminBranchRequests = () => {
                   <td className={`${a.td} font-semibold text-slate-900 dark:text-white`}>{it.name}</td>
                   <td className={`${a.td} text-slate-600 dark:text-slate-300`}>{it.email}</td>
                   <td className={a.td}>
-                    <span className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-200">
+                    <span className="rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800 dark:bg-teal-950/60 dark:text-teal-200">
                       {it.branch || '—'}
                     </span>
                   </td>

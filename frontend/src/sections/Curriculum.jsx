@@ -13,8 +13,8 @@ const Curriculum = ({ lang, t }) => {
         setActiveGrade(grade);
       }
     };
-    window.addEventListener('edumath:curriculum-grade', handler);
-    return () => window.removeEventListener('edumath:curriculum-grade', handler);
+    window.addEventListener('matova:curriculum-grade', handler);
+    return () => window.removeEventListener('matova:curriculum-grade', handler);
   }, []);
   
   // Örüntü odaklı veriyi çekiyoruz
@@ -29,8 +29,8 @@ const Curriculum = ({ lang, t }) => {
   // Seviyeye göre dinamik renk belirleme (İlkokul: Turuncu, Ortaokul: Indigo, Lise: Mor)
   const getLevelColor = (grade) => {
     if (grade <= 4) return 'from-orange-500 to-amber-500 dark:from-orange-900 dark:to-amber-900';
-    if (grade <= 8) return 'from-indigo-600 to-blue-600 dark:from-indigo-900 dark:to-blue-900';
-    return 'from-purple-600 to-fuchsia-600 dark:from-purple-900 dark:to-fuchsia-900';
+    if (grade <= 8) return 'from-teal-600 to-blue-600 dark:from-teal-900 dark:to-blue-900';
+    return 'from-sky-600 to-sky-600 dark:from-sky-900 dark:to-sky-900';
   };
 
   return (
@@ -41,14 +41,14 @@ const Curriculum = ({ lang, t }) => {
         <FadeIn delay={100}>
           <div className="text-center mb-16">
             <div className="flex justify-center mb-4">
-              <span className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-4 py-1 rounded-full text-sm font-bold tracking-widest uppercase">
+              <span className="bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400 px-4 py-1 rounded-full text-sm font-bold tracking-widest uppercase">
                 {t.curriculum.programTitle}
               </span>
             </div>
             <h2 className="text-3xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-6">
-              {t.curriculum.title} <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">{t.curriculum.titleHighlight}</span>
+              {t.curriculum.title} <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-sky-600">{t.curriculum.titleHighlight}</span>
             </h2>
-            <p className="text-base sm:text-lg text-indigo-700 dark:text-indigo-300 font-semibold mb-2">
+            <p className="text-base sm:text-lg text-teal-700 dark:text-teal-300 font-semibold mb-2">
               {t.curriculum.levelsSubtitle}
             </p>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
@@ -64,7 +64,7 @@ const Curriculum = ({ lang, t }) => {
             <FadeIn delay={200} direction="right">
               <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700 sticky top-28">
                 <h3 className="text-xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-                  <Layers className="text-indigo-600" size={24} /> {t.curriculum.selectGrade}
+                  <Layers className="text-teal-600" size={24} /> {t.curriculum.selectGrade}
                 </h3>
                 
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 lg:hidden">{t.curriculum.scrollHint}</p>
@@ -77,8 +77,8 @@ const Curriculum = ({ lang, t }) => {
                       onClick={() => setActiveGrade(item.grade)}
                       className={`group relative flex-shrink-0 snap-start flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-2xl font-bold transition-all duration-300 border-2 ${
                         activeGrade === item.grade
-                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none'
-                          : 'bg-gray-50 dark:bg-gray-700/50 border-transparent text-gray-600 dark:text-gray-400 hover:border-indigo-200 dark:hover:border-indigo-800 hover:bg-white dark:hover:bg-gray-700'
+                          ? 'bg-teal-600 border-teal-600 text-white shadow-lg shadow-teal-200 dark:shadow-none'
+                          : 'bg-gray-50 dark:bg-gray-700/50 border-transparent text-gray-600 dark:text-gray-400 hover:border-teal-200 dark:hover:border-teal-800 hover:bg-white dark:hover:bg-gray-700'
                       }`}
                     >
                       <span className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
@@ -103,7 +103,7 @@ const Curriculum = ({ lang, t }) => {
           {/* Sağ Panel: Müfredat Detayları */}
           <div className="lg:w-2/3 xl:w-3/4">
             <FadeIn delay={300} key={activeGrade}> {/* Grade değişiminde animasyonu tetikler */}
-              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl shadow-indigo-100/20 dark:shadow-none border border-gray-100 dark:border-gray-700 overflow-hidden min-h-0 lg:min-h-[480px] flex flex-col">
+              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl shadow-teal-100/20 dark:shadow-none border border-gray-100 dark:border-gray-700 overflow-hidden min-h-0 lg:min-h-[480px] flex flex-col">
                 
                 {/* Header Banner */}
                 <div className={`bg-gradient-to-br ${getLevelColor(activeGrade)} p-8 md:p-12 text-white relative transition-all duration-500`}>
@@ -112,7 +112,7 @@ const Curriculum = ({ lang, t }) => {
                     <h3 className="text-3xl md:text-5xl font-black mb-4 tracking-tight">
                       {selectedCurriculum.title}
                     </h3>
-                    <p className="text-indigo-50 dark:text-gray-200 text-lg md:text-xl max-w-3xl leading-relaxed opacity-90">
+                    <p className="text-teal-50 dark:text-gray-200 text-lg md:text-xl max-w-3xl leading-relaxed opacity-90">
                       {selectedCurriculum.description}
                     </p>
                   </div>
@@ -124,7 +124,7 @@ const Curriculum = ({ lang, t }) => {
                   {/* Konu Başlıkları */}
                   <div className="space-y-6">
                     <h4 className="flex items-center gap-3 text-xl font-bold text-gray-900 dark:text-white group">
-                      <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                      <div className="p-2 bg-teal-100 dark:bg-teal-900/50 rounded-lg text-teal-600 dark:text-teal-400 group-hover:scale-110 transition-transform">
                         <FileText size={22} />
                       </div>
                       {t.curriculum.topics}
@@ -132,7 +132,7 @@ const Curriculum = ({ lang, t }) => {
                     <ul className="space-y-3">
                       {selectedCurriculum.topics.map((topic, index) => (
                         <li key={index} className="flex items-center gap-4 bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-100 dark:border-gray-600 hover:shadow-md transition-all">
-                          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-indigo-500"></span>
+                          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-teal-500"></span>
                           <span className="font-semibold text-gray-700 dark:text-gray-200">{topic}</span>
                         </li>
                       ))}

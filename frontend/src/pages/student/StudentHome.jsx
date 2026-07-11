@@ -287,7 +287,7 @@ const StudentHome = () => {
       hintFromTopic: true,
     },
     { titleKey: 'kidMissionQuiz', hintKey: 'kidMissionQuizHint', path: '/student/quizzes', emoji: '⭐', accent: 'from-teal-400 to-emerald-500' },
-    { titleKey: 'goalExercise', hintKey: 'goalExerciseSubTodo', path: '/student/exercises', emoji: '🏋️', accent: 'from-indigo-400 to-violet-500' },
+    { titleKey: 'goalExercise', hintKey: 'goalExerciseSubTodo', path: '/student/exercises', emoji: '🏋️', accent: 'from-sky-400 to-teal-500' },
   ];
 
   const missionSubtitle = (m) => {
@@ -389,7 +389,7 @@ const StudentHome = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <BookOpen size={22} className="text-indigo-600 dark:text-indigo-400" aria-hidden />
+            <BookOpen size={22} className="text-teal-600 dark:text-teal-400" aria-hidden />
             {getText('myCourses')}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

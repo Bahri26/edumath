@@ -8,13 +8,13 @@ export const LEGAL_DOCS = {
       title: 'Gizlilik Politikası ve KVKK Aydınlatma Metni',
       updated: '24 Mayıs 2026',
       intro:
-        'Edumath (“Platform”), Anadolu Üniversitesi matematik eğitimi araştırma kapsamında geliştirilen bir öğrenme ve ölçme-değerlendirme hizmetidir. 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) kapsamında veri sorumlusu sıfatıyla kişisel verilerinizi aşağıda açıklanan çerçevede işler.',
+        'Matova (“Platform”), Anadolu Üniversitesi matematik eğitimi araştırma kapsamında geliştirilen bir öğrenme ve ölçme-değerlendirme hizmetidir. 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) kapsamında veri sorumlusu sıfatıyla kişisel verilerinizi aşağıda açıklanan çerçevede işler.',
       sections: [
         {
           title: '1. Veri sorumlusu ve iletişim',
           paragraphs: [
-            'Veri sorumlusu: Edumath platformu işletmesi.',
-            'KVKK kapsamındaki talepleriniz için: info@edumath.com — konu satırına “KVKK Başvurusu” yazmanız yeterlidir.',
+            'Veri sorumlusu: Matova platformu işletmesi.',
+            'KVKK kapsamındaki talepleriniz için: info@matova.app — konu satırına “KVKK Başvurusu” yazmanız yeterlidir.',
           ],
         },
         {
@@ -39,9 +39,9 @@ export const LEGAL_DOCS = {
         {
           title: '4. Yapay zeka kullanımı — model eğitimi yapılmaz',
           paragraphs: [
-            'Edumath, yüklediğiniz soru görsellerini, soru metinlerini, sınav içeriklerini veya öğrenci cevaplarını üçüncü taraf yapay zeka modellerini eğitmek (“fine-tune”, “model besleme”) amacıyla kullanmaz. Platformda otomatik model eğitimi veya veri seti oluşturma pipeline’ı bulunmaz.',
+            'Matova, yüklediğiniz soru görsellerini, soru metinlerini, sınav içeriklerini veya öğrenci cevaplarını üçüncü taraf yapay zeka modellerini eğitmek (“fine-tune”, “model besleme”) amacıyla kullanmaz. Platformda otomatik model eğitimi veya veri seti oluşturma pipeline’ı bulunmaz.',
             'Varsayılan yapılandırmada (AI_PROVIDER=local) metin tanıma ve soru çözümü sunucu üzerinde yerel OCR (Tesseract), kural tabanlı çözücüler ve dahili ml-service ile yapılır; içerik harici AI sağlayıcılarına gönderilmez.',
-            'Kurulumda isteğe bağlı olarak etkinleştirilen Google Gemini veya Ollama entegrasyonları yalnızca anlık çıkarım (inference) için kullanılır — örneğin görselden metin okuma veya soru varyasyonu üretme. Bu çağrılar tek seferlik API istekleridir; Edumath tarafında model eğitimi yapılmaz.',
+            'Kurulumda isteğe bağlı olarak etkinleştirilen Google Gemini veya Ollama entegrasyonları yalnızca anlık çıkarım (inference) için kullanılır — örneğin görselden metin okuma veya soru varyasyonu üretme. Bu çağrılar tek seferlik API istekleridir; Matova tarafında model eğitimi yapılmaz.',
             '“AI ile Üret” özelliği, yalnızca aynı kurum/öğretmen soru havuzundaki metin tabanlı örnekleri referans alarak yeni soru varyasyonları oluşturur; görselli sorular bu havuza dahil edilmez. Bu süreç platform içi üretimdir, dış model eğitimi değildir.',
             'Öğrenci sınav sonuçları zayıf konu analizi için yerel istatistiksel yöntemlerle işlenir; sinir ağı eğitimi yapılmaz.',
           ],
@@ -89,13 +89,13 @@ export const LEGAL_DOCS = {
       title: 'Privacy Policy & KVKK Notice',
       updated: '24 May 2026',
       intro:
-        'Edumath (“Platform”) is a learning and assessment service developed in the context of mathematics education research. As data controller under Turkish Law No. 6698 on Protection of Personal Data (KVKK), we process your personal data as described below.',
+        'Matova (“Platform”) is a learning and assessment service developed in the context of mathematics education research. As data controller under Turkish Law No. 6698 on Protection of Personal Data (KVKK), we process your personal data as described below.',
       sections: [
         {
           title: '1. Data controller & contact',
           paragraphs: [
-            'Data controller: Edumath platform operator.',
-            'For KVKK requests: info@edumath.com — subject line “KVKK Request”.',
+            'Data controller: Matova platform operator.',
+            'For KVKK requests: info@matova.app — subject line “KVKK Request”.',
           ],
         },
         {
@@ -120,9 +120,9 @@ export const LEGAL_DOCS = {
         {
           title: '4. Artificial intelligence — no model training',
           paragraphs: [
-            'Edumath does not use uploaded question images, question text, exam content, or student answers to train third-party AI models (fine-tuning or “feeding” datasets). There is no automated model-training pipeline in the platform.',
+            'Matova does not use uploaded question images, question text, exam content, or student answers to train third-party AI models (fine-tuning or “feeding” datasets). There is no automated model-training pipeline in the platform.',
             'In the default configuration (AI_PROVIDER=local), text recognition and question solving run on the server using local OCR (Tesseract), rule-based solvers, and the internal ml-service; content is not sent to external AI providers.',
-            'Optional Google Gemini or Ollama integrations, when enabled, are used only for one-time inference — e.g. reading text from an image or generating question variations. These are single API calls; Edumath does not train models on your data.',
+            'Optional Google Gemini or Ollama integrations, when enabled, are used only for one-time inference — e.g. reading text from an image or generating question variations. These are single API calls; Matova does not train models on your data.',
             'The “Generate with AI” feature references text-only samples from the same institution/teacher question pool; image-based questions are excluded. This is in-platform generation, not external model training.',
             'Student exam results are analyzed with local statistical methods for weak-topic reports; no neural network training is performed.',
           ],
@@ -172,7 +172,7 @@ export const LEGAL_DOCS = {
       title: 'Kullanım Şartları',
       updated: '24 Mayıs 2026',
       intro:
-        'Edumath platformunu kullanarak aşağıdaki şartları kabul etmiş sayılırsınız. Hizmet eğitim ve ölçme-değerlendirme amacıyla sunulur.',
+        'Matova platformunu kullanarak aşağıdaki şartları kabul etmiş sayılırsınız. Hizmet eğitim ve ölçme-değerlendirme amacıyla sunulur.',
       sections: [
         {
           title: '1. Hizmet kapsamı',
@@ -205,7 +205,7 @@ export const LEGAL_DOCS = {
         {
           title: '5. Fikri mülkiyet',
           paragraphs: [
-            'Platform yazılımı ve arayüzü Edumath’a aittir. Öğretmenlerin yüklediği soru ve materyallerin hakları içerik sahibinde kalır.',
+            'Platform yazılımı ve arayüzü Matova’ya aittir. Öğretmenlerin yüklediği soru ve materyallerin hakları içerik sahibinde kalır.',
           ],
         },
         {
@@ -226,7 +226,7 @@ export const LEGAL_DOCS = {
       title: 'Terms of Use',
       updated: '24 May 2026',
       intro:
-        'By using Edumath you agree to these terms. The service is provided for educational and assessment purposes.',
+        'By using Matova you agree to these terms. The service is provided for educational and assessment purposes.',
       sections: [
         {
           title: '1. Scope of service',
@@ -259,7 +259,7 @@ export const LEGAL_DOCS = {
         {
           title: '5. Intellectual property',
           paragraphs: [
-            'Platform software and UI belong to Edumath. Rights to teacher-uploaded questions and materials remain with the content owner.',
+            'Platform software and UI belong to Matova. Rights to teacher-uploaded questions and materials remain with the content owner.',
           ],
         },
         {
@@ -282,14 +282,14 @@ export const LEGAL_DOCS = {
       title: 'Çerez Politikası',
       updated: '24 Mayıs 2026',
       intro:
-        'Edumath, oturumunuzun güvenli şekilde sürdürülmesi ve tercihlerinizin hatırlanması için sınırlı çerez ve yerel depolama kullanır.',
+        'Matova, oturumunuzun güvenli şekilde sürdürülmesi ve tercihlerinizin hatırlanması için sınırlı çerez ve yerel depolama kullanır.',
       sections: [
         {
           title: '1. Kullanılan teknolojiler',
           paragraphs: [
             'Zorunlu oturum: giriş yaptıktan sonra kimlik doğrulama jetonu (JWT) tarayıcıda saklanır; oturum kapatılınca silinir.',
             'Tercih: tema (açık/koyu) ve dil seçimi localStorage üzerinde tutulabilir.',
-            'Edumath reklam veya üçüncü taraf izleme çerezi kullanmaz.',
+            'Matova reklam veya üçüncü taraf izleme çerezi kullanmaz.',
           ],
         },
         {
@@ -302,7 +302,7 @@ export const LEGAL_DOCS = {
           title: '3. Yönetim',
           paragraphs: [
             'Tarayıcı ayarlarından çerezleri silebilir veya engelleyebilirsiniz; oturum çerezlerini engellemek giriş yapmanızı engelleyebilir.',
-            'Sorularınız için: info@edumath.com',
+            'Sorularınız için: info@matova.app',
           ],
         },
       ],
@@ -311,14 +311,14 @@ export const LEGAL_DOCS = {
       title: 'Cookie Policy',
       updated: '24 May 2026',
       intro:
-        'Edumath uses limited cookies and local storage to keep your session secure and remember your preferences.',
+        'Matova uses limited cookies and local storage to keep your session secure and remember your preferences.',
       sections: [
         {
           title: '1. Technologies used',
           paragraphs: [
             'Essential session: after sign-in, an authentication token (JWT) is stored in the browser and cleared on sign-out.',
             'Preferences: theme (light/dark) and language may be stored in localStorage.',
-            'Edumath does not use advertising or third-party tracking cookies.',
+            'Matova does not use advertising or third-party tracking cookies.',
           ],
         },
         {
@@ -331,7 +331,7 @@ export const LEGAL_DOCS = {
           title: '3. Control',
           paragraphs: [
             'You can delete or block cookies in browser settings; blocking session cookies may prevent sign-in.',
-            'Questions: info@edumath.com',
+            'Questions: info@matova.app',
           ],
         },
       ],

@@ -5,6 +5,7 @@ import { useToast } from "../../context/ToastContext";
 import StudentHint from "../../components/StudentHint.jsx";
 import SolutionDisplay from "../../components/questions/SolutionDisplay.jsx";
 import StudentPageShell from "../../components/student/StudentPageShell.jsx";
+import QuestionVisual from "../../components/questions/QuestionVisual.jsx";
 
 export default function LessonQuiz() {
   const { lessonId } = useParams();
@@ -153,9 +154,10 @@ export default function LessonQuiz() {
             <div className="mb-2 font-semibold">
               {i + 1}. {q.question}
             </div>
+            <QuestionVisual src={q.image} alt={`Soru ${i + 1}`} className="mb-3" />
             <div className="flex flex-col gap-2">
               {(q.options || []).map((opt, j) => (
-                <label key={j} className="flex items-center gap-2 cursor-pointer">
+                <label key={j} className="flex items-start gap-2 cursor-pointer">
                   <input
                     type="radio"
                     name={`q${i}`}
@@ -168,8 +170,14 @@ export default function LessonQuiz() {
                         return b;
                       })
                     }
+                    className="mt-1"
                   />
-                  <span>{opt.text}</span>
+                  <span className="flex-1">
+                    {opt.text}
+                    {opt.image ? (
+                      <QuestionVisual src={opt.image} alt={`Şık ${j + 1}`} className="mt-2 max-h-32" />
+                    ) : null}
+                  </span>
                 </label>
               ))}
             </div>

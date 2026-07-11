@@ -404,7 +404,7 @@ const AdminUsers = () => {
 
       {loading ? (
         <div className={a.loadingBox}>
-          <Loader2 className="mr-2 h-5 w-5 animate-spin text-violet-600" />
+          <Loader2 className="mr-2 h-5 w-5 animate-spin text-teal-600" />
           {t('admin.users.loadingList')}
         </div>
       ) : items.length === 0 ? (
@@ -632,7 +632,7 @@ const AdminUsers = () => {
       {notesUserId && (
         <div className={a.modalBackdrop}>
           <div className={a.modalPanel} role="dialog" aria-modal="true" aria-labelledby="notes-modal-title">
-            <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-violet-600/12 to-indigo-600/8 px-6 py-4 dark:border-slate-800">
+            <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-teal-600/12 to-teal-600/8 px-6 py-4 dark:border-slate-800">
               <h2 id="notes-modal-title" className="text-lg font-bold text-slate-900 dark:text-white">
                 {t('admin.users.notesModalTitle')}
               </h2>

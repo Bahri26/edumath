@@ -4,9 +4,17 @@ const AssignmentSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
   subject: { type: String, required: true },
+  classLevel: { type: String, default: '' },
   dueDate: { type: Date },
   duration: { type: Number, default: 60 }, // dakika
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  linkType: {
+    type: String,
+    enum: ['text', 'exam', 'exercise'],
+    default: 'text',
+  },
+  linkedExamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', default: null },
+  linkedExerciseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Exercise', default: null },
 
   // Öğrenci teslimleri
   submissions: [{

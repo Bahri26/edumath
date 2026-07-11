@@ -9,10 +9,28 @@ const { recordUserActivity } = require('../services/activityLogger');
 exports.createAssignment = async (req, res) => {
   try {
     const teacherId = req.user.id;
-    const { title, description, subject, dueDate, duration, classLevel } = req.body;
+    const {
+      title,
+      description,
+      subject,
+      dueDate,
+      duration,
+      classLevel,
+      linkType = 'text',
+      linkedExamId,
+      linkedExerciseId,
+    } = req.body;
 
     if (!title || !subject) {
       return res.status(400).json({ message: 'Başlık ve ders zorunludur' });
+    }
+
+    const resolvedLinkType = ['text', 'exam', 'exercise'].includes(linkType) ? linkType : 'text';
+    if (resolvedLinkType === 'exam' && !linkedExamId) {
+      return res.status(400).json({ message: 'Sınav bağlantısı için sınav seçilmelidir' });
+    }
+    if (resolvedLinkType === 'exercise' && !linkedExerciseId) {
+      return res.status(400).json({ message: 'Egzersiz bağlantısı için egzersiz seçilmelidir' });
     }
 
     const newAssignment = new Assignment({
@@ -22,6 +40,9 @@ exports.createAssignment = async (req, res) => {
       dueDate,
       duration: duration || 60,
       classLevel,
+      linkType: resolvedLinkType,
+      linkedExamId: resolvedLinkType === 'exam' ? linkedExamId : null,
+      linkedExerciseId: resolvedLinkType === 'exercise' ? linkedExerciseId : null,
       createdBy: teacherId,
       submissions: []
     });
@@ -88,34 +109,53 @@ exports.getStudentAssignments = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
 
-    // Tüm ödevleri getir (tüm öğretmenler tarafından verilen)
-    const assignments = await Assignment.find()
-      .sort({ dueDate: 1 }) // En yakın deadline'ı başa al
+    const studentUser = await User.findById(studentId).select('grade').lean();
+    const links = await require('../models/Student').find({ userId: studentId }).select('teacherId grade').lean();
+    const teacherIds = links.map((l) => l.teacherId).filter(Boolean);
+    const grade = studentUser?.grade || links.find((l) => l.grade)?.grade || '';
+
+    const query = {};
+    if (teacherIds.length) {
+      query.createdBy = { $in: teacherIds };
+    } else {
+      // Bağlı öğretmen yoksa boş sonuç (tüm havuzu gösterme)
+      return res.json({ data: [], total: 0, pages: 0, currentPage: parseInt(page, 10) });
+    }
+    if (grade) {
+      query.$or = [
+        { classLevel: { $exists: false } },
+        { classLevel: null },
+        { classLevel: '' },
+        { classLevel: grade },
+      ];
+    }
+
+    const assignments = await Assignment.find(query)
+      .sort({ dueDate: 1 })
       .skip(skip)
-      .limit(parseInt(limit))
+      .limit(parseInt(limit, 10))
       .populate('createdBy', 'name email');
 
-    // Her ödev için bu öğrencinin submission'ını kontrol et
-    const assignmentsWithStatus = assignments.map(assignment => {
+    const assignmentsWithStatus = assignments.map((assignment) => {
       const submission = assignment.submissions?.find(
-        s => s.studentId.toString() === studentId
+        (s) => s.studentId.toString() === studentId,
       );
 
       return {
         ...assignment.toObject(),
         completed: !!submission,
         submission: submission || null,
-        submitted: submission?.submittedAt || null
+        submitted: submission?.submittedAt || null,
       };
     });
 
-    const total = await Assignment.countDocuments();
+    const total = await Assignment.countDocuments(query);
 
     res.json({
       data: assignmentsWithStatus,
       total,
-      pages: Math.ceil(total / limit),
-      currentPage: parseInt(page)
+      pages: Math.ceil(total / limit) || 1,
+      currentPage: parseInt(page, 10),
     });
   } catch (err) {
     res.status(500).json({ message: 'Ödevler alınamadı', error: err.message });
@@ -253,7 +293,7 @@ exports.updateAssignment = async (req, res) => {
   try {
     const teacherId = req.user.id;
     const { assignmentId } = req.params;
-    const { title, description, subject, dueDate, duration } = req.body;
+    const { title, description, subject, dueDate, duration, classLevel } = req.body;
 
     const assignment = await Assignment.findById(assignmentId);
     if (!assignment) {
@@ -265,8 +305,9 @@ exports.updateAssignment = async (req, res) => {
     }
 
     if (title) assignment.title = title;
-    if (description) assignment.description = description;
+    if (description !== undefined) assignment.description = description;
     if (subject) assignment.subject = subject;
+    if (classLevel !== undefined) assignment.classLevel = classLevel;
     if (dueDate) assignment.dueDate = dueDate;
     if (duration) assignment.duration = duration;
 

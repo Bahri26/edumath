@@ -53,8 +53,8 @@ export default function QuickGuideBlockList({ audience = 'student', blocks = [],
 
   const accentBar =
     variant === 'landing'
-      ? 'absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-gradient-to-b from-indigo-500 to-sky-500 opacity-90'
-      : 'absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-gradient-to-b from-indigo-500 to-violet-500 opacity-90';
+      ? 'absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-gradient-to-b from-teal-500 to-sky-500 opacity-90'
+      : 'absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-gradient-to-b from-teal-500 to-sky-500 opacity-90';
 
   const titleClass =
     variant === 'landing'
@@ -68,13 +68,13 @@ export default function QuickGuideBlockList({ audience = 'student', blocks = [],
 
   const iconWrap =
     variant === 'landing'
-      ? 'flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300'
-      : 'flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300';
+      ? 'flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-600 dark:bg-teal-950/60 dark:text-teal-300'
+      : 'flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-600 dark:bg-teal-950/60 dark:text-teal-300';
 
   const dotClass =
     variant === 'landing'
-      ? 'mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400 dark:bg-indigo-500'
-      : 'mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400 dark:bg-indigo-500';
+      ? 'mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-400 dark:bg-teal-500'
+      : 'mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-400 dark:bg-teal-500';
 
   return (
     <div className={variant === 'landing' ? 'grid gap-4 sm:grid-cols-2' : 'space-y-4'}>

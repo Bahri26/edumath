@@ -95,17 +95,17 @@ const LandingPage = () => {
   useEffect(() => {
     const metadata = lang === 'tr'
       ? {
-          title: 'Edumath | Matematik Öğrenme ve Akademik Araştırma Platformu',
-          description: 'Edumath, okul matematiği programları ile yüksek lisans ve doktora düzeyi akademik araştırma modüllerini aynı platformda sunan yapay zeka destekli öğrenme ortamıdır.',
-          ogTitle: 'Edumath | Matematik Öğrenme ve Akademik Araştırma Platformu',
+          title: 'Matova | Matematik Öğrenme ve Akademik Araştırma Platformu',
+          description: 'Matova, okul matematiği programları ile yüksek lisans ve doktora düzeyi akademik araştırma modüllerini aynı platformda sunan yapay zeka destekli öğrenme ortamıdır.',
+          ogTitle: 'Matova | Matematik Öğrenme ve Akademik Araştırma Platformu',
           ogDescription: 'Öğrenci, öğretmen ve akademik araştırma akışlarını ayrıştıran yapay zeka destekli matematik platformu.',
           locale: 'tr_TR',
           htmlLang: 'tr',
         }
       : {
-          title: 'Edumath | Math Learning and Academic Research Platform',
-          description: 'Edumath is an AI-supported environment that combines school mathematics programs with graduate and doctoral research modules.',
-          ogTitle: 'Edumath | Math Learning and Academic Research Platform',
+          title: 'Matova | Math Learning and Academic Research Platform',
+          description: 'Matova is an AI-supported environment that combines school mathematics programs with graduate and doctoral research modules.',
+          ogTitle: 'Matova | Math Learning and Academic Research Platform',
           ogDescription: 'A mathematics platform with dedicated journeys for students, teachers, and academic researchers.',
           locale: 'en_US',
           htmlLang: 'en',

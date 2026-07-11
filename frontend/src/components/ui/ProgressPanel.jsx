@@ -55,7 +55,7 @@ const ProgressPanel = ({ days = 14 }) => {
           <div className="flex items-center gap-2 text-slate-500"><TrendingUp size={18} /> Son {days} gün XP</div>
           <div className="mt-2 flex items-end gap-1 h-20">
             {trends.map((d) => (
-              <div key={d.day} title={`${d.day}: ${d.xp}`} className="bg-indigo-500/70 w-2 rounded" style={{ height: Math.min(100, d.xp) + '%' }} />
+              <div key={d.day} title={`${d.day}: ${d.xp}`} className="bg-teal-500/70 w-2 rounded" style={{ height: Math.min(100, d.xp) + '%' }} />
             ))}
           </div>
         </div>

@@ -257,7 +257,7 @@ router.put('/:id', authMiddleware, roleMiddleware(['teacher', 'admin']), async (
 
 router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (req, res) => {
   try {
-    const { answers, totalTimeSpentSeconds, questionTimes } = req.body;
+    const { answers, totalTimeSpentSeconds, questionTimes, hintsUsedQuestionIds } = req.body;
     const exam = await Exam.findById(req.params.id).populate('questions');
     if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı' });
 
@@ -322,6 +322,8 @@ router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (r
       .filter(Boolean);
 
     const parsedTotalTime = Number(totalTimeSpentSeconds);
+    const hintIdsRaw = Array.isArray(hintsUsedQuestionIds) ? hintsUsedQuestionIds : [];
+    const hintIds = [...new Set(hintIdsRaw.map((id) => String(id)).filter(Boolean))];
     exam.results.push({
       studentId: req.user.id,
       studentName,
@@ -335,6 +337,8 @@ router.post('/:id/submit', authMiddleware, roleMiddleware(['student']), async (r
         : null,
       questionTimes: parsedQuestionTimes,
       answerDetails,
+      hintsUsedCount: hintIds.length,
+      hintsUsedQuestionIds: hintIds,
     });
 
     await exam.save();

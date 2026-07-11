@@ -21,6 +21,7 @@ export default function StudentHint({
   topic,
   subject,
   compact = false,
+  onHintUsed,
 }) {
   const [hint, setHint] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,6 +42,7 @@ export default function StudentHint({
         subject,
       });
       setHint(String(data?.hint || '').trim());
+      onHintUsed?.(questionId);
     } catch (err) {
       const msg = describeApiError(err, { fallback: 'İpucu alınamadı.' });
       setError(msg);

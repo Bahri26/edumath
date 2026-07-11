@@ -45,7 +45,7 @@ const AdminSettings = () => {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8 px-4 py-8 sm:px-6 lg:px-10">
       <header className="flex flex-wrap items-start gap-4">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/25">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/25">
           <User className="h-6 w-6" />
         </span>
         <div>
@@ -60,7 +60,7 @@ const AdminSettings = () => {
 
       {loading ? (
         <div className={a.loadingBox}>
-          <Loader2 className="mr-2 h-5 w-5 animate-spin text-violet-600" />
+          <Loader2 className="mr-2 h-5 w-5 animate-spin text-teal-600" />
           Yükleniyor…
         </div>
       ) : (

@@ -25,12 +25,12 @@ const LegalPage = () => {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <Link
             to="/"
-            className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold hover:opacity-90 transition-opacity"
+            className="flex items-center gap-2 text-teal-600 dark:text-teal-400 font-bold hover:opacity-90 transition-opacity"
           >
-            <div className="bg-indigo-600 p-1 rounded-lg text-white">
+            <div className="bg-teal-600 p-1 rounded-lg text-white">
               <GraduationCap size={18} />
             </div>
-            <span>Edu<span className="text-indigo-500">math</span></span>
+            <span>Mato<span className="text-teal-500">va</span></span>
           </Link>
           <div className="flex items-center gap-3 text-sm">
             <button
@@ -42,7 +42,7 @@ const LegalPage = () => {
             </button>
             <Link
               to="/"
-              className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
             >
               <ArrowLeft size={16} />
               {t('legal.backHome')}
@@ -66,7 +66,7 @@ const LegalPage = () => {
                 {section.paragraphs.map((paragraph) => (
                   <li
                     key={paragraph.slice(0, 48)}
-                    className="text-sm sm:text-base leading-relaxed text-slate-600 dark:text-slate-400 pl-4 border-l-2 border-indigo-200 dark:border-indigo-800"
+                    className="text-sm sm:text-base leading-relaxed text-slate-600 dark:text-slate-400 pl-4 border-l-2 border-teal-200 dark:border-teal-800"
                   >
                     {paragraph}
                   </li>
@@ -84,22 +84,22 @@ const LegalPage = () => {
             <Link
               key={id}
               to={`/legal/${id}`}
-              className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+              className="text-teal-600 dark:text-teal-400 hover:underline font-medium"
             >
               {t(`legal.${id}`)}
             </Link>
           ))}
           <a
-            href="mailto:info@edumath.com"
-            className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+            href="mailto:info@matova.app"
+            className="text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400"
           >
-            info@edumath.com
+            info@matova.app
           </a>
         </nav>
       </main>
 
       <footer className="border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500 dark:text-slate-500">
-        © {new Date().getFullYear()} Edumath
+        © {new Date().getFullYear()} Matova
       </footer>
     </div>
   );

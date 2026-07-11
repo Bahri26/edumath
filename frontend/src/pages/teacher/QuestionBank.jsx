@@ -25,6 +25,7 @@ import QuestionTextWithPattern from '../../components/questions/QuestionTextWith
 import { sourceFilterOptions, sourceFilterToApi } from '../../utils/questionSourceLabel';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
 import { useTranslation } from '../../i18n/useTranslation';
+import TeacherPageShell from '../../components/teacher/TeacherPageShell.jsx';
 import {
   PATTERN_TOPIC_ORDER,
   PATTERN_TOPIC_ALL_UNDER,
@@ -81,14 +82,14 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
   const codeText = getCodeText(question);
 
   return (
-    <div className={`group relative bg-white dark:bg-slate-800 rounded-[1.5rem] border transition-all duration-300 ${
+    <div className={`group relative bg-white/95 dark:bg-surface-800/95 rounded-card border transition-all duration-300 ${
       expanded 
-        ? 'border-indigo-500 ring-4 ring-indigo-500/10 shadow-xl' 
-        : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 hover:shadow-lg'
+        ? 'border-teal-500 ring-4 ring-teal-500/10 shadow-soft' 
+        : 'border-surface-200 dark:border-surface-700 hover:border-teal-300 hover:shadow-md'
     }`}>
       <button
         type="button"
-        className="w-full text-left p-6 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-[1.5rem]"
+        className="w-full text-left p-6 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded-card"
         onClick={onToggle}
         aria-expanded={expanded}
         aria-label={expanded ? 'Soru detayını gizle' : 'Soru detayını göster'}
@@ -96,22 +97,22 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
           <div className="space-y-4 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300">
                 <Hash size={12} /> {question.classLevel}
               </span>
               <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${difficultyStyles[question.difficulty] || difficultyStyles['Orta']}`}>
                 {question.difficulty}
               </span>
-              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300">
                 {question.subject}
               </span>
               {topicLabel && (
-                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 border border-violet-100 dark:border-violet-800/40">
+                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-50 dark:bg-sky-900/25 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-800/40">
                   {topicLabel}
                 </span>
               )}
               {topicCode && (
-                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-fuchsia-50 dark:bg-fuchsia-900/20 text-fuchsia-700 dark:text-fuchsia-300 border border-fuchsia-100 dark:border-fuchsia-800/40">
+                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border border-amber-100 dark:border-amber-800/40">
                   {topicCode}
                 </span>
               )}
@@ -120,7 +121,7 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
             <QuestionTextWithPattern text={question.text} />
           </div>
           <div className="flex md:flex-col gap-2 opacity-60 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300" onClick={e => e.stopPropagation()}>
-            <button type="button" onClick={() => onEdit(question)} aria-label="Soruyu düzenle" className="p-2.5 bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-indigo-600 transition-all">
+            <button type="button" onClick={() => onEdit(question)} aria-label="Soruyu düzenle" className="p-2.5 bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-teal-600 transition-all">
               <Edit2 size={18} aria-hidden />
             </button>
             <button type="button" onClick={() => onDelete(question._id)} aria-label="Soruyu sil" className="p-2.5 bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-rose-600 transition-all">
@@ -142,22 +143,26 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {question.options?.map((opt, idx) => {
               const label = optionLabel(opt);
+              const optImage = typeof opt === 'object' ? (opt?.image || '') : '';
               const isCorrect = optionMatchesAnswer(opt, question.correctAnswer);
               return (
-              <div key={idx} className={`p-4 rounded-2xl border-2 flex items-center gap-4 ${
+              <div key={idx} className={`p-4 rounded-2xl border-2 flex items-start gap-4 ${
                 isCorrect
                   ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10'
                   : 'border-slate-100 dark:border-slate-700'
               }`}>
-                <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
+                <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 ${
                   isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-700'
                 }`}>
                   {String.fromCharCode(65 + idx)}
                 </span>
-                <div className="flex items-center gap-3 flex-1">
-                  <span className="text-sm font-semibold flex-1">
+                <div className="flex flex-col gap-2 flex-1 min-w-0">
+                  <span className="text-sm font-semibold">
                     {label ? renderWithLatex(label) : <span className="text-slate-400 italic">—</span>}
                   </span>
+                  {optImage ? (
+                    <QuestionVisual src={optImage} alt={`Şık ${String.fromCharCode(65 + idx)}`} className="max-h-36" />
+                  ) : null}
                 </div>
               </div>
               );
@@ -179,7 +184,7 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
             </CollapsiblePanel>
           )}
 
-          <CollapsiblePanel title="Adım adım çözüm" defaultOpen={false} className="bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-800/50">
+          <CollapsiblePanel title="Adım adım çözüm" defaultOpen={false} className="bg-teal-50/50 dark:bg-teal-900/10 border-teal-100 dark:border-teal-800/50">
             {question.solution ? (
               <SolutionDisplay text={question.solution} className="italic" />
             ) : (
@@ -462,22 +467,12 @@ export default function QuestionBank() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-8 sm:space-y-10 pb-24 sm:pb-32 max-w-7xl mx-auto">
-      
-      {/* Üst Header */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-end mb-4 sm:mb-8 px-0 sm:px-2">
-        <div className="space-y-2 min-w-0">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            {t('questionBank.title')}
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
-            {t('questionBank.subtitle')}
-          </p>
-          <div className="flex items-center gap-2 text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">
-            <span className="text-indigo-600 font-black">#</span> {t('questionBank.total', { n: totalQuestions })}
-          </div>
-        </div>
-
+    <TeacherPageShell
+      maxWidthClass="max-w-7xl"
+      className="pb-24 sm:pb-32"
+      title={t('questionBank.title')}
+      subtitle={t('questionBank.subtitle')}
+      headerAside={(
         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3 w-full lg:w-auto lg:justify-end">
           <Button
             variant="outline"
@@ -485,9 +480,10 @@ export default function QuestionBank() {
             onClick={() => setIsAiGenerateOpen(true)}
             disabled={profile.branchApproval !== 'approved'}
             title={profile.branchApproval !== 'approved' ? t('questionBank.branchPending') : t('questionBank.aiGenerateTitle')}
-            className="w-full sm:w-auto justify-center px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-violet-600 text-violet-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto justify-center border-2 border-sky-600 text-sky-700 dark:text-sky-300"
+            icon={Wand2}
           >
-            <Wand2 size={18} className="shrink-0" /> {t('questionBank.aiGenerate')}
+            {t('questionBank.aiGenerate')}
           </Button>
 
           <Button
@@ -496,9 +492,10 @@ export default function QuestionBank() {
             onClick={() => setIsSmartPasteOpen(true)}
             disabled={profile.branchApproval !== 'approved'}
             title={profile.branchApproval !== 'approved' ? t('questionBank.branchPending') : ''}
-            className="w-full sm:w-auto justify-center px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-indigo-600 text-indigo-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto justify-center border-2 border-teal-600 text-teal-700 dark:text-teal-300"
+            icon={Sparkles}
           >
-            <Sparkles size={18} className="shrink-0" /> {t('questionBank.smartPaste')}
+            {t('questionBank.smartPaste')}
           </Button>
 
           <Button
@@ -507,12 +504,17 @@ export default function QuestionBank() {
             disabled={profile.branchApproval !== 'approved'}
             title={profile.branchApproval !== 'approved' ? t('questionBank.branchPending') : ''}
             onClick={openNewQuestionModal}
-            className="w-full sm:w-auto justify-center px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl text-sm"
+            className="w-full sm:w-auto justify-center"
+            icon={Plus}
           >
-            <Plus size={20} className="shrink-0" /> {t('questionBank.addQuestion')}
+            {t('questionBank.addQuestion')}
           </Button>
         </div>
-      </div>
+      )}
+    >
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-teal-700 dark:text-teal-300 -mt-2">
+        # {t('questionBank.total', { n: totalQuestions })}
+      </p>
 
       {fetchError && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/30 px-4 py-3 flex flex-wrap items-center justify-between gap-3" role="alert">
@@ -522,15 +524,15 @@ export default function QuestionBank() {
       )}
 
       {/* Filtre Paneli */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-center bg-white/50 dark:bg-slate-800/50 backdrop-blur-md p-3 sm:p-4 rounded-2xl sm:rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-center bg-white/70 dark:bg-surface-800/60 backdrop-blur-md p-3 sm:p-4 rounded-card border border-surface-200 dark:border-surface-700 shadow-card">
         <div className="lg:col-span-5 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400" size={20} />
           <input 
             type="text"
             placeholder={t('questionBank.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => {setSearchQuery(e.target.value); setPage(1);}}
-            className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border-none rounded-2xl focus:ring-4 focus:ring-indigo-500/10 font-medium outline-none"
+            className="w-full pl-12 pr-4 py-4 bg-white dark:bg-surface-900 border-none rounded-2xl focus:ring-4 focus:ring-teal-500/15 font-medium outline-none"
           />
         </div>
         <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
@@ -539,7 +541,7 @@ export default function QuestionBank() {
           <FilterSelect icon={<Sparkles size={14}/>} value={filters.source} onChange={(v) => { setFilters({ ...filters, source: v }); setPage(1); }} options={sourceFilterOptions()} />
         </div>
       </div>
-      <p className="text-xs text-slate-400 px-1 lg:hidden">{t('questionBank.filterScrollHint')}</p>
+      <p className="text-xs text-surface-400 px-1 lg:hidden">{t('questionBank.filterScrollHint')}</p>
 
       {/* Approval gate */}
       {profile.branchApproval !== 'approved' && (
@@ -582,8 +584,8 @@ export default function QuestionBank() {
               <Fragment key={q._id}>
                 {showTopicHeading && (
                   <div className={`flex items-center gap-3 px-2 ${idx === 0 ? '' : 'mt-8 pt-2 border-t border-slate-100 dark:border-slate-800'}`}>
-                    <LayoutGrid size={16} className="text-violet-500 shrink-0" />
-                    <span className="text-[11px] font-black uppercase tracking-widest text-violet-700 dark:text-violet-300">
+                    <LayoutGrid size={16} className="text-sky-500 shrink-0" />
+                    <span className="text-[11px] font-black uppercase tracking-widest text-sky-700 dark:text-sky-300">
                       {topicLine}
                     </span>
                   </div>
@@ -629,7 +631,7 @@ export default function QuestionBank() {
         <div className="flex justify-center items-center gap-4 mt-12">
           <PaginationButton onClick={() => setPage(p => p - 1)} disabled={page === 1} icon={<ChevronLeft size={20}/>} ariaLabel={t('questionBank.pagePrev')} />
           <span className="text-sm font-black text-slate-400 uppercase tracking-widest px-4">
-            Sayfa <span className="text-indigo-600">{page}</span> / {totalPages}
+            Sayfa <span className="text-teal-600">{page}</span> / {totalPages}
           </span>
           <PaginationButton onClick={() => setPage(p => p + 1)} disabled={page === totalPages} icon={<ChevronRight size={20}/>} ariaLabel={t('questionBank.pageNext')} />
         </div>
@@ -705,18 +707,18 @@ export default function QuestionBank() {
         />
       )}
       <ConfirmDialog />
-    </div>
+    </TeacherPageShell>
   );
 }
 
 // --- Yardımcı Küçük Bileşenler ---
 const FilterSelect = ({ icon, value, onChange, options }) => (
   <div className="relative group">
-    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-500 group-hover:scale-110 transition-transform">{icon}</div>
+    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-teal-600 group-hover:scale-110 transition-transform">{icon}</div>
     <select 
       value={value} 
       onChange={(e) => onChange(e.target.value)}
-      className="w-full pl-9 pr-4 py-3 bg-white dark:bg-slate-900 border-none rounded-xl text-[10px] font-black uppercase tracking-wider outline-none cursor-pointer hover:bg-slate-50 transition-colors shadow-sm"
+      className="w-full pl-9 pr-4 py-3 bg-white dark:bg-surface-900 border-none rounded-xl text-[10px] font-black uppercase tracking-wider outline-none cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors shadow-sm"
     >
       {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
     </select>
@@ -729,7 +731,7 @@ const PaginationButton = ({ onClick, disabled, icon, ariaLabel }) => (
     onClick={onClick} 
     disabled={disabled}
     aria-label={ariaLabel}
-    className="p-3 bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-100 dark:border-slate-700 text-slate-500 hover:border-indigo-600 hover:text-indigo-600 disabled:opacity-20 transition-all shadow-sm active:scale-95"
+    className="p-3 bg-white dark:bg-surface-800 rounded-xl border-2 border-surface-100 dark:border-surface-700 text-surface-500 hover:border-teal-600 hover:text-teal-700 disabled:opacity-20 transition-all shadow-sm active:scale-95"
   >
     {icon}
   </button>

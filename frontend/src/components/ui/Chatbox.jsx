@@ -154,7 +154,7 @@ const Chatbox = ({ lang: langProp, onLoginClick }) => {
             aria-label={locale === 'EN' ? 'Close chat' : 'Sohbeti kapat'}
           />
           <div className="relative z-10 mx-3 mb-3 sm:mx-0 sm:mb-4 w-auto sm:w-80 md:w-96 max-h-[min(85vh,640px)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col animate-scale-in origin-bottom-right flex-1 sm:flex-none min-h-0">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white">
+            <div className="bg-gradient-to-r from-teal-600 to-sky-600 p-4 text-white">
               <div className="flex justify-between items-start gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="bg-white/20 p-2 rounded-xl shrink-0">
@@ -162,8 +162,8 @@ const Chatbox = ({ lang: langProp, onLoginClick }) => {
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-bold text-sm truncate">{t('chat.title')}</h3>
-                    <p className="text-xs text-indigo-100 truncate">{t('chat.subtitle')}</p>
-                    <p className="text-xs text-indigo-100/90 flex items-center gap-1.5 flex-wrap mt-0.5">
+                    <p className="text-xs text-teal-100 truncate">{t('chat.subtitle')}</p>
+                    <p className="text-xs text-teal-100/90 flex items-center gap-1.5 flex-wrap mt-0.5">
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${isGuest ? 'bg-amber-300' : 'bg-green-400 animate-pulse'}`}
                         aria-hidden
@@ -182,7 +182,7 @@ const Chatbox = ({ lang: langProp, onLoginClick }) => {
                   <X size={20} />
                 </button>
               </div>
-              <p className="mt-2 text-[11px] text-indigo-100/90 leading-snug">
+              <p className="mt-2 text-[11px] text-teal-100/90 leading-snug">
                 {t('chat.privacyNote')}{' '}
                 <Link to="/legal/privacy" className="underline font-semibold hover:text-white">
                   {t('chat.privacyLink')}
@@ -194,14 +194,14 @@ const Chatbox = ({ lang: langProp, onLoginClick }) => {
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {msg.sender === 'bot' && (
-                    <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center mr-2 shrink-0 mt-0.5">
-                      <Bot size={14} className="text-indigo-600 dark:text-indigo-400" aria-hidden />
+                    <div className="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-950 flex items-center justify-center mr-2 shrink-0 mt-0.5">
+                      <Bot size={14} className="text-teal-600 dark:text-teal-400" aria-hidden />
                     </div>
                   )}
                   <div
                     className={`max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed ${
                       msg.sender === 'user'
-                        ? 'bg-indigo-600 text-white rounded-br-none'
+                        ? 'bg-teal-600 text-white rounded-br-none'
                         : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-bl-none shadow-sm'
                     }`}
                   >
@@ -212,8 +212,8 @@ const Chatbox = ({ lang: langProp, onLoginClick }) => {
 
               {isTyping && (
                 <div className="flex justify-start items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center shrink-0">
-                    <Bot size={14} className="text-indigo-600 dark:text-indigo-400" aria-hidden />
+                  <div className="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-950 flex items-center justify-center shrink-0">
+                    <Bot size={14} className="text-teal-600 dark:text-teal-400" aria-hidden />
                   </div>
                   <div className="bg-white dark:bg-slate-800 px-3 py-2 rounded-2xl rounded-bl-none border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0ms]" />
@@ -233,7 +233,7 @@ const Chatbox = ({ lang: langProp, onLoginClick }) => {
                     type="button"
                     onClick={() => dispatchMessage(chip.message)}
                     disabled={isTyping}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors disabled:opacity-50"
+                    className="text-xs font-semibold px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border border-teal-100 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors disabled:opacity-50"
                   >
                     {chip.label}
                   </button>
@@ -247,7 +247,7 @@ const Chatbox = ({ lang: langProp, onLoginClick }) => {
                 <button
                   type="button"
                   onClick={handleLogin}
-                  className="shrink-0 font-bold text-indigo-700 dark:text-indigo-300 hover:underline"
+                  className="shrink-0 font-bold text-teal-700 dark:text-teal-300 hover:underline"
                 >
                   {t('chat.loginCta')}
                 </button>
@@ -261,7 +261,7 @@ const Chatbox = ({ lang: langProp, onLoginClick }) => {
               <input
                 type="text"
                 placeholder={t('chat.placeholder')}
-                className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white px-4 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white px-4 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 aria-label={t('chat.placeholder')}
@@ -269,7 +269,7 @@ const Chatbox = ({ lang: langProp, onLoginClick }) => {
               <button
                 type="submit"
                 disabled={!input.trim() || isTyping}
-                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white p-2 rounded-xl transition-colors"
+                className="bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white p-2 rounded-xl transition-colors"
                 aria-label={t('chat.send')}
               >
                 {isTyping ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
@@ -291,7 +291,7 @@ const Chatbox = ({ lang: langProp, onLoginClick }) => {
           className={`group flex items-center gap-2 transition-all duration-300 ${
             isOpen
               ? 'w-14 h-14 min-h-[56px] min-w-[56px] rounded-full bg-slate-800 justify-center'
-              : 'pl-4 pr-5 py-3 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:scale-105 shadow-lg hover:shadow-indigo-500/30'
+              : 'pl-4 pr-5 py-3 rounded-full bg-gradient-to-r from-teal-600 to-sky-600 hover:scale-105 shadow-lg hover:shadow-teal-500/30'
           }`}
           aria-label={isOpen ? (locale === 'EN' ? 'Close assistant' : 'Asistanı kapat') : t('chat.title')}
         >

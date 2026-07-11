@@ -32,7 +32,7 @@ function LogoMark({ scrolled, onNavigateHome }) {
       type="button"
       onClick={onNavigateHome}
       className="flex-shrink-0 flex items-center cursor-pointer group text-left"
-      aria-label="Edumath ana sayfa"
+      aria-label="Matova ana sayfa"
     >
       {failed ? (
         <div
@@ -56,7 +56,7 @@ function LogoMark({ scrolled, onNavigateHome }) {
       <span
         className={`ml-3 font-bold text-2xl tracking-tight ${scrolled ? 'text-surface-900 dark:text-white' : 'text-brand-900 dark:text-white'}`}
       >
-        Edu<span className="text-brand-600 dark:text-brand-400">math</span>
+        Mato<span className="text-brand-600 dark:text-brand-400">va</span>
       </span>
     </button>
   );

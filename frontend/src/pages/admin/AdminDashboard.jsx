@@ -4,28 +4,28 @@ import { ArrowUpRight, Loader2 } from 'lucide-react';
 import adminService from '../../services/adminService';
 import { admin as a } from '../../components/admin/adminUi';
 
-const StatCard = ({ label, value, onClick, accent = 'violet' }) => {
+const StatCard = ({ label, value, onClick, accent = 'teal' }) => {
   const bars = {
-    violet: 'from-violet-500 via-indigo-500 to-indigo-600',
+    teal: 'from-teal-500 via-sky-500 to-sky-600',
     emerald: 'from-emerald-400 via-teal-500 to-teal-600',
     slate: 'from-slate-500 via-slate-600 to-slate-800',
   };
   const shell = [
     'group relative w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-md shadow-slate-200/20 transition-all dark:border-slate-700 dark:bg-slate-900/75 dark:shadow-none',
     onClick
-      ? 'cursor-pointer hover:-translate-y-0.5 hover:border-violet-300/60 hover:shadow-xl hover:shadow-violet-500/10 dark:hover:border-violet-500/25'
+      ? 'cursor-pointer hover:-translate-y-0.5 hover:border-teal-300/60 hover:shadow-xl hover:shadow-teal-500/10 dark:hover:border-teal-500/25'
       : '',
   ].join(' ');
   const inner = (
     <>
-      <div className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${bars[accent] || bars.violet}`} />
+      <div className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${bars[accent] || bars.teal}`} />
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</div>
           <div className="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white">{value}</div>
         </div>
         {onClick && (
-          <span className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition group-hover:bg-violet-100 group-hover:text-violet-700 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-violet-950 dark:group-hover:text-violet-300">
+          <span className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition group-hover:bg-teal-100 group-hover:text-teal-700 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-teal-950 dark:group-hover:text-teal-300">
             <ArrowUpRight className="h-4 w-4" />
           </span>
         )}
@@ -103,7 +103,7 @@ const AdminDashboard = () => {
 
       {loading ? (
         <div className={a.loadingBox}>
-          <Loader2 className="mr-2 h-5 w-5 animate-spin text-violet-600" />
+          <Loader2 className="mr-2 h-5 w-5 animate-spin text-teal-600" />
           Veriler yükleniyor…
         </div>
       ) : (
@@ -113,7 +113,7 @@ const AdminDashboard = () => {
               label="Bekleyen sıfırlama talepleri"
               value={m.pendingResetCount ?? '—'}
               onClick={() => navigate('/admin/reset-requests')}
-              accent="violet"
+              accent="teal"
             />
             <StatCard
               label="Bekleyen kullanıcı onayları"

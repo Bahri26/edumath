@@ -357,13 +357,13 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       aria-label="Akıllı görsel analiz"
       onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
     >
-      <div className="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95">
+      <div className="bg-white dark:bg-surface-800 w-full max-w-4xl rounded-[2rem] shadow-soft overflow-hidden flex flex-col animate-scale-in border border-surface-200/60 dark:border-surface-700">
 
-        <div className="p-6 bg-indigo-600 text-white flex justify-between items-center">
+        <div className="p-6 bg-gradient-to-r from-teal-700 to-sky-700 text-white flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-xl"><Sparkles className={loading ? 'animate-spin' : ''} /></div>
             <div>
-              <h3 className="text-xl font-black">Akıllı Yapıştır</h3>
+              <h3 className="font-display text-xl font-semibold">Akıllı Yapıştır</h3>
               <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest">
                 {step === 'upload' ? 'Görsel → analiz → çözüm' : `${parseModeLabel(parseMode)} · doğrulama`}
               </p>
@@ -382,18 +382,18 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
-                className={`relative flex flex-col items-center justify-center w-full h-80 border-4 border-dashed rounded-[3rem] cursor-pointer transition-all group ${
+                className={`relative flex flex-col items-center justify-center w-full h-80 border-4 border-dashed rounded-[2rem] cursor-pointer transition-all group ${
                   dragOver
-                    ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30'
-                    : 'border-slate-100 dark:border-slate-700 hover:border-indigo-300 hover:bg-indigo-50/30'
+                    ? 'border-teal-500 bg-teal-50/50 dark:bg-teal-950/30'
+                    : 'border-surface-200 dark:border-surface-700 hover:border-teal-300 hover:bg-teal-50/30'
                 }`}
                 onClick={() => fileInputRef.current?.click()}
               >
                 <div className="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
-                  <div className="p-5 bg-indigo-50 dark:bg-indigo-900/30 rounded-full mb-4 group-hover:scale-110 transition-transform">
-                    {dragOver ? <ClipboardPaste className="text-indigo-600" size={48} /> : <ImageIcon className="text-indigo-600" size={48} />}
+                  <div className="p-5 bg-teal-50 dark:bg-teal-900/30 rounded-full mb-4 group-hover:scale-110 transition-transform">
+                    {dragOver ? <ClipboardPaste className="text-teal-600" size={48} /> : <ImageIcon className="text-teal-600" size={48} />}
                   </div>
-                  <p className="mb-2 text-lg font-black text-slate-700 dark:text-slate-200">
+                  <p className="mb-2 text-lg font-display font-semibold text-surface-800 dark:text-surface-200">
                     Soru görselini buraya bırakın veya yapıştırın
                   </p>
                   <p className="text-sm text-slate-400 font-medium text-center px-10">
@@ -401,7 +401,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                     <br />
                     Sistem OCR ile okur, soruyu çözer ve doğru şıkkı işaretler.
                   </p>
-                  <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-indigo-500">
+                  <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-teal-600">
                     Ctrl+V · sürükle-bırak · dosya seç
                   </p>
                 </div>
@@ -414,7 +414,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                 />
               </div>
               {loading && (
-                <div className="flex items-center justify-center gap-3 text-indigo-600 font-bold animate-pulse">
+                <div className="flex items-center justify-center gap-3 text-teal-600 font-bold animate-pulse">
                   <Loader2 className="animate-spin" /> OCR, çözüm ve şık işaretleme…
                 </div>
               )}
@@ -471,13 +471,13 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                   </section>
                 ) : null}
 
-                <section className="rounded-[1.75rem] border-2 border-indigo-200/90 bg-indigo-50/30 dark:bg-indigo-950/20 p-5 space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-indigo-800 dark:text-indigo-200">2 · Soru metni</p>
+                <section className="rounded-[1.75rem] border-2 border-teal-200/90 bg-teal-50/30 dark:bg-teal-950/20 p-5 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-teal-800 dark:text-teal-200">2 · Soru metni</p>
                   <textarea
                     value={parsedData.questionText}
                     onChange={(e) => setParsedData({ ...parsedData, questionText: e.target.value })}
                     rows={4}
-                    className="w-full p-4 bg-white/90 dark:bg-slate-900 border-none rounded-[1.25rem] font-medium outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full p-4 bg-white/90 dark:bg-slate-900 border-none rounded-[1.25rem] font-medium outline-none focus:ring-2 focus:ring-teal-500"
                     placeholder="Buna göre örüntünün 42. adımında kaç tane altıgen vardır?"
                   />
                 </section>

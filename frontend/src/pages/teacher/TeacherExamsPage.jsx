@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Plus, FileText, Trash2, Eye, Search,
   Clock, Award, Layers, Save,
-  ChevronLeft, ChevronRight, Calendar, ArrowLeft, GripVertical, BarChart3,
+  ChevronLeft, ChevronRight, Calendar, ArrowLeft, GripVertical, BarChart3, Sparkles,
 } from 'lucide-react';
 import apiClient, { resolveAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -17,7 +17,9 @@ import Card from '../../components/ui/Card.jsx';
 import Select from '../../components/ui/Select.jsx';
 import ExamPreviewModal from '../../components/exams/ExamPreviewModal.jsx';
 import ExamResultsModal from '../../components/exams/ExamResultsModal.jsx';
+import CreateExamModal from '../../components/exams/CreateExamModal.jsx';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
+import TeacherPageShell from '../../components/teacher/TeacherPageShell.jsx';
 
 // --- Alt Bileşenler (Stüdyo için) ---
 
@@ -120,6 +122,7 @@ export default function TeacherExamsPage() {
   const [poolLoading, setPoolLoading] = useState(false);
   const [previewId, setPreviewId] = useState(null);
   const [resultsId, setResultsId] = useState(null);
+  const [showQuickExam, setShowQuickExam] = useState(false);
 
   // Stüdyo State'leri
   const [examName, setExamName] = useState('');
@@ -559,7 +562,11 @@ export default function TeacherExamsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <TeacherPageShell
+      maxWidthClass="max-w-6xl"
+      title="Sınavlar"
+      subtitle={`Toplam ${examTotal} sınav`}
+    >
       {profile.branchApproval !== 'approved' && (
         <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100 text-sm">
           <p className="font-medium">
@@ -574,51 +581,56 @@ export default function TeacherExamsPage() {
         </div>
       )}
 
-      <header className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
-          <FileText size={28} className="text-brand-600 shrink-0" aria-hidden />
-          Sınavlar
-        </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Toplam <strong className="text-slate-700 dark:text-slate-200">{examTotal}</strong> sınav
-        </p>
-      </header>
-
-      <Card className="p-5 border border-slate-200 dark:border-slate-600">
+      <Card className="p-5 border border-surface-200 dark:border-surface-600" interactive>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Sınav oluştur</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Soru bankasından 7 kolay, 7 orta, 7 zor soru seçerek sınav hazırlayın.
+            <h2 className="font-display text-lg font-semibold text-surface-900 dark:text-white">Sınav oluştur</h2>
+            <p className="text-sm text-surface-500 dark:text-surface-400 mt-1">
+              Manuel 7-7-7 stüdyosu veya havuzdan otomatik akıllı sınav.
             </p>
           </div>
-          <Button
-            variant="primary"
-            size="md"
-            icon={Plus}
-            className="shrink-0 min-h-[44px]"
-            onClick={() => {
-              setExamName('');
-              setEasyQ([]);
-              setMediumQ([]);
-              setHardQ([]);
-              setView('studio');
-            }}
-          >
-            Sınav oluştur
-          </Button>
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="md"
+              icon={Sparkles}
+              className="min-h-[44px] border-teal-600 text-teal-700"
+              disabled={profile.branchApproval !== 'approved'}
+              title={profile.branchApproval !== 'approved' ? 'Branş onayı gerekli' : undefined}
+              onClick={() => setShowQuickExam(true)}
+            >
+              Akıllı Sınav
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              icon={Plus}
+              className="min-h-[44px]"
+              disabled={profile.branchApproval !== 'approved'}
+              title={profile.branchApproval !== 'approved' ? 'Branş onayı gerekli' : undefined}
+              onClick={() => {
+                setExamName('');
+                setEasyQ([]);
+                setMediumQ([]);
+                setHardQ([]);
+                setView('studio');
+              }}
+            >
+              Sınav oluştur
+            </Button>
+          </div>
         </div>
       </Card>
 
-      <Card className="p-4 flex flex-col md:flex-row gap-4 md:items-end md:justify-between border border-slate-200 dark:border-slate-600">
+      <Card className="p-4 flex flex-col md:flex-row gap-4 md:items-end md:justify-between border border-surface-200 dark:border-surface-600">
         <div className="relative flex-1 w-full md:max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" aria-hidden />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 pointer-events-none" aria-hidden />
           <input
             type="text"
             value={examSearch}
             onChange={(e) => setExamSearch(e.target.value)}
             placeholder="Sınav başlığında ara…"
-            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-white text-sm"
+            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-surface-200 dark:border-surface-600 dark:bg-surface-900 dark:text-white text-sm"
           />
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -767,7 +779,13 @@ export default function TeacherExamsPage() {
       </div>
       {previewId && <ExamPreviewModal examId={previewId} onClose={() => setPreviewId(null)} />}
       {resultsId && <ExamResultsModal examId={resultsId} onClose={() => setResultsId(null)} />}
+      {showQuickExam && (
+        <CreateExamModal
+          onClose={() => setShowQuickExam(false)}
+          onSuccess={fetchExams}
+        />
+      )}
       <ConfirmDialog />
-    </div>
+    </TeacherPageShell>
   );
 }

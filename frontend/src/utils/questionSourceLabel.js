@@ -40,7 +40,7 @@ export function getQuestionSourceMeta(question, lang = 'TR') {
       label: lang === 'EN' ? 'AI' : 'AI',
       detail: methodMap[method] || (method ? String(method) : lang === 'EN' ? 'Generated' : 'Üretildi'),
       badgeClass:
-        'bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-950/50 dark:text-violet-200 dark:border-violet-800/50',
+        'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-950/50 dark:text-sky-200 dark:border-sky-800/50',
       icon: 'sparkles',
     };
   }

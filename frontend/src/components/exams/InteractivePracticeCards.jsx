@@ -66,7 +66,7 @@ export const SequencePracticeCard = ({ question, state, onMove, examMode = false
         return (
           <div key={itemId} className="flex items-center justify-between gap-3 rounded-xl bg-white dark:bg-slate-800 p-3 border border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-3">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm">{index + 1}</span>
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-teal-100 text-teal-700 font-bold text-sm">{index + 1}</span>
               <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{item?.label}</span>
             </div>
             {!isLocked && (
@@ -79,7 +79,7 @@ export const SequencePracticeCard = ({ question, state, onMove, examMode = false
         );
       })}
       {!isLocked ? (
-        <button type="button" onClick={() => onMove(-1, 0, currentOrder, true)} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white">{examMode ? 'Sırayı Kilitle (Gönderim İçin)' : 'Sıralamayı Kontrol Et'}</button>
+        <button type="button" onClick={() => onMove(-1, 0, currentOrder, true)} className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white">{examMode ? 'Sırayı Kilitle (Gönderim İçin)' : 'Sıralamayı Kontrol Et'}</button>
       ) : (
         <div className={`rounded-xl p-4 text-sm ${examMode ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200' : (isCorrect ? 'bg-green-100 text-green-800' : 'bg-rose-100 text-rose-800')}`}>
           <strong>{examMode ? 'Sıra kaydedildi.' : (isCorrect ? 'Sıralama doğru.' : 'Sıralama hatalı.')}</strong>

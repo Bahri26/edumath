@@ -36,14 +36,14 @@ export default function GuideDrawer({ audience = 'student', open, onClose }) {
         className={`absolute right-0 top-0 flex h-full w-full max-w-lg flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-slate-900 dark:shadow-black/40 border-l border-slate-200/80 dark:border-slate-700 ${open ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="relative overflow-hidden border-b border-slate-200 dark:border-slate-700">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 opacity-[0.12] dark:opacity-[0.18]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-teal-600 via-sky-600 to-cyan-500 opacity-[0.12] dark:opacity-[0.18]" />
           <div className="relative flex items-start justify-between gap-3 px-5 py-5 sm:px-6">
             <div className="flex min-w-0 items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/90 text-indigo-600 shadow-md ring-1 ring-indigo-100 dark:bg-slate-800 dark:text-indigo-300 dark:ring-indigo-900/50">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/90 text-teal-600 shadow-md ring-1 ring-teal-100 dark:bg-slate-800 dark:text-teal-300 dark:ring-teal-900/50">
                 <BookOpen size={22} aria-hidden />
               </div>
               <div className="min-w-0 pt-0.5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-600/90 dark:text-indigo-300/90">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-teal-600/90 dark:text-teal-300/90">
                   {lang === 'EN' ? 'Quick guide' : 'Hızlı kılavuz'}
                 </p>
                 <h2 id="guide-drawer-title" className="text-lg font-bold leading-snug text-slate-900 dark:text-white">

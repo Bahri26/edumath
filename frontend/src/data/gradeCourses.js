@@ -2,7 +2,7 @@
 // Lightweight seed data to drive the Courses page by student grade
 
 const colors = [
-  'bg-indigo-500', 'bg-emerald-500', 'bg-rose-500', 'bg-amber-500', 'bg-blue-500', 'bg-fuchsia-500',
+  'bg-teal-500', 'bg-emerald-500', 'bg-rose-500', 'bg-amber-500', 'bg-sky-500', 'bg-cyan-500',
 ];
 
 function make(id, grade, title, opts = {}) {

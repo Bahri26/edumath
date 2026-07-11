@@ -5,7 +5,7 @@ const ExamCard = ({ exam, role, onStart, onDelete }) => {
   return (
     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all group">
       <div className="flex justify-between items-start mb-4">
-        <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-xl">
+        <div className="p-3 bg-teal-50 dark:bg-teal-900/30 text-teal-600 rounded-xl">
           <FileText size={24} />
         </div>
         {role === 'teacher' && (
@@ -28,7 +28,7 @@ const ExamCard = ({ exam, role, onStart, onDelete }) => {
         </span>
       </div>
       {role === 'student' ? (
-        <button onClick={() => onStart(exam)} className="w-full bg-indigo-600 text-white py-2.5 rounded-xl font-medium hover:bg-indigo-700 flex items-center justify-center gap-2">
+        <button onClick={() => onStart(exam)} className="w-full bg-teal-600 text-white py-2.5 rounded-xl font-medium hover:bg-teal-700 flex items-center justify-center gap-2">
           <Play size={18} /> Başla
         </button>
       ) : (

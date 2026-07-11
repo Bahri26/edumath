@@ -24,6 +24,8 @@ import { LanguageContext } from '../../context/LanguageContext';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { getClassReports } from '../../services/teacherService';
+import TeacherPageShell from '../../components/teacher/TeacherPageShell.jsx';
+import Button from '../../components/ui/Button.jsx';
 
 const RANGE_OPTIONS = [7, 30, 90, 180];
 
@@ -166,7 +168,7 @@ const TeacherReports = () => {
     const s = reportData?.summary;
     if (!s) {
       return [
-        { title: dict.classAvg, value: '—', icon: BarChart2, color: 'indigo' },
+        { title: dict.classAvg, value: '—', icon: BarChart2, color: 'teal' },
         { title: dict.examParticipation, value: '—', icon: Users, color: 'blue' },
         { title: dict.topTopic, value: '—', icon: CheckCircle, color: 'green' },
         { title: dict.needsSupport, value: '—', icon: AlertCircle, color: 'red' },
@@ -187,7 +189,7 @@ const TeacherReports = () => {
             ? `${dict.classAvg}: ${s.classAverage}`
             : undefined,
         icon: BarChart2,
-        color: 'indigo',
+        color: 'teal',
       },
       {
         title: dict.examParticipation,
@@ -222,12 +224,12 @@ const TeacherReports = () => {
 
   const getColorClass = (color) => {
     const colorMap = {
-      indigo: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400',
+      teal: 'bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400',
       blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
       green: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
       red: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400',
     };
-    return colorMap[color] || colorMap.indigo;
+    return colorMap[color] || colorMap.teal;
   };
 
   const topicRows = reportData?.topicPerformance?.length
@@ -254,12 +256,11 @@ const TeacherReports = () => {
   }, []);
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{getText('title')}</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">{getText('subtitle')}</p>
-        </div>
+    <TeacherPageShell
+      maxWidthClass="max-w-6xl"
+      title={getText('title')}
+      subtitle={getText('subtitle')}
+      headerAside={(
         <div className="flex gap-3">
           <div className="relative" ref={periodRef}>
             <button
@@ -268,7 +269,7 @@ const TeacherReports = () => {
                 e.stopPropagation();
                 setPeriodOpen((o) => !o);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 shadow-sm min-h-[44px]"
             >
               <Calendar size={16} />
               {periodLabel}
@@ -281,7 +282,7 @@ const TeacherReports = () => {
                     key={d}
                     type="button"
                     className={`block w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 ${
-                      rangeDays === d ? 'text-indigo-600 font-semibold' : 'text-slate-700 dark:text-slate-200'
+                      rangeDays === d ? 'text-teal-600 font-semibold' : 'text-slate-700 dark:text-slate-200'
                     }`}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -295,17 +296,12 @@ const TeacherReports = () => {
               </div>
             )}
           </div>
-          <button
-            type="button"
-            onClick={printReport}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium shadow-md shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 transition-colors"
-          >
-            <Download size={16} />
+          <Button variant="success" size="md" onClick={printReport} icon={Download}>
             {getText('downloadPDF')}
-          </button>
+          </Button>
         </div>
-      </div>
-
+      )}
+    >
       <div id="teacher-report-print" className="space-y-6">
         {reportsLoading ? (
           <div className="flex items-center gap-2 text-slate-500 text-sm py-6">
@@ -389,10 +385,10 @@ const TeacherReports = () => {
                       <div
                         className={`h-full rounded-full transition-all duration-700 ${
                           item.poolShare >= 35
-                            ? 'bg-indigo-500'
+                            ? 'bg-teal-500'
                             : item.poolShare >= 20
-                              ? 'bg-indigo-400'
-                              : 'bg-indigo-300'
+                              ? 'bg-teal-400'
+                              : 'bg-teal-300'
                         }`}
                         style={{ width: `${Math.min(100, item.poolShare)}%` }}
                       />
@@ -418,7 +414,7 @@ const TeacherReports = () => {
                   <Link
                     key={student._id}
                     to={`/teacher/student-progress?student=${student._id}`}
-                    className="block p-4 rounded-xl bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors"
+                    className="block p-4 rounded-xl bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 hover:border-teal-300 dark:hover:border-teal-600 transition-colors"
                   >
                     <div className="flex justify-between items-start">
                       <div>
@@ -436,7 +432,7 @@ const TeacherReports = () => {
               )}
               <Link
                 to="/teacher/student-progress"
-                className="block w-full py-2 text-center text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium"
+                className="block w-full py-2 text-center text-sm text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 font-medium"
               >
                 {getText('viewAll')} → {getText('studentProgress')}
               </Link>
@@ -467,7 +463,7 @@ const TeacherReports = () => {
                 onClick={() => setRangeDays(d)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                   rangeDays === d
-                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    ? 'bg-teal-600 text-white border-teal-600'
                     : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                 }`}
               >
@@ -562,8 +558,7 @@ const TeacherReports = () => {
             : 'İpucu artık öğrenciye otomatik gösterilmez; öğrenci açıkça "İpucu al" düğmesine bastığında kaydedilir. Bu rapor, sınıfın hangi konularda eksiği olduğunu görmenizi sağlar.'}
         </p>
       </div>
-      </div>
-    </div>
+    </TeacherPageShell>
   );
 };
 

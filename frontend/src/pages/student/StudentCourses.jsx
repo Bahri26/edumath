@@ -148,7 +148,7 @@ const StudentCourses = () => {
         <div className="space-y-10">
           {patternCourses.length > 0 && (
             <section>
-              <h2 className="text-lg font-bold text-violet-700 dark:text-violet-300 mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-bold text-teal-700 dark:text-teal-300 mb-4 flex items-center gap-2">
                 🧩 {getText('patternSection')}
               </h2>
               {renderGrid(patternCourses)}

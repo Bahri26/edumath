@@ -60,7 +60,7 @@ const ExamResult = ({ result, onBack }) => {
               <button 
                 onClick={handleGeneratePractice} 
                 disabled={loadingAI}
-                className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-200 dark:shadow-none disabled:bg-purple-400"
+                className="w-full mt-4 bg-sky-600 hover:bg-sky-700 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-sky-200 dark:shadow-none disabled:bg-sky-400"
               >
                 {loadingAI ? (
                   <>

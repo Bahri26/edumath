@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* --- Design tokens --- */
+:root {
+  --edu-ink: #0f172a;
+  --edu-muted: #64748b;
+  --edu-canvas: #f4faf8;
+  --edu-surface: #ffffff;
+  --edu-accent: #0d9488;
+  --edu-accent-2: #0284c7;
+  --edu-warm: #d97706;
+  --edu-ring: #14b8a6;
+  --edu-radius-card: 1.25rem;
+  --font-sans: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+}
+
+.dark {
+  --edu-ink: #f8fafc;
+  --edu-muted: #94a3b8;
+  --edu-canvas: #0b1220;
+  --edu-surface: #0f172a;
+  --edu-accent: #2dd4bf;
+  --edu-accent-2: #38bdf8;
+  --edu-warm: #fbbf24;
+  --edu-ring: #2dd4bf;
+}
+
 /* --- Global HTML/Body Reset --- */
 @layer base {
   html, body {
@@ -11,10 +37,23 @@
     height: 100%;
     overflow-x: hidden;
   }
-  
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--edu-ink);
+    background-color: var(--edu-canvas);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
   #root {
     width: 100%;
     height: 100%;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
 
   :focus:not(:focus-visible) {
@@ -22,12 +61,12 @@
   }
 
   :focus-visible {
-    outline: 2px solid theme('colors.brand.500');
+    outline: 2px solid var(--edu-ring);
     outline-offset: 2px;
   }
 }
 
-/* --- Custom Scrollbar --- */
+/* --- Custom Scrollbar & a11y --- */
 @layer utilities {
   .skip-link {
     position: absolute;
@@ -60,7 +99,7 @@
     font-size: 0.875rem;
     line-height: 1.25rem;
     box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    outline: 2px solid theme('colors.brand.500');
+    outline: 2px solid var(--edu-ring);
     outline-offset: 2px;
   }
 
@@ -73,25 +112,40 @@
     scrollbar-width: thin;
     scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background-color: rgba(100, 116, 139, 0.5);
     border-radius: 4px;
     border: 2px solid transparent;
     background-clip: content-box;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: rgba(100, 116, 139, 0.8);
+  }
+
+  .edu-mesh {
+    background-color: var(--edu-canvas);
+    background-image:
+      radial-gradient(at 12% 18%, rgb(45 212 191 / 0.14) 0px, transparent 45%),
+      radial-gradient(at 88% 8%, rgb(14 165 233 / 0.12) 0px, transparent 42%),
+      radial-gradient(at 70% 78%, rgb(251 191 36 / 0.1) 0px, transparent 48%);
+  }
+
+  .dark .edu-mesh {
+    background-image:
+      radial-gradient(at 12% 18%, rgb(45 212 191 / 0.08) 0px, transparent 45%),
+      radial-gradient(at 88% 8%, rgb(56 189 248 / 0.07) 0px, transparent 42%),
+      radial-gradient(at 70% 78%, rgb(251 191 36 / 0.06) 0px, transparent 48%);
   }
 }
 
@@ -99,6 +153,26 @@
 @layer utilities {
   .animate-scale-in {
     animation: scaleIn 0.3s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.45s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out forwards;
+  }
+
+  .animate-bounce-slow {
+    animation: bounceSlow 2.8s ease-in-out infinite;
+  }
+
+  .animate-pulse-soft {
+    animation: pulseSoft 1.6s ease-in-out infinite;
+  }
+
+  .animate-in {
+    animation: fadeIn 0.35s ease-out forwards;
   }
 }
 
@@ -110,5 +184,45 @@
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceSlow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pulseSoft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
   }
 }

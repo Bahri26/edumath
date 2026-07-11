@@ -30,7 +30,7 @@ const ResetPassword = () => {
         <input className="w-full border p-3 rounded" placeholder="E-posta" value={email} onChange={e=>setEmail(e.target.value)} />
         <input className="w-full border p-3 rounded" placeholder="Token" value={token} onChange={e=>setToken(e.target.value)} />
         <input className="w-full border p-3 rounded" type="password" placeholder="Yeni Şifre" value={newPassword} onChange={e=>setNewPassword(e.target.value)} />
-        <button className="w-full bg-indigo-600 text-white p-3 rounded" disabled={loading}>
+        <button className="w-full bg-teal-600 text-white p-3 rounded" disabled={loading}>
           {loading ? 'Gönderiliyor...' : 'Şifreyi Güncelle'}
         </button>
       </form>

@@ -159,7 +159,7 @@ function buildImageSolution(ocrText) {
 function chatReply(message) {
   const m = String(message || '').toLowerCase();
   if (/merhaba|selam|hey/.test(m)) {
-    return 'Merhaba! EduMath yerel asistanıyım. Dersler, ödevler veya çalışma merkezi hakkında sorabilirsin.';
+    return 'Merhaba! Matova yerel asistanıyım. Dersler, ödevler veya çalışma merkezi hakkında sorabilirsin.';
   }
   if (/ödev|odev|assignment/.test(m)) {
     return 'Ödevler menüsünden bekleyen görevlerini görebilir ve teslim edebilirsin.';

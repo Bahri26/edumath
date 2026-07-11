@@ -172,8 +172,8 @@ const DashboardLayout = ({
   };
 
   const shellBg = studentKid
-    ? 'bg-gradient-to-b from-kid-canvasFrom via-kid-canvasVia to-kid-canvasTo dark:from-kid-canvasFromDark dark:via-kid-canvasViaDark dark:to-kid-canvasToDark'
-    : 'bg-surface-50 dark:bg-surface-900';
+    ? 'edu-mesh bg-gradient-to-b from-kid-canvasFrom via-kid-canvasVia to-kid-canvasTo dark:from-kid-canvasFromDark dark:via-kid-canvasViaDark dark:to-kid-canvasToDark'
+    : 'edu-mesh bg-surface-50 dark:bg-surface-900';
 
   const headerBg = studentKid
     ? 'bg-white/85 dark:bg-surface-900/90 backdrop-blur-xl border-kid-rail/60 dark:border-surface-700/80'

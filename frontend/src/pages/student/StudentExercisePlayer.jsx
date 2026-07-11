@@ -233,6 +233,7 @@ export default function StudentExercisePlayer() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {(currentQ.options || []).map((opt, i) => {
           const text = optionText(opt);
+          const image = typeof opt === 'object' ? String(opt.image || '') : '';
           const letter = String.fromCharCode(65 + i);
           const selected = draftAnswer === text;
           return (
@@ -243,12 +244,15 @@ export default function StudentExercisePlayer() {
               onClick={() => setDraftAnswer(text)}
               className={`p-4 rounded-2xl border-2 text-left transition-all ${
                 selected
-                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40'
-                  : 'border-slate-200 dark:border-slate-600 hover:border-indigo-300'
+                  ? 'border-teal-500 bg-teal-50 dark:bg-teal-950/40'
+                  : 'border-slate-200 dark:border-slate-600 hover:border-teal-300'
               } ${isAnswered ? 'opacity-80' : ''}`}
             >
               <span className="font-bold mr-2">{letter})</span>
               {renderWithLatex(text)}
+              {image ? (
+                <QuestionVisual src={image} alt={`${letter} şıkkı`} className="mt-2 max-h-36" />
+              ) : null}
             </button>
           );
         })}
@@ -260,7 +264,7 @@ export default function StudentExercisePlayer() {
     return (
       <StudentPageShell title={t('exercisePlayer.loading')} maxWidthClass="max-w-2xl">
         <div className="flex justify-center py-16">
-          <Loader2 className="animate-spin text-indigo-600" size={36} />
+          <Loader2 className="animate-spin text-teal-600" size={36} />
         </div>
       </StudentPageShell>
     );
@@ -323,7 +327,7 @@ export default function StudentExercisePlayer() {
             })}
             <Link
               to="/student/exercises"
-              className="inline-flex items-center gap-2 text-indigo-600 font-semibold hover:underline"
+              className="inline-flex items-center gap-2 text-teal-600 font-semibold hover:underline"
             >
               {t('exercisePlayer.tryAnother')}
             </Link>
@@ -391,7 +395,7 @@ export default function StudentExercisePlayer() {
 
       <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full mb-6 overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all"
+          className="h-full bg-gradient-to-r from-teal-500 to-sky-500 transition-all"
           style={{ width: `${progress}%` }}
         />
       </div>

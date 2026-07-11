@@ -3,7 +3,6 @@ import {
   ChevronDown,
   ChevronUp,
   Layers,
-  LayoutGrid,
   Pencil,
   Plus,
   Trash2,
@@ -16,6 +15,7 @@ import { LanguageContext } from '../../context/LanguageContext';
 import Card from '../../components/ui/Card.jsx';
 import { CLASS_LEVELS, SUBJECTS } from '../../data/classLevelsAndDifficulties';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
+import TeacherPageShell from '../../components/teacher/TeacherPageShell.jsx';
 
 const COPY = {
   TR: {
@@ -245,17 +245,14 @@ export default function SkillTreeBuilder() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 animate-fade-in space-y-8">
-      <div>
-        <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-950/50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-3">
-          <Sparkles size={14} aria-hidden />
-          {t.live}
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-          <LayoutGrid className="text-indigo-500 shrink-0" size={28} aria-hidden />
-          {t.title}
-        </h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 max-w-3xl">{t.subtitle}</p>
+    <TeacherPageShell
+      maxWidthClass="max-w-5xl"
+      title={t.title}
+      subtitle={t.subtitle}
+    >
+      <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 dark:bg-teal-950/50 px-3 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 -mt-2">
+        <Sparkles size={14} aria-hidden />
+        {t.live}
       </div>
 
       <Card className="p-4 sm:p-5">
@@ -267,7 +264,7 @@ export default function SkillTreeBuilder() {
             <select
               value={classLevel}
               onChange={(e) => setClassLevel(e.target.value)}
-              className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+              className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500"
               aria-label={t.classLabel}
             >
               {CLASS_LEVELS.map((l) => (
@@ -284,7 +281,7 @@ export default function SkillTreeBuilder() {
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+              className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500"
               aria-label={t.subjectLabel}
             >
               {SUBJECTS.map((s) => (
@@ -303,7 +300,7 @@ export default function SkillTreeBuilder() {
                 value={newTopic}
                 onChange={(e) => setNewTopic(e.target.value)}
                 placeholder={t.newTopicPh}
-                className="flex-1 min-w-[180px] rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+                className="flex-1 min-w-[180px] rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500"
                 aria-label={t.newTopicPh}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
@@ -315,7 +312,7 @@ export default function SkillTreeBuilder() {
               <button
                 type="button"
                 onClick={addTopic}
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-500/25 hover:bg-indigo-700 transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-500/25 hover:bg-teal-700 transition-colors"
               >
                 <Plus size={16} aria-hidden />
                 {t.addTopic}
@@ -388,7 +385,7 @@ export default function SkillTreeBuilder() {
                       <button
                         type="button"
                         onClick={() => saveTopicName(topic._id)}
-                        className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                        className="rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-700"
                       >
                         {t.save}
                       </button>
@@ -475,7 +472,7 @@ export default function SkillTreeBuilder() {
                               <button
                                 type="button"
                                 onClick={() => saveLessonTitle(lesson._id)}
-                                className="text-xs font-semibold text-indigo-600 dark:text-indigo-400"
+                                className="text-xs font-semibold text-teal-600 dark:text-teal-400"
                               >
                                 {t.save}
                               </button>
@@ -496,7 +493,7 @@ export default function SkillTreeBuilder() {
                             <div className="mt-1 flex flex-wrap gap-2 opacity-90 group-hover:opacity-100">
                               <button
                                 type="button"
-                                className="text-xs font-medium text-indigo-600 dark:text-indigo-400 inline-flex items-center gap-1"
+                                className="text-xs font-medium text-teal-600 dark:text-teal-400 inline-flex items-center gap-1"
                                 onClick={() => {
                                   setEditingLessonId(lesson._id);
                                   setEditLessonTitle(lesson.title || '');
@@ -521,7 +518,7 @@ export default function SkillTreeBuilder() {
                   ))}
 
                   {addingLessonFor === topic._id ? (
-                    <div className="flex flex-wrap gap-2 items-center rounded-2xl border border-dashed border-indigo-300 dark:border-indigo-700 bg-indigo-50/40 dark:bg-indigo-950/20 p-3 flex-1 min-w-[220px]">
+                    <div className="flex flex-wrap gap-2 items-center rounded-2xl border border-dashed border-teal-300 dark:border-teal-700 bg-teal-50/40 dark:bg-teal-950/20 p-3 flex-1 min-w-[220px]">
                       <input
                         autoFocus
                         value={newLessonTitle}
@@ -542,7 +539,7 @@ export default function SkillTreeBuilder() {
                       <button
                         type="button"
                         onClick={() => addLesson(topic._id)}
-                        className="rounded-xl bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                        className="rounded-xl bg-teal-600 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-700"
                       >
                         {t.save}
                       </button>
@@ -561,7 +558,7 @@ export default function SkillTreeBuilder() {
                     <button
                       type="button"
                       onClick={() => setAddingLessonFor(topic._id)}
-                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-900 px-4 py-3 text-sm font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 min-h-[44px] min-w-[140px]"
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-teal-200 dark:border-teal-800 bg-white dark:bg-slate-900 px-4 py-3 text-sm font-semibold text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 min-h-[44px] min-w-[140px]"
                     >
                       <Plus size={16} aria-hidden />
                       {t.addLesson}
@@ -575,6 +572,6 @@ export default function SkillTreeBuilder() {
         </div>
       )}
       <ConfirmDialog />
-    </div>
+    </TeacherPageShell>
   );
 }

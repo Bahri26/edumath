@@ -1,5 +1,5 @@
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
-const { authorizeInteractive } = require('../services/storage/driveOAuth');
+require('dotenv').config({ path: require('path').join(__dirname, '../..', '.env') });
+const { authorizeInteractive } = require('../../services/storage/driveOAuth');
 
 authorizeInteractive()
   .then(() => {

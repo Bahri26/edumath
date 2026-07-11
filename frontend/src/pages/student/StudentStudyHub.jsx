@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { BookOpen, Clock, Play, Trophy, CheckCircle2, X } from 'lucide-react';
+import { BookOpen, Clock, Play, Trophy, CheckCircle2, X, Layers } from 'lucide-react';
 import apiClient from '../../services/api';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';
 import WeakTopicsInsightCard from '../../components/student/WeakTopicsInsightCard.jsx';
@@ -76,14 +76,14 @@ export default function StudentStudyHub() {
 
       <section id="my-exercises" className="mb-10 scroll-mt-24">
         {filterActive && (
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/80 dark:bg-indigo-950/30 px-4 py-3">
-            <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50/80 dark:bg-teal-950/30 px-4 py-3">
+            <p className="text-sm font-semibold text-teal-900 dark:text-teal-200">
               {t('studyHub.filterTopic', { topic: focusTopic })}
             </p>
             <button
               type="button"
               onClick={clearTopicFilter}
-              className="inline-flex items-center gap-1 text-sm font-bold text-indigo-700 dark:text-indigo-300 hover:underline"
+              className="inline-flex items-center gap-1 text-sm font-bold text-teal-700 dark:text-teal-300 hover:underline"
             >
               <X size={16} aria-hidden />
               {t('studyHub.clearFilter')}
@@ -96,7 +96,7 @@ export default function StudentStudyHub() {
             <Trophy size={22} className="text-amber-500" aria-hidden />
             {t('studyHub.myExercises')}
           </h2>
-          <Link to="/student/quizzes" className="text-sm font-semibold text-indigo-600 hover:underline">
+          <Link to="/student/quizzes" className="text-sm font-semibold text-teal-600 hover:underline">
             {t('studyHub.goQuizzes')}
           </Link>
         </div>
@@ -140,7 +140,7 @@ export default function StudentStudyHub() {
                   key={ex._id}
                   className={`rounded-2xl border bg-white dark:bg-slate-800 p-5 shadow-sm flex flex-col gap-3 ${
                     highlighted
-                      ? 'border-indigo-400 ring-2 ring-indigo-200 dark:border-indigo-600 dark:ring-indigo-900/50'
+                      ? 'border-teal-400 ring-2 ring-teal-200 dark:border-teal-600 dark:ring-teal-900/50'
                       : 'border-slate-200 dark:border-slate-700'
                   }`}
                 >
@@ -165,22 +165,22 @@ export default function StudentStudyHub() {
                       {t('studyHub.questionsCount', { n: count })}
                     </span>
                     {ex.timeLimit ? (
-                      <span className="px-2 py-0.5 rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 inline-flex items-center gap-1">
+                      <span className="px-2 py-0.5 rounded-lg bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 inline-flex items-center gap-1">
                         <Clock size={12} aria-hidden /> {ex.timeLimit} dk
                       </span>
                     ) : null}
                     {ex.topic ? (
-                      <span className="px-2 py-0.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 truncate max-w-full">
+                      <span className="px-2 py-0.5 rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 truncate max-w-full">
                         {ex.topic}
                       </span>
                     ) : null}
                   </div>
                   <Link
                     to={`/student/exercises/${ex._id}`}
-                    className="mt-auto inline-flex items-center justify-center gap-2 min-h-[44px] rounded-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:brightness-105 px-4 py-2.5"
+                    className="mt-auto inline-flex items-center justify-center gap-2 min-h-[44px] rounded-xl font-bold bg-gradient-to-r from-teal-600 to-sky-600 text-white hover:brightness-105 px-4 py-2.5"
                   >
                     <Play size={18} aria-hidden />
-                    {done ? t('studyHub.retry') : t('studyHub.start')}
+                    {done ? t('studyHub.retryExercise') : t('studyHub.start')}
                   </Link>
                 </div>
               );
@@ -191,7 +191,7 @@ export default function StudentStudyHub() {
 
       <section className="grid md:grid-cols-2 gap-4">
         <div className="rounded-2xl border border-sky-200/70 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 p-6">
-          <BookOpen size={28} className="text-indigo-600 mb-3" aria-hidden />
+          <BookOpen size={28} className="text-teal-600 mb-3" aria-hidden />
           <h3 className="font-bold text-slate-800 dark:text-white">{t('studyHub.quizCardTitle')}</h3>
           <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 mb-4">{t('studyHub.quizCardDesc')}</p>
           <Link
@@ -201,10 +201,16 @@ export default function StudentStudyHub() {
             {t('studyHub.goCourses')}
           </Link>
         </div>
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/40 p-6 opacity-80">
-          <p className="text-xs font-bold uppercase text-slate-400 mb-2">{t('studyHub.comingSoon')}</p>
-          <h3 className="font-bold text-slate-700 dark:text-slate-300">{t('studyHub.flashcardsTitle')}</h3>
-          <p className="text-sm text-slate-500 mt-1">{t('studyHub.flashcardsDesc')}</p>
+        <div className="rounded-2xl border border-sky-200/70 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 p-6">
+          <Layers size={28} className="text-sky-600 mb-3" aria-hidden />
+          <h3 className="font-bold text-slate-800 dark:text-white">{t('studyHub.flashcardsTitle')}</h3>
+          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 mb-4">{t('studyHub.flashcardsDesc')}</p>
+          <Link
+            to="/student/flashcards"
+            className="inline-flex min-h-[44px] items-center px-5 py-2 rounded-xl font-bold bg-sky-600 text-white hover:brightness-105"
+          >
+            {t('studyHub.openFlashcards')}
+          </Link>
         </div>
       </section>
     </StudentPageShell>

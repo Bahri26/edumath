@@ -107,12 +107,12 @@ export default function WeakTopicsInsightCard({
   return (
     <div className={`space-y-4 ${className}`}>
       <div
-        className={`bg-white dark:bg-slate-800 rounded-2xl border border-violet-200/70 dark:border-violet-900/40 shadow-sm ${
+        className={`bg-white dark:bg-slate-800 rounded-2xl border border-sky-200/70 dark:border-sky-900/40 shadow-sm ${
           compact ? 'p-4' : 'p-6'
         }`}
       >
         <div className="flex items-start gap-3 mb-4">
-          <div className="p-2 rounded-xl bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300 shrink-0">
+          <div className="p-2 rounded-xl bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300 shrink-0">
             <Brain size={compact ? 20 : 24} aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
@@ -121,7 +121,7 @@ export default function WeakTopicsInsightCard({
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{t(subtitleKey)}</p>
             {!loading && (
-              <p className="text-[10px] font-bold uppercase tracking-wider text-violet-500 mt-1">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-sky-500 mt-1">
                 {t('weakTopics.providerNote', { provider: providerLabel })}
               </p>
             )}
@@ -185,7 +185,7 @@ export default function WeakTopicsInsightCard({
                         type="button"
                         onClick={() => handlePractice([row.topic])}
                         disabled={practiceLoading}
-                        className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60"
+                        className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-60"
                       >
                         {topicBusy ? (
                           <>
@@ -211,7 +211,7 @@ export default function WeakTopicsInsightCard({
                 type="button"
                 onClick={() => handlePractice(weakList.slice(0, 3))}
                 disabled={practiceLoading}
-                className="inline-flex items-center gap-2 min-h-[40px] px-4 py-2 rounded-xl text-sm font-bold bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60"
+                className="inline-flex items-center gap-2 min-h-[40px] px-4 py-2 rounded-xl text-sm font-bold bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-60"
               >
                 {practiceLoading && !practiceLoadingTopic ? (
                   <>

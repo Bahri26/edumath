@@ -96,11 +96,11 @@ export default function ExamResultsModal({ examId, onClose }) {
                   <div className="text-xs font-bold text-emerald-600 uppercase">Ort. Puan</div>
                   <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300">%{summary.avgScore}</div>
                 </div>
-                <div className="p-4 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-900">
-                  <div className="text-xs font-bold text-violet-600 uppercase flex items-center gap-1">
+                <div className="p-4 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-900">
+                  <div className="text-xs font-bold text-sky-600 uppercase flex items-center gap-1">
                     <Clock size={12} /> Ort. Süre
                   </div>
-                  <div className="text-lg font-black text-violet-700 dark:text-violet-300 mt-1">
+                  <div className="text-lg font-black text-sky-700 dark:text-sky-300 mt-1">
                     {formatDuration(summary.avgTimeSpentSeconds)}
                   </div>
                 </div>

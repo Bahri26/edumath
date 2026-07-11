@@ -10,7 +10,7 @@ export function renderWithLatex(text) {
       {parts.map((part, index) => (
         part.startsWith('$') && part.endsWith('$')
           ? (
-            <span key={index} className="mx-1 text-indigo-600 font-serif bg-indigo-50/50 dark:bg-indigo-900/20 px-1 rounded">
+            <span key={index} className="mx-1 text-teal-600 font-serif bg-teal-50/50 dark:bg-teal-900/20 px-1 rounded">
               <InlineMath math={part.slice(1, -1)} />
             </span>
           )

@@ -30,6 +30,7 @@ import Select from '../../components/ui/Select.jsx';
 import { renderWithLatex } from '../../utils/latex.jsx';
 import ExerciseQuestionPicker from '../../components/exercises/ExerciseQuestionPicker.jsx';
 import ExerciseResultsModal from '../../components/exercises/ExerciseResultsModal.jsx';
+import TeacherPageShell from '../../components/teacher/TeacherPageShell.jsx';
 import 'katex/dist/katex.min.css';
 
 /**
@@ -47,8 +48,8 @@ const QuestionTypeToggle = ({ typeValue, label, selected, onToggle }) => (
     onClick={() => onToggle(typeValue)}
     className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
       selected.includes(typeValue)
-        ? 'bg-brand-600 text-white shadow-md'
-        : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:shadow'
+        ? 'bg-teal-600 text-white shadow-md'
+        : 'bg-surface-200 dark:bg-surface-700 text-surface-600 dark:text-surface-300 hover:shadow'
     }`}
   >
     {label}
@@ -58,20 +59,20 @@ const QuestionTypeToggle = ({ typeValue, label, selected, onToggle }) => (
 const FormSection = ({ step, title, children }) => (
   <section className="space-y-3">
     <div className="flex items-center gap-2">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-black text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-black text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
         {step}
       </span>
-      <h3 className="text-sm font-bold text-surface-800 dark:text-surface-100">{title}</h3>
+      <h3 className="font-display text-sm font-semibold text-surface-800 dark:text-surface-100">{title}</h3>
     </div>
     {children}
   </section>
 );
 
 const ExerciseCard = ({ exercise, onView, onEditQuestions, onResults, onDelete }) => (
-  <Card className="p-5 flex flex-col h-full hover:border-brand-200 dark:hover:border-brand-800">
+  <Card className="p-5 flex flex-col h-full" interactive>
     <div className="flex justify-between items-start gap-3 mb-3">
       <div className="min-w-0 flex-1">
-        <h3 className="font-bold text-surface-900 dark:text-white truncate">{exercise.name}</h3>
+        <h3 className="font-display font-semibold text-surface-900 dark:text-white truncate">{exercise.name}</h3>
         {exercise.description ? (
           <p className="text-sm text-surface-500 dark:text-surface-400 mt-1 line-clamp-2">{exercise.description}</p>
         ) : null}
@@ -80,7 +81,7 @@ const ExerciseCard = ({ exercise, onView, onEditQuestions, onResults, onDelete }
         <button
           type="button"
           onClick={() => onView(exercise._id)}
-          className="p-2 rounded-xl bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors"
+          className="p-2 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors"
           aria-label="Önizle"
         >
           <Eye size={18} />
@@ -119,17 +120,17 @@ const ExerciseCard = ({ exercise, onView, onEditQuestions, onResults, onDelete }
         {exercise.totalQuestions} soru
       </span>
       {exercise.topic ? (
-        <span className="px-2 py-0.5 bg-violet-100 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 text-xs font-bold rounded-lg truncate max-w-[180px]">
+        <span className="px-2 py-0.5 bg-sky-100 dark:bg-sky-900/25 text-sky-800 dark:text-sky-300 text-xs font-bold rounded-lg truncate max-w-[180px]">
           {exercise.topic}
         </span>
       ) : null}
       {exercise.gameMode === 'timed' && exercise.timeLimit ? (
-        <span className="px-2 py-0.5 bg-violet-100 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 text-xs font-bold rounded-lg inline-flex items-center gap-1">
+        <span className="px-2 py-0.5 bg-sky-100 dark:bg-sky-900/25 text-sky-700 dark:text-sky-300 text-xs font-bold rounded-lg inline-flex items-center gap-1">
           <Clock size={12} /> {exercise.timeLimit} dk
         </span>
       ) : null}
       {exercise.playTransform === 'game_show' ? (
-        <span className="px-2 py-0.5 bg-fuchsia-100 dark:bg-fuchsia-900/25 text-fuchsia-700 dark:text-fuchsia-300 text-xs font-bold rounded-lg">
+        <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/25 text-amber-700 dark:text-amber-300 text-xs font-bold rounded-lg">
           Oyun gösterimi
         </span>
       ) : null}
@@ -608,35 +609,18 @@ export default function TeacherExerciseCreator() {
   };
 
   return (
-    <div className="flex-1 p-4 md:p-6 space-y-6 pb-20 max-w-6xl mx-auto w-full">
-      {previewId ? <ExercisePreviewModal exerciseId={previewId} onClose={closePreview} /> : null}
-      {resultsId ? <ExerciseResultsModal exerciseId={resultsId} onClose={() => setResultsId(null)} /> : null}
-      {editExerciseId ? (
-        <ManageExerciseQuestionsModal
-          exerciseId={editExerciseId}
-          branchApproved={branchApproved}
-          onClose={closeEdit}
-          onSaved={fetchExercises}
-        />
-      ) : null}
-
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-brand-600 dark:text-brand-400 mb-1">
-            <Trophy size={22} aria-hidden />
-            <span className="text-[11px] font-black uppercase tracking-widest">Öğretmen</span>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-black text-surface-900 dark:text-white tracking-tight">Egzersizler</h1>
-          {!createMode && exercises.length > 0 ? (
-            <p className="text-sm text-surface-500 dark:text-surface-400 mt-1">
-              {total} egzersiz
-            </p>
-          ) : null}
-        </div>
+    <TeacherPageShell
+      maxWidthClass="max-w-6xl"
+      className="pb-20 w-full"
+      title="Egzersizler"
+      subtitle={!createMode && exercises.length > 0 ? `${total} egzersiz` : 'Havuzdan otomatik veya elle seçerek pratik paketleri oluşturun.'}
+      headerAside={(
         <Button
           variant={createMode ? 'secondary' : 'primary'}
           size="lg"
           icon={createMode ? X : Plus}
+          disabled={!createMode && !branchApproved}
+          title={!branchApproved && !createMode ? 'Branş onayı gerekli' : undefined}
           onClick={() => {
             if (createMode) {
               setCreateMode(false);
@@ -650,24 +634,35 @@ export default function TeacherExerciseCreator() {
         >
           {createMode ? 'Kapat' : 'Egzersiz oluştur'}
         </Button>
-      </header>
+      )}
+    >
+      {previewId ? <ExercisePreviewModal exerciseId={previewId} onClose={closePreview} /> : null}
+      {resultsId ? <ExerciseResultsModal exerciseId={resultsId} onClose={() => setResultsId(null)} /> : null}
+      {editExerciseId ? (
+        <ManageExerciseQuestionsModal
+          exerciseId={editExerciseId}
+          branchApproved={branchApproved}
+          onClose={closeEdit}
+          onSaved={fetchExercises}
+        />
+      ) : null}
 
       {createMode ? (
-        <Card className="space-y-5 border-brand-100 dark:border-brand-900/40">
-          <h2 className="text-lg font-bold text-surface-900 dark:text-white">Egzersiz oluştur</h2>
+        <Card className="space-y-5 border-teal-100 dark:border-teal-900/40">
+          <h2 className="font-display text-lg font-semibold text-surface-900 dark:text-white">Egzersiz oluştur</h2>
           <input
             type="text"
             placeholder="Egzersiz adı (örn. Rasyonel sayılar — tekrar)"
             value={exerciseName}
             onChange={(e) => setExerciseName(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-surface-200 dark:border-surface-600 bg-surface-50 dark:bg-surface-900 text-surface-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full px-4 py-3 rounded-xl border border-surface-200 dark:border-surface-600 bg-surface-50 dark:bg-surface-900 text-surface-900 dark:text-white outline-none focus:ring-2 focus:ring-teal-500"
           />
           <textarea
             placeholder="Açıklama (isteğe bağlı)"
             value={exerciseDescription}
             onChange={(e) => setExerciseDescription(e.target.value)}
             rows={2}
-            className="w-full px-4 py-3 rounded-xl border border-surface-200 dark:border-surface-600 bg-surface-50 dark:bg-surface-900 text-surface-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full px-4 py-3 rounded-xl border border-surface-200 dark:border-surface-600 bg-surface-50 dark:bg-surface-900 text-surface-900 dark:text-white outline-none focus:ring-2 focus:ring-teal-500"
           />
 
           <FormSection step="1" title="Oluşturma yöntemi">
@@ -680,12 +675,12 @@ export default function TeacherExerciseCreator() {
                 }}
                 className={`text-left rounded-2xl border-2 p-4 transition-all ${
                   buildMode === 'auto'
-                    ? 'border-brand-500 bg-brand-50/80 dark:bg-brand-950/40 ring-2 ring-brand-500/30'
-                    : 'border-surface-200 dark:border-surface-700 hover:border-brand-300'
+                    ? 'border-teal-500 bg-teal-50/80 dark:bg-teal-950/40 ring-2 ring-teal-500/30'
+                    : 'border-surface-200 dark:border-surface-700 hover:border-teal-300'
                 }`}
               >
                 <div className="flex items-center gap-2 font-bold text-surface-900 dark:text-white">
-                  <Wand2 size={20} className="text-brand-600 shrink-0" />
+                  <Wand2 size={20} className="text-teal-600 shrink-0" />
                   AI ile oluştur
                 </div>
                 <p className="text-xs text-surface-600 dark:text-surface-400 mt-1">
@@ -697,12 +692,12 @@ export default function TeacherExerciseCreator() {
                 onClick={() => setBuildMode('manual')}
                 className={`text-left rounded-2xl border-2 p-4 transition-all ${
                   buildMode === 'manual'
-                    ? 'border-brand-500 bg-brand-50/80 dark:bg-brand-950/40 ring-2 ring-brand-500/30'
-                    : 'border-surface-200 dark:border-surface-700 hover:border-brand-300'
+                    ? 'border-teal-500 bg-teal-50/80 dark:bg-teal-950/40 ring-2 ring-teal-500/30'
+                    : 'border-surface-200 dark:border-surface-700 hover:border-teal-300'
                 }`}
               >
                 <div className="flex items-center gap-2 font-bold text-surface-900 dark:text-white">
-                  <MousePointerClick size={20} className="text-brand-600 shrink-0" />
+                  <MousePointerClick size={20} className="text-teal-600 shrink-0" />
                   Manuel seç
                 </div>
                 <p className="text-xs text-surface-600 dark:text-surface-400 mt-1">
@@ -896,6 +891,6 @@ export default function TeacherExerciseCreator() {
         </div>
       ) : null}
       <ConfirmDialog />
-    </div>
+    </TeacherPageShell>
   );
 }

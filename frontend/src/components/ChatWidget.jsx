@@ -116,8 +116,8 @@ const ChatWidget = () => {
         onClick={() => setIsOpen(!isOpen)}
         className={`fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-2xl transition-all duration-300 z-40 flex items-center justify-center group ${
           isOpen
-            ? 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600'
-            : 'bg-gradient-to-br from-indigo-500 to-purple-600 hover:shadow-indigo-500/50 dark:from-indigo-600 dark:to-purple-700'
+            ? 'bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600'
+            : 'bg-gradient-to-br from-teal-500 to-sky-600 hover:shadow-teal-500/50 dark:from-teal-600 dark:to-sky-700'
         }`}
       >
         {isOpen ? (
@@ -143,10 +143,10 @@ const ChatWidget = () => {
           } z-50 animate-fade-in`}
         >
           {/* Widget Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white flex items-center justify-between">
+          <div className="bg-gradient-to-r from-teal-600 to-sky-600 p-4 text-white flex items-center justify-between">
             <div>
               <h3 className="font-bold text-sm">Mesajlar</h3>
-              <p className="text-xs text-indigo-100">
+              <p className="text-xs text-teal-100">
                 {conversations.length > 0 ? `${conversations.length} sohbet` : 'Sohbet yok'}
               </p>
             </div>
@@ -175,7 +175,7 @@ const ChatWidget = () => {
                       className={`w-full p-3 border-b border-slate-100 dark:border-slate-700 transition-colors text-left hover:bg-slate-50 dark:hover:bg-slate-700/50`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-sky-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
                           {otherUser?.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -212,13 +212,13 @@ const ChatWidget = () => {
                         <div
                           className={`max-w-xs rounded-2xl px-3 py-2 text-sm ${
                             isSent
-                              ? 'bg-indigo-600 text-white rounded-br-none'
+                              ? 'bg-teal-600 text-white rounded-br-none'
                               : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-bl-none'
                           }`}
                         >
                           <p>{message.content}</p>
                           <span className={`text-xs mt-1 block ${
-                            isSent ? 'text-indigo-100' : 'text-slate-600 dark:text-slate-400'
+                            isSent ? 'text-teal-100' : 'text-slate-600 dark:text-slate-400'
                           }`}>
                             {formatTime(message.createdAt)}
                           </span>
@@ -248,11 +248,11 @@ const ChatWidget = () => {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Mesaj yaz..."
-                    className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                   <button
                     type="submit"
-                    className="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
+                    className="p-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors"
                   >
                     <Send size={16} />
                   </button>

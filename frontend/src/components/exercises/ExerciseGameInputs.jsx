@@ -1,7 +1,7 @@
 import React from 'react';
 
 const padBtn =
-  'min-h-[52px] rounded-2xl text-xl font-black bg-indigo-600 text-white shadow-md active:scale-[0.98] hover:bg-indigo-500 disabled:opacity-40';
+  'min-h-[52px] rounded-2xl text-xl font-black bg-teal-600 text-white shadow-md active:scale-[0.98] hover:bg-teal-500 disabled:opacity-40';
 
 /** Sayı cevapları için dokunmatik pad (cevap metni sunucudaki correctAnswer ile aynı biçimde tutulur) */
 export function ExerciseNumberPad({ value, onChange, maxDigits = 10 }) {
@@ -66,8 +66,8 @@ export function ExerciseTwoChoiceBlocks({ leftLabel, rightLabel, value, onChange
         onClick={() => onChange(r)}
         className={`min-h-[120px] rounded-2xl border-4 p-4 text-left font-bold text-lg transition-all ${
           value === r
-            ? 'border-violet-500 bg-violet-50 dark:bg-violet-950/40 text-violet-900 dark:text-violet-100'
-            : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:border-violet-300'
+            ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-100'
+            : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:border-sky-300'
         }`}
       >
         {r}
@@ -93,8 +93,8 @@ export function ExerciseShapeOptionRow({ options, optionLabel, value, onChange }
             onClick={() => onChange(label)}
             className={`flex flex-col items-center gap-2 min-w-[100px] max-w-[160px] p-4 rounded-2xl border-4 transition-all ${
               active
-                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/50 shadow-lg scale-[1.02]'
-                : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:border-indigo-300'
+                ? 'border-teal-500 bg-teal-50 dark:bg-teal-950/50 shadow-lg scale-[1.02]'
+                : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:border-teal-300'
             }`}
           >
             <span className="text-4xl leading-none" aria-hidden>

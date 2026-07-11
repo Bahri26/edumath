@@ -5,11 +5,11 @@ const SidebarItem = ({ icon: Icon, label, active, onClick, isCollapsed }) => (
     onClick={onClick}
     className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-200 group relative ${
       active 
-        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
-        : 'text-slate-500 hover:bg-indigo-50 hover:text-indigo-600'
+        ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' 
+        : 'text-slate-500 hover:bg-teal-50 hover:text-teal-600'
     }`}
   >
-    <Icon size={20} className={`flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 group-hover:text-indigo-600'}`} />
+    <Icon size={20} className={`flex-shrink-0 ${active ? 'text-white' : 'text-slate-400 group-hover:text-teal-600'}`} />
     
     <span className={`font-medium text-sm transition-opacity duration-200 whitespace-nowrap ${
       isCollapsed ? 'opacity-0 w-0 hidden md:block' : 'opacity-100'

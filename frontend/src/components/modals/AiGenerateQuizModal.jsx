@@ -166,14 +166,14 @@ export default function AiGenerateQuizModal({
       aria-label="AI ile çoktan seçmeli soru üret"
       onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
     >
-      <div className="bg-white dark:bg-slate-800 w-full max-w-3xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-white/10">
-        <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex justify-between items-center gap-4">
+      <div className="bg-white dark:bg-surface-800 w-full max-w-3xl rounded-[2rem] shadow-soft overflow-hidden flex flex-col max-h-[90vh] border border-white/10">
+        <div className="p-6 bg-gradient-to-r from-teal-700 to-sky-700 text-white flex justify-between items-center gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="p-2 rounded-xl bg-white/20 shrink-0">
               <Wand2 size={20} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg font-black truncate">AI ile çoktan seçmeli üret</h3>
+              <h3 className="font-display text-lg font-semibold truncate">AI ile çoktan seçmeli üret</h3>
               <p className="text-[10px] font-bold opacity-85 uppercase tracking-widest">
                 {step === 'form' ? 'Konu seç → üret → havuza ekle veya düzenle' : 'Önizleme'}
               </p>
@@ -188,25 +188,25 @@ export default function AiGenerateQuizModal({
           {step === 'form' ? (
             <>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Konu veya ünite</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-surface-400">Konu veya ünite</label>
                 <input
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder="Örn. Doğrusal fonksiyonlar, üçgende alan..."
-                  className="mt-2 w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-violet-500 text-sm font-medium"
+                  className="mt-2 w-full px-4 py-3 rounded-2xl bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium"
                 />
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  Ders: <span className="font-bold text-slate-700 dark:text-slate-200">{resolvedSubject}</span> — üretilen sorular bu branşa kaydedilir.
+                <p className="mt-2 text-xs text-surface-500 dark:text-surface-400">
+                  Ders: <span className="font-bold text-surface-700 dark:text-surface-200">{resolvedSubject}</span> — üretilen sorular bu branşa kaydedilir.
                   Örnek alınırken yalnızca metin tabanlı sorular kullanılır; görselli sorular havuz örneği sayılmaz.
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sınıf</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-surface-400">Sınıf</label>
                   <select
                     value={classLevel}
                     onChange={(e) => setClassLevel(e.target.value)}
-                    className="mt-2 w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 outline-none text-sm font-bold"
+                    className="mt-2 w-full px-4 py-3 rounded-2xl bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 outline-none text-sm font-bold"
                   >
                     {CLASS_OPTS.map((c) => (
                       <option key={c} value={c}>
@@ -216,11 +216,11 @@ export default function AiGenerateQuizModal({
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Zorluk</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-surface-400">Zorluk</label>
                   <select
                     value={difficulty}
                     onChange={(e) => setDifficulty(e.target.value)}
-                    className="mt-2 w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 outline-none text-sm font-bold"
+                    className="mt-2 w-full px-4 py-3 rounded-2xl bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 outline-none text-sm font-bold"
                   >
                     {['Kolay', 'Orta', 'Zor'].map((d) => (
                       <option key={d} value={d}>
@@ -230,27 +230,27 @@ export default function AiGenerateQuizModal({
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Adet (1–15)</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-surface-400">Adet (1–15)</label>
                   <input
                     type="number"
                     min={1}
                     max={15}
                     value={count}
                     onChange={(e) => setCount(e.target.value)}
-                    className="mt-2 w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 outline-none text-sm font-bold"
+                    className="mt-2 w-full px-4 py-3 rounded-2xl bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 outline-none text-sm font-bold"
                   />
                 </div>
               </div>
-              <label className="flex items-start gap-3 cursor-pointer text-sm text-slate-700 dark:text-slate-300">
+              <label className="flex items-start gap-3 cursor-pointer text-sm text-surface-700 dark:text-surface-300">
                 <input
                   type="checkbox"
-                  className="mt-1 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                  className="mt-1 rounded border-surface-300 text-teal-600 focus:ring-teal-500"
                   checked={useGoogleGrounding}
                   onChange={(e) => setUseGoogleGrounding(e.target.checked)}
                 />
                 <span>
-                  <span className="font-bold text-slate-800 dark:text-slate-100">Google araması ile kaynaklama</span>
-                  <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  <span className="font-bold text-surface-800 dark:text-surface-100">Google araması ile kaynaklama</span>
+                  <span className="block text-xs text-surface-500 dark:text-surface-400 mt-0.5">
                     MEB müfredatı ile uyum için güvenilir web özetlerini kullanmayı dener (biraz daha yavaş olabilir; sunucuda
                     GEMINI_GOOGLE_GROUNDING=0 ile tamamen kapatılabilir).
                   </span>
@@ -260,7 +260,7 @@ export default function AiGenerateQuizModal({
           ) : (
             <>
               {generateHint && (
-                <p className="text-xs font-medium text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/40 border border-violet-100 dark:border-violet-800 rounded-xl px-4 py-3 flex flex-wrap items-center gap-2">
+                <p className="text-xs font-medium text-teal-800 dark:text-teal-200 bg-teal-50 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-800 rounded-xl px-4 py-3 flex flex-wrap items-center gap-2">
                   <QuestionSourceBadge
                     question={{ source: 'AI', assessmentMeta: { origin: 'ai-generate' } }}
                     size="sm"
@@ -272,10 +272,10 @@ export default function AiGenerateQuizModal({
               {generated.map((q, i) => (
                 <li
                   key={i}
-                  className="rounded-2xl border border-slate-100 dark:border-slate-700 p-4 bg-slate-50/80 dark:bg-slate-900/40"
+                  className="rounded-2xl border border-surface-100 dark:border-surface-700 p-4 bg-surface-50/80 dark:bg-surface-900/40"
                 >
                   <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="text-[10px] font-black text-violet-600 uppercase tracking-wider">#{i + 1}</span>
+                    <span className="text-[10px] font-black text-teal-600 uppercase tracking-wider">#{i + 1}</span>
                     <QuestionSourceBadge
                       question={{ source: 'AI', assessmentMeta: { origin: 'ai-generate' } }}
                       size="sm"

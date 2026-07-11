@@ -48,7 +48,7 @@ const AdminAuditLog = () => {
   return (
     <div className={a.pageWrap}>
       <header className="flex flex-wrap items-start gap-4">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/25">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/25">
           <Shield className="h-6 w-6" />
         </span>
         <div>
@@ -78,7 +78,7 @@ const AdminAuditLog = () => {
 
       {loading ? (
         <div className={a.loadingBox}>
-          <Loader2 className="mr-2 h-5 w-5 animate-spin text-violet-600" />
+          <Loader2 className="mr-2 h-5 w-5 animate-spin text-teal-600" />
           Kayıtlar yükleniyor…
         </div>
       ) : (
@@ -102,7 +102,7 @@ const AdminAuditLog = () => {
                     {row.createdAt ? new Date(row.createdAt).toLocaleString() : '—'}
                   </td>
                   <td className={a.td}>
-                    <code className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-violet-800 dark:bg-slate-800 dark:text-violet-300">
+                    <code className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-teal-800 dark:bg-slate-800 dark:text-teal-300">
                       {row.action}
                     </code>
                   </td>

@@ -45,16 +45,16 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-teal-950 px-4 py-12">
       <SkipLink>{t('skipToContent')}</SkipLink>
       <main id="main-content" tabIndex={-1} className="relative w-full max-w-md">
-        <div className="absolute -inset-px rounded-3xl bg-gradient-to-b from-violet-500/50 to-indigo-600/30 blur-sm" aria-hidden />
+        <div className="absolute -inset-px rounded-3xl bg-gradient-to-b from-teal-500/50 to-teal-600/30 blur-sm" aria-hidden />
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/90 p-8 shadow-2xl shadow-black/40 backdrop-blur-md">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/30">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/30">
               <Sparkles className="h-7 w-7" strokeWidth={2} aria-hidden />
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-violet-300/90">{t('admin.login.badge')}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-teal-300/90">{t('admin.login.badge')}</p>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-white">{t('admin.login.title')}</h1>
             <p className="mt-2 text-sm text-slate-400">{t('admin.login.subtitle')}</p>
           </div>

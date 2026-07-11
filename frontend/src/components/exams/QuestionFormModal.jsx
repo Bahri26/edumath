@@ -67,7 +67,7 @@ const QuestionFormModal = ({
       setAdvancedOpen(false);
       setMarkAsExpert(false);
     }
-  }, [isOpen]);
+  }, [isOpen, editingId]);
 
   const applyParsedPaste = (rawContent, { showNotice = true } = {}) => {
     const parsed = parsePastedQuestionText(rawContent, form);
@@ -152,6 +152,11 @@ const QuestionFormModal = ({
     e.preventDefault();
     if (!form.text?.trim() && !(effectiveMainImage && effectiveMainImage.file)) return showToast('Soru metni veya bir görsel gereklidir', 'error');
 
+    const filledOptions = (form.options || []).filter((o) => String(o || '').trim());
+    if (filledOptions.length < 2) {
+      return showToast('Resimli ve metinli sorular çoktan seçmeli olmalı: en az 2 şık girin', 'error');
+    }
+
     let submitForm = form;
     if (!form.correctAnswer?.trim()) {
       submitForm = enrichQuestionForm(form);
@@ -169,7 +174,7 @@ const QuestionFormModal = ({
       Object.keys(submitForm).forEach(key => {
         if (key === 'options') {
           submitForm.options.forEach(opt => formData.append('options', opt));
-        } else if (key !== 'source' && key !== 'assessmentMeta') {
+        } else if (key !== 'source' && key !== 'assessmentMeta' && key !== 'optionImagePreviews') {
           formData.append(key, submitForm[key]);
         }
       });
@@ -198,21 +203,21 @@ const QuestionFormModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4 animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col scale-in-center border border-white/20">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4 animate-fade-in">
+      <div className="bg-white dark:bg-surface-800 w-full max-w-4xl max-h-[90vh] rounded-[2rem] shadow-soft overflow-hidden flex flex-col animate-scale-in border border-white/20">
         
-        {/* HEADER: Gradient Tasarım */}
-        <div className="p-8 bg-indigo-600 text-white flex justify-between items-center relative overflow-hidden shrink-0">
+        {/* HEADER */}
+        <div className="p-8 bg-gradient-to-r from-teal-700 to-sky-700 text-white flex justify-between items-center relative overflow-hidden shrink-0">
           <div className="z-10">
-            <h3 className="text-2xl font-black flex items-center gap-3">
+            <h3 className="font-display text-2xl font-semibold flex items-center gap-3">
               {editingId ? <Sparkles /> : <PlusCircle />} 
               {editingId ? 'Soruyu Güncelle' : 'Soru Bankasına Ekle'}
             </h3>
-            <p className="text-indigo-100 text-sm font-medium mt-1 opacity-80">
+            <p className="text-teal-100 text-sm font-medium mt-1 opacity-90">
               MEB Maarif sistemine uygun, kaliteli içerikler oluşturun.
             </p>
           </div>
-          <button onClick={onClose} className="z-10 p-2 hover:bg-white/20 rounded-full transition-colors"><X size={24}/></button>
+          <button type="button" onClick={onClose} className="z-10 p-2 hover:bg-white/20 rounded-full transition-colors" aria-label="Kapat"><X size={24}/></button>
           <BookOpen className="absolute -right-6 -bottom-6 w-32 h-32 opacity-10 rotate-12" />
         </div>
 
@@ -238,7 +243,7 @@ const QuestionFormModal = ({
 
           {form.source === 'AI' && !markAsExpert ? (
             <div
-              className="rounded-xl border border-violet-200 bg-violet-50/80 dark:bg-violet-950/30 dark:border-violet-800 px-4 py-3 text-sm text-violet-950 dark:text-violet-100"
+              className="rounded-xl border border-sky-200 bg-sky-50/80 dark:bg-sky-950/30 dark:border-sky-800 px-4 py-3 text-sm text-sky-950 dark:text-sky-100"
               role="status"
             >
               <strong className="font-black">AI kaynağı:</strong> Metin, şıklar ve doğru cevabı kaydetmeden önce
@@ -267,13 +272,13 @@ const QuestionFormModal = ({
               {advancedOpen ? (
                 <div className="p-4 space-y-3 border-t border-slate-200 dark:border-slate-700">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-teal-700 dark:text-teal-300 flex items-center gap-2">
                       <ClipboardPaste size={14} /> Kopyala-yapıştır
                     </label>
                     <button
                       type="button"
                       onClick={() => setPasteOpen((v) => !v)}
-                      className="text-[10px] font-bold uppercase text-indigo-600"
+                      className="text-[10px] font-bold uppercase text-teal-600"
                     >
                       {pasteOpen ? 'Gizle' : 'Aç'}
                     </button>
@@ -296,7 +301,7 @@ const QuestionFormModal = ({
                             applyParsedPaste(pasted);
                           }, 0);
                         }}
-                        className="w-full p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-600 outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium"
+                        className="w-full p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-600 outline-none focus:ring-2 focus:ring-teal-400 text-sm font-medium"
                         placeholder={'Örn:\nKenar uzunlukları 2 cm olan...\nA) 11  B) 17  C) 22  D) 28\nCevap: D'}
                       />
                       <div className="flex justify-end">
@@ -304,7 +309,7 @@ const QuestionFormModal = ({
                           type="button"
                           disabled={pasteLoading}
                           onClick={() => handlePasteParse()}
-                          className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 disabled:opacity-50"
+                          className="px-4 py-2 rounded-xl bg-teal-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 disabled:opacity-50"
                         >
                           {pasteLoading ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
                           Ayrıştır ve forma aktar
@@ -330,7 +335,7 @@ const QuestionFormModal = ({
               <textarea
                 ref={firstInputRef}
                 rows={6}
-                className="w-full p-5 bg-slate-50 dark:bg-slate-900 rounded-[1.5rem] border-2 border-transparent focus:border-indigo-500 focus:bg-white transition-all text-slate-800 dark:text-white font-medium outline-none resize-none"
+                className="w-full p-5 bg-slate-50 dark:bg-slate-900 rounded-[1.5rem] border-2 border-transparent focus:border-teal-500 focus:bg-white transition-all text-slate-800 dark:text-white font-medium outline-none resize-none"
                 value={form.text}
                 onChange={e => setField('text', e.target.value)}
                 placeholder="Örn: $x^2 + 5x + 6 = 0$ denkleminin kökleri..."
@@ -341,7 +346,10 @@ const QuestionFormModal = ({
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 ml-2">
                 <ImageIcon size={14} /> Soru Görseli (Opsiyonel)
               </label>
-              <div className="relative h-[172px] border-4 border-dashed border-slate-100 dark:border-slate-700 rounded-[1.5rem] hover:border-indigo-300 hover:bg-indigo-50/30 transition-all group flex items-center justify-center overflow-hidden">
+              <p className="text-xs text-slate-500 ml-2 -mt-1">
+                Görsel yalnızca soru köküne eklenir. Şıklar metin olarak girilir.
+              </p>
+              <div className="relative h-[172px] border-4 border-dashed border-slate-100 dark:border-slate-700 rounded-[1.5rem] hover:border-teal-300 hover:bg-teal-50/30 transition-all group flex items-center justify-center overflow-hidden">
                 <input 
                   type="file" accept="image/*"
                   onChange={e => {
@@ -356,7 +364,7 @@ const QuestionFormModal = ({
                     <button type="button" onClick={(e) => { e.preventDefault(); effectiveSetMainImage({file:null, preview:''}); }} className="absolute top-2 right-2 p-1.5 bg-rose-500 text-white rounded-lg z-30 shadow-lg"><Trash2 size={14}/></button>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-2 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                  <div className="flex flex-col items-center gap-2 text-slate-400 group-hover:text-teal-500 transition-colors">
                     <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-full"><PlusCircle size={32}/></div>
                     <span className="text-xs font-bold uppercase tracking-tighter">Görsel Yüklemek İçin Tıklayın</span>
                   </div>
@@ -386,7 +394,7 @@ const QuestionFormModal = ({
               <button
                 type="button"
                 onClick={() => applyAutoSolve(true)}
-                className="text-[10px] font-black uppercase tracking-wider text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/30"
+                className="text-[10px] font-black uppercase tracking-wider text-teal-600 hover:text-teal-700 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-900/30"
               >
                 <Wand2 size={12} /> Çöz ve işaretle
               </button>
@@ -402,7 +410,8 @@ const QuestionFormModal = ({
               {form.options.map((opt, i) => {
                 const isCorrect = optionMatchesCorrect(opt, form.correctAnswer);
                 return (
-                <div key={i} className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${isCorrect ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-100 dark:border-slate-700'}`}>
+                <div key={i} className={`flex flex-col gap-2 p-3 rounded-2xl border-2 transition-all ${isCorrect ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-100 dark:border-slate-700'}`}>
+                  <div className="flex items-center gap-3">
                   <button 
                     type="button"
                     onClick={() => setField('correctAnswer', opt)}
@@ -427,6 +436,7 @@ const QuestionFormModal = ({
                     }}
                     placeholder={`Şık ${i+1}...`}
                   />
+                  </div>
                 </div>
               );})}
             </div>
@@ -496,7 +506,7 @@ const QuestionFormModal = ({
           <button 
             onClick={handleFormSubmit}
             disabled={isSaving}
-            className="px-10 py-3 rounded-2xl bg-indigo-600 text-white font-black flex items-center gap-2 shadow-xl shadow-indigo-100 hover:bg-indigo-700 disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
+            className="px-10 py-3 rounded-2xl bg-teal-600 text-white font-black flex items-center gap-2 shadow-xl shadow-teal-100 hover:bg-teal-700 disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
           >
             {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />} 
             {editingId ? 'Güncelle ve Kaydet' : 'Soru Bankasına Ekle'}

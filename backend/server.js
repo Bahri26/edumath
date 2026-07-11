@@ -242,6 +242,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/exercises', exerciseRoutes); // Egzersizler
 app.use('/api/assignments', assignmentRoutes); // Ödevler
 app.use('/api/messages', messageRoutes); // Mesajlar (Chat)
+app.use('/api/me', require('./routes/meRoutes')); // Öğrenci: öğretmenlerim, flashcards
 app.use('/api/admin', adminRoutes); // Admin işlemleri
 app.use('/api/progress', progressRoutes); // İlerleme ve trendler
     app.use('/api/topics', require('./routes/topicRoutes'));

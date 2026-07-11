@@ -14,9 +14,9 @@ export default {
       control: 'select',
       options: [
         'bg-blue-600',
-        'bg-purple-600',
+        'bg-sky-600',
         'bg-green-600',
-        'bg-indigo-600',
+        'bg-teal-600',
         'bg-red-600',
         'bg-orange-600',
         'bg-pink-600',
@@ -33,7 +33,7 @@ export const Default = {
     value: '12',
     change: '+3%',
     icon: BookOpen,
-    color: 'bg-indigo-600',
+    color: 'bg-teal-600',
   },
 };
 
@@ -60,7 +60,7 @@ export const Grid = {
   name: 'Izgara',
   render: () => (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl">
-      <StatCard title="Dersler" value="12" change="+2%" icon={BookOpen} color="bg-indigo-600" />
+      <StatCard title="Dersler" value="12" change="+2%" icon={BookOpen} color="bg-teal-600" />
       <StatCard title="Puan" value="840" icon={Trophy} color="bg-green-600" />
       <StatCard title="Sınıf" value="24" icon={Users} color="bg-blue-600" />
     </div>

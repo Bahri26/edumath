@@ -261,7 +261,7 @@ const SurveysPage = ({ role }) => {
         </div>
           <button 
             onClick={() => setShowForm(!showForm)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-colors min-h-[44px]"
+            className="bg-teal-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-teal-700 transition-colors min-h-[44px]"
           >
             <Plus size={18}/> {showForm ? 'İptal' : 'Yeni Anket'}
           </button>
@@ -270,7 +270,7 @@ const SurveysPage = ({ role }) => {
 
       {/* --- ÖĞRETMEN: ANKET OLUŞTURMA FORMU --- */}
       {role === 'teacher' && showForm && (
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-indigo-100 dark:border-slate-700 shadow-sm animate-fade-in">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-teal-100 dark:border-slate-700 shadow-sm animate-fade-in">
           <h3 className="font-bold mb-4 dark:text-white text-lg">Hızlı Anket Oluştur</h3>
           
           <form ref={formRef} onSubmit={handleCreate} className="space-y-6">
@@ -289,7 +289,7 @@ const SurveysPage = ({ role }) => {
               <input 
                 type="text" placeholder="Örn: Hafta sonu etüt saati?"
                 value={newTitle} onChange={e => setNewTitle(e.target.value)}
-                className="w-full p-3 border rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full p-3 border rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none"
               />
             </div>
 
@@ -301,7 +301,7 @@ const SurveysPage = ({ role }) => {
                 <div key={question.id} className="bg-slate-50 dark:bg-slate-700/50 p-5 rounded-lg border border-slate-200 dark:border-slate-600 space-y-3">
                   {/* Soru numarası ve silme butonu */}
                   <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">Soru {qIdx + 1}</span>
+                    <span className="text-sm font-bold text-teal-600 dark:text-teal-400">Soru {qIdx + 1}</span>
                     {questions.length > 1 && (
                       <button 
                         type="button" 
@@ -320,7 +320,7 @@ const SurveysPage = ({ role }) => {
                       placeholder="Örn: Hangi saat sizin için daha uygun?"
                       value={question.text}
                       onChange={e => updateQuestion(question.id, 'text', e.target.value)}
-                      className="w-full p-3 border rounded-lg dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                      className="w-full p-3 border rounded-lg dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none"
                       rows="2"
                     ></textarea>
                   </div>
@@ -332,14 +332,14 @@ const SurveysPage = ({ role }) => {
                       <button 
                         type="button"
                         onClick={() => updateQuestion(question.id, 'type', 'text')}
-                        className={`flex-1 p-2 rounded-lg border text-sm font-medium transition-all ${question.type === 'text' ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-500 text-indigo-700 dark:text-indigo-400' : 'border-slate-300 dark:border-slate-500 text-slate-600 dark:text-slate-400'}`}
+                        className={`flex-1 p-2 rounded-lg border text-sm font-medium transition-all ${question.type === 'text' ? 'bg-teal-50 dark:bg-teal-900/30 border-teal-500 text-teal-700 dark:text-teal-400' : 'border-slate-300 dark:border-slate-500 text-slate-600 dark:text-slate-400'}`}
                       >
                         Yazılı Cevap
                       </button>
                       <button 
                         type="button"
                         onClick={() => updateQuestion(question.id, 'type', 'multiple-choice')}
-                        className={`flex-1 p-2 rounded-lg border text-sm font-medium transition-all ${question.type === 'multiple-choice' ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-500 text-indigo-700 dark:text-indigo-400' : 'border-slate-300 dark:border-slate-500 text-slate-600 dark:text-slate-400'}`}
+                        className={`flex-1 p-2 rounded-lg border text-sm font-medium transition-all ${question.type === 'multiple-choice' ? 'bg-teal-50 dark:bg-teal-900/30 border-teal-500 text-teal-700 dark:text-teal-400' : 'border-slate-300 dark:border-slate-500 text-slate-600 dark:text-slate-400'}`}
                       >
                         Çoktan Seçmeli
                       </button>
@@ -360,7 +360,7 @@ const SurveysPage = ({ role }) => {
                             placeholder={`Seçenek ${optIdx + 1}`}
                             value={opt}
                             onChange={(e) => updateQuestionOption(question.id, optIdx, e.target.value)}
-                            className="flex-1 p-2 border rounded-md dark:bg-slate-700 dark:text-white dark:border-slate-600 focus:border-indigo-500 outline-none text-sm"
+                            className="flex-1 p-2 border rounded-md dark:bg-slate-700 dark:text-white dark:border-slate-600 focus:border-teal-500 outline-none text-sm"
                           />
                           {question.options.length > 2 && (
                             <button 
@@ -376,7 +376,7 @@ const SurveysPage = ({ role }) => {
                       <button 
                         type="button" 
                         onClick={() => addOptionToQuestion(question.id)}
-                        className="text-sm text-indigo-600 dark:text-indigo-400 font-medium hover:underline flex items-center gap-1 mt-2"
+                        className="text-sm text-teal-600 dark:text-teal-400 font-medium hover:underline flex items-center gap-1 mt-2"
                       >
                         <Plus size={14}/> Seçenek Ekle
                       </button>
@@ -389,13 +389,13 @@ const SurveysPage = ({ role }) => {
               <button 
                 type="button"
                 onClick={addQuestion}
-                className="w-full py-3 border-2 border-dashed border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/10 font-semibold flex items-center justify-center gap-2 transition-all"
+                className="w-full py-3 border-2 border-dashed border-teal-300 dark:border-teal-700 text-teal-600 dark:text-teal-400 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-900/10 font-semibold flex items-center justify-center gap-2 transition-all"
               >
                 <Plus size={18}/> Yeni Soru Ekle
               </button>
             </div>
 
-            <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 font-bold shadow-md shadow-indigo-200 transition-all">
+            <button type="submit" className="w-full bg-teal-600 text-white py-3 rounded-lg hover:bg-teal-700 font-bold shadow-md shadow-teal-200 transition-all">
               Anketi Yayınla
             </button>
           </form>
@@ -404,11 +404,11 @@ const SurveysPage = ({ role }) => {
 
       {/* --- ÖĞRENCİ: ANKET CEVAPLAMA EKRANI --- */}
       {role === 'student' && activeSurvey && (
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-indigo-200 dark:border-slate-600 shadow-xl animate-scale-in">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-teal-200 dark:border-slate-600 shadow-xl animate-scale-in">
           <div className="flex justify-between mb-6 border-b border-slate-100 pb-4">
             <div>
               <h3 className="font-bold text-xl dark:text-white">{activeSurvey.title}</h3>
-              <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded mt-1 inline-block">
+              <span className="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded mt-1 inline-block">
                 {activeSurvey.questions && activeSurvey.questions[0] && activeSurvey.questions[0].type === 'multiple-choice'
                   ? 'Seçmeli Anket'
                   : 'Açık Uçlu Soru'}
@@ -423,7 +423,7 @@ const SurveysPage = ({ role }) => {
             {activeSurvey.questions.map((q, idx) => (
               <div key={q._id || idx}>
                 <p className="font-medium text-lg text-slate-800 dark:text-slate-200 mb-4">
-                  <span className="text-indigo-600 font-bold mr-2">{idx + 1}.</span> {q.questionText}
+                  <span className="text-teal-600 font-bold mr-2">{idx + 1}.</span> {q.questionText}
                 </p>
 
                 {/* TİPE GÖRE GÖSTERİM */}
@@ -435,7 +435,7 @@ const SurveysPage = ({ role }) => {
                         key={optIdx} 
                         className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
                           answers[q._id] === opt 
-                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 ring-1 ring-indigo-500' 
+                            ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20 ring-1 ring-teal-500' 
                             : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                         }`}
                       >
@@ -444,7 +444,7 @@ const SurveysPage = ({ role }) => {
                           name={`question-${q._id}`} 
                           value={opt}
                           onChange={(e) => setAnswers({...answers, [q._id]: e.target.value})}
-                          className="w-5 h-5 text-indigo-600 focus:ring-indigo-500"
+                          className="w-5 h-5 text-teal-600 focus:ring-teal-500"
                         />
                         <span className="dark:text-slate-200">{opt}</span>
                       </label>
@@ -453,7 +453,7 @@ const SurveysPage = ({ role }) => {
                 ) : (
                   // KLASİK CEVAP
                   <textarea 
-                    className="w-full p-4 border rounded-xl dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                    className="w-full p-4 border rounded-xl dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none resize-none"
                     rows="4"
                     placeholder="Cevabınızı buraya detaylıca yazınız..."
                     onChange={(e) => setAnswers({...answers, [q._id]: e.target.value})}
@@ -500,13 +500,13 @@ const SurveysPage = ({ role }) => {
               <div className="flex items-start gap-4">
                 <div className={`p-3 rounded-xl shrink-0 ${
                    survey.questions[0]?.type === 'multiple-choice' 
-                    ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/20' 
+                    ? 'bg-sky-100 text-sky-600 dark:bg-sky-900/20' 
                     : 'bg-blue-100 text-blue-600 dark:bg-blue-900/20'
                 }`}>
                   {survey.questions[0]?.type === 'multiple-choice' ? <CheckCircle size={24}/> : <FileText size={24}/>}
                 </div>
                 <div>
-                  <h4 className="font-bold text-lg dark:text-white group-hover:text-indigo-600 transition-colors">{survey.title}</h4>
+                  <h4 className="font-bold text-lg dark:text-white group-hover:text-teal-600 transition-colors">{survey.title}</h4>
                   <div className="flex gap-3 text-xs text-slate-500 mt-1">
                      <span className="flex items-center gap-1"><Circle size={8} fill="currentColor"/> {survey.questions.length} Soru</span>
                      <span className="flex items-center gap-1"><Circle size={8} fill="currentColor"/> {survey.responses.length} Katılım</span>
@@ -533,7 +533,7 @@ const SurveysPage = ({ role }) => {
                 ) : (
                   <button 
                     onClick={() => setActiveSurvey(survey)}
-                    className="px-5 py-2.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 rounded-xl font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                    className="px-5 py-2.5 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 rounded-xl font-semibold hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors"
                   >
                     Katıl
                   </button>

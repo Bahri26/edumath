@@ -14,10 +14,10 @@ const Footer = ({ t }) => {
 
           <div>
             <div className="flex items-center text-white mb-4">
-              <div className="bg-indigo-600 p-1.5 rounded-lg mr-2">
+              <div className="bg-teal-600 p-1.5 rounded-lg mr-2">
                 <GraduationCap size={20} />
               </div>
-              <span className="text-xl font-bold">Edu<span className="text-indigo-400">math</span></span>
+              <span className="text-xl font-bold">Mato<span className="text-teal-400">va</span></span>
             </div>
             <p className="text-sm leading-relaxed mb-6 text-gray-400">
               {t.footer.desc}
@@ -27,20 +27,20 @@ const Footer = ({ t }) => {
           <div>
             <h3 className="text-white font-semibold text-lg mb-4">{t.footer.quickLinks}</h3>
             <ul className="space-y-3 text-sm">
-              <li><a href="#home" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.home}</a></li>
-              <li><a href="#about" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.about}</a></li>
-              <li><a href="#courses" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.courses}</a></li>
-              <li><a href="#curriculum" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.curriculum}</a></li>
-              <li><a href="#contact" className="hover:text-indigo-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.contact}</a></li>
+              <li><a href="#home" className="hover:text-teal-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.home}</a></li>
+              <li><a href="#about" className="hover:text-teal-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.about}</a></li>
+              <li><a href="#courses" className="hover:text-teal-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.courses}</a></li>
+              <li><a href="#curriculum" className="hover:text-teal-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.curriculum}</a></li>
+              <li><a href="#contact" className="hover:text-teal-400 transition-colors flex items-center gap-2"><ChevronRight size={14} /> {t.nav.contact}</a></li>
             </ul>
           </div>
 
           <div>
             <h3 className="text-white font-semibold text-lg mb-4">{t.footer.popularCourses}</h3>
             <ul className="space-y-3 text-sm">
-              <li><a href="#curriculum" className="hover:text-indigo-400 transition-colors">{t.footer.schoolTrack}</a></li>
-              <li><a href="#courses" className="hover:text-indigo-400 transition-colors">{t.footer.researchTrack}</a></li>
-              <li><a href="#contact" className="hover:text-indigo-400 transition-colors">{t.footer.demoTrack}</a></li>
+              <li><a href="#curriculum" className="hover:text-teal-400 transition-colors">{t.footer.schoolTrack}</a></li>
+              <li><a href="#courses" className="hover:text-teal-400 transition-colors">{t.footer.researchTrack}</a></li>
+              <li><a href="#contact" className="hover:text-teal-400 transition-colors">{t.footer.demoTrack}</a></li>
             </ul>
           </div>
 
@@ -48,16 +48,16 @@ const Footer = ({ t }) => {
             <h3 className="text-white font-semibold text-lg mb-4">{t.footer.contact}</h3>
             <div className="space-y-4 text-sm">
               <div className="flex items-start gap-3">
-                <MapPin className="mt-1 text-indigo-500 shrink-0" size={18} />
+                <MapPin className="mt-1 text-teal-500 shrink-0" size={18} />
                 <span>{t.contact.address}</span>
               </div>
               <div className="flex items-center gap-3">
-                <Phone className="text-indigo-500 shrink-0" size={18} />
+                <Phone className="text-teal-500 shrink-0" size={18} />
                 <span>{t.contact.phone}</span>
               </div>
               <div className="flex items-center gap-3">
-                <Mail className="text-indigo-500 shrink-0" size={18} />
-                <a href={`mailto:${email}`} className="hover:text-indigo-400 transition-colors">
+                <Mail className="text-teal-500 shrink-0" size={18} />
+                <a href={`mailto:${email}`} className="hover:text-teal-400 transition-colors">
                   {email}
                 </a>
               </div>
@@ -66,7 +66,7 @@ const Footer = ({ t }) => {
         </div>
 
         <div className="border-t border-gray-800 dark:border-gray-900 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 gap-4">
-          <p>&copy; {currentYear} Edumath. {t.footer.rights}</p>
+          <p>&copy; {currentYear} Matova. {t.footer.rights}</p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
             <a href={legalPath('privacy')} className="hover:text-white transition-colors">
               {t.footer.privacy}

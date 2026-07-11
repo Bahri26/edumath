@@ -8,7 +8,7 @@ const Courses = ({ lang, t }) => {
   const courses = getCourses(lang, t);
 
   const openCurriculumForGrade = (grade) => {
-    window.dispatchEvent(new CustomEvent('edumath:curriculum-grade', { detail: { grade } }));
+    window.dispatchEvent(new CustomEvent('matova:curriculum-grade', { detail: { grade } }));
     document.getElementById('curriculum')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   const researchModules = lang === 'tr'
@@ -71,9 +71,9 @@ const Courses = ({ lang, t }) => {
       case 'primary':
         return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
       case 'middle':
-        return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400';
+        return 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400';
       case 'high':
-        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+        return 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400';
       default:
         return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
     }
@@ -87,7 +87,7 @@ const Courses = ({ lang, t }) => {
         <FadeIn delay={100}>
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-white mb-6">
-              {t.courses.title} <span className="text-indigo-600 dark:text-indigo-400">{t.courses.titleHighlight}</span>
+              {t.courses.title} <span className="text-teal-600 dark:text-teal-400">{t.courses.titleHighlight}</span>
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed font-medium">
               {t.courses.desc}
@@ -117,12 +117,12 @@ const Courses = ({ lang, t }) => {
         <FadeIn delay={220}>
           <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-400 mb-2">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-teal-600 dark:text-teal-400 mb-2">
                 {t.courses.schoolTrackBadge}
               </p>
               <h3 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white">{t.courses.schoolTrackHeading}</h3>
             </div>
-            <a href="#curriculum" className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors">
+            <a href="#curriculum" className="text-sm font-bold text-teal-600 dark:text-teal-400 hover:text-teal-500 transition-colors">
               {t.courses.schoolTrackLink}
             </a>
           </div>
@@ -132,7 +132,7 @@ const Courses = ({ lang, t }) => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
           {courses.map((course, index) => (
             <FadeIn key={course.id} delay={index * 150} direction="up">
-              <div className="bg-white dark:bg-gray-900 rounded-[2rem] overflow-hidden shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 group flex flex-col h-full hover:border-indigo-500/50 transition-all duration-500 transform hover:-translate-y-2">
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] overflow-hidden shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 group flex flex-col h-full hover:border-teal-500/50 transition-all duration-500 transform hover:-translate-y-2">
                 
                 {/* Görsel Alanı */}
                 <div className="relative h-56 overflow-hidden">
@@ -164,13 +164,13 @@ const Courses = ({ lang, t }) => {
                     <span className="text-sm text-gray-500 dark:text-gray-400 font-bold ml-1">{course.rating}</span>
                   </div>
 
-                  <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-4 leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-4 leading-tight group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
                     {course.title}
                   </h3>
 
                   <div className="flex items-center gap-5 text-sm text-gray-500 dark:text-gray-400 mb-8 font-semibold">
                     <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-lg">
-                      <BookOpen size={16} className="text-indigo-500" />
+                      <BookOpen size={16} className="text-teal-500" />
                       {course.lessons}
                     </div>
                     <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-lg">
@@ -183,7 +183,7 @@ const Courses = ({ lang, t }) => {
                     <button
                       type="button"
                       onClick={() => openCurriculumForGrade(course.scrollGrade)}
-                      className="bg-gray-900 dark:bg-indigo-600 text-white p-4 rounded-2xl hover:bg-indigo-600 dark:hover:bg-indigo-500 transition-all shadow-lg group-hover:shadow-indigo-200 dark:shadow-none"
+                      className="bg-gray-900 dark:bg-teal-600 text-white p-4 rounded-2xl hover:bg-teal-600 dark:hover:bg-teal-500 transition-all shadow-lg group-hover:shadow-teal-200 dark:shadow-none"
                       aria-label={lang === 'tr' ? `${course.title} müfredatını aç` : `Open ${course.title} curriculum`}
                     >
                       <ArrowRight size={24} />
@@ -199,7 +199,7 @@ const Courses = ({ lang, t }) => {
         <FadeIn delay={400}>
           <div className="mt-16 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 p-8 md:p-10">
             <div className="max-w-3xl">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-indigo-600 dark:text-indigo-400 mb-4">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-teal-600 dark:text-teal-400 mb-4">
                 {t.courses.researchTrackBadge}
               </p>
               <h3 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight">
@@ -212,7 +212,7 @@ const Courses = ({ lang, t }) => {
             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 mt-10">
               {researchModules.map((item) => (
                 <div key={item.title} className="rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 mb-4">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 mb-4">
                     <ArrowRight size={18} />
                   </div>
                   <h4 className="text-lg font-black text-slate-900 dark:text-white mb-2">{item.title}</h4>

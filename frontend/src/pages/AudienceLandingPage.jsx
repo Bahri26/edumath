@@ -43,12 +43,12 @@ const updateCanonical = (href) => {
 };
 
 const upsertJsonLd = (data) => {
-  let script = document.head.querySelector('script[data-edumath-jsonld="audience"]');
+  let script = document.head.querySelector('script[data-matova-jsonld="audience"]');
 
   if (!script) {
     script = document.createElement('script');
     script.type = 'application/ld+json';
-    script.setAttribute('data-edumath-jsonld', 'audience');
+    script.setAttribute('data-matova-jsonld', 'audience');
     document.head.appendChild(script);
   }
 
@@ -61,7 +61,7 @@ const audienceContent = {
       badge: 'Ogrenci Akisi',
       title: 'Ogrenciler icin net, seviyeye gore ilerleyen matematik yolu',
       intro: 'Sinif duzeyi, konu sirasi ve ogrenme hizi birlikte ele alinmis bir calisma akisi.',
-      seoDescription: 'Edumath ogrenci kullanim kilavuzu ile ders akisi, odev takibi, sinav sureci ve seviyeye gore ilerleme yapisini inceleyin.',
+      seoDescription: 'Matova ogrenci kullanim kilavuzu ile ders akisi, odev takibi, sinav sureci ve seviyeye gore ilerleme yapisini inceleyin.',
       primaryCta: 'Ogrenci paneline gir',
       secondaryCta: 'Ana sayfaya don',
       heroIcon: GraduationCap,
@@ -86,7 +86,7 @@ const audienceContent = {
       badge: 'Ogretmen Akisi',
       title: 'Ogretmenler icin soru, sinav ve ogrenci takibi odakli kontrol paneli',
       intro: 'Icerik uretimi ve olcme-degerlendirme surecini tek panelde toplayan ogretmen odakli akis.',
-      seoDescription: 'Edumath ogretmen kullanim kilavuzu ile soru bankasi, sinav olusturma, ogrenci takibi ve raporlama akislarini inceleyin.',
+      seoDescription: 'Matova ogretmen kullanim kilavuzu ile soru bankasi, sinav olusturma, ogrenci takibi ve raporlama akislarini inceleyin.',
       primaryCta: 'Ogretmen paneline gir',
       secondaryCta: 'Ana sayfaya don',
       heroIcon: Users,
@@ -111,7 +111,7 @@ const audienceContent = {
       badge: 'Akademik Arastirma',
       title: 'Yuksek lisans ve doktora duzeyi matematik icin ayri bir calisma katmani',
       intro: 'Ders katalogundan ayri duran; makale, seminer, proof workshop ve tez uretkenligini merkeze alan bir arastirma akisi.',
-      seoDescription: 'Edumath akademik arastirma alani; paper review, proof workshop, tez uretkenligi ve seminer odakli matematik calisma akislarini sunar.',
+      seoDescription: 'Matova akademik arastirma alani; paper review, proof workshop, tez uretkenligi ve seminer odakli matematik calisma akislarini sunar.',
       primaryCta: 'Arastirma akisina gir',
       secondaryCta: 'Ana sayfaya don',
       heroIcon: Microscope,
@@ -138,7 +138,7 @@ const audienceContent = {
       badge: 'Student Flow',
       title: 'A clear mathematics journey for students organized by level',
       intro: 'A study flow where grade level, topic order, and learning pace are handled together.',
-      seoDescription: 'Review the Edumath student usage guide covering lesson flow, assignments, exams, and level-based learning structure.',
+      seoDescription: 'Review the Matova student usage guide covering lesson flow, assignments, exams, and level-based learning structure.',
       primaryCta: 'Open student panel',
       secondaryCta: 'Back to homepage',
       heroIcon: GraduationCap,
@@ -163,7 +163,7 @@ const audienceContent = {
       badge: 'Teacher Flow',
       title: 'A control panel for teachers focused on questions, exams, and student tracking',
       intro: 'A teacher-facing workflow that brings content production and assessment together in one place.',
-      seoDescription: 'Review the Edumath teacher usage guide for question bank filtering, exam creation, student tracking, and reporting workflows.',
+      seoDescription: 'Review the Matova teacher usage guide for question bank filtering, exam creation, student tracking, and reporting workflows.',
       primaryCta: 'Open teacher panel',
       secondaryCta: 'Back to homepage',
       heroIcon: Users,
@@ -188,7 +188,7 @@ const audienceContent = {
       badge: 'Academic Research',
       title: 'A separate workspace for graduate and doctoral mathematics',
       intro: 'A research flow separated from the lesson catalog, centered on papers, seminars, proof work, and thesis productivity.',
-      seoDescription: 'Edumath research space offers mathematics workflows for paper review, proof workshops, thesis productivity, and seminar-centered study.',
+      seoDescription: 'Matova research space offers mathematics workflows for paper review, proof workshops, thesis productivity, and seminar-centered study.',
       primaryCta: 'Open research flow',
       secondaryCta: 'Back to homepage',
       heroIcon: Microscope,
@@ -255,7 +255,7 @@ const AudienceLandingPage = ({ audience }) => {
   };
 
   useEffect(() => {
-    const pageTitle = `Edumath | ${content.title}`;
+    const pageTitle = `Matova | ${content.title}`;
     const canonicalUrl = `${window.location.origin}${canonicalPath}`;
 
     document.title = pageTitle;
@@ -319,7 +319,7 @@ const AudienceLandingPage = ({ audience }) => {
           <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
             <FadeIn delay={50}>
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-indigo-700 dark:border-indigo-900 dark:bg-gray-900/80 dark:text-indigo-300">
+                <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-teal-700 dark:border-teal-900 dark:bg-gray-900/80 dark:text-teal-300">
                   <HeroIcon size={16} />
                   {content.badge}
                 </div>
@@ -333,7 +333,7 @@ const AudienceLandingPage = ({ audience }) => {
                   <button
                     type="button"
                     onClick={routeForAudience}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-7 py-4 text-base font-bold text-white shadow-xl shadow-indigo-200/60 transition hover:bg-indigo-700"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-teal-600 px-7 py-4 text-base font-bold text-white shadow-xl shadow-teal-200/60 transition hover:bg-teal-700"
                   >
                     {content.primaryCta}
                     <ArrowRight size={18} />
@@ -341,7 +341,7 @@ const AudienceLandingPage = ({ audience }) => {
                   <button
                     type="button"
                     onClick={() => navigate('/')}
-                    className="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-7 py-4 text-base font-bold text-gray-700 transition hover:border-indigo-400 hover:text-indigo-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+                    className="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-7 py-4 text-base font-bold text-gray-700 transition hover:border-teal-400 hover:text-teal-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
                   >
                     {content.secondaryCta}
                   </button>
@@ -351,7 +351,7 @@ const AudienceLandingPage = ({ audience }) => {
 
             <FadeIn delay={180} direction="up">
               <div className="rounded-[2rem] border border-gray-200 bg-white/90 p-8 shadow-2xl shadow-gray-200/60 dark:border-gray-800 dark:bg-gray-900/90 dark:shadow-none">
-                <p className="text-sm font-black uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-400">
+                <p className="text-sm font-black uppercase tracking-[0.24em] text-teal-600 dark:text-teal-400">
                   {lang === 'tr' ? 'One Cikan Basliklar' : 'Key Highlights'}
                 </p>
                 <div className="mt-6 space-y-4">
@@ -375,7 +375,7 @@ const AudienceLandingPage = ({ audience }) => {
               return (
                 <FadeIn key={feature.title} delay={120 + index * 100} direction="up">
                   <div className="rounded-[1.75rem] border border-gray-200 bg-white p-6 shadow-lg shadow-gray-200/40 dark:border-gray-800 dark:bg-gray-900 dark:shadow-none">
-                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-300">
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 dark:bg-teal-950/40 dark:text-teal-300">
                       <Icon size={20} />
                     </div>
                     <h2 className="mt-5 text-xl font-black text-gray-900 dark:text-white">{feature.title}</h2>
@@ -392,7 +392,7 @@ const AudienceLandingPage = ({ audience }) => {
             {sections.map((section, index) => (
               <FadeIn key={section.id} delay={120 + index * 80} direction="up">
                 <article id={section.id} className="rounded-[2rem] border border-gray-200 bg-white p-7 shadow-lg shadow-gray-200/40 dark:border-gray-800 dark:bg-gray-900 dark:shadow-none">
-                  <p className="text-xs font-black uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-400">
+                  <p className="text-xs font-black uppercase tracking-[0.24em] text-teal-600 dark:text-teal-400">
                     {section.id}
                   </p>
                   <h3 className="mt-4 text-2xl font-black text-gray-900 dark:text-white">{section.title}</h3>
@@ -405,10 +405,10 @@ const AudienceLandingPage = ({ audience }) => {
 
         {guidePack && (
           <section className="px-4 pb-16 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-7xl rounded-[2rem] border border-indigo-200 bg-indigo-50/70 p-8 md:p-10 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+            <div className="mx-auto max-w-7xl rounded-[2rem] border border-teal-200 bg-teal-50/70 p-8 md:p-10 dark:border-teal-900/60 dark:bg-teal-950/20">
               <FadeIn delay={80}>
                 <div className="max-w-4xl">
-                  <p className="text-xs font-black uppercase tracking-[0.24em] text-indigo-700 dark:text-indigo-300">
+                  <p className="text-xs font-black uppercase tracking-[0.24em] text-teal-700 dark:text-teal-300">
                     {lang === 'tr' ? 'Kullanım kılavuzu' : 'Usage guide'}
                   </p>
                   <h2 className="mt-4 text-3xl font-black text-gray-900 dark:text-white md:text-4xl">

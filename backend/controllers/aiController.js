@@ -472,15 +472,6 @@ exports.smartParse = async (req, res) => {
       required: ["text", "options", "correctAnswer"],
     };
 
-    const model = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: schema,
-        temperature: 0.2,
-      },
-    });
-
     const instruction = `
       Aşağıdaki görseldeki soruyu tespit et ve aşağıdaki alanlarla JSON döndür:
       - text: Soru metni (LaTeX ifadelerini $...$ içinde ver)
@@ -513,28 +504,59 @@ exports.smartParse = async (req, res) => {
 
     let data;
     let parseMode = 'ai';
+    const isQuotaError = (err) => /429|quota|Too Many Requests|RESOURCE_EXHAUSTED/i.test(String(err?.message || err || ''));
 
-    try {
+    const runGeminiParse = async (modelName) => {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: schema,
+          temperature: 0.2,
+        },
+      });
       const result = await model.generateContent([instruction, imagePart]);
       const raw = result.response.text();
       let parsed;
       try { parsed = JSON.parse(raw); } catch (e) { parsed = {}; }
-      data = buildDefaultParsedQuestion({
-        text: parsed.text || "",
+      return buildDefaultParsedQuestion({
+        text: parsed.text || '',
         options: normalizeOptions(parsed.options),
-        correctAnswer: parsed.correctAnswer || "",
-        solution: parsed.solution || "",
-        subject: parsed.subject || "Matematik",
-        classLevel: parsed.classLevel || "9. Sınıf",
-        difficulty: parsed.difficulty || "Orta",
+        correctAnswer: parsed.correctAnswer || '',
+        solution: parsed.solution || '',
+        subject: parsed.subject || 'Matematik',
+        classLevel: parsed.classLevel || '9. Sınıf',
+        difficulty: parsed.difficulty || 'Orta',
         imagePath: imageUrl,
       });
+    };
 
+    try {
+      data = await runGeminiParse(MODEL_NAME);
       const hasUsefulAiResult = data.text.trim() || data.options.some((option) => option.trim());
       if (!hasUsefulAiResult) {
         throw new Error('AI parse returned empty fields');
       }
     } catch (aiErr) {
+      const fallbackModel = process.env.GEMINI_FALLBACK_MODEL?.trim();
+      if (fallbackModel && fallbackModel !== MODEL_NAME && isQuotaError(aiErr)) {
+        try {
+          console.warn('smartParse primary model quota, trying fallback:', fallbackModel);
+          data = await runGeminiParse(fallbackModel);
+          const hasUseful = data.text.trim() || data.options.some((option) => option.trim());
+          if (!hasUseful) throw new Error('AI parse returned empty fields');
+          parseMode = 'ai-fallback';
+          return res.json({
+            success: true,
+            data,
+            meta: { parseMode, autoFilled: true },
+            message: 'Görsel yedek model ile ayrıştırıldı.',
+          });
+        } catch (fallbackErr) {
+          console.warn('smartParse fallback model failed:', fallbackErr?.message);
+        }
+      }
+
       console.warn('smartParse AI error, fallback to OCR:', aiErr?.message);
       parseMode = 'ocr';
       try {
@@ -551,8 +573,11 @@ exports.smartParse = async (req, res) => {
             parseMode,
             layout: ocrLayout || assessmentMeta?.parseLayout || {},
             autoFilled: Boolean(data.text?.trim() || data.options?.some((o) => String(o).trim())),
+            quotaLimited: isQuotaError(aiErr),
           },
-          message: 'AI kullanılamadı, OCR ile alanlar dolduruldu.',
+          message: isQuotaError(aiErr)
+            ? 'Gemini kotası doldu; OCR ile alanlar dolduruldu. Kontrol edin.'
+            : 'AI kullanılamadı, OCR ile alanlar dolduruldu.',
           ocrPreview: ocrText.slice(0, 2000),
         });
       } catch (ocrErr) {

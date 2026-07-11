@@ -4,10 +4,10 @@ const StatCard = ({ title, value, change, icon: Icon, color }) => {
   // Renk sınıflarını map'le (dinamik sınıflar Tailwind'de çalışmaz)
   const colorMap = {
     'bg-blue-600': 'text-blue-600',
-    'bg-purple-600': 'text-purple-600',
+    'bg-sky-600': 'text-sky-600',
     'bg-green-600': 'text-green-600',
     'bg-green-700': 'text-green-700',
-    'bg-indigo-600': 'text-indigo-600',
+    'bg-teal-600': 'text-teal-600',
     'bg-red-600': 'text-red-600',
     'bg-rose-600': 'text-rose-600',
     'bg-orange-600': 'text-orange-600',

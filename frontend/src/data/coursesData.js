@@ -38,12 +38,12 @@ export const COURSE_VISUALS = {
     pattern: '● ▲ ● ▲ ●',
   },
   middle: {
-    gradient: 'from-indigo-500 via-blue-500 to-cyan-400',
+    gradient: 'from-teal-500 via-sky-500 to-cyan-400',
     icon: 'trending',
     pattern: '2 · 4 · 6 · 8',
   },
   high: {
-    gradient: 'from-purple-600 via-violet-500 to-fuchsia-400',
+    gradient: 'from-sky-600 via-teal-500 to-cyan-400',
     icon: 'sigma',
     pattern: 'Σ · f(n) · ∞',
   },

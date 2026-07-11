@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import {
   BookOpen, FileText, CheckCircle, Trophy, Users, BarChart2,
-  Calendar, MessageSquare, ClipboardList, LayoutGrid,
+  Calendar, MessageSquare, ClipboardList, LayoutGrid, Wand2,
 } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -12,8 +12,10 @@ export function useTeacherNavItems() {
       { id: 'overview', label: t('nav.teacherOverview'), icon: BookOpen, path: '/teacher/overview' },
       { id: 'questions', label: t('nav.teacherQuestions'), icon: FileText, path: '/teacher/questions' },
       { id: 'exams', label: t('nav.teacherExams'), icon: CheckCircle, path: '/teacher/exams' },
+      { id: 'assignments', label: t('nav.teacherAssignments'), icon: ClipboardList, path: '/teacher/assignments' },
       { id: 'exercises', label: t('nav.teacherExercises'), icon: Trophy, path: '/teacher/exercises' },
       { id: 'skill-tree', label: t('nav.teacherSkillTree'), icon: LayoutGrid, path: '/teacher/skill-tree' },
+      { id: 'pattern-builder', label: t('nav.teacherPatternBuilder'), icon: Wand2, path: '/teacher/pattern-builder' },
       { id: 'student-progress', label: t('nav.teacherProgress'), icon: Users, path: '/teacher/student-progress' },
       { id: 'reports', label: t('nav.teacherReports'), icon: BarChart2, path: '/teacher/reports' },
     ],
@@ -24,7 +26,10 @@ export function useTeacherNavItems() {
 export function useTeacherProfileExtras() {
   const { t } = useTranslation();
   return useMemo(
-    () => [{ id: 'surveys', label: t('nav.teacherSurveys'), icon: ClipboardList, path: '/teacher/surveys' }],
+    () => [
+      { id: 'surveys', label: t('nav.teacherSurveys'), icon: ClipboardList, path: '/teacher/surveys' },
+      { id: 'messages', label: t('nav.teacherMessages'), icon: MessageSquare, path: '/teacher/messages' },
+    ],
     [t],
   );
 }

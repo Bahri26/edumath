@@ -184,7 +184,7 @@ const AdminResetRequests = () => {
 
       {loading ? (
         <div className={a.loadingBox}>
-          <Loader2 className="mr-2 h-5 w-5 animate-spin text-violet-600" />
+          <Loader2 className="mr-2 h-5 w-5 animate-spin text-teal-600" />
           Talepler yükleniyor…
         </div>
       ) : (
@@ -295,7 +295,7 @@ const AdminResetRequests = () => {
               <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                  className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                   checked={mustChange}
                   onChange={(e) => setMustChange(e.target.checked)}
                 />

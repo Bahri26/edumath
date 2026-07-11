@@ -1,11 +1,11 @@
 import React from 'react';
 
 const COLOR_MAP = {
-  indigo: { bar: 'bg-indigo-500', chip: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200' },
+  indigo: { bar: 'bg-teal-500', chip: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-200' },
   emerald: { bar: 'bg-emerald-500', chip: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200' },
   amber: { bar: 'bg-amber-500', chip: 'bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200' },
   sky: { bar: 'bg-sky-500', chip: 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-200' },
-  violet: { bar: 'bg-violet-500', chip: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-200' },
+  violet: { bar: 'bg-sky-500', chip: 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-200' },
   rose: { bar: 'bg-rose-500', chip: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-200' },
   teal: { bar: 'bg-teal-500', chip: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-200' },
   orange: { bar: 'bg-orange-500', chip: 'bg-orange-50 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200' },
@@ -43,7 +43,7 @@ const CourseCard = ({
           {icon}
         </div>
         {isPattern ? (
-          <span className="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200">
+          <span className="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-200">
             Örüntü
           </span>
         ) : null}

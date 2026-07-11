@@ -17,15 +17,19 @@ export default function StudentPageShell({
         <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2 min-w-0">
             {title ? (
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-600 to-teal-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-teal-400">
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight bg-gradient-to-r from-kid-headerFrom via-sky-600 to-kid-headerTo bg-clip-text text-transparent dark:from-kid-headerFromDark dark:via-sky-400 dark:to-kid-headerToDark">
                 {title}
               </h1>
             ) : null}
             {subtitle ? (
-              <p className="text-slate-600 dark:text-slate-300 font-medium leading-relaxed max-w-3xl">{subtitle}</p>
+              <p className="text-surface-600 dark:text-surface-300 font-medium leading-relaxed max-w-3xl">
+                {subtitle}
+              </p>
             ) : null}
           </div>
-          {headerAside ? <div className="shrink-0">{headerAside}</div> : null}
+          {headerAside ? (
+            <div className="shrink-0 animate-scale-in">{headerAside}</div>
+          ) : null}
         </header>
       ) : null}
       {children}

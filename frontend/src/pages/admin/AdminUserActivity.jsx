@@ -20,7 +20,7 @@ const CATEGORY_BADGE = {
   auth: 'bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300',
   content: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300',
   learning: 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300',
-  admin: 'bg-violet-100 text-violet-800 dark:bg-violet-950/50 dark:text-violet-300',
+  admin: 'bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300',
   system: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
 };
 
@@ -152,7 +152,7 @@ export default function AdminUserActivity() {
   return (
     <div className={a.pageWrap}>
       <header className="flex flex-wrap items-start gap-4">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-indigo-600 text-white shadow-lg shadow-cyan-500/25">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-600 text-white shadow-lg shadow-cyan-500/25">
           <Activity className="h-6 w-6" />
         </span>
         <div className="flex-1 min-w-0">
@@ -201,7 +201,7 @@ export default function AdminUserActivity() {
 
           {watchLoading ? (
             <div className="flex justify-center py-4">
-              <Loader2 className="h-5 w-5 animate-spin text-violet-600" />
+              <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
             </div>
           ) : watchlist.length === 0 ? (
             <p className="text-xs text-slate-500">{t('admin.activity.watchEmpty')}</p>
@@ -218,7 +218,7 @@ export default function AdminUserActivity() {
                     <div className="flex items-start justify-between gap-2">
                       <button
                         type="button"
-                        className="text-left text-sm font-medium text-slate-800 hover:text-violet-600 dark:text-slate-100"
+                        className="text-left text-sm font-medium text-slate-800 hover:text-teal-600 dark:text-slate-100"
                         onClick={() => filterByUser(uid)}
                       >
                         {u?.name || '—'}
@@ -318,7 +318,7 @@ export default function AdminUserActivity() {
 
           {loading ? (
             <div className={a.loadingBox}>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin text-violet-600" />
+              <Loader2 className="mr-2 h-5 w-5 animate-spin text-teal-600" />
               {t('admin.activity.loading')}
             </div>
           ) : items.length === 0 ? (
@@ -343,7 +343,7 @@ export default function AdminUserActivity() {
                         <div className="min-w-0">
                           <button
                             type="button"
-                            className="truncate text-left text-sm font-medium text-slate-800 hover:text-violet-600 dark:text-slate-100"
+                            className="truncate text-left text-sm font-medium text-slate-800 hover:text-teal-600 dark:text-slate-100"
                             onClick={() => filterByUser(pop?._id || row.userId)}
                           >
                             {displayName}
@@ -408,7 +408,7 @@ export default function AdminUserActivity() {
                                 <div className="min-w-0">
                                   <button
                                     type="button"
-                                    className="truncate text-left text-sm font-medium text-slate-800 hover:text-violet-600 dark:text-slate-100"
+                                    className="truncate text-left text-sm font-medium text-slate-800 hover:text-teal-600 dark:text-slate-100"
                                     onClick={() => filterByUser(pop?._id || row.userId)}
                                   >
                                     {displayName}

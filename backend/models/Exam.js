@@ -41,6 +41,8 @@ const ExamSchema = new mongoose.Schema({
       isCorrect: { type: Boolean, default: false },
       timeSpentSeconds: { type: Number, default: null },
     }],
+    hintsUsedCount: { type: Number, default: 0 },
+    hintsUsedQuestionIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }],
     submittedAt: { type: Date, default: Date.now }
   }]
 }, { timestamps: true, collection: 'exams' });

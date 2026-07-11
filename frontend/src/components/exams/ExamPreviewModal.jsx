@@ -39,7 +39,7 @@ export default function ExamPreviewModal({ examId, onClose }) {
     <div className="fixed inset-0 z-[150] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 w-full max-w-5xl rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+        <div className="flex items-center justify-between p-6 bg-gradient-to-r from-teal-600 to-sky-600 text-white">
           <div className="flex items-center gap-3">
             <Eye size={22} />
             <span className="font-black tracking-wide">Sınav Önizleme</span>
@@ -63,8 +63,8 @@ export default function ExamPreviewModal({ examId, onClose }) {
                   <p className="text-slate-500 text-sm">Oluşturulma: {new Date(exam.createdAt).toLocaleString()}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="px-3 py-1 rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 flex items-center gap-2 text-sm"><Clock size={16} /> {exam.duration} dk</span>
-                  <span className="px-3 py-1 rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 flex items-center gap-2 text-sm"><Layers size={16} /> {exam.questions?.length || 0} soru</span>
+                  <span className="px-3 py-1 rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 flex items-center gap-2 text-sm"><Clock size={16} /> {exam.duration} dk</span>
+                  <span className="px-3 py-1 rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300 flex items-center gap-2 text-sm"><Layers size={16} /> {exam.questions?.length || 0} soru</span>
                 </div>
               </div>
 
@@ -76,7 +76,7 @@ export default function ExamPreviewModal({ examId, onClose }) {
                   return (
                     <Card key={q._id || idx} className="p-5">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded bg-indigo-50 text-indigo-700">Soru {idx + 1}</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded bg-teal-50 text-teal-700">Soru {idx + 1}</span>
                         <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded ${q.difficulty === 'Zor' ? 'bg-rose-50 text-rose-700' : q.difficulty === 'Orta' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>{q.difficulty}</span>
                       </div>
                       <QuestionTextWithPattern
@@ -89,7 +89,12 @@ export default function ExamPreviewModal({ examId, onClose }) {
                         {opts.map((opt, i) => (
                           <div key={i} className={`flex items-start gap-2 p-3 rounded-xl border ${opt.text === q.correctAnswer ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 dark:border-slate-700'}`}>
                             <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-100 text-slate-700 font-bold">{String.fromCharCode(65 + i)}</span>
-                            <span className="text-sm flex-1">{opt.text}</span>
+                            <div className="flex-1 min-w-0 space-y-2">
+                              <span className="text-sm">{opt.text}</span>
+                              {opt.image ? (
+                                <QuestionVisual src={opt.image} alt={`Şık ${String.fromCharCode(65 + i)}`} className="max-h-32" />
+                              ) : null}
+                            </div>
                           </div>
                         ))}
                       </div>

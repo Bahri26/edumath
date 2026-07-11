@@ -57,8 +57,8 @@ export default function StudentExamAnalysisPanel({ exam, labels, language = 'TR'
   const hasCharts = pieData.some((d) => d.value > 0);
 
   return (
-    <Card className="p-0 overflow-hidden border border-violet-100 dark:border-violet-900/40">
-      <div className="px-4 py-4 sm:px-5 bg-gradient-to-r from-violet-50/80 to-indigo-50/50 dark:from-violet-950/30 dark:to-indigo-950/20 border-b border-violet-100 dark:border-violet-900/40">
+    <Card className="p-0 overflow-hidden border border-sky-100 dark:border-sky-900/40">
+      <div className="px-4 py-4 sm:px-5 bg-gradient-to-r from-sky-50/80 to-teal-50/50 dark:from-sky-950/30 dark:to-teal-950/20 border-b border-sky-100 dark:border-sky-900/40">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h4 className="font-bold text-slate-900 dark:text-white truncate">{exam.title || '—'}</h4>

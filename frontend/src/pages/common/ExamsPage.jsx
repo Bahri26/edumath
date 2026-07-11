@@ -1,31 +1,29 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { Clock, FileText, Plus, Trash2, Play, CheckCircle, AlertTriangle, X, Brain, Sparkles, GripVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Clock, FileText, Plus, Trash2, Play, CheckCircle, AlertTriangle, X, GripVertical } from 'lucide-react';
 import apiClient from '../../services/api';
 import { generatePracticeQuestions } from '../../services/aiService';
 import { useToast } from '../../context/ToastContext';
 import { createExam } from '../../services/examService';
 import SkeletonCard from '../../components/ui/SkeletonCard';
-import { renderWithLatex } from '../../utils/latex.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Badge from '../../components/ui/Badge.jsx';
 import Card from '../../components/ui/Card.jsx';
-import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
-import QuestionTextWithPattern from '../../components/questions/QuestionTextWithPattern.jsx';
-import { MatchingPracticeCard, SequencePracticeCard } from '../../components/exams/InteractivePracticeCards.jsx';
+import ExamPlayer from '../../components/exams/ExamPlayer.jsx';
+import ExamResultPanel from '../../components/exams/ExamResultPanel.jsx';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
-import StudentHint from '../../components/StudentHint.jsx';
-import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
 import { computeExamTotalTimeSpent } from '../../hooks/useQuestionTimer.js';
 import { formatDuration } from '../../utils/formatDuration.js';
+import { isExamQuestionAnswered } from '../../utils/examAnswerUtils.js';
 import { useTranslation } from '../../i18n/useTranslation';
 
 const ExamsPage = ({ role }) => {
   const { askConfirm, ConfirmDialog } = useConfirmAction();
   const { t } = useTranslation();
   const sx = (key, params) => t(`studentExams.${key}`, params);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -58,6 +56,8 @@ const ExamsPage = ({ role }) => {
   const answersRef = useRef({});
   const questionTimesRef = useRef({});
   const examDurationRef = useRef(0);
+  const hintsUsedRef = useRef(new Set());
+  const autoStartHandled = useRef(false);
 
   const fetchExams = async () => {
     try {
@@ -74,6 +74,16 @@ const ExamsPage = ({ role }) => {
   useEffect(() => {
     fetchExams();
   }, []);
+
+  useEffect(() => {
+    if (role !== 'student' || loading || autoStartHandled.current) return;
+    const startId = searchParams.get('start');
+    if (!startId) return;
+    autoStartHandled.current = true;
+    setSearchParams({}, { replace: true });
+    startExam(startId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, role, searchParams]);
 
   // --- TEACHER: SINAV OLUŞTUR ---
   const handleCreateExam = async () => {
@@ -153,6 +163,7 @@ const ExamsPage = ({ role }) => {
       setUserAnswers({});
       answersRef.current = {};
       questionTimesRef.current = {};
+      hintsUsedRef.current = new Set();
       setExamResult(null);
       setPracticeQuestions(null);
 
@@ -194,9 +205,14 @@ const ExamsPage = ({ role }) => {
         answers: payload,
         totalTimeSpentSeconds,
         questionTimes: questionTimesRef.current,
+        hintsUsedQuestionIds: [...hintsUsedRef.current],
       });
 
-      setExamResult({ ...res.data, totalTimeSpentSeconds });
+      setExamResult({
+        ...res.data,
+        totalTimeSpentSeconds,
+        hintsUsedCount: hintsUsedRef.current.size,
+      });
       setActiveExam(null);
       fetchExams();
     } catch (err) {
@@ -208,7 +224,9 @@ const ExamsPage = ({ role }) => {
   const confirmFinishExam = async (early = false) => {
     if (!activeExam) return;
     const totalQuestions = activeExam.questions.length;
-    const answeredCount = activeExam.questions.filter((item) => userAnswers[item._id]).length;
+    const answeredCount = activeExam.questions.filter((item) =>
+      isExamQuestionAnswered(item, userAnswers[item._id]),
+    ).length;
     const unanswered = totalQuestions - answeredCount;
 
     const confirmed = await askConfirm({
@@ -301,12 +319,6 @@ const ExamsPage = ({ role }) => {
     });
   };
 
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
   if (loading) {
     return (
       <div className="p-6">
@@ -321,340 +333,48 @@ const ExamsPage = ({ role }) => {
 
   // --- EKRAN 1: SINAV ANI (Öğrenci) ---
   if (activeExam && !examResult) {
-    const totalQuestions = activeExam.questions.length;
-    const idx = Math.min(examQuestionIndex, Math.max(0, totalQuestions - 1));
-    const q = activeExam.questions[idx];
-    const isFirst = idx === 0;
-    const isLast = idx >= totalQuestions - 1;
-    const answeredCount = activeExam.questions.filter((item) => userAnswers[item._id]).length;
-
-    const recordAnswer = (questionId, optionText) => {
-      const next = { ...userAnswers, [questionId]: optionText };
-      setUserAnswers(next);
-      answersRef.current = next;
-      questionTimesRef.current = {
-        ...questionTimesRef.current,
-        [questionId]: computeExamTotalTimeSpent(
-          examDurationRef.current || activeExam.duration,
-          timeLeft,
-        ),
-      };
-    };
-
     return (
-      <>
-      <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-slate-900 flex flex-col">
-        <div className="bg-white dark:bg-slate-800 p-3 sm:p-4 shadow-md sticky top-0 z-10 flex flex-wrap justify-between items-center gap-3 px-4 sm:px-8 border-b border-slate-200 dark:border-slate-700">
-          <div className="min-w-0">
-            <h2 className="text-lg sm:text-xl font-bold dark:text-white truncate">{activeExam.title}</h2>
-            <p className="text-sm text-slate-500">
-              {sx('questionProgress', { current: idx + 1, total: totalQuestions })}
-              {answeredCount > 0 && ` · ${sx('answeredCount', { n: answeredCount })}`}
-            </p>
-          </div>
-          <div className={`text-xl sm:text-2xl font-mono font-bold px-3 sm:px-4 py-2 rounded-lg shrink-0 ${timeLeft < 300 ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
-            {formatTime(timeLeft)}
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto p-4 sm:p-6">
-            {q && (
-              <div className="bg-white dark:bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
-                <div className="flex gap-3 mb-4">
-                  <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold px-3 py-1 rounded-lg">
-                    {sx('questionLabel', { n: idx + 1 })}
-                  </span>
-                </div>
-                <QuestionTextWithPattern
-                  text={q.text}
-                  mainClassName="text-lg font-medium text-slate-800 dark:text-white"
-                  className="mb-4"
-                />
-                <QuestionVisual src={q.image} alt={sx('questionLabel', { n: idx + 1 })} className="mb-4" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {(Array.isArray(q.options) ? q.options : []).map((opt, i) => {
-                    const optionText = opt?.text || '';
-                    const isSelected = userAnswers[q._id] === optionText;
-                    const letter = String.fromCharCode(65 + i);
-                    return (
-                      <label
-                        key={i}
-                        className={`flex items-start gap-3 p-4 min-h-[52px] border rounded-2xl cursor-pointer transition-all ${isSelected ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500' : 'hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'}`}
-                      >
-                        <input
-                          type="radio"
-                          name={`q-${q._id}`}
-                          value={optionText}
-                          checked={isSelected}
-                          onChange={() => recordAnswer(q._id, optionText)}
-                          className="mt-1 w-5 h-5 text-indigo-600 shrink-0"
-                        />
-                        <div className="flex-1">
-                          <div className="text-slate-700 dark:text-slate-200">
-                            <span className="font-bold mr-2">{letter})</span>
-                            {renderWithLatex(optionText)}
-                          </div>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-wrap gap-2 justify-center mt-6 px-1">
-              {activeExam.questions.map((item, qIdx) => {
-                const answered = !!userAnswers[item._id];
-                const current = qIdx === idx;
-                return (
-                  <button
-                    key={item._id}
-                    type="button"
-                    onClick={() => setExamQuestionIndex(qIdx)}
-                    className={`w-9 h-9 min-w-[36px] rounded-lg text-sm font-bold transition-all ${
-                      current
-                        ? 'bg-indigo-600 text-white ring-2 ring-indigo-300'
-                        : answered
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
-                          : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
-                    }`}
-                    aria-label={`${sx('questionLabel', { n: qIdx + 1 })}${answered ? sx('questionAnsweredAria') : ''}`}
-                    aria-current={current ? 'step' : undefined}
-                  >
-                    {qIdx + 1}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="sticky bottom-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 flex flex-wrap items-center justify-between gap-3">
-          <button
-            type="button"
-            disabled={isFirst}
-            onClick={() => setExamQuestionIndex((n) => Math.max(0, n - 1))}
-            className="inline-flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl font-semibold border border-slate-200 dark:border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700"
-          >
-            <ChevronLeft size={18} aria-hidden /> {sx('prev')}
-          </button>
-          <div className="flex gap-2">
-            {!isLast ? (
-              <button
-                type="button"
-                onClick={() => setExamQuestionIndex((n) => Math.min(totalQuestions - 1, n + 1))}
-                className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700"
-              >
-                {sx('next')} <ChevronRight size={18} aria-hidden />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => confirmFinishExam(false)}
-                className="px-5 py-2.5 min-h-[44px] rounded-xl font-bold bg-green-600 text-white hover:bg-green-700"
-              >
-                {sx('finish')}
-              </button>
-            )}
-            {!isLast && (
-              <button
-                type="button"
-                onClick={() => confirmFinishExam(true)}
-                className="px-4 py-2.5 min-h-[44px] rounded-xl font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700"
-              >
-                {sx('finishEarly')}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-      <ConfirmDialog />
-      </>
+      <ExamPlayer
+        exam={activeExam}
+        questionIndex={examQuestionIndex}
+        setQuestionIndex={setExamQuestionIndex}
+        userAnswers={userAnswers}
+        setUserAnswers={setUserAnswers}
+        answersRef={answersRef}
+        questionTimesRef={questionTimesRef}
+        hintsUsedRef={hintsUsedRef}
+        timeLeft={timeLeft}
+        examDuration={examDurationRef.current || activeExam.duration}
+        onConfirmFinish={confirmFinishExam}
+        ConfirmDialog={ConfirmDialog}
+        labels={{
+          questionProgress: (p) => sx('questionProgress', p),
+          answeredCount: (p) => sx('answeredCount', p),
+          questionLabel: (p) => sx('questionLabel', p),
+          questionAnsweredAria: sx('questionAnsweredAria'),
+          prev: sx('prev'),
+          next: sx('next'),
+          finish: sx('finish'),
+          finishEarly: sx('finishEarly'),
+        }}
+      />
     );
   }
 
   // --- EKRAN 2: SONUÇ VE AI ANTRENMAN ---
   if (examResult) {
     return (
-      <div className="animate-fade-in max-w-4xl mx-auto pt-6 pb-20 space-y-8">
-        
-        {/* Sonuç Kartı */}
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 text-center">
-          <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-             {examResult.score >= 50 ? <CheckCircle size={40} /> : <AlertTriangle size={40} className="text-orange-500"/>}
-          </div>
-          <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">Sınav Tamamlandı!</h2>
-          <p className="text-slate-500 mb-6">
-            Başarı Puanın:{' '}
-            <span className={`text-2xl font-bold ${examResult.score >= 50 ? 'text-green-600' : 'text-orange-500'}`}>
-              {examResult.score}
-            </span>
-            {examResult.totalTimeSpentSeconds != null && (
-              <span className="block text-sm mt-2 text-slate-400">
-                Süre: {Math.floor(examResult.totalTimeSpentSeconds / 60)} dk {examResult.totalTimeSpentSeconds % 60} sn
-              </span>
-            )}
-          </p>
-          
-          {/* Eksik Konular Listesi */}
-          {examResult.weakTopics && examResult.weakTopics.length > 0 ? (
-            <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-2xl border border-red-100 dark:border-red-900/30 max-w-lg mx-auto mb-6 text-left">
-              <h3 className="font-bold text-red-700 dark:text-red-300 flex items-center gap-2 mb-3">
-                <AlertTriangle size={18}/> Geliştirilmesi Gereken Konular:
-              </h3>
-              <ul className="list-disc list-inside space-y-1 text-red-600 dark:text-red-400">
-                {examResult.weakTopics.map((topic, i) => (
-                  <li key={i}>{topic}</li>
-                ))}
-              </ul>
-              
-              {/* AI Butonu - Sadece sorular henüz üretilmediyse göster */}
-              {!practiceQuestions && (
-                <div className="flex flex-col gap-2 mt-4">
-                <button 
-                  onClick={handleGeneratePractice} 
-                  disabled={loadingAI}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-200 dark:shadow-none"
-                >
-                  {loadingAI ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      AI Soruları Hazırlıyor...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={20} />
-                      AI İle Eksiklerini Kapat
-                    </>
-                  )}
-                </button>
-                <Link
-                  to="/student/exercises"
-                  className="w-full text-center py-3 rounded-xl font-bold border-2 border-indigo-200 text-indigo-700 dark:border-indigo-800 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
-                >
-                  Egzersizlere git
-                </Link>
-                <Link
-                  to="/student/courses"
-                  className="w-full text-center py-3 rounded-xl font-bold border-2 border-slate-200 text-slate-600 dark:border-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                >
-                  İlgili derslere git
-                </Link>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-green-600 font-medium mb-6">Tebrikler! Belirgin bir eksik konun yok. 🎉</div>
-          )}
-
-          <button onClick={() => setExamResult(null)} className="text-slate-500 hover:text-slate-800 underline">
-            Listeye Dön
-          </button>
-        </div>
-
-        {/* AI Tarafından Üretilen Alıştırma Alanı */}
-        {practiceQuestions && (
-          <div className="animate-slide-up">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-purple-100 text-purple-600 rounded-xl">
-                <Brain size={28} />
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Sana Özel Antrenman</h3>
-                <p className="text-slate-500">Gemini AI tarafından eksiklerine göre hazırlandı.</p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {practiceQuestions.map((q, idx) => {
-                const state = practiceState[idx];
-                const isAnswered = !!state;
-
-                return (
-                  <div key={idx} className={`bg-white dark:bg-slate-800 p-6 rounded-2xl border-2 transition-all ${isAnswered ? (state.isCorrect ? 'border-green-200' : 'border-red-200') : 'border-transparent shadow-sm'}`}>
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="bg-purple-50 text-purple-700 font-bold px-3 py-1 rounded-lg text-sm">Soru {idx + 1}</span>
-                    </div>
-                    
-                    <QuestionTextWithPattern
-                      text={q.text || q.questionText}
-                      mainClassName="text-lg font-medium text-slate-800 dark:text-white"
-                      className="mb-6"
-                    />
-                    <QuestionVisual src={q.image} alt={`Antrenman ${idx + 1} gorseli`} className="mb-4" />
-
-                    {q.type === 'matching' ? (
-                      <MatchingPracticeCard question={q} state={state} onChange={(promptId, selectedValue, correctPairs) => handleMatchingAnswer(idx, promptId, selectedValue, correctPairs)} />
-                    ) : q.type === 'sequence' ? (
-                      <SequencePracticeCard question={q} state={state} onMove={(index, direction, currentOrder, checkOnly = false) => handleSequenceMove(idx, index, direction, currentOrder, checkOnly)} />
-                    ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                      {(Array.isArray(q.options) ? q.options : Object.values(q.options)).map((opt, i) => {
-                        const optKey = ["A", "B", "C", "D"][i]; // Harf karşılığı
-                        const isSelected = state?.selected === (q.options.A ? optKey : opt); // Backend formatına göre kontrol
-                        
-                        let btnClass = "border-slate-200 hover:bg-slate-50"; // Default
-                        if (isAnswered) {
-                          if (q.correctAnswer === (q.options.A ? optKey : opt)) btnClass = "bg-green-100 border-green-500 text-green-800"; // Doğru şık
-                          else if (isSelected) btnClass = "bg-red-100 border-red-500 text-red-800"; // Yanlış seçim
-                          else btnClass = "opacity-50"; // Diğerleri
-                        } else if (isSelected) {
-                           btnClass = "border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50";
-                        }
-
-                        return (
-                          <button 
-                            key={i} 
-                            disabled={isAnswered}
-                            onClick={() => handlePracticeAnswer(idx, q.options.A ? optKey : opt, q.correctAnswer)}
-                            className={`p-4 border rounded-xl text-left transition-all ${btnClass}`}
-                          >
-                            <span className="font-bold mr-2">{optKey})</span> {opt}
-                          </button>
-                        )
-                      })}
-                    </div>
-                    )}
-
-                    {isAnswered && q.type !== 'matching' && q.type !== 'sequence' && (
-                      <div className={`mt-4 p-4 rounded-xl text-sm ${state.isCorrect ? 'bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-200' : 'bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-200'}`}>
-                        <div className="font-bold mb-1 flex items-center gap-2">
-                           {state.isCorrect ? <CheckCircle size={16}/> : <X size={16}/>}
-                           {state.isCorrect ? "Doğru Cevap!" : "Yanlış Cevap"}
-                        </div>
-                        {!state.isCorrect && q.correctAnswer && (
-                          <p className="mb-2">Doğru cevap: <strong>{q.correctAnswer}</strong></p>
-                        )}
-                        {!state.isCorrect && q.solution ? (
-                          <div className="mb-2">
-                            <p className="text-xs font-bold opacity-70 mb-1">Çözüm</p>
-                            <SolutionDisplay text={q.solution} />
-                          </div>
-                        ) : null}
-                        {!state.isCorrect && (
-                          <StudentHint
-                            questionId={q._id}
-                            questionText={q.text || q.questionText}
-                            studentAnswer={state?.selected || ''}
-                            topic={q.topic}
-                            subject={q.subject}
-                            compact
-                          />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            
-            <div className="text-center mt-10">
-               <button onClick={() => setExamResult(null)} className="bg-slate-800 text-white px-8 py-3 rounded-xl hover:bg-slate-700">Antrenmanı Bitir</button>
-            </div>
-          </div>
-        )}
-      </div>
+      <ExamResultPanel
+        examResult={examResult}
+        practiceQuestions={practiceQuestions}
+        practiceState={practiceState}
+        loadingAI={loadingAI}
+        onGeneratePractice={handleGeneratePractice}
+        onPracticeAnswer={handlePracticeAnswer}
+        onMatchingAnswer={handleMatchingAnswer}
+        onSequenceMove={handleSequenceMove}
+        onBackToList={() => setExamResult(null)}
+      />
     );
   }
 
@@ -668,7 +388,7 @@ const ExamsPage = ({ role }) => {
               title={sx('emptyTitle')}
               description={sx('emptyDesc')}
               action={
-                <Link to="/student/courses" className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700">
+                <Link to="/student/courses" className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-bold bg-teal-600 text-white hover:bg-teal-700">
                   {sx('goCourses')}
                 </Link>
               }
@@ -686,9 +406,15 @@ const ExamsPage = ({ role }) => {
             />
           )
         ) : exams.map(exam => (
-            <Card key={exam._id}>
+            <Card key={exam._id} interactive className="flex flex-col h-full !p-5">
               <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-xl"><FileText size={24} /></div>
+                <div className={`p-3 rounded-2xl ${
+                  role === 'student'
+                    ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300'
+                    : 'bg-brand-50 dark:bg-brand-900/30 text-brand-600'
+                }`}>
+                  <FileText size={22} />
+                </div>
                 <div className="flex items-center gap-2">
                   {exam.classLevel && <Badge color="indigo" className="font-semibold">{exam.classLevel}</Badge>}
                   {role === 'teacher' && exam.canManage !== false && (
@@ -698,12 +424,11 @@ const ExamsPage = ({ role }) => {
                   )}
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">{exam.title}</h3>
-              {exam.description && <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">{exam.description}</p>}
-              <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300 mb-6">
-                <span className="flex items-center gap-1"><Clock size={14}/> {exam.duration} Dk</span>
-                <span className="flex items-center gap-1">
-                  <AlertTriangle size={14}/>
+              <h3 className="font-display text-lg font-semibold text-surface-900 dark:text-white mb-1">{exam.title}</h3>
+              {exam.description && <p className="text-sm text-surface-500 dark:text-surface-400 mb-3 line-clamp-2">{exam.description}</p>}
+              <div className="flex flex-wrap items-center gap-2 text-sm text-surface-600 dark:text-surface-300 mb-6">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-50 dark:bg-surface-900/40"><Clock size={14}/> {exam.duration} Dk</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-50 dark:bg-surface-900/40">
                   {role === 'student'
                     ? sx('questionsCount', { n: exam.questionCount ?? exam.questions?.length ?? 0 })
                     : `${exam.questionCount ?? exam.questions?.length ?? 0} Soru`}
@@ -715,26 +440,28 @@ const ExamsPage = ({ role }) => {
                   <Badge color={exam.status === 'active' ? 'green' : exam.status === 'draft' ? 'yellow' : 'blue'}>{exam.status}</Badge>
                 )}
               </div>
+              <div className="mt-auto">
               {role === 'student' ? (
                 <div className="flex gap-2 flex-wrap">
                   {exam.canStart ? (
-                    <Button variant="primary" size="md" onClick={() => startExam(exam._id)} icon={Play}>{sx('start')}</Button>
+                    <Button variant="soft" size="md" onClick={() => startExam(exam._id)} icon={Play}>{sx('start')}</Button>
                   ) : exam.studentCompleted ? (
                     <Button variant="outline" size="md" onClick={() => viewMyResult(exam._id)} icon={CheckCircle}>{sx('viewResult')}</Button>
                   ) : exam.schedulePhase === 'scheduled' ? (
                     <span className="text-sm text-amber-600 dark:text-amber-400 font-medium py-2">{sx('scheduled')}</span>
                   ) : (
-                    <span className="text-sm text-slate-500 py-2">{sx('ended')}</span>
+                    <span className="text-sm text-surface-500 py-2">{sx('ended')}</span>
                   )}
                   {exam.studentCompleted && exam.canStart === false && exam.schedulePhase === 'live' && (
                     <Button variant="outline" size="md" onClick={() => viewMyResult(exam._id)}>{sx('viewResult')}</Button>
                   )}
                 </div>
               ) : (
-                <div className="w-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 py-2.5 rounded-xl text-center text-sm font-medium">
+                <div className="w-full bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 py-2.5 rounded-xl text-center text-sm font-medium">
                   {exam.results.length} Katılım
                 </div>
               )}
+              </div>
             </Card>
         ))}
       </div>
@@ -787,7 +514,7 @@ const ExamsPage = ({ role }) => {
                     ))}
                   </ul>
                   <div className="flex flex-col gap-2 mt-4">
-                    <Link to="/student/exercises" className="text-center py-2 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700">
+                    <Link to="/student/exercises" className="text-center py-2 rounded-xl font-bold bg-teal-600 text-white hover:bg-teal-700">
                       Egzersizlere git
                     </Link>
                     <Link to="/student/courses" className="text-center py-2 rounded-xl font-bold border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800">
@@ -806,9 +533,9 @@ const ExamsPage = ({ role }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-800 w-full max-w-lg max-h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white flex justify-between items-start">
+            <div className="bg-gradient-to-r from-teal-700 to-sky-700 p-6 text-white flex justify-between items-start">
               <div>
-                <h3 className="text-2xl font-bold">Sınav Oluştur</h3>
+                <h3 className="font-display text-2xl font-semibold">Sınav Oluştur</h3>
               </div>
               <button onClick={() => {setShowCreateModal(false); setActiveTab('create');}} className="p-2 hover:bg-white/20 rounded-lg">
                 <X size={24} className="text-white"/>
@@ -819,13 +546,13 @@ const ExamsPage = ({ role }) => {
             <div className="flex border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
               <button
                 onClick={() => setActiveTab('create')}
-                className={`flex-1 py-3 font-semibold text-sm transition-all ${activeTab === 'create' ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800' : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
+                className={`flex-1 py-3 font-semibold text-sm transition-all ${activeTab === 'create' ? 'border-b-2 border-teal-600 text-teal-600 bg-white dark:bg-slate-800' : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
               >
                 Sınav Oluştur
               </button>
               <button
                 onClick={() => setActiveTab('questions')}
-                className={`flex-1 py-3 font-semibold text-sm transition-all ${activeTab === 'questions' ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800' : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
+                className={`flex-1 py-3 font-semibold text-sm transition-all ${activeTab === 'questions' ? 'border-b-2 border-teal-600 text-teal-600 bg-white dark:bg-slate-800' : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
               >
                 Soru Seçimi ({selectedQuestions.length}/21)
               </button>
@@ -842,7 +569,7 @@ const ExamsPage = ({ role }) => {
                     <label className="block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Sınav Adı *</label>
                     <input 
                       type="text" 
-                      className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" 
+                      className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none" 
                       placeholder="Örn: Matematik Denemesi - 1" 
                       value={newTitle} 
                       onChange={e => setNewTitle(e.target.value)}
@@ -855,7 +582,7 @@ const ExamsPage = ({ role }) => {
                       <label className="block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Konu *</label>
                       <input 
                         type="text" 
-                        className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" 
+                        className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none" 
                         placeholder="Örn: Örüntüler" 
                         value={examSubject} 
                         onChange={e => setExamSubject(e.target.value)}
@@ -864,7 +591,7 @@ const ExamsPage = ({ role }) => {
                     <div>
                       <label className="block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Sınıf *</label>
                       <select 
-                        className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" 
+                        className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none" 
                         value={selectedClass} 
                         onChange={e => setSelectedClass(e.target.value)}
                       >
@@ -881,14 +608,14 @@ const ExamsPage = ({ role }) => {
                       <label className="block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Süre (dakika) *</label>
                       <input 
                         type="number" 
-                        className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" 
+                        className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none" 
                         value={duration} 
                         onChange={e => setDuration(e.target.value)}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Toplam Soru</label>
-                      <div className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 text-sm font-bold flex items-center justify-center">
+                      <div className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 text-sm font-bold flex items-center justify-center">
                         21 Soru
                       </div>
                     </div>
@@ -898,7 +625,7 @@ const ExamsPage = ({ role }) => {
                   <div>
                     <label className="block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Açıklama (İsteğe bağlı)</label>
                     <textarea 
-                      className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none" 
+                      className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none resize-none" 
                       rows="2"
                       placeholder="Sınav hakkında not ekleyebilirsiniz..."
                     />
@@ -941,11 +668,11 @@ const ExamsPage = ({ role }) => {
                       <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Seçilen Sorular:</p>
                       <div className="flex flex-wrap gap-1">
                         {selectedQuestions.map((q, idx) => (
-                          <div key={q.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium">
+                          <div key={q.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-full text-xs font-medium">
                             <span>{idx + 1}</span>
                             <button
                               onClick={() => setSelectedQuestions(selectedQuestions.filter(sq => sq.id !== q.id))}
-                              className="ml-0.5 hover:text-indigo-900 dark:hover:text-indigo-100"
+                              className="ml-0.5 hover:text-teal-900 dark:hover:text-teal-100"
                             >
                               ✕
                             </button>

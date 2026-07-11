@@ -31,6 +31,6 @@ describe('DashboardLayout', () => {
     );
     expect(screen.queryByText('Ana Sayfa')).not.toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Derslerim' }).length).toBeGreaterThan(0);
-    expect(screen.queryByText('EduMath')).not.toBeInTheDocument();
+    expect(screen.queryByText('Matova')).not.toBeInTheDocument();
   });
 });

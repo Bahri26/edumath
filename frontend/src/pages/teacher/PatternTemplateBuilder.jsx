@@ -9,6 +9,7 @@ import { describeApiError } from '../../utils/errorMessage';
 import { Sparkles, Wand2, Save, RefreshCw, Image as ImageIcon } from 'lucide-react';
 import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
 import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
+import TeacherPageShell from '../../components/teacher/TeacherPageShell.jsx';
 
 const TEMPLATE_OPTIONS = [
   {
@@ -174,26 +175,20 @@ export default function PatternTemplateBuilder() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600">
-            <Wand2 size={18} />
-          </div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100">Örüntü Soru Oluşturucu</h1>
-        </div>
-        <p className="text-sm text-slate-500 dark:text-slate-300">
-          Şablondan üretin veya ihtiyaç halinde Gemini ile görsel örüntü paketi ekleyin; önizlemede birlikte görünür, havuza aynı akıştan kaydedersiniz.
-        </p>
+    <TeacherPageShell
+      maxWidthClass="max-w-6xl"
+      title="Örüntü Soru Oluşturucu"
+      subtitle="Şablondan üretin veya ihtiyaç halinde Gemini ile görsel örüntü paketi ekleyin; önizlemede birlikte görünür, havuza aynı akıştan kaydedersiniz."
+      headerAside={(
         <Link
           to="/teacher/questions"
-          className="text-xs font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-500 w-fit"
+          className="text-xs font-black uppercase tracking-widest text-teal-600 hover:text-teal-500"
         >
           Soru bankasına dön
         </Link>
-      </div>
-
-      <Card className="p-6 rounded-[1.5rem]">
+      )}
+    >
+      <Card className="p-6 rounded-card">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Şablon</label>
@@ -257,7 +252,7 @@ export default function PatternTemplateBuilder() {
             <label className="flex items-start gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-300">
               <input
                 type="checkbox"
-                className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                className="mt-0.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                 checked={geminiGoogleGrounding}
                 onChange={(e) => setGeminiGoogleGrounding(e.target.checked)}
               />
@@ -290,7 +285,7 @@ export default function PatternTemplateBuilder() {
                 </div>
                 <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-indigo-600 transition-[width] duration-200"
+                    className="h-full bg-teal-600 transition-[width] duration-200"
                     style={{ width: `${Math.round((saveProgress.done / Math.max(1, saveProgress.total)) * 100)}%` }}
                   />
                 </div>
@@ -308,7 +303,7 @@ export default function PatternTemplateBuilder() {
                 <div className="text-xs font-black uppercase tracking-widest text-slate-400">
                   {q.classLevel} • {q.difficulty}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-indigo-600 font-bold">
+                <div className="flex items-center gap-2 text-xs text-teal-600 font-bold">
                   <ImageIcon size={14} /> SVG
                 </div>
               </div>
@@ -348,7 +343,7 @@ export default function PatternTemplateBuilder() {
               )}
               {q.solution && (
                 <div className="text-xs text-slate-600 dark:text-slate-300">
-                  <p className="font-bold text-[10px] uppercase tracking-wide text-indigo-600 dark:text-indigo-400 mb-1">
+                  <p className="font-bold text-[10px] uppercase tracking-wide text-teal-600 dark:text-teal-400 mb-1">
                     Adım adım çözüm
                   </p>
                   <SolutionDisplay text={q.solution} className="italic" />
@@ -358,7 +353,7 @@ export default function PatternTemplateBuilder() {
           ))}
         </div>
       )}
-    </div>
+    </TeacherPageShell>
   );
 }
 

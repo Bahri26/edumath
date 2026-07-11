@@ -52,7 +52,7 @@ const AdminInternalNotesPanel = ({ refType, refId }) => {
 
       {loading ? (
         <div className="flex items-center gap-2 py-6 text-sm text-slate-500">
-          <Loader2 className="h-4 w-4 animate-spin text-violet-600" />
+          <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
           Yükleniyor…
         </div>
       ) : (
