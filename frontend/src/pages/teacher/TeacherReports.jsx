@@ -551,6 +551,7 @@ const TeacherReports = () => {
             </div>
           </div>
         )}
+      </div>
 
         <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-4">
           {language === 'EN'
