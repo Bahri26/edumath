@@ -14,7 +14,8 @@
     "test:e2e:ui": "playwright test --ui",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "generate:brand-assets": "node scripts/generateBrandAssets.js"
   },
   "dependencies": {
     "axios": "^1.13.2",
