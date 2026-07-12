@@ -1,15 +1,20 @@
 /**
  * Öğretmen / öğrenci hızlı kılavuzu — GuideDrawer ve AudienceLandingPage ortak kaynak.
  * Dil anahtarları: TR | EN (LanguageContext: TR / EN ile eşleşir)
+ *
+ * Her blok: id, path (panel rotası), matchPrefixes (opsiyonel), title, lines, tip?
  */
 export const QUICK_GUIDE = {
   teacher: {
     TR: {
       title: 'Öğretmen kılavuzu',
       intro:
-        'Paneldeki temel akışları tek yerden hatırlatın. Menüden ilgili sayfaya geçerek adımları uygulayın.',
+        'Paneldeki temel akışları tek yerden hatırlatın. İlgili karttan sayfaya gidebilir veya tam kılavuzu açabilirsiniz.',
+      fullGuidePath: '/teachers',
       blocks: [
         {
+          id: 'questions',
+          path: '/teacher/questions',
           title: 'Soru bankası',
           lines: [
             'Üst filtrelerle branş, sınıf, zorluk ve konu daraltın; metin araması ile hızlıca bulun.',
@@ -19,6 +24,8 @@ export const QUICK_GUIDE = {
           tip: 'Branş onayından sonra konu havuzu filtreleri otomatik olarak branşınıza sabitlenir.',
         },
         {
+          id: 'exams',
+          path: '/teacher/exams',
           title: 'Sınavlar',
           lines: [
             '«Hızlı sınav» ile sınıf, süre ve soru sayısını seçip tek tıkta taslak oluşturun (branş onayı gerekir).',
@@ -28,14 +35,18 @@ export const QUICK_GUIDE = {
           tip: 'Tarih ve süre alanlarını doldurmadan yayınlamayı unutmayın.',
         },
         {
+          id: 'skill-tree',
+          path: '/teacher/skill-tree',
           title: 'Konu ve ders yapısı',
           lines: [
             '«Konu & ders yapısı» ile sınıf ve derse göre konu ekleyin; her konuya ders (lesson) bağlayın.',
-            'Sürükle benzeri yukarı / aşağı düğmeleriyle konu ve ders sırasını öğrenci «Konu ağacı» görünümüyle hizalayın.',
+            'Yukarı / aşağı düğmeleriyle konu ve ders sırasını öğrenci konu ağacı ile hizalayın.',
             'Ders silindiğinde ilgili öğrenci quiz ilerlemesi de temizlenir; silmeden önce onaylayın.',
           ],
         },
         {
+          id: 'student-progress',
+          path: '/teacher/student-progress',
           title: 'Öğrenci ilerleme',
           lines: [
             'Sınıf listesinden öğrenci seçin; ders bazlı doğru / yanlış ve XP özetini görün.',
@@ -43,14 +54,19 @@ export const QUICK_GUIDE = {
           ],
         },
         {
+          id: 'reports',
+          path: '/teacher/reports',
           title: 'Raporlar',
           lines: [
             'Dönem seçerek sınav ortalaması, katılım oranı ve günlük trend grafiğini canlı veriden alın.',
-            'İpucu istekleri, öğrencilerin hangi konularda «İpucu al» dediğini gösterir; zayıf nokta analizi için kullanın.',
+            'İpucu istekleri, öğrencilerin hangi konularda «İpucu al» dediğini gösterir.',
             '«Yazdır / PDF» ile tarayıcıdan PDF kaydı veya yazdırma yapabilirsiniz.',
           ],
         },
         {
+          id: 'exercises',
+          path: '/teacher/exercises',
+          matchPrefixes: ['/teacher/exercises', '/teacher/pattern-builder'],
           title: 'Egzersizler ve kalıplar',
           lines: [
             'Egzersiz oluşturucu ile etkileşimli alıştırmalar hazırlayın; şablonlar zaman kazandırır.',
@@ -58,6 +74,9 @@ export const QUICK_GUIDE = {
           ],
         },
         {
+          id: 'account',
+          path: '/teacher/settings',
+          matchPrefixes: ['/teacher/settings', '/teacher/profile', '/teacher/surveys'],
           title: 'Anketler ve hesap',
           lines: [
             'Profil menüsünden «Anketler» ile ortak anket arayüzüne geçin.',
@@ -69,9 +88,12 @@ export const QUICK_GUIDE = {
     EN: {
       title: 'Teacher quick guide',
       intro:
-        'A compact reminder of key flows. Use the side menu to open each area when you are ready.',
+        'A compact reminder of key flows. Jump to a page from each card, or open the full guide.',
+      fullGuidePath: '/teachers',
       blocks: [
         {
+          id: 'questions',
+          path: '/teacher/questions',
           title: 'Question bank',
           lines: [
             'Filter by branch, grade, difficulty, and topic; use text search for fast lookup.',
@@ -81,6 +103,8 @@ export const QUICK_GUIDE = {
           tip: 'After branch approval, pool filters stay pinned to your teaching field.',
         },
         {
+          id: 'exams',
+          path: '/teacher/exams',
           title: 'Exams',
           lines: [
             'Use «Quick exam» for a fast draft with counts and timing (branch approval required).',
@@ -90,14 +114,18 @@ export const QUICK_GUIDE = {
           tip: 'Set start time and duration before publishing.',
         },
         {
+          id: 'skill-tree',
+          path: '/teacher/skill-tree',
           title: 'Topics & lessons',
           lines: [
             'Under «Topics & lessons», pick grade and subject, add topics, then attach lessons.',
-            'Reorder topics and lessons so the student «Topic tree» matches your teaching sequence.',
+            'Reorder topics and lessons so the student topic tree matches your sequence.',
             'Deleting a lesson clears related quiz progress; confirm when prompted.',
           ],
         },
         {
+          id: 'student-progress',
+          path: '/teacher/student-progress',
           title: 'Student progress',
           lines: [
             'Pick a student from the roster to see per-lesson correct, wrong, and XP.',
@@ -105,14 +133,19 @@ export const QUICK_GUIDE = {
           ],
         },
         {
+          id: 'reports',
+          path: '/teacher/reports',
           title: 'Reports',
           lines: [
-            'Choose a period for live charts: class average, participation, and daily submission trend.',
-            'Hint requests show where learners pressed «Get hint»—useful for remediation planning.',
-            '«Print / PDF» opens the browser print dialog to save or print the report block.',
+            'Choose a period for live charts: class average, participation, and daily trend.',
+            'Hint requests show where learners pressed «Get hint».',
+            '«Print / PDF» opens the browser print dialog.',
           ],
         },
         {
+          id: 'exercises',
+          path: '/teacher/exercises',
+          matchPrefixes: ['/teacher/exercises', '/teacher/pattern-builder'],
           title: 'Exercises & patterns',
           lines: [
             'Build interactive drills in the exercise creator; templates speed up authoring.',
@@ -120,6 +153,9 @@ export const QUICK_GUIDE = {
           ],
         },
         {
+          id: 'account',
+          path: '/teacher/settings',
+          matchPrefixes: ['/teacher/settings', '/teacher/profile', '/teacher/surveys'],
           title: 'Surveys & account',
           lines: [
             'Open «Surveys» from the profile menu for the shared survey experience.',
@@ -133,16 +169,21 @@ export const QUICK_GUIDE = {
     TR: {
       title: 'Öğrenci kılavuzu',
       intro:
-        'Ders, sınav ve tekrar için kısa yollar. Her bölüm menüdeki bir sayfaya karşılık gelir.',
+        'Ders, sınav ve tekrar için kısa yollar. Bu sayfayla ilgili kartlar üstte; karttan ilgili sayfaya gidebilirsin.',
+      fullGuidePath: '/students',
       blocks: [
         {
+          id: 'home',
+          path: '/student/home',
           title: 'Ana sayfa',
           lines: [
-            'Son kaldığın derse hızlı dönüş kartlarını ve günlük hedeflerini buradan takip et.',
-            'Özet istatistikler motivasyon içindir; asıl içerik ders ve sınav sayfalarında.',
+            '«Şimdi yap» ile bir sonraki göreve tek tıkla geç.',
+            'Seri, günlük XP ve haftalık hedef burada; asıl çalışma ders ve sınav sayfalarında.',
           ],
         },
         {
+          id: 'quizzes',
+          path: '/student/quizzes',
           title: 'Sınavlar',
           lines: [
             '«Sınavlar» listesinde aktif sınavları aç; süre sayacını izleyerek tek seferde tamamla.',
@@ -151,35 +192,46 @@ export const QUICK_GUIDE = {
           tip: 'Bağlantı koparsa sayfayı yenilemeden önce sürenin dolmadığından emin ol.',
         },
         {
-          title: 'Konu ağacı ve ders quizleri',
+          id: 'courses',
+          path: '/student/courses',
+          title: 'Dersler ve konu ağacı',
           lines: [
-            '«Konu ağacı»nda sınıfına uygun konular listelenir; her ders adına tıklayınca quiz açılır.',
-            'Quiz bitince XP ve doğru / yanlış sayın ilerleme panelinde öğretmeninle paylaşılır.',
+            '«Derslerim»de sınıfına uygun konular listelenir; derse tıklayınca quiz açılır.',
+            'Quiz bitince XP ve doğru / yanlış sayın öğretmeninin ilerleme panelinde görünür.',
           ],
         },
         {
-          title: 'AI antrenman ve pratik',
+          id: 'exercises',
+          path: '/student/exercises',
+          title: 'Çalışma merkezi',
           lines: [
-            'Eksik konular için önerilen alıştırmalar veya AI destekli tekrar alanları varsa buradan gir.',
+            'Eksik konular için önerilen alıştırmalara çalışma merkezinden gir.',
             'Adım adım çözüm önerilerini not düşerek kendi özetine çevir.',
           ],
         },
         {
+          id: 'assignments',
+          path: '/student/assignments',
+          matchPrefixes: ['/student/assignments', '/student/calendar'],
           title: 'Ödevler ve takvim',
           lines: [
             '«Ödevler» ve «Takvim» ile teslim tarihlerini planla; yaklaşan görevler ana sayfada öne çıkar.',
           ],
         },
         {
-          title: 'Mesajlar ve sınıf',
+          id: 'messages',
+          path: '/student/messages',
+          title: 'Mesajlar',
           lines: [
             '«Mesajlar» ile öğretmen veya sınıf duyurularını takip et; okunmamışlar bildirimle vurgulanır.',
           ],
         },
         {
-          title: 'Liderlik ve profil',
+          id: 'account',
+          path: '/student/settings',
+          matchPrefixes: ['/student/settings', '/student/profile'],
+          title: 'Profil ve ayarlar',
           lines: [
-            '«Liderlik» tablosunda sınıf içi sıralamayı görebilirsin; rekabet sağlıklı kalsın.',
             'Profil ve ayarlardan şifre, dil ve karanlık mod gibi tercihleri güncelle.',
           ],
         },
@@ -188,16 +240,21 @@ export const QUICK_GUIDE = {
     EN: {
       title: 'Student quick guide',
       intro:
-        'Short paths for study, exams, and review. Each block maps to a real page in the menu.',
+        'Short paths for study, exams, and review. Cards for this page float to the top; jump there from each card.',
+      fullGuidePath: '/students',
       blocks: [
         {
+          id: 'home',
+          path: '/student/home',
           title: 'Home',
           lines: [
-            'Jump back to your last lesson from quick cards and scan daily goals.',
-            'Summary stats are motivational; lessons and exams hold the real work.',
+            'Use «Do this next» to jump into your next task in one click.',
+            'Streak and XP live here; lessons and exams hold the real work.',
           ],
         },
         {
+          id: 'quizzes',
+          path: '/student/quizzes',
           title: 'Exams',
           lines: [
             'Open active exams from «Exams»; watch the timer and submit once you are done.',
@@ -206,35 +263,46 @@ export const QUICK_GUIDE = {
           tip: 'If the tab freezes, check the timer before refreshing the page.',
         },
         {
-          title: 'Topic tree & lesson quizzes',
+          id: 'courses',
+          path: '/student/courses',
+          title: 'Courses & topic tree',
           lines: [
-            '«Topic tree» lists subjects for your level; tap a lesson title to start its quiz.',
+            '«My courses» lists subjects for your level; tap a lesson to start its quiz.',
             'When you finish, XP and correct / wrong counts sync to your teacher’s progress view.',
           ],
         },
         {
-          title: 'AI training & practice',
+          id: 'exercises',
+          path: '/student/exercises',
+          title: 'Study hub',
           lines: [
-            'Enter suggested drills or AI coaching areas when they appear for weak topics.',
+            'Open suggested drills for weak topics from the study hub.',
             'Turn step hints into your own short notes for spaced repetition.',
           ],
         },
         {
+          id: 'assignments',
+          path: '/student/assignments',
+          matchPrefixes: ['/student/assignments', '/student/calendar'],
           title: 'Assignments & calendar',
           lines: [
             'Use «Assignments» and «Calendar» to plan due dates; upcoming work surfaces on home.',
           ],
         },
         {
-          title: 'Messages & class',
+          id: 'messages',
+          path: '/student/messages',
+          title: 'Messages',
           lines: [
             'Check «Messages» for teacher notes or class announcements; unread items stay highlighted.',
           ],
         },
         {
-          title: 'Leaderboard & profile',
+          id: 'account',
+          path: '/student/settings',
+          matchPrefixes: ['/student/settings', '/student/profile'],
+          title: 'Profile & settings',
           lines: [
-            '«Leaderboard» shows class rankings if enabled—keep competition friendly.',
             'Profile and settings hold password, language, and theme preferences.',
           ],
         },
@@ -242,3 +310,22 @@ export const QUICK_GUIDE = {
     },
   },
 };
+
+/** Pathname ile eşleşen blokları üste alır; aktif id’yi döner. */
+export function orderGuideBlocks(blocks = [], pathname = '') {
+  const path = String(pathname || '');
+  const scored = blocks.map((block, index) => {
+    const prefixes = Array.isArray(block.matchPrefixes) && block.matchPrefixes.length
+      ? block.matchPrefixes
+      : [block.path].filter(Boolean);
+    const active = prefixes.some((p) => path === p || path.startsWith(`${p}/`));
+    return { block, index, active };
+  });
+  scored.sort((a, b) => {
+    if (a.active !== b.active) return a.active ? -1 : 1;
+    return a.index - b.index;
+  });
+  const ordered = scored.map((s) => ({ ...s.block, _active: s.active }));
+  const activeId = scored.find((s) => s.active)?.block?.id || null;
+  return { ordered, activeId };
+}

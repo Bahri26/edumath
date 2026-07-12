@@ -1,17 +1,26 @@
-import React, { useContext, useEffect } from 'react';
-import { X, BookOpen } from 'lucide-react';
+import React, { useContext, useEffect, useMemo } from 'react';
+import { X, BookOpen, ExternalLink } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { LanguageContext } from '../../context/LanguageContext';
-import { QUICK_GUIDE } from '../../data/quickGuideContent';
+import { QUICK_GUIDE, orderGuideBlocks } from '../../data/quickGuideContent';
 import QuickGuideBlockList from './QuickGuideBlockList.jsx';
 
 /**
- * Öğretmen / öğrenci ortak kullanım kılavuzu — sağdan açılan panel (öğretmen paneli davranışı).
+ * Öğretmen / öğrenci ortak kullanım kılavuzu — sağdan açılan panel.
+ * Mevcut rotaya göre ilgili kartlar üste alınır; kartlardan sayfaya gidilir.
  */
 export default function GuideDrawer({ audience = 'student', open, onClose }) {
   const { language } = useContext(LanguageContext);
   const lang = language === 'EN' ? 'EN' : 'TR';
   const pack = QUICK_GUIDE[audience] || QUICK_GUIDE.student;
   const content = pack[lang];
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const { ordered, activeId } = useMemo(
+    () => orderGuideBlocks(content.blocks, location.pathname),
+    [content.blocks, location.pathname],
+  );
 
   useEffect(() => {
     if (!open) return undefined;
@@ -26,6 +35,19 @@ export default function GuideDrawer({ audience = 'student', open, onClose }) {
       window.removeEventListener('keydown', onKey);
     };
   }, [open, onClose]);
+
+  const handleNavigate = (path) => {
+    onClose();
+    if (path && path !== location.pathname) {
+      navigate(path);
+    }
+  };
+
+  const handleFullGuide = () => {
+    const dest = content.fullGuidePath || (audience === 'teacher' ? '/teachers' : '/students');
+    onClose();
+    navigate(dest);
+  };
 
   return (
     <div
@@ -79,16 +101,40 @@ export default function GuideDrawer({ audience = 'student', open, onClose }) {
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6 sm:py-6">
           {content.intro ? (
-            <p className="mb-6 rounded-2xl border border-sky-100 bg-sky-50/80 px-4 py-3 text-sm leading-relaxed text-sky-950 dark:border-sky-900/40 dark:bg-sky-950/25 dark:text-sky-100">
+            <p className="mb-4 rounded-2xl border border-sky-100 bg-sky-50/80 px-4 py-3 text-sm leading-relaxed text-sky-950 dark:border-sky-900/40 dark:bg-sky-950/25 dark:text-sky-100">
               {content.intro}
             </p>
           ) : null}
 
-          <QuickGuideBlockList audience={audience} blocks={content.blocks} variant="drawer" />
+          {activeId ? (
+            <p className="mb-4 text-xs font-semibold text-teal-700 dark:text-teal-300">
+              {lang === 'EN'
+                ? 'Tips for this page are listed first.'
+                : 'Bu sayfaya özel ipuçları üstte.'}
+            </p>
+          ) : null}
 
-          <p className="mt-8 text-center text-[11px] text-slate-400 dark:text-slate-500">
-            {lang === 'EN' ? 'Press Esc to close.' : 'Kapatmak için Esc tuşuna basabilirsiniz.'}
-          </p>
+          <QuickGuideBlockList
+            audience={audience}
+            blocks={ordered}
+            variant="drawer"
+            lang={lang}
+            onNavigate={handleNavigate}
+          />
+
+          <div className="mt-6 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleFullGuide}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-teal-200 bg-white px-4 text-sm font-semibold text-teal-800 hover:bg-teal-50 dark:border-teal-800 dark:bg-slate-800 dark:text-teal-200 dark:hover:bg-slate-700"
+            >
+              <ExternalLink size={16} aria-hidden />
+              {lang === 'EN' ? 'Open full guide' : 'Tam kılavuzu aç'}
+            </button>
+            <p className="text-center text-[11px] text-slate-400 dark:text-slate-500">
+              {lang === 'EN' ? 'Press Esc to close.' : 'Kapatmak için Esc.'}
+            </p>
+          </div>
         </div>
       </aside>
     </div>
