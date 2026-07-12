@@ -12,6 +12,7 @@ import {
   isExamQuestionAnswered,
   formatExamClock,
 } from '../../utils/examAnswerUtils.js';
+import { hasQuestionImage } from '../../utils/questionImage.js';
 
 /**
  * Canlı sınav oturumu UI + cevap kayıt mantığı.
@@ -190,6 +191,7 @@ export default function ExamPlayer({
                       options={q.options}
                       value={pendingMc}
                       onChange={setPendingMc}
+                      letterOnly={hasQuestionImage(q.image)}
                     />
                     <button
                       type="button"

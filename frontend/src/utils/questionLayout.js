@@ -13,6 +13,7 @@ export const IMAGE_QUESTION_INSTRUCTION = 'Aşağıdaki soruyu çözünüz.';
 
 const GENERIC_STEM_PATTERNS = [
   /^aşağıdaki soruyu çözünüz\.?$/iu,
+  /^aşağıda\s+verilen\s+soruyu\s+çözünüz\.?$/iu,
   /^yukarıdaki soruyu çözünüz\.?$/iu,
   /^verilen soruyu çözünüz\.?$/iu,
   /^soruyu çözünüz\.?$/iu,
@@ -67,8 +68,40 @@ export function sanitizeStemPart(text) {
   return value;
 }
 
-export function normalizeDisplayOptions(options = [], max = 5) {
-  return normalizeOptionEntries(options, max).map((opt) => opt.text);
+export function buildLetterOptionSlots(options = [], max = 5) {
+  const raw = Array.isArray(options) ? options.slice(0, max) : [];
+  if (raw.length < 2) return [];
+  return raw.map((opt, index) => ({
+    text: typeof opt === 'string' ? clean(opt) : clean(opt?.text),
+    image: typeof opt === 'object' ? clean(opt?.image) : '',
+    index,
+  }));
+}
+
+export function getOptionLetter(index) {
+  return String.fromCharCode(65 + index);
+}
+
+export function getOptionAnswerValue(entry, index) {
+  const text = typeof entry === 'string' ? clean(entry) : clean(entry?.text);
+  if (text) return text;
+  return getOptionLetter(index);
+}
+
+export function isOptionAnswerSelected(selectedValue, entry, index) {
+  const value = clean(selectedValue);
+  if (!value) return false;
+  const text = getOptionAnswerValue(entry, index);
+  const letter = getOptionLetter(index);
+  return value === text || value === letter;
+}
+
+export function isOptionAnswerCorrect(entry, index, correctAnswer) {
+  const ca = clean(correctAnswer);
+  if (!ca) return false;
+  const text = getOptionAnswerValue(entry, index);
+  const letter = getOptionLetter(index);
+  return ca === text || ca === letter;
 }
 
 export function normalizeOptionEntries(options = [], max = 5) {
@@ -84,6 +117,10 @@ export function normalizeOptionEntries(options = [], max = 5) {
     })
     .filter((opt) => opt.text || opt.image);
   return list.slice(0, max);
+}
+
+export function normalizeDisplayOptions(options = [], max = 5) {
+  return normalizeOptionEntries(options, max).map((opt) => opt.text);
 }
 
 export function getQuestionLayout(question = {}) {
@@ -161,6 +198,15 @@ export function resolveQuestionStem(question = {}) {
   if (hasImage && !introText && !questionText) {
     introText = '';
     questionText = '';
+  }
+
+  if (hasImage) {
+    if (introText && (isGenericStemPlaceholder(introText) || introText === IMAGE_QUESTION_INSTRUCTION)) {
+      introText = '';
+    }
+    if (questionText && (isGenericStemPlaceholder(questionText) || questionText === IMAGE_QUESTION_INSTRUCTION)) {
+      questionText = '';
+    }
   }
 
   const showIntro = Boolean(introText);

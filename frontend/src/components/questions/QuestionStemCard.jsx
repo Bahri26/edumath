@@ -10,9 +10,11 @@ export default function QuestionStemCard({
   showMeta = true,
   showVisual = true,
   framed = true,
+  showImageInstruction = null,
   className = '',
 }) {
   const stem = resolveQuestionStem(question);
+  const displayInstruction = showImageInstruction ?? stem.showImageInstruction;
   const topic = String(question?.topic || '').trim();
   const classLevel = String(question?.classLevel || '').trim();
   const type = question?.type && question.type !== 'multiple-choice'
@@ -93,8 +95,8 @@ export default function QuestionStemCard({
     </div>
   ) : null;
 
-  const instructionBlock = stem.showImageInstruction ? (
-    <p className={`text-base font-semibold text-surface-800 dark:text-white ${framed ? 'px-4 pt-4 sm:px-5 sm:pt-5' : 'mb-3'}`}>
+  const instructionBlock = displayInstruction ? (
+    <p className={`text-base font-semibold text-surface-800 dark:text-white ${framed ? 'mb-3' : 'mb-3'}`}>
       {IMAGE_QUESTION_INSTRUCTION}
     </p>
   ) : null;
@@ -111,8 +113,8 @@ export default function QuestionStemCard({
 
   return (
     <section className={className}>
+      {instructionBlock}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-600 dark:bg-slate-900/50">
-        {instructionBlock}
         {metaBlock}
         {body}
       </div>

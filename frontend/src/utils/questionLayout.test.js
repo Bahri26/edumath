@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildCombinedQuestionText,
+  buildLetterOptionSlots,
   getQuestionLayout,
   getQuestionPreviewText,
   IMAGE_QUESTION_INSTRUCTION,
   isGenericStemPlaceholder,
+  isOptionAnswerCorrect,
+  isOptionAnswerSelected,
   isWeakStemFragment,
   normalizeDisplayOptions,
   normalizeOptionEntries,
@@ -68,6 +71,23 @@ describe('resolveQuestionStem', () => {
     expect(stem.visualVariant).toBe('compact');
   });
 
+  it('suppresses aşağıda verilen soruyu çözünüz on image questions', () => {
+    const stem = resolveQuestionStem({
+      text: 'Aşağıda verilen soruyu çözünüz.',
+      image: '/uploads/questions/sample.png',
+      assessmentMeta: {
+        parseLayout: {
+          introText: 'Aşağıda verilen soruyu çözünüz.',
+          questionLine: '',
+        },
+      },
+    });
+
+    expect(stem.showIntro).toBe(false);
+    expect(stem.showQuestion).toBe(false);
+    expect(stem.imageOnly).toBe(true);
+  });
+
   it('suppresses junk OCR stems like verilen soruyu çözünüz and Aşağıda', () => {
     const stem = resolveQuestionStem({
       text: 'verilen soruyu çözünüz.\n\nAşağıda',
@@ -121,6 +141,15 @@ describe('question layout helpers', () => {
       { text: '15', image: '' },
       { text: '33', image: '/uploads/options/b.png' },
     ]);
+  });
+
+  it('supports letter-only selection for image questions', () => {
+    const slots = buildLetterOptionSlots(['15', '33', '48', '52']);
+    expect(slots).toHaveLength(4);
+    expect(isOptionAnswerSelected('33', slots[1], 1)).toBe(true);
+    expect(isOptionAnswerSelected('B', slots[1], 1)).toBe(true);
+    expect(isOptionAnswerCorrect('48', 2, 'C')).toBe(true);
+    expect(isOptionAnswerCorrect('48', 2, '48')).toBe(true);
   });
 
   it('builds combined question text', () => {

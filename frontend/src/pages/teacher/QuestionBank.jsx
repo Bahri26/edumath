@@ -9,7 +9,7 @@ import {
   Sparkles, Hash,
   LayoutGrid, Wand2,
 } from 'lucide-react';
-import apiClient from '../../services/api';
+import apiClient, { resolveAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import 'katex/dist/katex.min.css';
 import Button from '../../components/ui/Button.jsx';
@@ -17,13 +17,12 @@ import Card from '../../components/ui/Card.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import SkeletonCard from '../../components/ui/SkeletonCard';
 import { renderWithLatex } from '../../utils/latex.jsx';
-import QuestionSourceBadge from '../../components/questions/QuestionSourceBadge.jsx';
 import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
 import CollapsiblePanel from '../../components/ui/CollapsiblePanel.jsx';
 import QuestionStemCard from '../../components/questions/QuestionStemCard.jsx';
 import QuestionOptionGrid from '../../components/questions/QuestionOptionGrid.jsx';
-import { getQuestionPreviewText } from '../../utils/questionLayout.js';
-import { getQuestionLayout } from '../../utils/questionLayout.js';
+import { getQuestionPreviewText, IMAGE_QUESTION_INSTRUCTION, getQuestionLayout } from '../../utils/questionLayout.js';
+import { hasQuestionImage } from '../../utils/questionImage.js';
 import { sourceFilterOptions, sourceFilterToApi } from '../../utils/questionSourceLabel';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -70,65 +69,94 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
   const { topicLabel, code: topicCode } = extractTopicAndCode(question);
   const hintText = getHintText(question);
   const codeText = getCodeText(question);
+  const isImageQuestion = hasQuestionImage(question.image);
+  const imageSrc = isImageQuestion ? resolveAssetUrl(question.image) : '';
 
   return (
-    <div className={`group relative bg-white/95 dark:bg-surface-800/95 rounded-card border transition-all duration-300 ${
-      expanded 
-        ? 'border-teal-500 ring-4 ring-teal-500/10 shadow-soft' 
-        : 'border-surface-200 dark:border-surface-700 hover:border-teal-300 hover:shadow-md'
-    }`}>
-      <button
-        type="button"
-        className="w-full text-left p-6 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded-card"
-        onClick={onToggle}
-        aria-expanded={expanded}
-        aria-label={expanded ? 'Soru detayını gizle' : 'Soru detayını göster'}
+    <div className={expanded ? 'col-span-full' : ''}>
+      <div
+        className={`group relative overflow-hidden rounded-2xl border bg-white/95 transition-all duration-300 dark:bg-surface-800/95 ${
+          expanded
+            ? 'border-teal-500 ring-4 ring-teal-500/10 shadow-soft'
+            : 'aspect-square border-surface-200 hover:border-teal-300 hover:shadow-md dark:border-surface-700'
+        }`}
       >
-        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-          <div className="space-y-4 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300">
-                <Hash size={12} /> {question.classLevel}
-              </span>
-              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${difficultyStyles[question.difficulty] || difficultyStyles['Orta']}`}>
-                {question.difficulty}
-              </span>
-              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300">
-                {question.subject}
-              </span>
-              {topicLabel && (
-                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-50 dark:bg-sky-900/25 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-800/40">
-                  {topicLabel}
-                </span>
+        <button
+          type="button"
+          className={`w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
+            expanded ? 'p-4' : 'flex h-full flex-col p-3'
+          }`}
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Soru detayını gizle' : 'Soru detayını göster'}
+        >
+          {!expanded ? (
+            <>
+              {isImageQuestion ? (
+                <p className="mb-2 line-clamp-1 text-[11px] font-semibold text-surface-700 dark:text-surface-200">
+                  {IMAGE_QUESTION_INSTRUCTION}
+                </p>
+              ) : (
+                <p className="mb-2 line-clamp-3 flex-1 text-sm font-medium leading-snug text-surface-700 dark:text-surface-200">
+                  {getQuestionPreviewText(question)}
+                </p>
               )}
-              {topicCode && (
-                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border border-amber-100 dark:border-amber-800/40">
-                  {topicCode}
+
+              {isImageQuestion ? (
+                <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-900/40">
+                  <img
+                    src={imageSrc}
+                    alt=""
+                    className="max-h-full max-w-full object-contain"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+              ) : null}
+
+              <div className="mt-2 flex flex-wrap gap-1">
+                <span className="rounded-full bg-surface-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-surface-600 dark:bg-surface-700 dark:text-surface-300">
+                  {question.classLevel}
                 </span>
-              )}
-              <QuestionSourceBadge question={question} size="sm" />
-            </div>
-            <p className="text-sm font-medium leading-relaxed text-surface-700 line-clamp-2 dark:text-surface-200">
-              {getQuestionPreviewText(question)}
-            </p>
-          </div>
-          <div className="flex md:flex-col gap-2 opacity-60 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300" onClick={e => e.stopPropagation()}>
-            <button type="button" onClick={() => onEdit(question)} aria-label="Soruyu düzenle" className="p-2.5 bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-teal-600 transition-all">
-              <Edit2 size={18} aria-hidden />
-            </button>
-            <button type="button" onClick={() => onDelete(question._id)} aria-label="Soruyu sil" className="p-2.5 bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-rose-600 transition-all">
-              <Trash2 size={18} aria-hidden />
-            </button>
-          </div>
+                <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${difficultyStyles[question.difficulty] || difficultyStyles['Orta']}`}>
+                  {question.difficulty}
+                </span>
+                {topicLabel ? (
+                  <span className="line-clamp-1 rounded-full border border-sky-100 bg-sky-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-sky-800 dark:border-sky-800/40 dark:bg-sky-900/25 dark:text-sky-300">
+                    {topicLabel}
+                  </span>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">Soru detayı — kapatmak için tıklayın</p>
+          )}
+        </button>
+
+        <div
+          className="absolute right-2 top-2 flex gap-1 opacity-70 transition-opacity group-hover:opacity-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button type="button" onClick={() => onEdit(question)} aria-label="Soruyu düzenle" className="rounded-lg border border-slate-200 bg-white p-2 text-slate-400 shadow-sm hover:text-teal-600 dark:border-slate-600 dark:bg-slate-800">
+            <Edit2 size={16} aria-hidden />
+          </button>
+          <button type="button" onClick={() => onDelete(question._id)} aria-label="Soruyu sil" className="rounded-lg border border-slate-200 bg-white p-2 text-slate-400 shadow-sm hover:text-rose-600 dark:border-slate-600 dark:bg-slate-800">
+            <Trash2 size={16} aria-hidden />
+          </button>
         </div>
-      </button>
+      </div>
 
       {expanded && (
-        <div className="px-6 pb-6 pt-2 border-t border-slate-50 dark:border-slate-700 space-y-5 animate-in slide-in-from-top-2">
-          <QuestionStemCard question={question} showMeta={false} />
+        <div className="mt-3 space-y-4 rounded-2xl border border-slate-100 bg-white/95 p-4 dark:border-slate-700 dark:bg-surface-800/95">
+          {isImageQuestion ? (
+            <p className="text-base font-semibold text-surface-800 dark:text-white">
+              {IMAGE_QUESTION_INSTRUCTION}
+            </p>
+          ) : null}
+          <QuestionStemCard question={question} showMeta={false} showImageInstruction={false} />
           {question.learningOutcome && (
-            <div className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-              <span className="font-black uppercase tracking-wider text-[9px] text-slate-400">Kazanım</span>
+            <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] leading-snug text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
+              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Kazanım</span>
               {' '}{question.learningOutcome}
             </div>
           )}
@@ -137,6 +165,7 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
             correctAnswer={question.correctAnswer}
             showCorrect
             disabled
+            letterOnly={isImageQuestion}
           />
 
           {(hintText || codeText) && (
@@ -584,9 +613,9 @@ export default function QuestionBank() {
       )}
 
       {/* Soru Listesi */}
-      <div className="space-y-4">
+      <div>
         {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
@@ -609,15 +638,16 @@ export default function QuestionBank() {
             }
           />
         ) : (
-          questions.map((q, idx) => {
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          {questions.map((q, idx) => {
             const topicLine = q.topic || 'Konu belirtilmemiş';
             const showTopicHeading = [PATTERN_TOPIC_ALL_UNDER, 'Örüntüler'].includes(filters.topic)
               && (idx === 0 || (questions[idx - 1].topic || 'Konu belirtilmemiş') !== topicLine);
             return (
               <Fragment key={q._id}>
                 {showTopicHeading && (
-                  <div className={`flex items-center gap-3 px-2 ${idx === 0 ? '' : 'mt-8 pt-2 border-t border-slate-100 dark:border-slate-800'}`}>
-                    <LayoutGrid size={16} className="text-sky-500 shrink-0" />
+                  <div className={`col-span-full flex items-center gap-3 px-1 ${idx === 0 ? '' : 'mt-4 border-t border-slate-100 pt-4 dark:border-slate-800'}`}>
+                    <LayoutGrid size={16} className="shrink-0 text-sky-500" />
                     <span className="text-[11px] font-black uppercase tracking-widest text-sky-700 dark:text-sky-300">
                       {topicLine}
                     </span>
@@ -658,7 +688,8 @@ export default function QuestionBank() {
                 />
               </Fragment>
             );
-          })
+          })}
+          </div>
         )}
       </div>
 

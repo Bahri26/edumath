@@ -24,6 +24,7 @@ import {
 } from '../../components/exercises/ExerciseGameInputs.jsx';
 import { MatchingPracticeCard } from '../../components/exams/InteractivePracticeCards.jsx';
 import { parseStoredAnswer } from '../../utils/examAnswerUtils.js';
+import { hasQuestionImage } from '../../utils/questionImage.js';
 import { useQuestionTimer } from '../../hooks/useQuestionTimer.js';
 
 function optionText(opt) {
@@ -292,6 +293,7 @@ export default function StudentExercisePlayer() {
         value={draftAnswer}
         onChange={setDraftAnswer}
         disabled={isAnswered}
+        letterOnly={hasQuestionImage(currentQ?.image)}
       />
     );
   };
