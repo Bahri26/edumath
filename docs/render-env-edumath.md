@@ -123,9 +123,13 @@ Service account yeterliyse OAuth gerekmez. Kişisel Drive için:
 |------------|--------|
 | `VITE_API_URL` | `https://edumath-t10n.onrender.com` |
 | `VITE_SENTRY_DSN` | Opsiyonel |
-| `VITE_PUBLIC_SITE_URL` | `https://edumath-client.onrender.com` (OG/canonical; `matova.app` olunca güncelle) |
+| `VITE_PUBLIC_SITE_URL` | `https://edumath-client.onrender.com` → canlıda `https://matova.app` ([matova-domain-setup.md](./matova-domain-setup.md)) |
 
 Drive kullanıldığında `VITE_ASSET_BASE_URL` **gerekmez**.
+
+### Custom domain / e-posta
+
+Adım adım: [matova-domain-setup.md](./matova-domain-setup.md) — DNS, Render custom domain, `FRONTEND_URL` / `ALLOWED_ORIGINS`, SMTP (`EMAIL_FROM=Matova <noreply@matova.app>`).
 
 ---
 

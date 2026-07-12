@@ -42,10 +42,12 @@ SMTP_HOST="<opsiyonel>"
 SMTP_PORT="<opsiyonel>"
 SMTP_USER="<opsiyonel>"
 SMTP_PASS="<opsiyonel>"
+EMAIL_FROM="Matova <noreply@matova.app>"
 ```
 Frontend için (opsiyonel) `frontend/.env`:
 ```
 VITE_API_URL="http://localhost:8000"
+VITE_PUBLIC_SITE_URL="http://localhost:5173"
 ```
 
 ### 3) Çalıştırma
@@ -108,8 +110,8 @@ Servisler:
 Render uzerinde izlenecek sira:
 1. Repo olarak `Bahri26/edumath` sec ve `Blueprint` ile deploy et.
 2. Backend service icin `MONGODB_URI` degerini Render panelinden gir.
-3. Frontend deploy olduktan sonra `edumath-web` URL'sini backend'deki `FRONTEND_URL` env degerine yaz.
-4. Backend URL'sini frontend'deki `VITE_API_URL` env degerine yaz.
+3. Frontend deploy olduktan sonra `edumath-web` URL'sini (veya `https://matova.app`) backend'deki `FRONTEND_URL` env degerine yaz.
+4. Frontend build env: `VITE_API_URL` + `VITE_PUBLIC_SITE_URL` (OG/canonical). Custom domain: [docs/matova-domain-setup.md](docs/matova-domain-setup.md).
 5. Eger gorselleri ayri bir bucket veya CDN'den vereceksen `VITE_ASSET_BASE_URL` tanimla. Bos birakilirsa frontend, `VITE_API_URL` uzerinden devam eder.
 
 Notlar:

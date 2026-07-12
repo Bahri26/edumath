@@ -15,8 +15,21 @@ services:
         sync: false
       - key: MONGODB_DB
         value: Edumath
+      # Custom domain olunca: https://matova.app — bkz. docs/matova-domain-setup.md
       - key: FRONTEND_URL
         value: https://edumath-client.onrender.com
+      - key: ALLOWED_ORIGINS
+        value: https://edumath-client.onrender.com
+      - key: EMAIL_FROM
+        value: Matova <noreply@matova.app>
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
@@ -106,6 +119,9 @@ services:
         value: https://edumath-t10n.onrender.com/api
       - key: VITE_ASSET_BASE_URL
         value: https://edumath-t10n.onrender.com
+      # Custom domain olunca: https://matova.app — bkz. docs/matova-domain-setup.md
+      - key: VITE_PUBLIC_SITE_URL
+        value: https://edumath-client.onrender.com
       - key: VITE_API_TIMEOUT_MS
         value: 15000
       - key: VITE_AUTH_TIMEOUT_MS

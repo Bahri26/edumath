@@ -32,7 +32,7 @@ npm run test:e2e
 |----------|--------|
 | `MONGODB_URI` | Atlas connection string |
 | `JWT_SECRET` / `JWT_REFRESH_SECRET` | Strong random values |
-| `FRONTEND_URL` | e.g. `https://edumath-client.onrender.com` |
+| `FRONTEND_URL` | e.g. `https://edumath-client.onrender.com` → custom domain: `https://matova.app` ([matova-domain-setup.md](./matova-domain-setup.md)) |
 | `NODE_ENV` | `production` |
 
 ### Google Drive (images)
@@ -63,7 +63,10 @@ curl https://YOUR-API.onrender.com/ready
 | Variable | Notes |
 |----------|--------|
 | `VITE_API_URL` | Backend URL (no trailing slash) |
+| `VITE_PUBLIC_SITE_URL` | Public origin for OG/canonical (`https://matova.app` when live) |
 | `VITE_SENTRY_DSN` | Optional — error tracking |
+
+**Custom domain + e-posta:** [matova-domain-setup.md](./matova-domain-setup.md)
 
 ## 4. Sentry (optional)
 

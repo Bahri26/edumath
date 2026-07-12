@@ -465,9 +465,9 @@ router.post('/request-password-reset', validate(requestResetSchema), async (req,
     const resetLink = `${baseUrl}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
     await mailer.sendMail({
       to: email,
-      subject: 'Şifre Sıfırlama Talimatı',
+      subject: 'Matova — Şifre sıfırlama',
       text: `Şifrenizi sıfırlamak için bağlantı: ${resetLink}\nBu bağlantı 15 dakika geçerlidir.`,
-      html: `<p>Şifrenizi sıfırlamak için <a href="${resetLink}">bu bağlantıyı</a> kullanın.</p><p>Bağlantı 15 dakika geçerlidir.</p>`
+      html: `<p>Şifrenizi sıfırlamak için <a href="${resetLink}">bu bağlantıyı</a> kullanın.</p><p>Bağlantı 15 dakika geçerlidir.</p><p>— Matova</p>`
     });
 
     res.json({ message: 'Eğer e-posta kayıtlı ise talimat gönderildi.' });
@@ -523,9 +523,9 @@ router.post('/request-email-verify', validate(requestVerifySchema), async (req, 
     const verifyLink = `${baseUrl}/verify-email?token=${rawToken}&email=${encodeURIComponent(email)}`;
     await mailer.sendMail({
       to: email,
-      subject: 'E-posta Doğrulama',
+      subject: 'Matova — E-posta doğrulama',
       text: `E-postanızı doğrulamak için bağlantı: ${verifyLink}`,
-      html: `<p>E-postanızı doğrulamak için <a href="${verifyLink}">bu bağlantıyı</a> kullanın.</p>`
+      html: `<p>E-postanızı doğrulamak için <a href="${verifyLink}">bu bağlantıyı</a> kullanın.</p><p>— Matova</p>`
     });
 
     res.json({ message: 'Eğer e-posta kayıtlı ise doğrulama gönderildi.' });
