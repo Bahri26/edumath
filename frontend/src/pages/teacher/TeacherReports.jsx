@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useContext, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   BarChart2,
   Users,
@@ -9,6 +9,8 @@ import {
   CheckCircle,
   Lightbulb,
   Loader2,
+  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -62,6 +64,12 @@ const REPORT_TRANSLATIONS = {
     lastDays: (d) => `Son ${d} gün`,
     sixMonths: 'Son 6 ay',
     studentProgress: 'Öğrenci takibi',
+    nextActionsTitle: 'Ne yapmalıyım?',
+    nextActionsHint: 'Canlı verilere göre önerilen sonraki adımlar.',
+    actionOpenBank: 'Soru bankası',
+    actionOpenAssignments: 'Ödevler',
+    actionOpenProgress: 'Öğrenci takibi',
+    actionOpenExams: 'Sınavlar',
   },
   EN: {
     title: 'Class Reports',
@@ -81,6 +89,12 @@ const REPORT_TRANSLATIONS = {
     lastDays: (d) => `Last ${d} days`,
     sixMonths: 'Last 6 months',
     studentProgress: 'Student progress',
+    nextActionsTitle: 'What should I do next?',
+    nextActionsHint: 'Suggested next steps from live class data.',
+    actionOpenBank: 'Question bank',
+    actionOpenAssignments: 'Assignments',
+    actionOpenProgress: 'Student progress',
+    actionOpenExams: 'Exams',
   },
 };
 
@@ -240,6 +254,85 @@ const TeacherReports = () => {
 
   const trendData = reportData?.dailyTrend?.length ? reportData.dailyTrend : [];
 
+  const nextActions = useMemo(() => {
+    const en = language === 'EN';
+    const actions = [];
+    const topHint = hintData?.byTopic?.[0];
+    if (topHint?.topic && Number(topHint.count) > 0) {
+      const topic = String(topHint.topic).trim();
+      actions.push({
+        id: 'hint-topic',
+        title: en
+          ? `Reinforce “${topic}” with practice`
+          : `“${topic}” konusunda güçlendirme yap`,
+        detail: en
+          ? `${topHint.count} hint request(s) in this period — add or assign questions.`
+          : `Bu dönemde ${topHint.count} ipucu isteği — soru ekle veya ödev ver.`,
+        to: `/teacher/questions?topic=${encodeURIComponent(topic)}`,
+        cta: getText('actionOpenBank'),
+      });
+    }
+
+    const weakTopic = String(reportData?.summary?.weakTopic || '').trim();
+    if (weakTopic && weakTopic !== '—') {
+      actions.push({
+        id: 'weak-exam-topic',
+        title: en
+          ? `Review exam results on “${weakTopic}”`
+          : `“${weakTopic}” sınav sonuçlarını gözden geçir`,
+        detail: en
+          ? 'This topic shows the weakest exam performance in the selected range.'
+          : 'Seçili dönemde sınavda en çok zorlanılan konu bu.',
+        to: `/teacher/questions?topic=${encodeURIComponent(weakTopic)}`,
+        cta: getText('actionOpenBank'),
+      });
+    }
+
+    const riskStudent = riskRows[0];
+    if (riskStudent?._id) {
+      actions.push({
+        id: 'risk-student',
+        title: en
+          ? `Check in with ${riskStudent.name}`
+          : `${riskStudent.name} ile birebir bak`,
+        detail: en
+          ? `Average ${riskStudent.averageScore} — open the progress view.`
+          : `Ortalama ${riskStudent.averageScore} — ilerleme ekranını aç.`,
+        to: `/teacher/student-progress?student=${riskStudent._id}`,
+        cta: getText('actionOpenProgress'),
+      });
+    }
+
+    const participation = reportData?.summary?.participationRate;
+    if (participation != null && Number(participation) < 50 && Number(reportData?.summary?.totalStudents) > 0) {
+      actions.push({
+        id: 'low-participation',
+        title: en ? 'Boost exam participation' : 'Sınav katılımını artır',
+        detail: en
+          ? `Only ${participation}% participated — remind the class or open a short quiz.`
+          : `Katılım yalnızca %${participation} — sınıfı hatırlat veya kısa sınav aç.`,
+        to: '/teacher/exams',
+        cta: getText('actionOpenExams'),
+      });
+    }
+
+    if (actions.length === 0 && !reportsLoading && !hintLoading) {
+      actions.push({
+        id: 'steady',
+        title: en ? 'Class looks steady' : 'Sınıf tablosu dengeli',
+        detail: en
+          ? 'No urgent signals in this range. Keep assigning light practice.'
+          : 'Bu aralıkta acil sinyal yok. Hafif alıştırma vermeye devam edin.',
+        to: '/teacher/assignments',
+        cta: getText('actionOpenAssignments'),
+      });
+    }
+
+    return actions.slice(0, 4);
+    // getText depends on language; listed via language
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language, hintData, reportData, riskRows, reportsLoading, hintLoading]);
+
   const printReport = useCallback(() => {
     const style = document.createElement('style');
     style.setAttribute('data-teacher-report-print', '1');
@@ -308,6 +401,48 @@ const TeacherReports = () => {
             <Loader2 className="animate-spin" size={16} />{' '}
             {language === 'EN' ? 'Loading reports…' : 'Raporlar yükleniyor…'}
           </div>
+        ) : null}
+
+        {nextActions.length > 0 && !reportsLoading ? (
+          <section
+            aria-label={getText('nextActionsTitle')}
+            className="rounded-2xl border border-teal-200/80 dark:border-teal-800/50 bg-gradient-to-br from-teal-50/90 via-white to-sky-50/80 dark:from-teal-950/40 dark:via-slate-800 dark:to-slate-800 p-5 sm:p-6 shadow-sm"
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2.5 rounded-xl bg-teal-600 text-white shadow-sm shrink-0">
+                <Sparkles size={18} aria-hidden />
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
+                  {getText('nextActionsTitle')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  {getText('nextActionsHint')}
+                </p>
+              </div>
+            </div>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {nextActions.map((action) => (
+                <li key={action.id}>
+                  <Link
+                    to={action.to}
+                    className="group flex h-full flex-col gap-2 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white/90 dark:bg-slate-900/50 p-4 hover:border-teal-400 dark:hover:border-teal-500 transition-colors"
+                  >
+                    <p className="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug">
+                      {action.title}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 flex-1">
+                      {action.detail}
+                    </p>
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-teal-700 dark:text-teal-300">
+                      {action.cta}
+                      <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" aria-hidden />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
         ) : null}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
