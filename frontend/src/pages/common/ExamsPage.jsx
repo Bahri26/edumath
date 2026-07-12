@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Clock, FileText, Plus, Trash2, Play, CheckCircle, AlertTriangle, X, GripVertical } from 'lucide-react';
+import { Clock, FileText, Plus, Trash2, Play, CheckCircle, AlertTriangle, X, GripVertical, Download, Link2, Loader2 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { generatePracticeQuestions } from '../../services/aiService';
 import { useToast } from '../../context/ToastContext';
@@ -18,6 +18,7 @@ import { computeExamTotalTimeSpent } from '../../hooks/useQuestionTimer.js';
 import { formatDuration } from '../../utils/formatDuration.js';
 import { isExamQuestionAnswered } from '../../utils/examAnswerUtils.js';
 import { useTranslation } from '../../i18n/useTranslation';
+import { printElementById } from '../../utils/printElement.js';
 
 const ExamsPage = ({ role }) => {
   const { askConfirm, ConfirmDialog } = useConfirmAction();
@@ -47,10 +48,13 @@ const ExamsPage = ({ role }) => {
   
   // Sonuç ve AI Alıştırma State'leri
   const [examResult, setExamResult] = useState(null);
+  const [resultExamMeta, setResultExamMeta] = useState({ id: '', title: '' });
   const [loadingAI, setLoadingAI] = useState(false);
   const [practiceQuestions, setPracticeQuestions] = useState(null);
   const [practiceState, setPracticeState] = useState({});
   const [myResult, setMyResult] = useState(null);
+  const [myResultSharing, setMyResultSharing] = useState(false);
+  const [myResultShareUrl, setMyResultShareUrl] = useState('');
 
   const timerRef = useRef(null);
   const answersRef = useRef({});
@@ -212,7 +216,10 @@ const ExamsPage = ({ role }) => {
         ...res.data,
         totalTimeSpentSeconds,
         hintsUsedCount: hintsUsedRef.current.size,
+        examId: activeExam._id,
+        examTitle: activeExam.title,
       });
+      setResultExamMeta({ id: activeExam._id, title: activeExam.title || '' });
       setActiveExam(null);
       fetchExams();
     } catch (err) {
@@ -243,10 +250,37 @@ const ExamsPage = ({ role }) => {
   const viewMyResult = async (examId) => {
     try {
       const res = await apiClient.get(`/exams/${examId}/my-result`);
+      setMyResultShareUrl('');
       setMyResult(res.data);
     } catch (err) {
       const msg = err?.response?.data?.message || 'Sonuç bulunamadı.';
       showToast(msg, 'error');
+    }
+  };
+
+  const shareMyResult = async () => {
+    const examId = myResult?.examId;
+    if (!examId) {
+      showToast('Paylaşım için sınav bilgisi eksik.', 'error');
+      return;
+    }
+    setMyResultSharing(true);
+    try {
+      const res = await apiClient.post(`/exams/${examId}/share`);
+      const path = res.data?.data?.path;
+      if (!path) throw new Error('path missing');
+      const url = `${window.location.origin}${path}`;
+      setMyResultShareUrl(url);
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('Paylaşım bağlantısı panoya kopyalandı (14 gün geçerli).', 'success');
+      } catch {
+        showToast('Bağlantı hazır — aşağıdan kopyalayabilirsiniz.', 'success');
+      }
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Paylaşım bağlantısı oluşturulamadı.', 'error');
+    } finally {
+      setMyResultSharing(false);
     }
   };
 
@@ -366,6 +400,8 @@ const ExamsPage = ({ role }) => {
     return (
       <ExamResultPanel
         examResult={examResult}
+        examId={resultExamMeta.id || examResult.examId}
+        examTitle={resultExamMeta.title || examResult.examTitle}
         practiceQuestions={practiceQuestions}
         practiceState={practiceState}
         loadingAI={loadingAI}
@@ -373,7 +409,10 @@ const ExamsPage = ({ role }) => {
         onPracticeAnswer={handlePracticeAnswer}
         onMatchingAnswer={handleMatchingAnswer}
         onSequenceMove={handleSequenceMove}
-        onBackToList={() => setExamResult(null)}
+        onBackToList={() => {
+          setExamResult(null);
+          setResultExamMeta({ id: '', title: '' });
+        }}
       />
     );
   }
@@ -493,11 +532,14 @@ const ExamsPage = ({ role }) => {
       {myResult && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
-            <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between no-print">
               <h3 className="text-lg font-bold text-slate-800 dark:text-white">Sonucum</h3>
-              <button onClick={() => setMyResult(null)} className="text-slate-500 hover:text-slate-800">Kapat</button>
+              <button type="button" onClick={() => setMyResult(null)} className="text-slate-500 hover:text-slate-800">Kapat</button>
             </div>
-            <div className="p-6 space-y-3 text-slate-700 dark:text-slate-200">
+            <div id="my-exam-result-print" className="p-6 space-y-3 text-slate-700 dark:text-slate-200">
+              {myResult.examTitle ? (
+                <div className="font-display text-lg font-semibold text-slate-900 dark:text-white">{myResult.examTitle}</div>
+              ) : null}
               <div><span className="font-semibold">Puan:</span> {myResult.score}</div>
               <div>
                 <span className="font-semibold">Doğru:</span> {myResult.correctCount} • <span className="font-semibold">Yanlış:</span> {myResult.wrongCount}
@@ -513,16 +555,49 @@ const ExamsPage = ({ role }) => {
                       <li key={i}>{t}</li>
                     ))}
                   </ul>
-                  <div className="flex flex-col gap-2 mt-4">
-                    <Link to="/student/exercises" className="text-center py-2 rounded-xl font-bold bg-teal-600 text-white hover:bg-teal-700">
-                      Egzersizlere git
-                    </Link>
-                    <Link to="/student/courses" className="text-center py-2 rounded-xl font-bold border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800">
-                      Derslere git
-                    </Link>
-                  </div>
                 </div>
               )}
+              <div className="no-print flex flex-col gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  icon={Download}
+                  onClick={() =>
+                    printElementById('my-exam-result-print', {
+                      title: `Matova — ${myResult.examTitle || 'Sınav sonucu'}`,
+                    })
+                  }
+                >
+                  Yazdır / PDF
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  icon={myResultSharing ? undefined : Link2}
+                  disabled={myResultSharing || !myResult.examId}
+                  onClick={shareMyResult}
+                >
+                  {myResultSharing ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 size={16} className="animate-spin" />
+                      Hazırlanıyor…
+                    </span>
+                  ) : (
+                    'Kısa link paylaş'
+                  )}
+                </Button>
+                {myResultShareUrl ? (
+                  <p className="text-xs text-slate-500 break-all">{myResultShareUrl}</p>
+                ) : null}
+                <Link to="/student/exercises" className="text-center py-2 rounded-xl font-bold bg-teal-600 text-white hover:bg-teal-700">
+                  Egzersizlere git
+                </Link>
+                <Link to="/student/courses" className="text-center py-2 rounded-xl font-bold border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800">
+                  Derslere git
+                </Link>
+              </div>
             </div>
           </div>
         </div>

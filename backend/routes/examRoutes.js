@@ -400,7 +400,12 @@ router.get('/:id/my-result', authMiddleware, roleMiddleware(['student']), async 
     if (!exam) return res.status(404).json({ message: 'Sınav bulunamadı' });
     const my = (exam.results || []).find((r) => String(r.studentId) === String(req.user.id));
     if (!my) return res.status(404).json({ message: 'Sonuç bulunamadı' });
-    res.json(my);
+    const plain = my.toObject ? my.toObject() : { ...my };
+    res.json({
+      ...plain,
+      examId: exam._id,
+      examTitle: exam.title,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

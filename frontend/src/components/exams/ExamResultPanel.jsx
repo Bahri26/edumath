@@ -1,12 +1,25 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, AlertTriangle, X, Brain, Sparkles, Clock } from 'lucide-react';
+import {
+  CheckCircle,
+  AlertTriangle,
+  X,
+  Brain,
+  Sparkles,
+  Clock,
+  Download,
+  Link2,
+  Loader2,
+} from 'lucide-react';
 import QuestionVisual from '../questions/QuestionVisual.jsx';
 import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
 import { MatchingPracticeCard, SequencePracticeCard } from './InteractivePracticeCards.jsx';
 import StudentHint from '../StudentHint.jsx';
 import SolutionDisplay from '../questions/SolutionDisplay.jsx';
 import Button from '../ui/Button.jsx';
+import apiClient from '../../services/api';
+import { useToast } from '../../context/ToastContext';
+import { printElementById } from '../../utils/printElement.js';
 
 function ScoreRing({ score }) {
   const ok = score >= 50;
@@ -45,6 +58,8 @@ function ScoreRing({ score }) {
  */
 export default function ExamResultPanel({
   examResult,
+  examId,
+  examTitle,
   practiceQuestions,
   practiceState,
   loadingAI,
@@ -54,13 +69,51 @@ export default function ExamResultPanel({
   onSequenceMove,
   onBackToList,
 }) {
+  const { showToast } = useToast();
+  const [sharing, setSharing] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+
   const score = examResult?.score ?? 0;
   const ok = score >= 50;
   const weakTopics = examResult?.weakTopics || [];
+  const resolvedExamId = examId || examResult?.examId;
+  const title = examTitle || examResult?.examTitle || 'Sınav sonucu';
+
+  const handlePrint = useCallback(() => {
+    printElementById('exam-result-print', { title: `Matova — ${title}` });
+  }, [title]);
+
+  const handleShare = useCallback(async () => {
+    if (!resolvedExamId) {
+      showToast('Paylaşım için sınav bilgisi eksik.', 'error');
+      return;
+    }
+    setSharing(true);
+    try {
+      const res = await apiClient.post(`/exams/${resolvedExamId}/share`);
+      const path = res.data?.data?.path;
+      if (!path) throw new Error('path missing');
+      const url = `${window.location.origin}${path}`;
+      setShareUrl(url);
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('Paylaşım bağlantısı panoya kopyalandı (14 gün geçerli).', 'success');
+      } catch {
+        showToast('Bağlantı hazır — aşağıdan kopyalayabilirsiniz.', 'success');
+      }
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Paylaşım bağlantısı oluşturulamadı.', 'error');
+    } finally {
+      setSharing(false);
+    }
+  }, [resolvedExamId, showToast]);
 
   return (
     <div className="animate-fade-in max-w-4xl mx-auto pt-4 sm:pt-6 pb-20 space-y-8">
-      <section className="relative overflow-hidden bg-white/95 dark:bg-surface-800/95 p-6 sm:p-10 rounded-[1.75rem] shadow-soft border border-surface-200/80 dark:border-surface-700 text-center backdrop-blur-sm">
+      <section
+        id="exam-result-print"
+        className="relative overflow-hidden bg-white/95 dark:bg-surface-800/95 p-6 sm:p-10 rounded-[1.75rem] shadow-soft border border-surface-200/80 dark:border-surface-700 text-center backdrop-blur-sm"
+      >
         <div
           className="pointer-events-none absolute inset-0 opacity-70"
           style={{
@@ -71,6 +124,9 @@ export default function ExamResultPanel({
           aria-hidden
         />
         <div className="relative">
+          <p className="text-[10px] font-black uppercase tracking-widest text-teal-700 dark:text-teal-300 mb-2">
+            Matova
+          </p>
           <div
             className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-4 ${
               ok
@@ -82,9 +138,10 @@ export default function ExamResultPanel({
             {ok ? 'Başarılı tamamlandı' : 'Geliştirme fırsatı'}
           </div>
 
-          <h2 className="font-display text-3xl sm:text-4xl font-semibold text-surface-900 dark:text-white mb-2">
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold text-surface-900 dark:text-white mb-1">
             Sınav Tamamlandı!
           </h2>
+          <p className="text-sm text-surface-500 dark:text-surface-400 mb-4">{title}</p>
           <ScoreRing score={score} />
 
           <div className="flex flex-wrap justify-center gap-3 text-sm text-surface-500 mb-6">
@@ -100,7 +157,40 @@ export default function ExamResultPanel({
                 {examResult.hintsUsedCount > 0 ? ' · puan kesintisi yok' : ''}
               </span>
             ) : null}
+            {examResult.correctCount != null ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-50 dark:bg-surface-900/50 border border-surface-200 dark:border-surface-700">
+                Doğru {examResult.correctCount} · Yanlış {examResult.wrongCount ?? '—'}
+              </span>
+            ) : null}
           </div>
+
+          <div className="no-print flex flex-wrap justify-center gap-2 mb-6">
+            <Button type="button" variant="outline" size="md" icon={Download} onClick={handlePrint}>
+              Yazdır / PDF
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              icon={sharing ? undefined : Link2}
+              disabled={sharing || !resolvedExamId}
+              onClick={handleShare}
+            >
+              {sharing ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 size={16} className="animate-spin" />
+                  Hazırlanıyor…
+                </span>
+              ) : (
+                'Kısa link paylaş'
+              )}
+            </Button>
+          </div>
+          {shareUrl ? (
+            <p className="no-print text-xs text-surface-500 mb-6 break-all max-w-lg mx-auto">
+              {shareUrl}
+            </p>
+          ) : null}
 
           {weakTopics.length > 0 ? (
             <div className="bg-rose-50/90 dark:bg-rose-950/25 p-5 sm:p-6 rounded-2xl border border-rose-200/70 dark:border-rose-900/40 max-w-lg mx-auto mb-6 text-left">
@@ -117,7 +207,7 @@ export default function ExamResultPanel({
               </ul>
 
               {!practiceQuestions ? (
-                <div className="flex flex-col gap-2 mt-4">
+                <div className="no-print flex flex-col gap-2 mt-4">
                   <Button
                     variant="success"
                     fullWidth
@@ -158,7 +248,7 @@ export default function ExamResultPanel({
           <button
             type="button"
             onClick={onBackToList}
-            className="text-surface-500 hover:text-teal-700 dark:hover:text-teal-300 font-semibold underline underline-offset-4"
+            className="no-print text-surface-500 hover:text-teal-700 dark:hover:text-teal-300 font-semibold underline underline-offset-4"
           >
             Listeye dön
           </button>
@@ -166,7 +256,7 @@ export default function ExamResultPanel({
       </section>
 
       {practiceQuestions ? (
-        <section className="animate-slide-up">
+        <section className="animate-slide-up no-print">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-3 bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-200 rounded-2xl">
               <Brain size={28} />

@@ -233,6 +233,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/surveys', surveyRoutes);
 app.use('/api/exams', examRoutes);
+app.use('/api', require('./routes/examShareRoutes'));
 app.use('/api/users', userRoutes);      // Öğrenci aramak için
 app.use('/api/students', studentRoutes); // Listeyi kaydetmek için
 app.use('/api/teacher', teacherRoutes); // Öğretmen istatistikleri
