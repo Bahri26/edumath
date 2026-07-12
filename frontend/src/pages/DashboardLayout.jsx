@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { LogOut, Moon, Sun, User, Settings, Menu, X, Globe, MessageSquare } from 'lucide-react';
 import NotificationDropdown from '../components/ui/NotificationDropdown.jsx';
 import DashboardLogoMark from '../components/ui/DashboardLogoMark.jsx';
+import MatovaMark from '../components/ui/MatovaMark.jsx';
 import SkipLink from '../components/ui/SkipLink.jsx';
 import { useTranslation } from '../i18n/useTranslation';
 import useUnreadMessageCount from '../hooks/useUnreadMessageCount.js';
@@ -151,8 +152,9 @@ const DashboardLayout = ({
     }`;
   };
 
-  const renderNavButton = (item, { compact = false, iconOnly = false, onNavigate } = {}) => {
+  const renderNavButton = (item, { compact = false, iconOnly = false, onNavigate, badge = 0 } = {}) => {
     const active = isNavItemActive(item.path);
+    const badgeCount = Number(badge) || 0;
     return (
       <button
         key={item.id}
@@ -164,10 +166,19 @@ const DashboardLayout = ({
           navigate(item.path);
         }}
         aria-current={active ? 'page' : undefined}
-        aria-label={item.label}
+        aria-label={
+          badgeCount > 0 ? `${item.label} (${badgeCount})` : item.label
+        }
         title={iconOnly ? item.label : undefined}
       >
-        <item.icon size={compact ? 18 : 20} aria-hidden="true" className="shrink-0" />
+        <span className="relative shrink-0">
+          <item.icon size={compact ? 18 : 20} aria-hidden="true" />
+          {badgeCount > 0 && iconOnly ? (
+            <span className="absolute -top-1 -right-1 min-w-[0.9rem] h-[0.9rem] px-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black leading-[0.9rem] text-center">
+              {badgeCount > 9 ? '9+' : badgeCount}
+            </span>
+          ) : null}
+        </span>
         {iconOnly ? (
           <span
             role="tooltip"
@@ -176,7 +187,14 @@ const DashboardLayout = ({
             {item.label}
           </span>
         ) : (
-          <span>{item.label}</span>
+          <>
+            <span className="flex-1 text-left">{item.label}</span>
+            {badgeCount > 0 ? (
+              <span className="text-[10px] font-black bg-rose-500 text-white min-w-[1.25rem] h-5 px-1.5 rounded-full inline-flex items-center justify-center">
+                {badgeCount > 9 ? '9+' : badgeCount}
+              </span>
+            ) : null}
+          </>
         )}
       </button>
     );
@@ -217,11 +235,17 @@ const DashboardLayout = ({
         {...(!isNavMenuOpen ? { inert: true } : {})}
       >
         <div className="flex items-center justify-between p-4 border-b border-surface-100 dark:border-surface-800">
-          <DashboardLogoMark
-            size="sm"
-            title={panelLabel}
+          <button
+            type="button"
+            className="flex items-center gap-2.5 min-w-0 text-left rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             onClick={() => { closeDrawer(); navigate(panelHomePath); }}
-          />
+            aria-label={panelLabel}
+          >
+            <MatovaMark size={36} className="rounded-[10px] shadow-sm shrink-0" />
+            <span className="font-display font-semibold text-surface-900 dark:text-white truncate">
+              Mato<span className="text-teal-600 dark:text-teal-400">va</span>
+            </span>
+          </button>
           <button
             type="button"
             onClick={closeDrawer}
@@ -233,10 +257,30 @@ const DashboardLayout = ({
         </div>
         <nav
           id="primary-nav"
-          className="p-3 space-y-1 overflow-y-auto overscroll-contain max-h-[calc(100vh-4.5rem)]"
+          className="p-3 space-y-1 overflow-y-auto overscroll-contain max-h-[calc(100vh-4.5rem)] flex flex-col"
           aria-label={role === 'teacher' ? t('teacherNav') : t('studentNav')}
         >
-          {visibleNavItems.map((item) => renderNavButton(item, { onNavigate: closeDrawer }))}
+          <div className="space-y-1">
+            {visibleNavItems.map((item) =>
+              renderNavButton(item, {
+                onNavigate: closeDrawer,
+                badge: item.id === 'messages' ? unreadMessages : 0,
+              }),
+            )}
+          </div>
+          {profileMenuExtras.length > 0 ? (
+            <div className="mt-auto pt-4 border-t border-surface-100 dark:border-surface-800 space-y-1">
+              <p className="px-4 py-1 text-[10px] font-black uppercase tracking-widest text-surface-400">
+                {t('profileMenu')}
+              </p>
+              {profileMenuExtras.map((item) =>
+                renderNavButton(item, {
+                  onNavigate: closeDrawer,
+                  badge: item.id === 'messages' ? unreadMessages : 0,
+                }),
+              )}
+            </div>
+          ) : null}
         </nav>
       </aside>
 

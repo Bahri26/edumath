@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { ArrowLeft, GraduationCap } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import SkipLink from '../../components/ui/SkipLink';
+import MatovaMark from '../../components/ui/MatovaMark.jsx';
 import { useTranslation } from '../../i18n/useTranslation';
 import { LEGAL_DOC_TYPES, getLegalDoc } from '../../data/legalContent';
 
 const LegalPage = () => {
   const { docType } = useParams();
-  const { t, language, setLanguage, isEnglish } = useTranslation();
+  const { t, setLanguage, isEnglish } = useTranslation();
 
   if (!LEGAL_DOC_TYPES.includes(docType)) {
     return <Navigate to="/" replace />;
@@ -25,24 +26,24 @@ const LegalPage = () => {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <Link
             to="/"
-            className="flex items-center gap-2 text-teal-600 dark:text-teal-400 font-bold hover:opacity-90 transition-opacity"
+            className="flex items-center gap-2.5 text-slate-900 dark:text-white font-bold hover:opacity-90 transition-opacity"
           >
-            <div className="bg-teal-600 p-1 rounded-lg text-white">
-              <GraduationCap size={18} />
-            </div>
-            <span>Mato<span className="text-teal-500">va</span></span>
+            <MatovaMark size={32} className="rounded-lg shadow-sm" />
+            <span className="text-lg tracking-tight">
+              Mato<span className="text-teal-600 dark:text-teal-400">va</span>
+            </span>
           </Link>
           <div className="flex items-center gap-3 text-sm">
             <button
               type="button"
               onClick={() => setLanguage(isEnglish ? 'TR' : 'EN')}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="px-3 py-1.5 min-h-[40px] rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               {isEnglish ? 'TR' : 'EN'}
             </button>
             <Link
               to="/"
-              className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+              className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors min-h-[40px]"
             >
               <ArrowLeft size={16} />
               {t('legal.backHome')}
@@ -55,7 +56,7 @@ const LegalPage = () => {
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
           {t('legal.updated')}: {doc.updated}
         </p>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-6">{doc.title}</h1>
+        <h1 className="font-display text-3xl font-semibold text-slate-900 dark:text-white mb-6">{doc.title}</h1>
         <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300 mb-10">{doc.intro}</p>
 
         <div className="space-y-8">
