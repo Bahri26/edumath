@@ -94,13 +94,9 @@ UserSchema.pre('save', async function() {
     } catch {}
   }
 
-  try {
-    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS || '10');
-    const salt = await bcrypt.genSalt(saltRounds);
-    this.password = await bcrypt.hash(pwd, salt);
-  } catch (err) {
-    throw err;
-  }
+  const saltRounds = parseInt(process.env.BCRYPT_ROUNDS || '10');
+  const salt = await bcrypt.genSalt(saltRounds);
+  this.password = await bcrypt.hash(pwd, salt);
 });
 
 // Şifre karşılaştırma

@@ -25,7 +25,7 @@ Son güncelleme: deploy öncesi eksik giderme sprinti (admin mobil, i18n, boş d
 ## Otomatik doğrulama
 
 ```powershell
-cd backend ; npm test ; npm run smoke:predeploy ; npm run smoke:exam
+cd backend ; npm run lint:syntax ; npm run lint ; npm test ; npm run smoke:predeploy ; npm run smoke:exam
 cd ../frontend ; npm test ; npm run test:e2e
 ```
 

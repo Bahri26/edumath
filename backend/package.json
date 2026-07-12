@@ -2,6 +2,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "lint": "eslint .",
+    "lint:syntax": "node scripts/tools/syntaxCheck.js",
     "test": "node --test scripts/tests/registerRole.test.js scripts/tests/examAccess.test.js scripts/tests/examSchedule.test.js scripts/tests/studentProgress.test.js scripts/tests/studentAnalyticsService.test.js scripts/tests/exerciseAnswer.test.js scripts/tests/authMiddleware.test.js scripts/tests/questionGrading.test.js scripts/tests/questionImageParse.test.js scripts/tests/patternQuestionSolver.test.js scripts/tests/teacherStudentAccess.test.js scripts/tests/idorAccess.test.js scripts/tests/aiPromptSafety.test.js",
     "seed:test-users": "node scripts/seed/seedTestUsers.js",
     "seed:patterns": "node scripts/seed/seedPatternsCurriculum.js",
@@ -83,6 +85,9 @@
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
     "nodemon": "^3.1.11"
   }
 }
