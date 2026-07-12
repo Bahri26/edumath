@@ -1,5 +1,31 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const Student = require('../models/Student');
+
+function recipientWantsNotifications(user) {
+  return user?.notifications !== false;
+}
+
+async function findStudentsByClassLevel(classLevel) {
+  if (!classLevel) return [];
+
+  const users = await User.find({
+    role: 'student',
+    grade: classLevel,
+  }).select('_id notifications');
+
+  if (users.length > 0) return users;
+
+  // Roster üzerinden sınıf eşlemesi (User.grade boş olabilir)
+  const roster = await Student.find({ grade: classLevel }).select('userId').lean();
+  const ids = roster.map((s) => s.userId).filter(Boolean);
+  if (!ids.length) return [];
+
+  return User.find({
+    _id: { $in: ids },
+    role: 'student',
+  }).select('_id notifications');
+}
 
 // 1. KULLANICININ BİLDİRİMLERİNİ GETİR
 exports.getNotifications = async (req, res) => {
@@ -16,12 +42,12 @@ exports.getNotifications = async (req, res) => {
       .populate('senderId', 'name email')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     const total = await Notification.countDocuments(filter);
     const unreadCount = await Notification.countDocuments({
       recipientId: req.user.id,
-      isRead: false
+      isRead: false,
     });
 
     res.status(200).json({
@@ -29,16 +55,16 @@ exports.getNotifications = async (req, res) => {
       data: notifications,
       unreadCount,
       pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(total / limit),
-        totalItems: total
-      }
+        currentPage: parseInt(page, 10),
+        totalPages: Math.ceil(total / Math.max(parseInt(limit, 10), 1)),
+        totalItems: total,
+      },
     });
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Bildirimler alınırken hata oluştu',
-      error: err.message 
+      error: err.message,
     });
   }
 };
@@ -46,32 +72,32 @@ exports.getNotifications = async (req, res) => {
 // 2. OKUNDU OLARAK İŞARETLE
 exports.markAsRead = async (req, res) => {
   try {
-    const notification = await Notification.findByIdAndUpdate(
-      req.params.id,
-      { 
+    const notification = await Notification.findOneAndUpdate(
+      { _id: req.params.id, recipientId: req.user.id },
+      {
         isRead: true,
-        readAt: new Date()
+        readAt: new Date(),
       },
-      { new: true }
+      { new: true },
     );
 
     if (!notification) {
       return res.status(404).json({
         success: false,
-        message: 'Bildirim bulunamadı'
+        message: 'Bildirim bulunamadı',
       });
     }
 
     res.status(200).json({
       success: true,
-      message: 'Bildirim okundu işaretle',
-      data: notification
+      message: 'Bildirim okundu işaretlendi',
+      data: notification,
     });
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Bildirim işaretlenirken hata oluştu',
-      error: err.message 
+      error: err.message,
     });
   }
 };
@@ -81,22 +107,22 @@ exports.markAllAsRead = async (req, res) => {
   try {
     const result = await Notification.updateMany(
       { recipientId: req.user.id, isRead: false },
-      { 
+      {
         isRead: true,
-        readAt: new Date()
-      }
+        readAt: new Date(),
+      },
     );
 
     res.status(200).json({
       success: true,
-      message: 'Tüm bildirimler okundu işaretle',
-      data: result
+      message: 'Tüm bildirimler okundu işaretlendi',
+      data: result,
     });
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Bildirimler işaretlenirken hata oluştu',
-      error: err.message 
+      error: err.message,
     });
   }
 };
@@ -104,25 +130,28 @@ exports.markAllAsRead = async (req, res) => {
 // 4. BİLDİRİM SİL
 exports.deleteNotification = async (req, res) => {
   try {
-    const notification = await Notification.findByIdAndDelete(req.params.id);
+    const notification = await Notification.findOneAndDelete({
+      _id: req.params.id,
+      recipientId: req.user.id,
+    });
 
     if (!notification) {
       return res.status(404).json({
         success: false,
-        message: 'Bildirim bulunamadı'
+        message: 'Bildirim bulunamadı',
       });
     }
 
     res.status(200).json({
       success: true,
       message: 'Bildirim silindi',
-      data: notification
+      data: notification,
     });
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Bildirim silinirken hata oluştu',
-      error: err.message 
+      error: err.message,
     });
   }
 };
@@ -131,26 +160,38 @@ exports.deleteNotification = async (req, res) => {
 exports.deleteAllNotifications = async (req, res) => {
   try {
     const result = await Notification.deleteMany({
-      recipientId: req.user.id
+      recipientId: req.user.id,
     });
 
     res.status(200).json({
       success: true,
       message: 'Tüm bildirimler silindi',
-      data: result
+      data: result,
     });
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Bildirimler silinirken hata oluştu',
-      error: err.message 
+      error: err.message,
     });
   }
 };
 
-// İç Fonksiyon: Bildirim Oluştur (diğer controller'lardan çağrılır)
-exports.createNotification = async (recipientId, senderId, type, title, message, metadata = {}, actionUrl = null) => {
+/** Diğer controller'lardan çağrılan kayıt yardımcısı */
+exports.createNotificationRecord = async (
+  recipientId,
+  senderId,
+  type,
+  title,
+  message,
+  metadata = {},
+  actionUrl = null,
+  related = {},
+) => {
   try {
+    const recipient = await User.findById(recipientId).select('notifications');
+    if (!recipientWantsNotifications(recipient)) return null;
+
     const notification = new Notification({
       recipientId,
       senderId,
@@ -158,7 +199,9 @@ exports.createNotification = async (recipientId, senderId, type, title, message,
       title,
       message,
       metadata,
-      actionUrl
+      actionUrl,
+      relatedId: related.relatedId || undefined,
+      relatedModel: related.relatedModel || undefined,
     });
 
     await notification.save();
@@ -169,49 +212,144 @@ exports.createNotification = async (recipientId, senderId, type, title, message,
   }
 };
 
-// Öğretmen atama oluşturduğunda tüm öğrencilere bildirim gönder
+// Öğretmen atama oluşturduğunda sınıf öğrencilerine bildirim
 exports.notifyStudentsForAssignment = async (assignmentData) => {
   try {
-    const students = await User.find({
-      role: 'student',
-      classLevel: assignmentData.classLevel
-    });
+    const students = await findStudentsByClassLevel(assignmentData.classLevel);
+    const recipients = students.filter(recipientWantsNotifications);
 
-    const notifications = students.map(student => ({
+    if (!recipients.length) {
+      return { success: true, notifiedCount: 0 };
+    }
+
+    const dueLabel = assignmentData.dueDate
+      ? new Date(assignmentData.dueDate).toLocaleDateString('tr-TR')
+      : 'belirtilmedi';
+
+    const notifications = recipients.map((student) => ({
       recipientId: student._id,
       senderId: assignmentData.createdBy,
       type: 'assignment',
-      title: `Yeni Ödev: ${assignmentData.title}`,
-      message: `${assignmentData.title} adlı ödev eklendi. Son tarih: ${new Date(assignmentData.dueDate).toLocaleDateString('tr-TR')}`,
+      title: `Yeni ödev: ${assignmentData.title}`,
+      message: `${assignmentData.title} eklendi. Son tarih: ${dueLabel}`,
       relatedId: assignmentData._id,
       relatedModel: 'Assignment',
-      actionUrl: `/student/assignments`,
+      actionUrl: '/student/assignments',
       metadata: {
         assignmentTitle: assignmentData.title,
-        dueDate: assignmentData.dueDate
-      }
+        dueDate: assignmentData.dueDate,
+      },
     }));
 
     await Notification.insertMany(notifications);
-    return { success: true, notifiedCount: students.length };
+    return { success: true, notifiedCount: recipients.length };
   } catch (err) {
-    console.error('Öğrencilere bildirim gönderilirken hata:', err);
+    console.error('Öğrencilere ödev bildirimi gönderilirken hata:', err);
     return { success: false, error: err.message };
   }
 };
 
-// 5. TEST İÇİN MANUEL BİLDİRİM OLUŞTUR (POST)
+// Öğretmen sınav yayınladığında sınıf öğrencilerine bildirim
+exports.notifyStudentsForExam = async (examData) => {
+  try {
+    const students = await findStudentsByClassLevel(examData.classLevel);
+    const recipients = students.filter(recipientWantsNotifications);
+
+    if (!recipients.length) {
+      return { success: true, notifiedCount: 0 };
+    }
+
+    const notifications = recipients.map((student) => ({
+      recipientId: student._id,
+      senderId: examData.createdBy,
+      type: 'exam',
+      title: `Yeni sınav: ${examData.title}`,
+      message: examData.duration
+        ? `${examData.title} yayınlandı (${examData.duration} dk).`
+        : `${examData.title} yayınlandı.`,
+      relatedId: examData._id,
+      relatedModel: 'Exam',
+      actionUrl: '/student/quizzes',
+      metadata: {
+        examTitle: examData.title,
+        duration: examData.duration,
+      },
+    }));
+
+    await Notification.insertMany(notifications);
+    return { success: true, notifiedCount: recipients.length };
+  } catch (err) {
+    console.error('Öğrencilere sınav bildirimi gönderilirken hata:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
+ * Mesaj geldiğinde alıcıya bildirim.
+ * Aynı konuşmada okunmamış bildirim varsa güncellenir (spam önleme).
+ */
+exports.notifyForMessage = async ({
+  recipientId,
+  senderId,
+  senderName,
+  conversationId,
+  preview,
+  recipientRole,
+}) => {
+  try {
+    const recipient = await User.findById(recipientId).select('notifications role');
+    if (!recipientWantsNotifications(recipient)) return null;
+
+    const role = recipientRole || recipient?.role || 'student';
+    const actionUrl = `/${role}/messages`;
+    const title = `Yeni mesaj: ${senderName || 'Bir kullanıcı'}`;
+    const message = String(preview || '').slice(0, 120) || 'Yeni bir mesajınız var.';
+
+    const existing = await Notification.findOne({
+      recipientId,
+      type: 'message',
+      relatedId: conversationId,
+      isRead: false,
+    });
+
+    if (existing) {
+      existing.title = title;
+      existing.message = message;
+      existing.senderId = senderId;
+      existing.actionUrl = actionUrl;
+      existing.createdAt = new Date();
+      await existing.save();
+      return existing;
+    }
+
+    return exports.createNotificationRecord(
+      recipientId,
+      senderId,
+      'message',
+      title,
+      message,
+      { conversationId },
+      actionUrl,
+      { relatedId: conversationId, relatedModel: 'Message' },
+    );
+  } catch (err) {
+    console.error('Mesaj bildirimi oluşturulurken hata:', err);
+    return null;
+  }
+};
+
+// Test / manuel bildirim (HTTP)
 exports.createNotification = async (req, res) => {
   try {
-    // req.user.id -> Kendine bildirim atar (Test için)
     const newNotif = new Notification({
-      recipient: req.user.id,
+      recipientId: req.user.id,
       title: req.body.title,
       message: req.body.message,
-      type: req.body.type || 'info'
+      type: req.body.type || 'system',
+      actionUrl: req.body.actionUrl || null,
     });
     await newNotif.save();
-    res.status(201).json(newNotif);
+    res.status(201).json({ success: true, data: newNotif });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

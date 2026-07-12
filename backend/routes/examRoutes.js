@@ -11,6 +11,7 @@ const { gradeQuestionAnswer } = require('../utils/questionGrading');
 const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
 const { recordUserActivity } = require('../services/activityLogger');
 const { canManageExam } = require('../utils/examAccess');
+const notificationController = require('../controllers/notificationController');
 const {
   syncExamStatusIfNeeded,
   assertStudentCanTake,
@@ -157,7 +158,14 @@ router.post('/', authMiddleware, roleMiddleware(['teacher']), async (req, res) =
       targetLabel: name,
     });
 
-    res.status(201).json({ success: true, message: 'Sınav oluşturuldu', data: newExam });
+    const notifyResult = await notificationController.notifyStudentsForExam(newExam);
+
+    res.status(201).json({
+      success: true,
+      message: 'Sınav oluşturuldu',
+      data: newExam,
+      notified: notifyResult,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -210,7 +218,8 @@ router.post('/auto-generate', authMiddleware, roleMiddleware(['teacher']), async
       endAt: endAt ? new Date(endAt) : new Date(now.getTime() + 90 * 86400000),
     });
     await newExam.save();
-    res.status(201).json(newExam);
+    const notifyResult = await notificationController.notifyStudentsForExam(newExam);
+    res.status(201).json({ ...newExam.toObject(), notified: notifyResult });
   } catch (err) {
     res.status(500).json({ message: 'Sınav oluşturulurken hata: ' + err.message });
   }

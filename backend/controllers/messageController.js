@@ -1,6 +1,7 @@
 const Message = require('../models/Message');
 const Conversation = require('../models/Conversation');
 const User = require('../models/User');
+const notificationController = require('./notificationController');
 
 // Konuşmaları getir (öğrenci/öğretmen)
 exports.getConversations = async (req, res) => {
@@ -151,6 +152,17 @@ exports.sendMessage = async (req, res) => {
     conversation.lastMessage = message._id;
     conversation.lastMessageAt = new Date();
     await conversation.save();
+
+    const senderName = message.senderId?.name || 'Bir kullanıcı';
+    const recipient = await User.findById(recipientId).select('role').lean();
+    await notificationController.notifyForMessage({
+      recipientId,
+      senderId: userId,
+      senderName,
+      conversationId: conversation._id,
+      preview: content,
+      recipientRole: recipient?.role,
+    });
 
     res.status(201).json({
       success: true,

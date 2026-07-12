@@ -9,11 +9,11 @@ router.use(authMiddleware);
 // Bildirim listesi (sayfalama ve filtreleme ile)
 router.get('/', notificationController.getNotifications);
 
+// Tüm bildirimleri okundu yap (parametreli rotadan önce olmalı)
+router.put('/mark-all-read', notificationController.markAllAsRead);
+
 // Bildirim okundu olarak işaretle
 router.put('/:id/read', notificationController.markAsRead);
-
-// Tüm bildirimleri okundu olarak işaretle
-router.put('/mark-all-read', notificationController.markAllAsRead);
 
 // Bildirim sil
 router.delete('/:id', notificationController.deleteNotification);

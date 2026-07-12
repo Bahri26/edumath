@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   User,
   Save,
@@ -39,12 +39,29 @@ const SectionHeading = ({ icon: Icon, children }) => (
   </h3>
 );
 
+const resolveNotifUrl = (n, role) => {
+  if (n?.actionUrl) return n.actionUrl;
+  switch (n?.type) {
+    case 'assignment':
+      return role === 'student' ? '/student/assignments' : '/teacher/assignments';
+    case 'exam':
+      return role === 'student' ? '/student/quizzes' : '/teacher/exams';
+    case 'message':
+      return `/${role}/messages`;
+    case 'survey':
+      return `/${role}/surveys`;
+    default:
+      return null;
+  }
+};
+
 const SettingsPage = ({ role = 'student' }) => {
   const { showToast } = useToast();
   const { askConfirm, ConfirmDialog } = useConfirmAction();
   const { setIsDarkMode } = useTheme();
   const { setLanguage } = useLanguage();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [showPwdModal, setShowPwdModal] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -108,7 +125,7 @@ const SettingsPage = ({ role = 'student' }) => {
     const fetchNotifications = async () => {
       try {
         setNotifLoading(true);
-        const res = await apiClient.get('/notifications?limit=5');
+        const res = await apiClient.get('/notifications?limit=15');
         const list = res.data?.data ?? res.data?.notifications ?? [];
         setNotifications(Array.isArray(list) ? list : []);
         setUnreadCount(res.data?.unreadCount ?? 0);
@@ -186,6 +203,22 @@ const SettingsPage = ({ role = 'student' }) => {
     } catch (error) {
       showToast('İşlem başarısız: ' + (error.response?.data?.message || error.message), 'error');
     }
+  };
+
+  const openNotification = async (n) => {
+    if (!n.isRead) {
+      try {
+        await apiClient.put(`/notifications/${n._id}/read`);
+        setNotifications((prev) =>
+          prev.map((item) => (item._id === n._id ? { ...item, isRead: true } : item)),
+        );
+        setUnreadCount((c) => Math.max(0, c - 1));
+      } catch {
+        /* sessiz */
+      }
+    }
+    const url = resolveNotifUrl(n, role);
+    if (url) navigate(url);
   };
 
   if (loading) {
@@ -350,14 +383,16 @@ const SettingsPage = ({ role = 'student' }) => {
                 <EmptyState
                   icon={Bell}
                   title="Henüz bildirim yok"
-                  description="Duyurular ve sistem mesajları burada görünür."
+                  description="Ödev, sınav ve mesaj bildirimleri burada toplanır."
                   className="py-8 border-0 bg-transparent"
                 />
               ) : (
                 notifications.map((n) => (
-                  <div
+                  <button
+                    type="button"
                     key={n._id}
-                    className={`p-4 border-b border-slate-200 dark:border-slate-700 last:border-b-0 ${
+                    onClick={() => openNotification(n)}
+                    className={`w-full text-left p-4 border-b border-slate-200 dark:border-slate-700 last:border-b-0 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors ${
                       n.isRead ? '' : 'bg-brand-50/80 dark:bg-brand-950/30'
                     }`}
                   >
@@ -368,10 +403,11 @@ const SettingsPage = ({ role = 'student' }) => {
                       )}
                     </div>
                     <div className="text-sm text-slate-600 dark:text-slate-300 mt-1">{n.message}</div>
-                    <div className="text-xs text-slate-500 mt-2">
-                      {n.createdAt ? new Date(n.createdAt).toLocaleString('tr-TR') : ''}
+                    <div className="text-xs text-slate-500 mt-2 flex justify-between gap-2">
+                      <span>{n.type ? n.type : 'sistem'}</span>
+                      <span>{n.createdAt ? new Date(n.createdAt).toLocaleString('tr-TR') : ''}</span>
                     </div>
-                  </div>
+                  </button>
                 ))
               )}
             </div>
