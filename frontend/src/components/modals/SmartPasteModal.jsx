@@ -400,6 +400,8 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                     Ekran görüntüsü alın (Win+Shift+S), sonra <strong>Ctrl+V</strong> ile yapıştırın.
                     <br />
                     Sistem OCR ile okur, soruyu çözer ve doğru şıkkı işaretler.
+                    <br />
+                    <span className="text-teal-600 dark:text-teal-400">Görsel soru köküne eklenir; şıklar yalnızca metin olur.</span>
                   </p>
                   <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-teal-600">
                     Ctrl+V · sürükle-bırak · dosya seç

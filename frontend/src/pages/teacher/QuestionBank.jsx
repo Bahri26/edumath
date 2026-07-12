@@ -143,7 +143,6 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {question.options?.map((opt, idx) => {
               const label = optionLabel(opt);
-              const optImage = typeof opt === 'object' ? (opt?.image || '') : '';
               const isCorrect = optionMatchesAnswer(opt, question.correctAnswer);
               return (
               <div key={idx} className={`p-4 rounded-2xl border-2 flex items-start gap-4 ${
@@ -160,9 +159,6 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
                   <span className="text-sm font-semibold">
                     {label ? renderWithLatex(label) : <span className="text-slate-400 italic">—</span>}
                   </span>
-                  {optImage ? (
-                    <QuestionVisual src={optImage} alt={`Şık ${String.fromCharCode(65 + idx)}`} className="max-h-36" />
-                  ) : null}
                 </div>
               </div>
               );

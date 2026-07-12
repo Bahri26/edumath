@@ -1,13 +1,12 @@
-/** Soru şıklarını { text, image } biçimine normalize eder. */
+/** Soru şıklarını metin-only { text } biçimine normalize eder. */
 export function normalizeOptions(options) {
   if (!Array.isArray(options)) return [];
   return options.map((opt) => {
     if (typeof opt === 'string') {
-      return { text: opt, image: '' };
+      return { text: opt };
     }
     return {
       text: String(opt?.text ?? ''),
-      image: typeof opt?.image === 'string' ? opt.image : '',
     };
   });
 }

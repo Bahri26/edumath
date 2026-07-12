@@ -175,7 +175,7 @@ export default function AiGenerateQuizModal({
             <div className="min-w-0">
               <h3 className="font-display text-lg font-semibold truncate">AI ile çoktan seçmeli üret</h3>
               <p className="text-[10px] font-bold opacity-85 uppercase tracking-widest">
-                {step === 'form' ? 'Konu seç → üret → havuza ekle veya düzenle' : 'Önizleme'}
+                {step === 'form' ? 'Konu seç → üret → metin şıklarla havuza ekle' : 'Önizleme · şıklar metin'}
               </p>
             </div>
           </div>

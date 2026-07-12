@@ -31,11 +31,69 @@ const applyClassLevelFilter = (query, classLevel) => {
   });
 };
 
-const mapQuestionRecord = (question) => ({
-  ...question,
-  classLevel: question.classLevel || question.class_level || question.grade_level || '',
-});
+function normalizeOptionPayload(options) {
+  if (Array.isArray(options)) {
+    return options;
+  }
 
+  if (typeof options === 'string' && options.trim()) {
+    try {
+      const parsed = JSON.parse(options);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      /* tek metin şık */
+    }
+    return [options];
+  }
+
+  return [];
+}
+
+/** Şıklar yalnızca metin; görseller soru kökünde tutulur. */
+function optionTextFromPayload(opt) {
+  if (opt == null) return '';
+  if (typeof opt === 'string') return opt;
+  if (typeof opt === 'object') return String(opt.text ?? '');
+  return String(opt);
+}
+
+function toTextOnlyOptions(options) {
+  return normalizeOptionPayload(options).map((opt) => ({
+    text: optionTextFromPayload(opt),
+    image: '',
+    imageKey: '',
+    imageProvider: '',
+  }));
+}
+
+async function clearOptionImages(options = []) {
+  for (const option of options) {
+    if (!option?.image && !option?.imageKey) continue;
+    await deleteStoredAsset({
+      key: option.imageKey,
+      provider: option.imageProvider,
+      url: option.image,
+    });
+  }
+}
+
+const mapQuestionRecord = (question) => {
+  const mapped = {
+    ...question,
+    classLevel: question.classLevel || question.class_level || question.grade_level || '',
+  };
+  if (Array.isArray(mapped.options)) {
+    mapped.options = mapped.options.map((opt) => ({
+      text: optionTextFromPayload(opt),
+      image: '',
+      imageKey: '',
+      imageProvider: '',
+    }));
+  }
+  return mapped;
+};
 const buildQuestionSearch = (query, search, mode = 'text') => {
   const term = String(search || '').trim();
   if (!term) {
@@ -60,26 +118,6 @@ const buildQuestionSearch = (query, search, mode = 'text') => {
 
 function normalizeStoredImagePath(value) {
   return toUploadRelativePath(value);
-}
-
-function normalizeOptionPayload(options) {
-  if (Array.isArray(options)) {
-    return options;
-  }
-
-  if (typeof options === 'string' && options.trim()) {
-    try {
-      const parsed = JSON.parse(options);
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
-    } catch {
-      /* tek metin şık */
-    }
-    return [options];
-  }
-
-  return [];
 }
 
 function parseInteractionData(value) {
@@ -299,6 +337,14 @@ exports.createQuestion = async (req, res, next) => {
       return res.status(400).json({ message: 'Doğru cevap gereklidir.' });
     }
 
+    const optionsData = toTextOnlyOptions(req.body.options);
+    const filledOptionCount = optionsData.filter((o) => String(o.text || '').trim()).length;
+    if (filledOptionCount < 2) {
+      return res.status(400).json({
+        message: 'Çoktan seçmeli soru için en az 2 metin şık gereklidir. Görsel yalnızca soru köküne eklenir.',
+      });
+    }
+
     // Teacher branch enforcement: if teacher has approved branch, lock subject to branch
     let finalSubject = subject;
     try {
@@ -351,27 +397,8 @@ exports.createQuestion = async (req, res, next) => {
       }
     }
 
-    // 2. Şıkları İşle
-    let optionsData = [];
-    const optionValues = normalizeOptionPayload(req.body.options);
-    if (optionValues.length > 0) {
-      optionsData = optionValues.map(optText => ({ text: optText, image: '', imageKey: '', imageProvider: '' }));
-    }
-
-    // 3. Şık Resimlerini Eşleştir
-    if (req.files) {
-      for (const f of req.files) {
-        if (f.fieldname.startsWith('optionImage_')) {
-          const index = parseInt(f.fieldname.split('_')[1]);
-          if (optionsData[index]) {
-            const uploaded = await uploadFile(f, 'question-options');
-            optionsData[index].image = uploaded.url;
-            optionsData[index].imageKey = uploaded.key;
-            optionsData[index].imageProvider = uploaded.provider;
-          }
-        }
-      }
-    }
+    // 2. Şıkları İşle (yalnızca metin; şık görseli kabul edilmez)
+    // optionsData yukarıda doğrulandı
 
     let resolvedAssessmentMeta;
     if (assessmentMeta) {
@@ -417,7 +444,10 @@ exports.createQuestion = async (req, res, next) => {
       });
     }
 
-    res.status(201).json({ success: true, data: newQuestion });
+    res.status(201).json({
+      success: true,
+      data: mapQuestionRecord(newQuestion.toObject ? newQuestion.toObject() : newQuestion),
+    });
 
   } catch (error) {
     next(error);
@@ -445,19 +475,24 @@ exports.batchCreateQuestions = async (req, res, next) => {
       }
     } catch {}
 
-    const payload = questions.map(q => ({
-      ...q,
-      subject: enforcedSubject ? enforcedSubject : (q.subject || 'Matematik'),
-      source: q.source || 'AI',
-      createdBy: req.user?.id || q.createdBy
-    }));
+    const payload = questions.map((q) => {
+      const options = toTextOnlyOptions(q.options);
+      return {
+        ...q,
+        options,
+        type: 'multiple-choice',
+        subject: enforcedSubject ? enforcedSubject : (q.subject || 'Matematik'),
+        source: q.source || 'AI',
+        createdBy: req.user?.id || q.createdBy,
+      };
+    });
 
     const savedQuestions = await Question.insertMany(payload);
 
     res.status(201).json({
       success: true,
       message: `${savedQuestions.length} soru başarıyla havuza eklendi.`,
-      data: savedQuestions
+      data: savedQuestions.map((doc) => mapQuestionRecord(doc.toObject ? doc.toObject() : doc)),
     });
 
   } catch (error) {
@@ -497,38 +532,18 @@ exports.updateQuestion = async (req, res, next) => {
       }
     }
 
-    // Şık Güncellemesi
+    // Şık Güncellemesi — yalnızca metin; eski şık görselleri silinir
     const optionPayload = normalizeOptionPayload(req.body.options);
     if (optionPayload.length > 0) {
-       let newOptions = optionPayload.map((txt, i) => {
-          const oldOption = question.options[i] || {};
-          return {
-            text: txt,
-            image: oldOption.image || '',
-            imageKey: oldOption.imageKey || '',
-            imageProvider: oldOption.imageProvider || '',
-          };
-       });
-
-       if (req.files) {
-         for (const f of req.files) {
-            if (f.fieldname.startsWith('optionImage_')) {
-               const index = parseInt(f.fieldname.split('_')[1]);
-               if (newOptions[index]) {
-                 await deleteStoredAsset({ key: newOptions[index].imageKey, provider: newOptions[index].imageProvider, url: newOptions[index].image });
-                 const uploaded = await uploadFile(f, 'question-options');
-                 newOptions[index].image = uploaded.url;
-                 newOptions[index].imageKey = uploaded.key;
-                 newOptions[index].imageProvider = uploaded.provider;
-               }
-            }
-         }
-       }
-       question.options = newOptions;
+      await clearOptionImages(question.options || []);
+      question.options = toTextOnlyOptions(optionPayload);
     }
 
     await question.save();
-    res.status(200).json({ success: true, data: question });
+    res.status(200).json({
+      success: true,
+      data: mapQuestionRecord(question.toObject ? question.toObject() : question),
+    });
 
   } catch (error) {
     next(error);

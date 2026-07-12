@@ -10,8 +10,8 @@ import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
 const normalizeOptions = (options) => {
   if (!Array.isArray(options)) return [];
   return options.map((opt) => {
-    if (typeof opt === 'string') return { text: opt, image: '' };
-    return { text: opt?.text || '', image: opt?.image || '' };
+    if (typeof opt === 'string') return { text: opt };
+    return { text: opt?.text || '' };
   });
 };
 
@@ -89,12 +89,7 @@ export default function ExamPreviewModal({ examId, onClose }) {
                         {opts.map((opt, i) => (
                           <div key={i} className={`flex items-start gap-2 p-3 rounded-xl border ${opt.text === q.correctAnswer ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 dark:border-slate-700'}`}>
                             <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-100 text-slate-700 font-bold">{String.fromCharCode(65 + i)}</span>
-                            <div className="flex-1 min-w-0 space-y-2">
-                              <span className="text-sm">{opt.text}</span>
-                              {opt.image ? (
-                                <QuestionVisual src={opt.image} alt={`Şık ${String.fromCharCode(65 + i)}`} className="max-h-32" />
-                              ) : null}
-                            </div>
+                            <span className="text-sm flex-1 min-w-0">{opt.text}</span>
                           </div>
                         ))}
                       </div>
