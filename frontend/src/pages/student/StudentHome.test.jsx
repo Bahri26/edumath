@@ -6,7 +6,7 @@ import { LanguageProvider } from '../../context/LanguageContext';
 import { MemoryRouter } from 'react-router-dom';
 
 describe('StudentHome', () => {
-  it('renders welcome message', () => {
+  it('renders welcome message and primary next action', () => {
     render(
       <MemoryRouter>
         <LanguageProvider>
@@ -15,5 +15,7 @@ describe('StudentHome', () => {
       </MemoryRouter>
     );
     expect(screen.getByText(/hoş geldin/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/şimdi yap/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^başla$/i })).toBeInTheDocument();
   });
 });

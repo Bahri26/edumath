@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Clock, BookOpen, CircleHelp } from 'lucide-react';
+import { CheckCircle, Clock, BookOpen, CircleHelp, Play, Star, Dumbbell, ArrowRight } from 'lucide-react';
 import { studentProfile as staticProfile } from '../../data/studentData';
 import CourseCard from '../../components/ui/CourseCard';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';
@@ -46,9 +46,10 @@ const StudentHome = () => {
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    if (date.toDateString() === today.toDateString()) return 'Bugün';
-    if (date.toDateString() === tomorrow.toDateString()) return 'Yarın';
-    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
+    const isEn = language === 'EN';
+    if (date.toDateString() === today.toDateString()) return isEn ? 'Today' : 'Bugün';
+    if (date.toDateString() === tomorrow.toDateString()) return isEn ? 'Tomorrow' : 'Yarın';
+    return date.toLocaleDateString(isEn ? 'en-US' : 'tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   const isDueUrgent = (dateStr) => {
@@ -94,7 +95,7 @@ const StudentHome = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [language]);
 
   // Sınavlar, egzersizler, bugün XP (trend) — ana sayfa özetleri
   useEffect(() => {
@@ -196,6 +197,14 @@ const StudentHome = () => {
       coursesEmptyTitle: "Konuların hazırlanıyor",
       coursesEmptyHint: "Öğretmenin eklediği konular burada görünecek.",
       goCourses: "Derslerime Git",
+      nowDoTitle: "Şimdi yap",
+      nowDoCta: "Başla",
+      nowDoAssignment: "Yaklaşan ödevin var",
+      nowDoExam: "{{n}} sınav seni bekliyor",
+      nowDoExercise: "{{n}} egzersiz tamamlanmayı bekliyor",
+      nowDoContinue: "Kaldığın yerden devam et",
+      nowDoFallback: "Çalışma merkezinden pratik yap",
+      seeAllCourses: "Tüm dersler",
     },
     EN: {
       welcome: "Welcome Back",
@@ -230,6 +239,14 @@ const StudentHome = () => {
       coursesEmptyTitle: "Topics are on the way",
       coursesEmptyHint: "Your teacher's topics will show here.",
       goCourses: "Go to my courses",
+      nowDoTitle: "Do this next",
+      nowDoCta: "Start",
+      nowDoAssignment: "You have an upcoming assignment",
+      nowDoExam: "{{n}} quiz(zes) waiting",
+      nowDoExercise: "{{n}} practice(s) still open",
+      nowDoContinue: "Pick up where you left off",
+      nowDoFallback: "Practice in the study hub",
+      seeAllCourses: "All courses",
     }
   };
 
@@ -282,12 +299,12 @@ const StudentHome = () => {
     {
       titleKey: 'continueLesson',
       path: continueLearning.lessonId ? `/student/lesson/${continueLearning.lessonId}` : '/student/courses',
-      emoji: '▶️',
+      Icon: Play,
       accent: 'from-amber-400 to-orange-500',
       hintFromTopic: true,
     },
-    { titleKey: 'kidMissionQuiz', hintKey: 'kidMissionQuizHint', path: '/student/quizzes', emoji: '⭐', accent: 'from-teal-400 to-emerald-500' },
-    { titleKey: 'goalExercise', hintKey: 'goalExerciseSubTodo', path: '/student/exercises', emoji: '🏋️', accent: 'from-sky-400 to-teal-500' },
+    { titleKey: 'kidMissionQuiz', hintKey: 'kidMissionQuizHint', path: '/student/quizzes', Icon: Star, accent: 'from-teal-400 to-emerald-500' },
+    { titleKey: 'goalExercise', hintKey: 'goalExerciseSubTodo', path: '/student/exercises', Icon: Dumbbell, accent: 'from-sky-400 to-teal-500' },
   ];
 
   const missionSubtitle = (m) => {
@@ -316,6 +333,53 @@ const StudentHome = () => {
     return false;
   };
 
+  const primaryNext = useMemo(() => {
+    if (firstPendingAssignment) {
+      return {
+        title: getText('nowDoAssignment'),
+        detail: assignmentHint || firstPendingAssignment.title,
+        path: '/student/assignments',
+      };
+    }
+    if (openExamCount > 0) {
+      return {
+        title: fill(getText('nowDoExam'), { n: openExamCount }),
+        detail: getText('kidMissionQuizHint'),
+        path: '/student/quizzes',
+      };
+    }
+    if (incompleteExerciseCount > 0) {
+      return {
+        title: fill(getText('nowDoExercise'), { n: incompleteExerciseCount }),
+        detail: getText('goalExerciseSubTodo'),
+        path: '/student/exercises',
+      };
+    }
+    if (continueLearning.lessonId || continueLearning.topic) {
+      return {
+        title: getText('nowDoContinue'),
+        detail: continueLearning.topic || getText('kidContinueFallback'),
+        path: continueLearning.lessonId
+          ? `/student/lesson/${continueLearning.lessonId}`
+          : '/student/courses',
+      };
+    }
+    return {
+      title: getText('nowDoFallback'),
+      detail: getText('kidBuddyLine'),
+      path: '/student/exercises',
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    language,
+    firstPendingAssignment,
+    assignmentHint,
+    openExamCount,
+    incompleteExerciseCount,
+    continueLearning.lessonId,
+    continueLearning.topic,
+  ]);
+
   const firstName = profile.name?.split(' ')[0] || 'Öğrenci';
 
   return (
@@ -333,6 +397,33 @@ const StudentHome = () => {
         </button>
       )}
     >
+      <section
+        aria-label={getText('nowDoTitle')}
+        className="rounded-2xl border border-teal-200/80 dark:border-teal-800/50 bg-gradient-to-r from-teal-50 via-white to-sky-50 dark:from-teal-950/40 dark:via-slate-800 dark:to-slate-800 p-4 sm:p-5 shadow-sm"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-widest text-teal-700 dark:text-teal-300">
+              {getText('nowDoTitle')}
+            </p>
+            <h2 className="font-display text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mt-1 truncate">
+              {primaryNext.title}
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
+              {primaryNext.detail}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate(primaryNext.path)}
+            className="inline-flex items-center justify-center gap-2 shrink-0 min-h-[48px] px-6 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700 shadow-sm"
+          >
+            {getText('nowDoCta')}
+            <ArrowRight size={18} aria-hidden />
+          </button>
+        </div>
+      </section>
+
       <section
         aria-label={getText('kidTodayTitle')}
         className="rounded-2xl border border-sky-200/70 dark:border-slate-600 bg-white/90 dark:bg-slate-800/90 shadow-sm p-5 sm:p-6"
@@ -365,6 +456,7 @@ const StudentHome = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {kidMissions.map((m) => {
             const done = isMissionDone(m);
+            const Icon = m.Icon;
             return (
               <button
                 key={m.titleKey}
@@ -377,7 +469,7 @@ const StudentHome = () => {
                     <CheckCircle size={18} className="text-white" />
                   </span>
                 )}
-                <span className="text-xl mb-1.5 block" aria-hidden>{m.emoji}</span>
+                <Icon size={22} className="mb-2 opacity-95" aria-hidden />
                 <span className="font-bold text-base leading-tight block">{getText(m.titleKey)}</span>
                 <span className="text-xs text-white/90 font-medium line-clamp-2 mt-1">{missionSubtitle(m)}</span>
               </button>
@@ -388,17 +480,28 @@ const StudentHome = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <BookOpen size={22} className="text-teal-600 dark:text-teal-400" aria-hidden />
-            {getText('myCourses')}
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <BookOpen size={22} className="text-teal-600 dark:text-teal-400" aria-hidden />
+              {getText('myCourses')}
+            </h2>
+            {courses.length > 2 ? (
+              <button
+                type="button"
+                onClick={() => navigate('/student/courses')}
+                className="text-sm font-bold text-teal-700 dark:text-teal-300 hover:underline"
+              >
+                {getText('seeAllCourses')}
+              </button>
+            ) : null}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {coursesLoading ? (
               [1, 2].map((i) => (
                 <div key={i} className="h-36 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
               ))
             ) : courses.length > 0 ? (
-              courses.slice(0, 4).map((course) => (
+              courses.slice(0, 2).map((course) => (
                 <CourseCard
                   key={course.id}
                   {...course}
@@ -424,7 +527,7 @@ const StudentHome = () => {
         <div className="space-y-6">
           <WeakTopicsInsightCard
             compact
-            showPractice={false}
+            showPractice
             onGoHub={() => navigate('/student/exercises')}
           />
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
