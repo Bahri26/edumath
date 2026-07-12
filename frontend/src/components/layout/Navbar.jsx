@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import NotificationDropdown from '../ui/NotificationDropdown.jsx';
+import MatovaMark from '../ui/MatovaMark.jsx';
 
 const DropdownItem = ({ icon, label, onClick, variant = 'default' }) => {
   const IconComponent = icon;
@@ -31,12 +32,7 @@ function LogoMark({ scrolled, onNavigateHome }) {
       className="flex-shrink-0 flex items-center cursor-pointer group text-left"
       aria-label="Matova ana sayfa"
     >
-      <div
-        className="h-10 w-10 rounded-xl bg-gradient-to-br from-teal-600 to-sky-600 text-white font-black text-lg flex items-center justify-center shadow-sm ring-2 ring-teal-500/30"
-        aria-hidden
-      >
-        M
-      </div>
+      <MatovaMark size={40} className="shadow-sm ring-2 ring-teal-500/25 rounded-[10px]" />
       <span
         className={`ml-3 font-bold text-2xl tracking-tight ${scrolled ? 'text-surface-900 dark:text-white' : 'text-brand-900 dark:text-white'}`}
       >

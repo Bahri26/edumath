@@ -1,11 +1,11 @@
 import React from 'react';
+import MatovaMark from './MatovaMark.jsx';
 
 /**
- * Panel / navbar Matova işareti — yalnızca “M” (eski logo dosyasına bağlı değil).
+ * Panel başlığında Matova işareti (metin yok).
  */
 export default function DashboardLogoMark({ onClick, className = '', size = 'md', title }) {
-  const dim = size === 'sm' ? 'h-9 w-9' : 'h-10 w-10';
-  const textSize = size === 'sm' ? 'text-base' : 'text-lg';
+  const px = size === 'sm' ? 36 : 40;
 
   return (
     <button
@@ -15,12 +15,7 @@ export default function DashboardLogoMark({ onClick, className = '', size = 'md'
       aria-label={title || 'Matova ana sayfa'}
       title={title || 'Matova ana sayfa'}
     >
-      <div
-        className={`${dim} rounded-xl bg-gradient-to-br from-teal-600 to-sky-600 text-white font-black ${textSize} flex items-center justify-center shadow-md shadow-teal-500/25 ring-1 ring-white/20`}
-        aria-hidden
-      >
-        M
-      </div>
+      <MatovaMark size={px} className="shadow-md shadow-teal-500/20 ring-1 ring-white/15 rounded-[10px]" />
     </button>
   );
 }

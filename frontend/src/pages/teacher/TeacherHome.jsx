@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus,
@@ -13,6 +13,9 @@ import {
   BarChart3,
   LineChart,
   ChevronDown,
+  ArrowRight,
+  Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 import ActivityRow from '../../components/ui/ActivityRow';
 import apiClient from '../../services/api';
@@ -161,6 +164,64 @@ const TeacherHome = () => {
   const topicRows = (dashboardReports?.topicPerformance || []).slice(0, 6);
   const trendRows = (dashboardReports?.dailyTrend || []).slice(-7);
 
+  const lowStudents = useMemo(
+    () =>
+      [...students]
+        .filter((s) => typeof s.averageScore === 'number' && s.averageScore < 55)
+        .sort((a, b) => (a.averageScore || 0) - (b.averageScore || 0)),
+    [students],
+  );
+
+  const primaryNext = useMemo(() => {
+    if (!stats && !dashboardLoading) {
+      return {
+        title: 'Özet henüz hazır değil',
+        detail: 'Verileri yenileyin veya soru bankasına ilk içeriği ekleyin.',
+        path: '/teacher/questions',
+        cta: 'Soru bankası',
+      };
+    }
+    if ((stats?.totalQuestions ?? 0) === 0) {
+      return {
+        title: 'İlk sorularını ekle',
+        detail: 'Soru bankası boş — Smart Paste veya AI ile hızlıca başlayabilirsiniz.',
+        path: '/teacher/questions',
+        cta: 'Soru ekle',
+      };
+    }
+    if ((stats?.activeExams ?? 0) === 0) {
+      return {
+        title: 'Sınıfa bir sınav aç',
+        detail: 'Aktif sınav yok. Havuzdaki sorulardan kısa bir ölçme oluşturun.',
+        path: '/teacher/exams',
+        cta: 'Sınav oluştur',
+      };
+    }
+    if (lowStudents[0]) {
+      const s = lowStudents[0];
+      return {
+        title: `${s.name || s.email} için takip`,
+        detail: `Ortalama ${s.averageScore} — ilerleme ekranından detaya bakın.`,
+        path: `/teacher/student-progress?student=${s._id}`,
+        cta: 'Öğrenci takibi',
+      };
+    }
+    if ((stats?.classAverage ?? 100) < 60) {
+      return {
+        title: 'Sınıf ortalaması düşük',
+        detail: `Ortalama %${stats.classAverage}. Raporlardan zayıf konuları ve ipucu isteklerini inceleyin.`,
+        path: '/teacher/reports',
+        cta: 'Raporlara git',
+      };
+    }
+    return {
+      title: 'Sınıf tablosu dengeli',
+      detail: 'İsterseniz yeni soru üretin veya hafif bir ödev verin.',
+      path: '/teacher/assignments',
+      cta: 'Ödevler',
+    };
+  }, [stats, dashboardLoading, lowStudents]);
+
   return (
     <>
       <TeacherPageShell
@@ -190,6 +251,46 @@ const TeacherHome = () => {
           <p className="text-xs text-surface-400 -mt-4">
             Soru, sınav ve anket sayıları yalnızca sizin oluşturduğunuz kayıtları içerir.
           </p>
+        ) : null}
+
+        {!dashboardLoading ? (
+          <section
+            aria-label="Şimdi yap"
+            className="rounded-2xl border border-teal-200/80 dark:border-teal-800/50 bg-gradient-to-r from-teal-50 via-white to-sky-50 dark:from-teal-950/40 dark:via-slate-800 dark:to-slate-800 p-4 sm:p-5 shadow-sm"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="p-2.5 rounded-xl bg-teal-600 text-white shadow-sm shrink-0">
+                  {(stats?.classAverage ?? 100) < 60 || lowStudents[0] ? (
+                    <AlertCircle size={18} aria-hidden />
+                  ) : (
+                    <Sparkles size={18} aria-hidden />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-teal-700 dark:text-teal-300">
+                    Şimdi yap
+                  </p>
+                  <h2 className="font-display text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mt-1 truncate">
+                    {primaryNext.title}
+                  </h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
+                    {primaryNext.detail}
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                className="shrink-0 min-h-[48px]"
+                onClick={() => navigate(primaryNext.path)}
+              >
+                {primaryNext.cta}
+                <ArrowRight size={18} aria-hidden />
+              </Button>
+            </div>
+          </section>
         ) : null}
 
         <div className="grid grid-cols-1 gap-6">

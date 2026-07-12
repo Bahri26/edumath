@@ -1,5 +1,6 @@
 import React from 'react';
-import { GraduationCap, Phone, MapPin, Mail, ChevronRight } from 'lucide-react';
+import { Phone, MapPin, Mail, ChevronRight } from 'lucide-react';
+import MatovaMark from '../ui/MatovaMark.jsx';
 
 const Footer = ({ t }) => {
   const currentYear = new Date().getFullYear();
@@ -13,11 +14,11 @@ const Footer = ({ t }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
 
           <div>
-            <div className="flex items-center text-white mb-4">
-              <div className="bg-teal-600 p-1.5 rounded-lg mr-2">
-                <GraduationCap size={20} />
-              </div>
-              <span className="text-xl font-bold">Mato<span className="text-teal-400">va</span></span>
+            <div className="flex items-center text-white mb-4 gap-2">
+              <MatovaMark size={28} className="rounded-lg shadow-sm" />
+              <span className="text-xl font-bold">
+                Mato<span className="text-teal-400">va</span>
+              </span>
             </div>
             <p className="text-sm leading-relaxed mb-6 text-gray-400">
               {t.footer.desc}
