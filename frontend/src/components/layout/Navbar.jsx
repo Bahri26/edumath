@@ -6,7 +6,6 @@ import {
   BrainCircuit, Moon, Sun, Globe, LogIn, Settings, FileText, UserCircle, LogOut,
 } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
-import logoUrl from '../../assets/logo.png';
 import NotificationDropdown from '../ui/NotificationDropdown.jsx';
 
 const DropdownItem = ({ icon, label, onClick, variant = 'default' }) => {
@@ -25,8 +24,6 @@ const DropdownItem = ({ icon, label, onClick, variant = 'default' }) => {
 };
 
 function LogoMark({ scrolled, onNavigateHome }) {
-  const [failed, setFailed] = useState(false);
-
   return (
     <button
       type="button"
@@ -34,25 +31,12 @@ function LogoMark({ scrolled, onNavigateHome }) {
       className="flex-shrink-0 flex items-center cursor-pointer group text-left"
       aria-label="Matova ana sayfa"
     >
-      {failed ? (
-        <div
-          className="h-10 w-10 rounded-xl bg-brand-600 text-white font-black text-lg flex items-center justify-center shadow-sm ring-2 ring-brand-500/30"
-          aria-hidden
-        >
-          E
-        </div>
-      ) : (
-        <img
-          src={logoUrl}
-          alt=""
-          width={40}
-          height={40}
-          decoding="async"
-          fetchPriority="high"
-          className="h-10 w-10 rounded-xl object-contain bg-surface-50 dark:bg-surface-800 ring-1 ring-surface-200 dark:ring-surface-600 shadow-sm p-0.5"
-          onError={() => setFailed(true)}
-        />
-      )}
+      <div
+        className="h-10 w-10 rounded-xl bg-gradient-to-br from-teal-600 to-sky-600 text-white font-black text-lg flex items-center justify-center shadow-sm ring-2 ring-teal-500/30"
+        aria-hidden
+      >
+        M
+      </div>
       <span
         className={`ml-3 font-bold text-2xl tracking-tight ${scrolled ? 'text-surface-900 dark:text-white' : 'text-brand-900 dark:text-white'}`}
       >

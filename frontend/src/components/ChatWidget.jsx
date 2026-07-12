@@ -40,13 +40,14 @@ const ChatWidget = () => {
       setLoading(true);
       const res = await apiClient.get('/messages/conversations?limit=5');
       setConversations(res.data.data || []);
-      
-      // Okunmamış sayısı hesapla
-      const unread = res.data.data?.reduce((count, conv) => {
-        const hasUnread = conv.messages?.some(msg => !msg.isRead);
-        return count + (hasUnread ? 1 : 0);
-      }, 0) || 0;
-      setUnreadCount(unread);
+
+      try {
+        const unreadRes = await apiClient.get('/messages/unread-count');
+        setUnreadCount(Number(unreadRes.data?.unreadCount ?? 0));
+      } catch {
+        const unread = (res.data.data || []).reduce((count, conv) => count + Number(conv.unreadCount || 0), 0);
+        setUnreadCount(unread);
+      }
 
       if (res.data.data && res.data.data.length > 0 && !selectedConversation) {
         setSelectedConversation(res.data.data[0]);

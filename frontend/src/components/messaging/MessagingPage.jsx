@@ -90,6 +90,13 @@ export default function MessagingPage({ role = 'student' }) {
         );
         if (!cancelled) setMessages(res.data.data || []);
         await apiClient.put(`/messages/conversations/${selectedConversation._id}/read`);
+        if (!cancelled) {
+          setConversations((prev) =>
+            prev.map((conv) =>
+              conv._id === selectedConversation._id ? { ...conv, unreadCount: 0 } : conv,
+            ),
+          );
+        }
       } catch {
         /* ignore */
       }
@@ -228,6 +235,7 @@ export default function MessagingPage({ role = 'student' }) {
               filteredConversations.map((conv) => {
                 const other = getOtherUser(conv);
                 const active = selectedConversation?._id === conv._id;
+                const unread = Number(conv.unreadCount || 0);
                 return (
                   <button
                     key={conv._id}
@@ -235,10 +243,19 @@ export default function MessagingPage({ role = 'student' }) {
                     onClick={() => setSelectedConversation(conv)}
                     className={`w-full text-left px-4 py-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 ${active ? 'bg-teal-50 dark:bg-teal-950/30' : ''}`}
                   >
-                    <p className="font-bold text-sm text-slate-800 dark:text-white truncate">
-                      {other?.name || other?.email || 'Kullanıcı'}
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={`text-sm truncate ${unread > 0 ? 'font-black text-slate-900 dark:text-white' : 'font-bold text-slate-800 dark:text-white'}`}>
+                        {other?.name || other?.email || 'Kullanıcı'}
+                      </p>
+                      {unread > 0 ? (
+                        <span className="shrink-0 text-[10px] font-black bg-rose-500 text-white min-w-[1.25rem] h-5 px-1.5 rounded-full inline-flex items-center justify-center">
+                          {unread > 9 ? '9+' : unread}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className={`text-xs truncate ${unread > 0 ? 'text-slate-700 dark:text-slate-200 font-semibold' : 'text-slate-500'}`}>
+                      {conv.lastMessage?.content || '—'}
                     </p>
-                    <p className="text-xs text-slate-500 truncate">{conv.lastMessage?.content || '—'}</p>
                   </button>
                 );
               })

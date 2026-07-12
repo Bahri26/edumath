@@ -13,7 +13,7 @@ exports.getConversations = async (req, res) => {
       .populate('participantIds', 'name email profilePicture role')
       .populate({
         path: 'lastMessage',
-        select: 'content senderId createdAt'
+        select: 'content senderId createdAt isRead'
       })
       .sort({ lastMessageAt: -1 })
       .skip(skip)
@@ -21,9 +21,22 @@ exports.getConversations = async (req, res) => {
 
     const total = await Conversation.countDocuments({ participantIds: userId });
 
+    const data = await Promise.all(
+      conversations.map(async (conv) => {
+        const plain = conv.toObject ? conv.toObject() : conv;
+        const unreadCount = await Message.countDocuments({
+          conversationId: conv._id,
+          recipientId: userId,
+          isRead: false,
+          isDeleted: { $ne: true },
+        });
+        return { ...plain, unreadCount };
+      }),
+    );
+
     res.status(200).json({
       success: true,
-      data: conversations,
+      data,
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / limit),

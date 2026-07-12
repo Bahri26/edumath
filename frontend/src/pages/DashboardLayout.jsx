@@ -2,11 +2,12 @@ import React, { useContext, useState, useEffect, useRef, useCallback } from 'rea
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { LogOut, Moon, Sun, User, Settings, Menu, X, Globe } from 'lucide-react';
+import { LogOut, Moon, Sun, User, Settings, Menu, X, Globe, MessageSquare } from 'lucide-react';
 import NotificationDropdown from '../components/ui/NotificationDropdown.jsx';
 import DashboardLogoMark from '../components/ui/DashboardLogoMark.jsx';
 import SkipLink from '../components/ui/SkipLink.jsx';
 import { useTranslation } from '../i18n/useTranslation';
+import useUnreadMessageCount from '../hooks/useUnreadMessageCount.js';
 
 function useIsDesktopNav() {
   const [isDesktop, setIsDesktop] = useState(() => {
@@ -47,6 +48,16 @@ const DashboardLayout = ({
 
   const panelHomePath = role === 'teacher' ? '/teacher/overview' : '/student/home';
   const panelLabel = role === 'teacher' ? t('teacherPanel') : t('studentPanelNav');
+  const messagesPath = `/${role}/messages`;
+  const { unreadCount: unreadMessages, refresh: refreshUnreadMessages } = useUnreadMessageCount({
+    enabled: Boolean(user),
+  });
+
+  useEffect(() => {
+    if (location.pathname.startsWith(messagesPath)) {
+      refreshUnreadMessages();
+    }
+  }, [location.pathname, messagesPath, refreshUnreadMessages]);
 
   const visibleNavItems = navMenuItems.filter((item) => item.id !== 'overview' && item.id !== 'home');
 
@@ -281,6 +292,25 @@ const DashboardLayout = ({
 
             <NotificationDropdown />
 
+            <button
+              type="button"
+              onClick={() => navigate(messagesPath)}
+              className="relative p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl hover:bg-surface-100 dark:hover:bg-surface-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              aria-label={
+                unreadMessages > 0
+                  ? `${role === 'teacher' ? t('nav.teacherMessages') : t('nav.studentMessages')} (${unreadMessages})`
+                  : (role === 'teacher' ? t('nav.teacherMessages') : t('nav.studentMessages'))
+              }
+              title={role === 'teacher' ? t('nav.teacherMessages') : t('nav.studentMessages')}
+            >
+              <MessageSquare size={20} aria-hidden="true" />
+              {unreadMessages > 0 ? (
+                <span className="absolute top-1 right-1 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black leading-[1.1rem] text-center">
+                  {unreadMessages > 9 ? '9+' : unreadMessages}
+                </span>
+              ) : null}
+            </button>
+
             <div className="relative" ref={profileRef}>
               <button
                 type="button"
@@ -311,6 +341,7 @@ const DashboardLayout = ({
                   </button>
                   {profileMenuExtras.map((item) => {
                     const Icon = item.icon;
+                    const showBadge = item.id === 'messages' && unreadMessages > 0;
                     return (
                       <button
                         key={item.id}
@@ -323,7 +354,12 @@ const DashboardLayout = ({
                         className="w-full text-left px-4 py-2.5 hover:bg-surface-100 dark:hover:bg-surface-700 flex items-center gap-2 text-surface-800 dark:text-surface-100 font-medium"
                       >
                         {Icon ? <Icon size={16} aria-hidden /> : null}
-                        {item.label}
+                        <span className="flex-1">{item.label}</span>
+                        {showBadge ? (
+                          <span className="text-[10px] font-black bg-rose-500 text-white min-w-[1.25rem] h-5 px-1.5 rounded-full inline-flex items-center justify-center">
+                            {unreadMessages > 9 ? '9+' : unreadMessages}
+                          </span>
+                        ) : null}
                       </button>
                     );
                   })}

@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import logoUrl from '../../assets/logo.png';
+import React from 'react';
 
 /**
- * Panel başlığında yalnızca M logosu (metin yok).
+ * Panel / navbar Matova işareti — yalnızca “M” (eski logo dosyasına bağlı değil).
  */
 export default function DashboardLogoMark({ onClick, className = '', size = 'md', title }) {
-  const [failed, setFailed] = useState(false);
   const dim = size === 'sm' ? 'h-9 w-9' : 'h-10 w-10';
   const textSize = size === 'sm' ? 'text-base' : 'text-lg';
 
@@ -17,24 +15,12 @@ export default function DashboardLogoMark({ onClick, className = '', size = 'md'
       aria-label={title || 'Matova ana sayfa'}
       title={title || 'Matova ana sayfa'}
     >
-      {failed ? (
-        <div
-          className={`${dim} rounded-xl bg-gradient-to-br from-brand-600 to-teal-600 text-white font-black ${textSize} flex items-center justify-center shadow-md shadow-brand-500/25 ring-1 ring-white/20`}
-          aria-hidden
-        >
-          M
-        </div>
-      ) : (
-        <img
-          src={logoUrl}
-          alt=""
-          width={40}
-          height={40}
-          decoding="async"
-          className={`${dim} rounded-xl object-contain bg-white dark:bg-surface-800 ring-1 ring-surface-200/80 dark:ring-surface-600 shadow-sm p-0.5`}
-          onError={() => setFailed(true)}
-        />
-      )}
+      <div
+        className={`${dim} rounded-xl bg-gradient-to-br from-teal-600 to-sky-600 text-white font-black ${textSize} flex items-center justify-center shadow-md shadow-teal-500/25 ring-1 ring-white/20`}
+        aria-hidden
+      >
+        M
+      </div>
     </button>
   );
 }
