@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCombinedQuestionText,
   getQuestionLayout,
+  getQuestionPreviewText,
   isGenericStemPlaceholder,
+  isWeakStemFragment,
   normalizeDisplayOptions,
   resolveQuestionStem,
+  sanitizeStemPart,
 } from './questionLayout.js';
 
 describe('getQuestionLayout', () => {
@@ -62,12 +65,49 @@ describe('resolveQuestionStem', () => {
     expect(stem.showQuestion).toBe(true);
     expect(stem.visualVariant).toBe('compact');
   });
+
+  it('suppresses junk OCR stems like verilen soruyu çözünüz and Aşağıda', () => {
+    const stem = resolveQuestionStem({
+      text: 'verilen soruyu çözünüz.\n\nAşağıda',
+      image: '/uploads/questions/sample.png',
+      assessmentMeta: {
+        parseLayout: {
+          introText: 'verilen soruyu çözünüz.',
+          questionLine: 'Aşağıda',
+        },
+      },
+    });
+
+    expect(stem.showIntro).toBe(false);
+    expect(stem.showQuestion).toBe(false);
+    expect(stem.imageOnly).toBe(true);
+  });
 });
 
 describe('question layout helpers', () => {
   it('detects generic stem placeholders', () => {
     expect(isGenericStemPlaceholder('Aşağıdaki soruyu çözünüz.')).toBe(true);
+    expect(isGenericStemPlaceholder('verilen soruyu çözünüz.')).toBe(true);
     expect(isGenericStemPlaceholder('Bir kitaplıkta örüntü vardır.')).toBe(false);
+  });
+
+  it('detects weak stem fragments', () => {
+    expect(isWeakStemFragment('Aşağıda')).toBe(true);
+    expect(sanitizeStemPart('verilen soruyu çözünüz.')).toBe('');
+    expect(sanitizeStemPart('Buna göre kaç kare kullanılır?')).toBe('Buna göre kaç kare kullanılır?');
+  });
+
+  it('builds preview text for image-only questions', () => {
+    expect(getQuestionPreviewText({
+      text: 'verilen soruyu çözünüz.',
+      image: '/uploads/questions/sample.png',
+      assessmentMeta: {
+        parseLayout: {
+          introText: 'verilen soruyu çözünüz.',
+          questionLine: 'Aşağıda',
+        },
+      },
+    })).toBe('Görsel soru');
   });
 
   it('builds combined question text', () => {

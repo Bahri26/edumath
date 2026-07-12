@@ -137,6 +137,7 @@ export default function ExamPlayer({
                 <QuestionStemCard
                   question={q}
                   questionLabel={labels.questionLabel({ n: idx + 1 })}
+                  framed={false}
                   className="mb-5"
                 />
 

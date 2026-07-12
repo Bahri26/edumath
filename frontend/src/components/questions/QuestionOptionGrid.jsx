@@ -10,6 +10,7 @@ export default function QuestionOptionGrid({
   correctAnswer = '',
   showCorrect = false,
   ariaLabel = 'Cevap seçenekleri',
+  variant = 'square',
 }) {
   const visibleOptions = normalizeDisplayOptions(options);
 
@@ -17,8 +18,13 @@ export default function QuestionOptionGrid({
     return null;
   }
 
+  const isSquare = variant === 'square';
+  const gridClass = isSquare
+    ? 'mx-auto grid max-w-md grid-cols-2 gap-3 sm:max-w-xl sm:grid-cols-4'
+    : 'grid grid-cols-1 gap-3 sm:grid-cols-2';
+
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="group" aria-label={ariaLabel}>
+    <div className={gridClass} role="group" aria-label={ariaLabel}>
       {visibleOptions.map((text, index) => {
         const selected = value === text;
         const correct = showCorrect && text === correctAnswer;
@@ -31,7 +37,11 @@ export default function QuestionOptionGrid({
             disabled={disabled}
             aria-pressed={selected}
             onClick={() => onChange?.(text)}
-            className={`group min-h-[86px] rounded-2xl border-2 p-4 text-left transition-all duration-200 ${
+            className={`group rounded-2xl border-2 transition-all duration-200 ${
+              isSquare
+                ? 'flex aspect-square flex-col items-center justify-center p-3 text-center'
+                : 'min-h-[86px] p-4 text-left'
+            } ${
               correct
                 ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
                 : selected
@@ -39,10 +49,10 @@ export default function QuestionOptionGrid({
                   : 'border-surface-200 bg-white hover:border-teal-300 hover:bg-surface-50 dark:border-surface-600 dark:bg-surface-800 dark:hover:bg-surface-700/60'
             } ${disabled ? 'cursor-default opacity-80' : 'cursor-pointer'}`}
           >
-            <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.14em] text-surface-500 dark:text-surface-400">
+            <span className={`block text-[11px] font-bold uppercase tracking-[0.14em] text-surface-500 dark:text-surface-400 ${isSquare ? 'mb-1.5' : 'mb-2'}`}>
               {letter}
             </span>
-            <span className="block text-base font-semibold text-surface-900 dark:text-white sm:text-lg">
+            <span className={`block font-semibold text-surface-900 dark:text-white ${isSquare ? 'text-lg sm:text-xl' : 'text-base sm:text-lg'}`}>
               {text ? renderWithLatex(text) : '—'}
             </span>
           </button>

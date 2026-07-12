@@ -448,6 +448,7 @@ export default function StudentExercisePlayer() {
           <QuestionStemCard
             question={currentQ}
             questionLabel={`Soru ${currentIndex + 1}`}
+            framed={false}
           />
 
           {renderInput()}

@@ -22,6 +22,7 @@ import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
 import CollapsiblePanel from '../../components/ui/CollapsiblePanel.jsx';
 import QuestionStemCard from '../../components/questions/QuestionStemCard.jsx';
 import QuestionOptionGrid from '../../components/questions/QuestionOptionGrid.jsx';
+import { getQuestionPreviewText } from '../../utils/questionLayout.js';
 import { getQuestionLayout } from '../../utils/questionLayout.js';
 import { sourceFilterOptions, sourceFilterToApi } from '../../utils/questionSourceLabel';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
@@ -107,7 +108,9 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
               )}
               <QuestionSourceBadge question={question} size="sm" />
             </div>
-            <QuestionStemCard question={question} showMeta={false} showVisual={false} />
+            <p className="text-sm font-medium leading-relaxed text-surface-700 line-clamp-2 dark:text-surface-200">
+              {getQuestionPreviewText(question)}
+            </p>
           </div>
           <div className="flex md:flex-col gap-2 opacity-60 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300" onClick={e => e.stopPropagation()}>
             <button type="button" onClick={() => onEdit(question)} aria-label="Soruyu düzenle" className="p-2.5 bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-teal-600 transition-all">
