@@ -1,8 +1,8 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { renderWithLatex } from '../../utils/latex.jsx';
-import QuestionVisual from '../questions/QuestionVisual.jsx';
-import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
+import QuestionOptionGrid from '../questions/QuestionOptionGrid.jsx';
+import QuestionStemCard from '../questions/QuestionStemCard.jsx';
 import { MatchingPracticeCard, SequencePracticeCard } from './InteractivePracticeCards.jsx';
 import StudentHint from '../StudentHint.jsx';
 import { ExerciseFillPlay } from '../exercises/ExerciseGameInputs.jsx';
@@ -134,23 +134,11 @@ export default function ExamPlayer({
           <div className="max-w-3xl mx-auto p-4 sm:p-6 animate-fade-in">
             {q ? (
               <article className="bg-white/95 dark:bg-surface-800/95 p-5 sm:p-7 rounded-[1.35rem] shadow-card dark:shadow-card-dark border border-surface-200/80 dark:border-surface-700 backdrop-blur-sm">
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 font-bold px-3 py-1 rounded-xl text-sm">
-                    {labels.questionLabel({ n: idx + 1 })}
-                  </span>
-                  {q.type && q.type !== 'multiple-choice' ? (
-                    <span className="bg-teal-50 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wide">
-                      {q.type}
-                    </span>
-                  ) : null}
-                </div>
-
-                <QuestionTextWithPattern
-                  text={q.text}
-                  mainClassName="text-lg sm:text-[1.15rem] font-medium text-surface-800 dark:text-white leading-relaxed"
-                  className="mb-4"
+                <QuestionStemCard
+                  question={q}
+                  questionLabel={labels.questionLabel({ n: idx + 1 })}
+                  className="mb-5"
                 />
-                <QuestionVisual src={q.image} alt={labels.questionLabel({ n: idx + 1 })} className="mb-4" />
 
                 {q.type === 'matching' ? (
                   <MatchingPracticeCard
@@ -180,38 +168,11 @@ export default function ExamPlayer({
                     onChange={(val) => recordAnswer(q._id, val)}
                   />
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {(Array.isArray(q.options) ? q.options : []).map((opt, i) => {
-                      const optionText = typeof opt === 'string' ? opt : (opt?.text || '');
-                      const isSelected = userAnswers[q._id] === optionText;
-                      const letter = String.fromCharCode(65 + i);
-                      return (
-                        <label
-                          key={i}
-                          className={`flex items-start gap-3 p-4 min-h-[52px] border-2 rounded-2xl cursor-pointer transition-all duration-200 ${
-                            isSelected
-                              ? 'bg-teal-50 border-teal-500 ring-2 ring-teal-400/40 dark:bg-teal-950/40 dark:border-teal-400'
-                              : 'hover:bg-surface-50 dark:hover:bg-surface-700/60 border-surface-200 dark:border-surface-600 hover:border-teal-300/60'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name={`q-${q._id}`}
-                            value={optionText}
-                            checked={isSelected}
-                            onChange={() => recordAnswer(q._id, optionText)}
-                            className="mt-1 w-5 h-5 text-teal-600 shrink-0"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-surface-700 dark:text-surface-200">
-                              <span className="font-bold mr-2 text-teal-700 dark:text-teal-300">{letter})</span>
-                              {renderWithLatex(optionText)}
-                            </div>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
+                  <QuestionOptionGrid
+                    options={q.options}
+                    value={userAnswers[q._id]}
+                    onChange={(optionText) => recordAnswer(q._id, optionText)}
+                  />
                 )}
 
                 {hintText ? (

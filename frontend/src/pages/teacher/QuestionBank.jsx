@@ -21,7 +21,7 @@ import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
 import QuestionSourceBadge from '../../components/questions/QuestionSourceBadge.jsx';
 import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
 import CollapsiblePanel from '../../components/ui/CollapsiblePanel.jsx';
-import QuestionTextWithPattern from '../../components/questions/QuestionTextWithPattern.jsx';
+import QuestionStemCard from '../../components/questions/QuestionStemCard.jsx';
 import { sourceFilterOptions, sourceFilterToApi } from '../../utils/questionSourceLabel';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -118,7 +118,7 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
               )}
               <QuestionSourceBadge question={question} size="sm" />
             </div>
-            <QuestionTextWithPattern text={question.text} />
+            <QuestionStemCard question={question} showMeta={false} showVisual={false} />
           </div>
           <div className="flex md:flex-col gap-2 opacity-60 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300" onClick={e => e.stopPropagation()}>
             <button type="button" onClick={() => onEdit(question)} aria-label="Soruyu düzenle" className="p-2.5 bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 rounded-xl text-slate-400 hover:text-teal-600 transition-all">

@@ -7,7 +7,8 @@ import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';
 import { useTranslation } from '../../i18n/useTranslation';
-import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
+import QuestionOptionGrid from '../../components/questions/QuestionOptionGrid.jsx';
+import QuestionStemCard from '../../components/questions/QuestionStemCard.jsx';
 import QuestionTextWithPattern from '../../components/questions/QuestionTextWithPattern.jsx';
 import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
 import StudentHint from '../../components/StudentHint.jsx';
@@ -148,17 +149,6 @@ export default function StudentExercisePlayer() {
   }, [currentQ, currentIndex, exercise]);
 
   // Must stay above early returns — conditional hooks trigger React #310.
-  const questionImageAlt = useMemo(() => {
-    if (!currentQ) return t('exercisePlayer.questionImageAlt');
-    const snippet = String(currentQ.text || currentQ.topic || '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 100);
-    return snippet
-      ? `${t('exercisePlayer.questionImageAlt')}: ${snippet}`
-      : t('exercisePlayer.questionImageAlt');
-  }, [currentQ, t]);
-
   const handleFinish = async () => {
     if (submitting) return;
     setSubmitting(true);
@@ -297,33 +287,12 @@ export default function StudentExercisePlayer() {
     }
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {(currentQ.options || []).map((opt, i) => {
-          const text = optionText(opt);
-          const image = typeof opt === 'object' ? String(opt.image || '') : '';
-          const letter = String.fromCharCode(65 + i);
-          const selected = draftAnswer === text;
-          return (
-            <button
-              key={i}
-              type="button"
-              disabled={isAnswered}
-              onClick={() => setDraftAnswer(text)}
-              className={`p-4 rounded-2xl border-2 text-left transition-all ${
-                selected
-                  ? 'border-teal-500 bg-teal-50 dark:bg-teal-950/40'
-                  : 'border-slate-200 dark:border-slate-600 hover:border-teal-300'
-              } ${isAnswered ? 'opacity-80' : ''}`}
-            >
-              <span className="font-bold mr-2">{letter})</span>
-              {renderWithLatex(text)}
-              {image ? (
-                <QuestionVisual src={image} alt={`${letter} şıkkı`} className="mt-2 max-h-36" />
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+      <QuestionOptionGrid
+        options={currentQ.options}
+        value={draftAnswer}
+        onChange={setDraftAnswer}
+        disabled={isAnswered}
+      />
     );
   };
 
@@ -476,11 +445,10 @@ export default function StudentExercisePlayer() {
 
       {currentQ && (
         <div className="rounded-[1.25rem] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm space-y-4">
-          <QuestionTextWithPattern
-            text={currentQ.text}
-            mainClassName="text-lg font-medium text-slate-800 dark:text-white"
+          <QuestionStemCard
+            question={currentQ}
+            questionLabel={`Soru ${currentIndex + 1}`}
           />
-          <QuestionVisual src={currentQ.image} alt={questionImageAlt} />
 
           {renderInput()}
 
