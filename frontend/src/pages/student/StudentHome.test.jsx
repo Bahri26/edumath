@@ -28,7 +28,7 @@ describe('StudentHome', () => {
       </MemoryRouter>
     );
     expect(screen.getByText(/seriyi başlat|gün seri/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /kılavuz/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /kullanım kılavuzu/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /derse devam et/i })).not.toBeInTheDocument();
   });
 });

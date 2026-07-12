@@ -5,8 +5,8 @@ import { QUICK_GUIDE } from '../../data/quickGuideContent';
 import QuickGuideBlockList from './QuickGuideBlockList.jsx';
 
 /**
- * Öğrenci / öğretmen hızlı kılavuz — ortalanmış modal (sağ drawer değil).
- * Kapalıyken DOM'a hiç yazılmaz; ana sayfayı sıkıştırmaz.
+ * Öğrenci / öğretmen ortak kılavuz — öğretmen paneliyle aynı kartlı düzen.
+ * Kapalıyken DOM'a yazılmaz.
  */
 export default function GuideDrawer({ audience = 'student', open, onClose }) {
   const { language } = useContext(LanguageContext);
@@ -44,16 +44,16 @@ export default function GuideDrawer({ audience = 'student', open, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="guide-dialog-title"
-        className="relative z-[1] flex w-full max-w-lg max-h-[min(88vh,40rem)] flex-col rounded-t-2xl sm:rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200/80 dark:border-slate-700"
+        className="relative z-[1] flex w-full max-w-3xl max-h-[min(90vh,44rem)] flex-col rounded-t-2xl sm:rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200/80 dark:border-slate-700"
       >
-        <header className="shrink-0 flex items-start justify-between gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+        <header className="shrink-0 flex items-start justify-between gap-3 px-5 py-4 sm:px-6 border-b border-slate-100 dark:border-slate-800">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">
               {lang === 'EN' ? 'Quick guide' : 'Hızlı kılavuz'}
             </p>
             <h2
               id="guide-dialog-title"
-              className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-white"
+              className="mt-0.5 text-lg sm:text-xl font-semibold text-slate-900 dark:text-white"
             >
               {content.title}
             </h2>
@@ -69,21 +69,22 @@ export default function GuideDrawer({ audience = 'student', open, onClose }) {
           </button>
         </header>
 
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 sm:px-6 sm:py-5">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6 sm:py-6">
           {content.intro ? (
-            <p className="mb-5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            <p className="mb-5 text-sm leading-relaxed text-slate-600 dark:text-slate-300 max-w-2xl">
               {content.intro}
             </p>
           ) : null}
 
-          <QuickGuideBlockList audience={audience} blocks={content.blocks} variant="drawer" />
+          {/* Öğretmen / öğrenci aynı kart ızgarası (landing stili) */}
+          <QuickGuideBlockList audience={audience} blocks={content.blocks} variant="landing" />
         </div>
 
-        <footer className="shrink-0 border-t border-slate-100 dark:border-slate-800 px-5 py-3 flex justify-end">
+        <footer className="shrink-0 border-t border-slate-100 dark:border-slate-800 px-5 py-3 sm:px-6 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="min-h-[40px] rounded-xl bg-teal-600 px-4 text-sm font-semibold text-white hover:bg-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+            className="min-h-[40px] rounded-xl bg-teal-600 px-5 text-sm font-semibold text-white hover:bg-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
           >
             {lang === 'EN' ? 'Got it' : 'Tamam'}
           </button>

@@ -1,8 +1,9 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, BookOpen, CircleHelp, ArrowRight, Flame } from 'lucide-react';
+import { Clock, BookOpen, ArrowRight, Flame } from 'lucide-react';
 import { studentProfile as staticProfile } from '../../data/studentData';
 import CourseCard from '../../components/ui/CourseCard';
+import Button from '../../components/ui/Button.jsx';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';
 import { LanguageContext } from '../../context/LanguageContext';
 import apiClient from '../../services/api';
@@ -181,7 +182,7 @@ const StudentHome = () => {
       noPendingTasks: 'Henüz yaklaşan ödev yok',
       kidBuddyLine: 'Birlikte matematik macerasına devam edelim!',
       kidTasksProgress: '{{done}} / {{total}} görev',
-      guide: 'Kılavuz',
+      guide: 'Kullanım Kılavuzu',
       progressToday: 'Bugün {{xp}} XP',
       streakLabel: '{{n}} gün seri',
       streakFresh: 'Seriyi başlat',
@@ -211,7 +212,7 @@ const StudentHome = () => {
       noPendingTasks: 'No pending assignments',
       kidBuddyLine: 'Let’s keep the math adventure going!',
       kidTasksProgress: '{{done}} / {{total}} tasks',
-      guide: 'Guide',
+      guide: 'User guide',
       progressToday: 'Today {{xp}} XP',
       streakLabel: '{{n}}-day streak',
       streakFresh: 'Start a streak',
@@ -334,14 +335,14 @@ const StudentHome = () => {
       title={`${getText('welcome')}, ${firstName}!`}
       subtitle={getText('kidBuddyLine')}
       headerAside={(
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="md"
           onClick={() => setIsGuideOpen(true)}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-200 min-h-[44px] px-1"
+          icon={BookOpen}
         >
-          <CircleHelp size={16} aria-hidden />
           {getText('guide')}
-        </button>
+        </Button>
       )}
     >
       <section
