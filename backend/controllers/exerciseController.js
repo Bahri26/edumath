@@ -9,6 +9,11 @@ const { buildTopicMongoClause } = require('../constants/patternTopics');
 const { stripQuestionForStudent } = require('../utils/examSchedule');
 const { parseAnswerPayload, summarizeExerciseSubmission } = require('../utils/exerciseAnswer');
 const { generateAndSaveExerciseVariants } = require('../services/exerciseQuestionVariantService');
+const {
+  classLevelsMatch,
+  classLevelQueryValues,
+  sameStudentId,
+} = require('../utils/classLevel');
 
 const STUDENT_QUESTION_FIELDS =
   'text difficulty type options image imageKey imageProvider interactiveType interactionData topic subject assessmentMeta';
@@ -16,16 +21,19 @@ const STUDENT_QUESTION_FIELDS =
 async function resolveStudentClass(studentId) {
   const student = await User.findById(studentId).select('grade classLevel name');
   if (!student) return { error: 'Öğrenci bulunamadı', status: 404 };
-  const studentClass = student.grade || student.classLevel;
-  if (!studentClass) return { error: 'Öğrenci sınıf bilgisi bulunamadı', status: 400 };
+  const studentClass = student.grade || student.classLevel || null;
+  // grade yoksa 400 yerine caller boş liste / soft empty dönebilir
   return { student, studentClass };
 }
 
 async function assertStudentCanAccessExercise(exercise, studentId) {
   const { student, studentClass, error, status } = await resolveStudentClass(studentId);
   if (error) return { ok: false, error, status };
+  if (!studentClass) {
+    return { ok: false, error: 'Öğrenci sınıf bilgisi bulunamadı', status: 400 };
+  }
   if (!exercise.isActive) return { ok: false, error: 'Egzersiz aktif değil', status: 403 };
-  if (exercise.classLevel !== studentClass) {
+  if (!classLevelsMatch(exercise.classLevel, studentClass)) {
     return { ok: false, error: 'Bu egzersiz sizin sınıfınıza ait değil', status: 403 };
   }
   return { ok: true, student, studentClass };
@@ -216,21 +224,27 @@ exports.getStudentExercises = async (req, res, next) => {
     const studentId = req.user.id;
     const { page = 1, limit = 10 } = req.query;
 
-    // Öğrencinin sınıfını al
-    const student = await User.findById(studentId);
-    if (!student) {
-      return res.status(404).json({ message: 'Öğrenci bulunamadı' });
+    const { student, studentClass, error, status } = await resolveStudentClass(studentId);
+    if (error) {
+      return res.status(status).json({ message: error });
     }
 
-    // grade (örn: "9. Sınıf") veya classLevel olabilir
-    const studentClass = student.grade || student.classLevel;
+    // Sınıf yoksa soft empty — 400 yerine boş liste (UI kırılmasın)
     if (!studentClass) {
-      return res.status(400).json({ message: 'Öğrenci sınıf bilgisi bulunamadı' });
+      return res.json({
+        success: true,
+        data: [],
+        totalPages: 0,
+        page: Number(page) || 1,
+        total: 0,
+        warning: 'Öğrenci sınıf bilgisi eksik; egzersiz listesi boş.',
+      });
     }
 
-    const query = { 
-      classLevel: studentClass,
-      isActive: true 
+    const classVariants = classLevelQueryValues(studentClass);
+    const query = {
+      classLevel: classVariants.length > 1 ? { $in: classVariants } : studentClass,
+      isActive: true,
     };
 
     const total = await Exercise.countDocuments(query);
@@ -241,21 +255,22 @@ exports.getStudentExercises = async (req, res, next) => {
       .populate('createdBy', 'name')
       .select('-submissions.answers');
 
-    // Her egzersiz için öğrencinin ilerlemesini ekle
-    const enrichedExercises = exercises.map(ex => {
-      const submission = ex.submissions?.find(s => s.studentId.toString() === studentId);
+    const enrichedExercises = exercises.map((ex) => {
+      const submission = (ex.submissions || []).find((s) => sameStudentId(s?.studentId, studentId));
       return {
         ...ex.toObject(),
         questions: undefined,
         questionCount: ex.totalQuestions || (ex.questions?.length ?? 0),
-        studentProgress: submission ? {
-          score: submission.score,
-          status: submission.status,
-          completedQuestions: submission.completedQuestions,
-          startedAt: submission.startedAt,
-          completedAt: submission.completedAt,
-          totalTimeSpent: submission.totalTimeSpent ?? null,
-        } : null
+        studentProgress: submission
+          ? {
+              score: submission.score,
+              status: submission.status,
+              completedQuestions: submission.completedQuestions,
+              startedAt: submission.startedAt,
+              completedAt: submission.completedAt,
+              totalTimeSpent: submission.totalTimeSpent ?? null,
+            }
+          : null,
       };
     });
 
@@ -263,8 +278,9 @@ exports.getStudentExercises = async (req, res, next) => {
       success: true,
       data: enrichedExercises,
       totalPages: Math.ceil(total / limit),
-      page,
-      total
+      page: Number(page) || 1,
+      total,
+      studentClass,
     });
   } catch (error) {
     next(error);
@@ -288,9 +304,9 @@ exports.getExerciseById = async (req, res, next) => {
         return res.status(access.status).json({ message: access.error });
       }
       const doc = exercise.toObject();
-      doc.questions = (doc.questions || []).map(stripQuestionForStudent);
-      const submission = exercise.submissions?.find(
-        (s) => s.studentId.toString() === String(req.user.id),
+      doc.questions = (doc.questions || []).filter(Boolean).map(stripQuestionForStudent);
+      const submission = (exercise.submissions || []).find((s) =>
+        sameStudentId(s?.studentId, req.user.id),
       );
       return res.json({
         success: true,
@@ -328,9 +344,13 @@ exports.getExerciseForPlay = async (req, res, next) => {
       return res.status(access.status).json({ message: access.error });
     }
 
-    const submission = exercise.submissions?.find(
-      (s) => s.studentId.toString() === String(req.user.id),
+    const submission = (exercise.submissions || []).find((s) =>
+      sameStudentId(s?.studentId, req.user.id),
     );
+
+    const playQuestions = (exercise.questions || [])
+      .filter(Boolean)
+      .map(stripQuestionForStudent);
 
     res.json({
       success: true,
@@ -341,18 +361,21 @@ exports.getExerciseForPlay = async (req, res, next) => {
         classLevel: exercise.classLevel,
         subject: exercise.subject,
         topic: exercise.topic,
-        totalQuestions: exercise.totalQuestions,
+        totalQuestions: playQuestions.length || exercise.totalQuestions,
         gameMode: exercise.gameMode,
         playTransform: exercise.playTransform,
         timeLimit: exercise.timeLimit,
         pointsPerQuestion: exercise.pointsPerQuestion,
         createdBy: exercise.createdBy,
-        questions: (exercise.questions || []).map(stripQuestionForStudent),
-        studentProgress: submission ? {
-          score: submission.score,
-          status: submission.status,
-          completedAt: submission.completedAt,
-        } : null,
+        questions: playQuestions,
+        emptyQuestions: playQuestions.length === 0,
+        studentProgress: submission
+          ? {
+              score: submission.score,
+              status: submission.status,
+              completedAt: submission.completedAt,
+            }
+          : null,
       },
     });
   } catch (error) {
@@ -476,8 +499,16 @@ exports.submitExercise = async (req, res, next) => {
       submittedAnswers,
     });
 
-    let submission = exercise.submissions.find(s => s.studentId.toString() === studentId);
-    
+    let submission = (exercise.submissions || []).find((s) =>
+      sameStudentId(s?.studentId, studentId),
+    );
+
+    const studentDoc =
+      access.student ||
+      (await User.findById(studentId).select('name').lean());
+    const studentName =
+      studentDoc?.name || req.user.name || req.user.email || 'Öğrenci';
+
     if (submission) {
       submission.answers = submittedAnswers;
       submission.score = score;
@@ -485,10 +516,11 @@ exports.submitExercise = async (req, res, next) => {
       submission.status = 'completed';
       submission.completedAt = new Date();
       submission.totalTimeSpent = totalTimeSpent;
+      if (!submission.studentName) submission.studentName = studentName;
     } else {
       exercise.submissions.push({
         studentId,
-        studentName: req.user.name,
+        studentName,
         score,
         completedQuestions: correctCount,
         status: 'completed',

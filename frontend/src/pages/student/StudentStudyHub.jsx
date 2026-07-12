@@ -7,11 +7,7 @@ import WeakTopicsInsightCard from '../../components/student/WeakTopicsInsightCar
 import SkeletonCard from '../../components/ui/SkeletonCard.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { useTranslation } from '../../i18n/useTranslation';
-
-function matchesTopic(exercise, needle) {
-  const hay = `${exercise.topic || ''} ${exercise.name || ''} ${exercise.description || ''}`.toLowerCase();
-  return hay.includes(needle);
-}
+import { matchesTopic } from '../../utils/topicMatch';
 
 export default function StudentStudyHub() {
   const navigate = useNavigate();
@@ -22,16 +18,19 @@ export default function StudentStudyHub() {
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [listWarning, setListWarning] = useState(null);
 
   const loadExercises = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
+    setListWarning(null);
     try {
       const res = await apiClient.get('/exercises/student/my-exercises', {
         params: { page: 1, limit: 50 },
       });
       const rows = res.data?.data ?? res.data ?? [];
       setExercises(Array.isArray(rows) ? rows : []);
+      if (res.data?.warning) setListWarning(res.data.warning);
     } catch (err) {
       setExercises([]);
       setLoadError(err?.response?.data?.message || t('studyHub.loadError'));
@@ -48,8 +47,7 @@ export default function StudentStudyHub() {
     if (!focusTopic) {
       return { displayedExercises: exercises, filterActive: false, noTopicMatch: false };
     }
-    const needle = focusTopic.toLowerCase();
-    const matched = exercises.filter((ex) => matchesTopic(ex, needle));
+    const matched = exercises.filter((ex) => matchesTopic(ex, focusTopic));
     return {
       displayedExercises: matched,
       filterActive: true,
@@ -90,6 +88,12 @@ export default function StudentStudyHub() {
             </button>
           </div>
         )}
+
+        {listWarning ? (
+          <div className="mb-4 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/80 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+            {listWarning}
+          </div>
+        ) : null}
 
         <div className="flex items-center justify-between gap-4 mb-4">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
@@ -134,7 +138,7 @@ export default function StudentStudyHub() {
               const score = ex.studentProgress?.score;
               const count = ex.questionCount ?? ex.totalQuestions ?? 0;
               const highlighted =
-                filterActive && focusTopic && matchesTopic(ex, focusTopic.toLowerCase());
+                filterActive && focusTopic && matchesTopic(ex, focusTopic);
               return (
                 <div
                   key={ex._id}

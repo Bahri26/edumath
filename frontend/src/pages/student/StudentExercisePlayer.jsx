@@ -272,6 +272,24 @@ export default function StudentExercisePlayer() {
 
   if (!exercise) return null;
 
+  if (!questions.length) {
+    return (
+      <StudentPageShell
+        title={exercise.name || t('exercisePlayer.emptyTitle')}
+        subtitle={exercise.description || ''}
+        maxWidthClass="max-w-2xl"
+      >
+        <div className="rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/80 dark:bg-amber-950/30 p-8 text-center">
+          <p className="font-bold text-slate-900 dark:text-white">{t('exercisePlayer.emptyTitle')}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">{t('exercisePlayer.emptyHint')}</p>
+          <Button variant="primary" className="mt-6" onClick={() => navigate('/student/exercises')}>
+            {t('exercisePlayer.backToHub')}
+          </Button>
+        </div>
+      </StudentPageShell>
+    );
+  }
+
   if (finished) {
     const review = finished.data?.answers || {};
     const wrongItems = Object.entries(review).filter(([, v]) => !v.isCorrect);

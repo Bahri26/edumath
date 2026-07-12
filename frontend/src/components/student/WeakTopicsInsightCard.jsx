@@ -24,6 +24,7 @@ export default function WeakTopicsInsightCard({
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
+  const [insightsError, setInsightsError] = useState(null);
   const [insights, setInsights] = useState({
     weakTopics: [],
     topics: [],
@@ -35,11 +36,34 @@ export default function WeakTopicsInsightCard({
   const [practiceLoading, setPracticeLoading] = useState(false);
   const [practiceLoadingTopic, setPracticeLoadingTopic] = useState('');
   const [practiceQuestions, setPracticeQuestions] = useState(null);
+  const [practiceEmpty, setPracticeEmpty] = useState(false);
+
+  const reloadInsights = async () => {
+    setLoading(true);
+    setInsightsError(null);
+    try {
+      const data = await fetchStudentInsights();
+      setInsights({
+        weakTopics: Array.isArray(data?.weakTopics) ? data.weakTopics : [],
+        topics: Array.isArray(data?.topics) ? data.topics : [],
+        suggested: Boolean(data?.suggested),
+        hasActivity: Boolean(data?.hasActivity),
+        scoringProvider: data?.scoringProvider || 'local-matrix',
+        provider: data?.provider || 'local',
+      });
+    } catch (err) {
+      setInsights({ weakTopics: [], topics: [] });
+      setInsightsError(err?.response?.data?.message || t('weakTopics.loadError'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      setInsightsError(null);
       try {
         const data = await fetchStudentInsights();
         if (cancelled) return;
@@ -51,8 +75,11 @@ export default function WeakTopicsInsightCard({
           scoringProvider: data?.scoringProvider || 'local-matrix',
           provider: data?.provider || 'local',
         });
-      } catch {
-        if (!cancelled) setInsights({ weakTopics: [], topics: [] });
+      } catch (err) {
+        if (!cancelled) {
+          setInsights({ weakTopics: [], topics: [] });
+          setInsightsError(err?.response?.data?.message || t('weakTopics.loadError'));
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -60,7 +87,7 @@ export default function WeakTopicsInsightCard({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   const displayTopics = (insights.topics?.length ? insights.topics : []).slice(0, compact ? 3 : 5);
 
@@ -82,6 +109,7 @@ export default function WeakTopicsInsightCard({
     if (!list.length) return;
     const single = list.length === 1 ? list[0] : '';
     setPracticeLoading(true);
+    setPracticeEmpty(false);
     if (single) setPracticeLoadingTopic(single);
     setPracticeQuestions(null);
     try {
@@ -91,9 +119,12 @@ export default function WeakTopicsInsightCard({
         studentId: uid || undefined,
         count: 5,
       });
-      setPracticeQuestions(data?.questions || []);
+      const qs = data?.questions || [];
+      setPracticeQuestions(qs);
+      setPracticeEmpty(qs.length === 0);
     } catch {
       setPracticeQuestions([]);
+      setPracticeEmpty(true);
     } finally {
       setPracticeLoading(false);
       setPracticeLoadingTopic('');
@@ -133,6 +164,17 @@ export default function WeakTopicsInsightCard({
             <Loader2 size={16} className="animate-spin" aria-hidden />
             {t('weakTopics.loading')}
           </p>
+        ) : insightsError ? (
+          <div className="rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/20 p-3" role="alert">
+            <p className="text-sm text-amber-900 dark:text-amber-100 mb-2">{insightsError}</p>
+            <button
+              type="button"
+              onClick={reloadInsights}
+              className="text-sm font-bold text-teal-700 dark:text-teal-300 hover:underline"
+            >
+              {t('weakTopics.retry')}
+            </button>
+          </div>
         ) : displayTopics.length === 0 ? (
           <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{t('weakTopics.empty')}</p>
         ) : weakList.length === 0 ? (
@@ -235,6 +277,12 @@ export default function WeakTopicsInsightCard({
           </div>
         )}
       </div>
+
+      {practiceEmpty ? (
+        <p className="text-sm text-amber-800 dark:text-amber-200 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-950/20 px-4 py-3">
+          {t('weakTopics.practiceEmpty')}
+        </p>
+      ) : null}
 
       {practiceQuestions && practiceQuestions.length > 0 && (
         <AIPractice questions={practiceQuestions} sourceLabel={t('weakTopics.subtitleLocal')} />
