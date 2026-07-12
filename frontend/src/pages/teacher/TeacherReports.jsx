@@ -31,6 +31,13 @@ import Button from '../../components/ui/Button.jsx';
 
 const RANGE_OPTIONS = [7, 30, 90, 180];
 
+/** Rapor zayıf konusundan ödev formunu önceden doldurmak için */
+function assignmentCreatePath(topic) {
+  const params = new URLSearchParams({ create: '1' });
+  if (topic) params.set('topic', topic);
+  return `/teacher/assignments?${params.toString()}`;
+}
+
 const riskIssueTr = (avg) => {
   if (avg < 45) return 'Genel ortalama düşük; destek önerilir.';
   if (avg < 55) return 'Ortalama gelişim alanında; takip faydalı olur.';
@@ -68,6 +75,7 @@ const REPORT_TRANSLATIONS = {
     nextActionsHint: 'Canlı verilere göre önerilen sonraki adımlar.',
     actionOpenBank: 'Soru bankası',
     actionOpenAssignments: 'Ödevler',
+    actionCreateAssignment: 'Ödev oluştur',
     actionOpenProgress: 'Öğrenci takibi',
     actionOpenExams: 'Sınavlar',
   },
@@ -93,6 +101,7 @@ const REPORT_TRANSLATIONS = {
     nextActionsHint: 'Suggested next steps from live class data.',
     actionOpenBank: 'Question bank',
     actionOpenAssignments: 'Assignments',
+    actionCreateAssignment: 'Create assignment',
     actionOpenProgress: 'Student progress',
     actionOpenExams: 'Exams',
   },
@@ -263,13 +272,15 @@ const TeacherReports = () => {
       actions.push({
         id: 'hint-topic',
         title: en
-          ? `Reinforce “${topic}” with practice`
-          : `“${topic}” konusunda güçlendirme yap`,
+          ? `Assign practice on “${topic}”`
+          : `“${topic}” için ödev oluştur`,
         detail: en
-          ? `${topHint.count} hint request(s) in this period — add or assign questions.`
-          : `Bu dönemde ${topHint.count} ipucu isteği — soru ekle veya ödev ver.`,
-        to: `/teacher/questions?topic=${encodeURIComponent(topic)}`,
-        cta: getText('actionOpenBank'),
+          ? `${topHint.count} hint request(s) in this period — create a short assignment in one step.`
+          : `Bu dönemde ${topHint.count} ipucu isteği — tek adımda kısa ödev aç.`,
+        to: assignmentCreatePath(topic),
+        cta: getText('actionCreateAssignment'),
+        secondaryTo: `/teacher/questions?topic=${encodeURIComponent(topic)}`,
+        secondaryCta: getText('actionOpenBank'),
       });
     }
 
@@ -278,13 +289,15 @@ const TeacherReports = () => {
       actions.push({
         id: 'weak-exam-topic',
         title: en
-          ? `Review exam results on “${weakTopic}”`
-          : `“${weakTopic}” sınav sonuçlarını gözden geçir`,
+          ? `Assign work on “${weakTopic}”`
+          : `“${weakTopic}” için ödev oluştur`,
         detail: en
-          ? 'This topic shows the weakest exam performance in the selected range.'
-          : 'Seçili dönemde sınavda en çok zorlanılan konu bu.',
-        to: `/teacher/questions?topic=${encodeURIComponent(weakTopic)}`,
-        cta: getText('actionOpenBank'),
+          ? 'Weakest exam topic in this range — open a prefilled assignment.'
+          : 'Seçili dönemde en zayıf sınav konusu — hazır başlıklı ödev formu açılır.',
+        to: assignmentCreatePath(weakTopic),
+        cta: getText('actionCreateAssignment'),
+        secondaryTo: `/teacher/questions?topic=${encodeURIComponent(weakTopic)}`,
+        secondaryCta: getText('actionOpenBank'),
       });
     }
 
@@ -323,8 +336,8 @@ const TeacherReports = () => {
         detail: en
           ? 'No urgent signals in this range. Keep assigning light practice.'
           : 'Bu aralıkta acil sinyal yok. Hafif alıştırma vermeye devam edin.',
-        to: '/teacher/assignments',
-        cta: getText('actionOpenAssignments'),
+        to: '/teacher/assignments?create=1',
+        cta: getText('actionCreateAssignment'),
       });
     }
 
@@ -424,21 +437,31 @@ const TeacherReports = () => {
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {nextActions.map((action) => (
                 <li key={action.id}>
-                  <Link
-                    to={action.to}
-                    className="group flex h-full flex-col gap-2 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white/90 dark:bg-slate-900/50 p-4 hover:border-teal-400 dark:hover:border-teal-500 transition-colors"
-                  >
+                  <div className="group flex h-full flex-col gap-2 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white/90 dark:bg-slate-900/50 p-4 hover:border-teal-400 dark:hover:border-teal-500 transition-colors">
                     <p className="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug">
                       {action.title}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 flex-1">
                       {action.detail}
                     </p>
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-teal-700 dark:text-teal-300">
-                      {action.cta}
-                      <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" aria-hidden />
-                    </span>
-                  </Link>
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
+                      <Link
+                        to={action.to}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-teal-700 dark:text-teal-300"
+                      >
+                        {action.cta}
+                        <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" aria-hidden />
+                      </Link>
+                      {action.secondaryTo ? (
+                        <Link
+                          to={action.secondaryTo}
+                          className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                        >
+                          {action.secondaryCta}
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>

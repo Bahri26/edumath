@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Plus, Trash2, ClipboardList, Loader2, ChevronLeft, ChevronRight,
   Calendar, Clock, Users, X, Eye, Send,
@@ -26,6 +26,12 @@ const emptyForm = {
   linkedExamId: '',
   linkedExerciseId: '',
 };
+
+function defaultDueDateIso(daysAhead = 7) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  return d.toISOString().slice(0, 10);
+}
 
 function formatDate(value) {
   if (!value) return 'Tarih yok';
@@ -164,6 +170,7 @@ function AssignmentDetailModal({ assignment, onClose, onGraded }) {
 export default function TeacherAssignmentsPage() {
   const { showToast } = useToast();
   const { askConfirm, ConfirmDialog } = useConfirmAction();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -191,6 +198,29 @@ export default function TeacherAssignmentsPage() {
       }
     })();
   }, []);
+
+  // Rapor / deep-link: ?create=1&topic=... ile formu doldur
+  useEffect(() => {
+    if (searchParams.get('create') !== '1') return;
+    const topic = String(searchParams.get('topic') || '').trim();
+    const classLevel = String(searchParams.get('classLevel') || '').trim();
+    const subject = String(searchParams.get('subject') || '').trim();
+
+    setCreateMode(true);
+    setForm((f) => ({
+      ...f,
+      ...(classLevel ? { classLevel } : {}),
+      ...(subject ? { subject } : {}),
+      title: topic ? `${topic} güçlendirme ödevi` : (f.title || 'Güçlendirme ödevi'),
+      description: topic
+        ? `Sınıf raporlarına göre “${topic}” konusunda ek çalışma. Kısa sürede tamamlayın.`
+        : f.description,
+      dueDate: f.dueDate || defaultDueDateIso(7),
+      duration: f.duration || 40,
+      linkType: 'text',
+    }));
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!createMode) return undefined;
