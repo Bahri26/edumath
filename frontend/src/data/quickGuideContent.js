@@ -5,7 +5,7 @@
 export const QUICK_GUIDE = {
   teacher: {
     TR: {
-      title: 'Öğretmen kullanım kılavuzu',
+      title: 'Öğretmen kılavuzu',
       intro:
         'Paneldeki temel akışları tek yerden hatırlatın. Menüden ilgili sayfaya geçerek adımları uygulayın.',
       blocks: [
@@ -131,9 +131,9 @@ export const QUICK_GUIDE = {
   },
   student: {
     TR: {
-      title: 'Öğrenci kullanım kılavuzu',
+      title: 'Öğrenci kılavuzu',
       intro:
-        'Ders çalışma, sınav ve tekrar için kısa yollar. Her bölüm menüdeki gerçek sayfaya karşılık gelir.',
+        'Ders, sınav ve tekrar için kısa yollar. Her bölüm menüdeki bir sayfaya karşılık gelir.',
       blocks: [
         {
           title: 'Ana sayfa',
