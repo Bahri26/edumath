@@ -293,10 +293,9 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     setLoading(true);
     try {
       let base = dataToSave || parsedData;
-      if (!base.correctAnswer?.trim()) {
-        base = enrichQuestionForm(base);
-        setParsedData(base);
-      }
+      base = enrichQuestionForm(base);
+      setParsedData(base);
+
       const payload = { ...buildSavePayload(base, parseLayout), source: 'Manuel' };
       const useDiagramPath = Boolean(
         parseLayout?.diagramImagePath
@@ -309,7 +308,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         return;
       }
       if (!payload.correctAnswer?.trim()) {
-        showToast('Doğru cevap bulunamadı. «Çöz ve işaretle» veya manuel işaretleyin.', 'error');
+        showToast('Doğru cevap otomatik bulunamadı. Şıkları kontrol edin.', 'error');
         return;
       }
 

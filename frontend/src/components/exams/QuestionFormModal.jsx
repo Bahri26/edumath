@@ -6,11 +6,18 @@ import {
 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
 import QuestionSourceBadge from '../questions/QuestionSourceBadge.jsx';
+import QuestionStemCard from '../questions/QuestionStemCard.jsx';
 import SolutionDisplay from '../questions/SolutionDisplay.jsx';
 import { enrichQuestionForm, optionMatchesCorrect } from '../../utils/patternQuestionSolver';
 import { parsePastedQuestionText } from '../../utils/parsePastedQuestionText';
+import {
+  buildCombinedQuestionText,
+  getQuestionLayout,
+  PATTERN_INTRO_PLACEHOLDER,
+  PATTERN_QUESTION_PLACEHOLDER,
+} from '../../utils/questionLayout.js';
+import { normalizeStemFields } from '../../utils/normalizeStemFields';
 
 const QuestionFormModal = ({ 
   isOpen, onClose, editingId, manualForm, setManualForm, 
@@ -45,8 +52,17 @@ const QuestionFormModal = ({
   const effectiveSetMainImage = setMainImage ?? setFallbackMainImage;
 
   // Veri Senkronizasyonu
+  const layoutFromForm = getQuestionLayout({
+    text: effectiveForm?.text,
+    introText: effectiveForm?.introText,
+    questionText: effectiveForm?.questionText,
+    assessmentMeta: effectiveForm?.assessmentMeta,
+  });
+
   const form = {
     text: effectiveForm?.text || '',
+    introText: effectiveForm?.introText ?? layoutFromForm.introText,
+    questionText: effectiveForm?.questionText ?? layoutFromForm.questionText,
     subject: lockedSubject ? lockedSubject : (effectiveForm?.subject || 'Matematik'),
     topic: effectiveForm?.topic || '',
     learningOutcome: effectiveForm?.learningOutcome || '',
@@ -79,6 +95,8 @@ const QuestionFormModal = ({
     effectiveSetForm((prev) => ({
       ...(prev || {}),
       text: parsed.text,
+      introText: parsed.introText || normalizeStemFields('', parsed.text).introText,
+      questionText: parsed.questionText || normalizeStemFields('', parsed.text).questionText,
       options: parsed.options,
       correctAnswer: parsed.correctAnswer || '',
       solution: parsed.solution || prev?.solution || '',
@@ -107,6 +125,18 @@ const QuestionFormModal = ({
   };
 
   const setField = (k, v) => effectiveSetForm(prev => ({ ...(prev || {}), [k]: v }));
+
+  const syncStemFields = (nextIntro, nextQuestion) => {
+    const intro = String(nextIntro ?? form.introText ?? '').trim();
+    const question = String(nextQuestion ?? form.questionText ?? '').trim();
+    const text = buildCombinedQuestionText(intro, question);
+    effectiveSetForm((prev) => ({
+      ...(prev || {}),
+      introText: intro,
+      questionText: question,
+      text,
+    }));
+  };
   // Ensure subject stays locked if provided
   useEffect(() => {
     if (lockedSubject) {
@@ -150,38 +180,50 @@ const QuestionFormModal = ({
   
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (!form.text?.trim() && !(effectiveMainImage && effectiveMainImage.file)) return showToast('Soru metni veya bir görsel gereklidir', 'error');
+    if (!form.text?.trim() && !(effectiveMainImage && effectiveMainImage.file)) {
+      return showToast('Giriş/soru metni veya bir görsel gereklidir', 'error');
+    }
 
     const filledOptions = (form.options || []).filter((o) => String(o || '').trim());
     if (filledOptions.length < 2) {
       return showToast('Resimli ve metinli sorular çoktan seçmeli olmalı: en az 2 şık girin', 'error');
     }
 
-    let submitForm = form;
-    if (!form.correctAnswer?.trim()) {
-      submitForm = enrichQuestionForm(form);
-      if (submitForm.correctAnswer !== form.correctAnswer || submitForm.solution !== form.solution) {
-        effectiveSetForm((prev) => ({ ...(prev || {}), ...submitForm }));
-      }
+    let submitForm = {
+      ...form,
+      text: buildCombinedQuestionText(form.introText, form.questionText) || form.text,
+    };
+    submitForm = enrichQuestionForm(submitForm);
+    if (submitForm.correctAnswer !== form.correctAnswer || submitForm.solution !== form.solution) {
+      effectiveSetForm((prev) => ({ ...(prev || {}), ...submitForm }));
     }
-    if (!submitForm.correctAnswer?.trim()) return showToast('Lütfen doğru cevabı işaretleyin', 'error');
+    if (!submitForm.correctAnswer?.trim()) {
+      return showToast('Doğru cevap otomatik bulunamadı. Şıkları kontrol edin.', 'error');
+    }
 
     setIsSaving(true);
     try {
       const resolvedSource =
         markAsExpert || (form.source !== 'AI' && !editingId) ? 'Manuel' : form.source || 'Manuel';
+      const parseLayout = {
+        ...(form.assessmentMeta?.parseLayout || {}),
+        introText: submitForm.introText || '',
+        questionLine: submitForm.questionText || '',
+        stemText: submitForm.text,
+      };
+      const assessmentMeta = {
+        ...(form.assessmentMeta || {}),
+        parseLayout,
+      };
       const formData = new FormData();
-      Object.keys(submitForm).forEach(key => {
-        if (key === 'options') {
-          submitForm.options.forEach(opt => formData.append('options', opt));
-        } else if (key !== 'source' && key !== 'assessmentMeta' && key !== 'optionImagePreviews') {
-          formData.append(key, submitForm[key]);
-        }
+      const skipKeys = new Set(['options', 'source', 'assessmentMeta', 'optionImagePreviews', 'introText', 'questionText']);
+      submitForm.options.forEach((opt) => formData.append('options', opt));
+      Object.keys(submitForm).forEach((key) => {
+        if (skipKeys.has(key)) return;
+        formData.append(key, submitForm[key]);
       });
       formData.append('source', resolvedSource);
-      if (form.assessmentMeta) {
-        formData.append('assessmentMeta', JSON.stringify(form.assessmentMeta));
-      }
+      formData.append('assessmentMeta', JSON.stringify(assessmentMeta));
       if (effectiveMainImage && effectiveMainImage.file) formData.append('image', effectiveMainImage.file);
 
       const endpoint = editingId ? `/questions/${editingId}` : '/questions';
@@ -326,28 +368,42 @@ const QuestionFormModal = ({
             </section>
           ) : null}
           
-          {/* 1. BÖLÜM: SORU GİRİŞİ (TEXT + IMAGE) */}
+          {/* 1. BÖLÜM: STANDART SORU FORMATI */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 ml-2">
-                <HelpCircle size={14} /> Soru Metni (LaTeX Destekli)
-              </label>
-              <textarea
-                ref={firstInputRef}
-                rows={6}
-                className="w-full p-5 bg-slate-50 dark:bg-slate-900 rounded-[1.5rem] border-2 border-transparent focus:border-teal-500 focus:bg-white transition-all text-slate-800 dark:text-white font-medium outline-none resize-none"
-                value={form.text}
-                onChange={e => setField('text', e.target.value)}
-                placeholder="Örn: $x^2 + 5x + 6 = 0$ denkleminin kökleri..."
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 ml-2">
+                  <HelpCircle size={14} /> Giriş metni
+                </label>
+                <textarea
+                  ref={firstInputRef}
+                  rows={3}
+                  className="w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border-2 border-transparent focus:border-teal-500 focus:bg-white transition-all text-slate-800 dark:text-white font-medium outline-none resize-none text-sm leading-relaxed"
+                  value={form.introText}
+                  onChange={(e) => syncStemFields(e.target.value, form.questionText)}
+                  placeholder={PATTERN_INTRO_PLACEHOLDER}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 ml-2">
+                  <Target size={14} /> Soru cümlesi
+                </label>
+                <textarea
+                  rows={3}
+                  className="w-full p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border-2 border-transparent focus:border-teal-500 focus:bg-white transition-all text-slate-800 dark:text-white font-semibold outline-none resize-none text-sm leading-relaxed"
+                  value={form.questionText}
+                  onChange={(e) => syncStemFields(form.introText, e.target.value)}
+                  placeholder={PATTERN_QUESTION_PLACEHOLDER}
+                />
+              </div>
             </div>
 
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 ml-2">
-                <ImageIcon size={14} /> Soru Görseli (Opsiyonel)
+                <ImageIcon size={14} /> Soru görseli (örüntü / diyagram)
               </label>
               <p className="text-xs text-slate-500 ml-2 -mt-1">
-                Görsel yalnızca soru köküne eklenir. Şıklar metin olarak girilir.
+                Görsel soru kökünde gösterilir. Şıklar metin olarak ayrı girilir.
               </p>
               <div className="relative h-[172px] border-4 border-dashed border-slate-100 dark:border-slate-700 rounded-[1.5rem] hover:border-teal-300 hover:bg-teal-50/30 transition-all group flex items-center justify-center overflow-hidden">
                 <input 
@@ -373,14 +429,22 @@ const QuestionFormModal = ({
             </div>
           </div>
 
-          {form.text.trim() ? (
+          {(form.introText.trim() || form.questionText.trim() || effectiveMainImage?.preview) ? (
             <div className="rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-50/80 dark:bg-slate-900/40 p-5">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
-                Soru bankası / sınavda öğrencinin göreceği düzen
+                Öğrencinin göreceği düzen
               </p>
-              <QuestionTextWithPattern
-                text={form.text}
-                mainClassName="text-base text-slate-800 dark:text-slate-200"
+              <QuestionStemCard
+                question={{
+                  topic: form.topic,
+                  classLevel: form.classLevel,
+                  introText: form.introText,
+                  questionText: form.questionText,
+                  text: form.text,
+                  image: effectiveMainImage?.preview || '',
+                  assessmentMeta: { parseLayout: { introText: form.introText, questionLine: form.questionText } },
+                }}
+                showMeta={Boolean(form.topic)}
               />
             </div>
           ) : null}

@@ -6,29 +6,41 @@ function QuestionVisualInner({
   src,
   alt = 'Soru görseli',
   className = '',
+  variant = 'default',
   loading = 'eager',
   fetchPriority,
 }) {
   const [failed, setFailed] = useState(false);
   const resolved = useMemo(() => resolveAssetUrl(src), [src]);
+  const compact = variant === 'compact';
 
   if (failed) {
     return null;
   }
 
   return (
-    <div
-      className={`flex items-center justify-center overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-600 bg-gradient-to-br from-slate-50 via-white to-teal-50/60 dark:from-slate-900 dark:via-slate-900 dark:to-teal-950/40 px-4 py-3 max-h-[min(420px,calc(70vh-8rem))] shadow-inner ${className}`}
-    >
-      <img
-        src={resolved}
-        alt={alt}
-        className="max-h-[min(380px,calc(70vh-10rem))] w-auto max-w-full object-contain drop-shadow-md"
-        loading={loading}
-        decoding="async"
-        fetchPriority={fetchPriority}
-        onError={() => setFailed(true)}
-      />
+    <div className={`flex justify-center ${className}`}>
+      <div
+        className={
+          compact
+            ? 'inline-block max-w-full overflow-hidden rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-600 dark:bg-slate-900'
+            : 'flex w-full max-w-2xl items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-teal-50/40 px-3 py-2 dark:border-slate-600 dark:from-slate-900 dark:via-slate-900 dark:to-teal-950/30'
+        }
+      >
+        <img
+          src={resolved}
+          alt={alt}
+          className={
+            compact
+              ? 'block max-h-[min(340px,55vh)] w-auto max-w-full h-auto'
+              : 'max-h-[min(360px,calc(65vh-8rem))] w-auto max-w-full object-contain'
+          }
+          loading={loading}
+          decoding="async"
+          fetchPriority={fetchPriority}
+          onError={() => setFailed(true)}
+        />
+      </div>
     </div>
   );
 }

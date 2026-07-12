@@ -335,10 +335,51 @@ export function solvePatternQuestion(input = {}) {
   return null;
 }
 
+const GENERIC_SOLUTION = 'Çözüm: örüntü kuralını bulun, adım adım uygulayın ve şıklarla karşılaştırın.';
+
+function isGenericSolutionText(solution) {
+  const s = String(solution || '').trim();
+  return !s || s === GENERIC_SOLUTION;
+}
+
+function buildTemplateSolution(form = {}) {
+  const options = Array.isArray(form.options)
+    ? form.options.map((o) => String(o || '').trim()).filter(Boolean)
+    : [];
+  const answer = String(form.correctAnswer || '').trim();
+  let letter = '';
+  if (/^[A-E]$/i.test(answer)) {
+    letter = answer.toUpperCase();
+  } else {
+    const idx = options.findIndex((o) => o === answer || o.includes(answer) || answer.includes(o));
+    if (idx >= 0) letter = String.fromCharCode(65 + idx);
+  }
+  const step = String(form.text || form.questionText || '').match(/(\d+)\s*\.\s*ad[ıi]m/i);
+  const stepHint = step
+    ? `${step[1]}. adım için kuralı uygulayın.`
+    : 'İstenen adım veya terim için kuralı uygulayın.';
+  const lines = [
+    'Örüntünün kuralını (artış miktarı, çarpan veya şekil sayısı) belirleyin.',
+    stepHint,
+  ];
+  if (letter && answer.length > 1 && !/^[A-E]$/i.test(answer)) {
+    lines.push(`Sonuç ${letter}) ${answer} şıkkına uyar.`);
+  } else if (letter) {
+    const optText = options[letter.charCodeAt(0) - 65] || '';
+    lines.push(optText ? `Doğru cevap ${letter}) ${optText} şıkkıdır.` : `Doğru şık ${letter}.`);
+  } else if (answer) {
+    lines.push(`Doğru cevap: ${answer}.`);
+  } else {
+    lines.push('Sonucu şıklarla karşılaştırarak doğru seçeneği işaretleyin.');
+  }
+  return buildSolutionLines(lines);
+}
+
 export function enrichQuestionForm(form = {}) {
   const options = Array.isArray(form.options) ? form.options : [];
   const hasAnswer = String(form.correctAnswer || '').trim().length > 0;
-  const hasSolution = String(form.solution || '').trim().length > 0;
+  const hasSolution = String(form.solution || '').trim().length > 0
+    && !isGenericSolutionText(form.solution);
 
   if (hasAnswer && hasSolution) {
     return form;
@@ -353,15 +394,20 @@ export function enrichQuestionForm(form = {}) {
     options: options.filter((o) => String(o || '').trim()),
   });
 
-  if (!solved) {
-    return form;
+  if (solved) {
+    return {
+      ...form,
+      correctAnswer: hasAnswer ? form.correctAnswer : solved.correctAnswer,
+      solution: hasSolution ? form.solution : solved.solution,
+    };
   }
 
-  return {
+  const next = {
     ...form,
-    correctAnswer: hasAnswer ? form.correctAnswer : solved.correctAnswer,
-    solution: hasSolution ? form.solution : solved.solution,
+    correctAnswer: form.correctAnswer,
+    solution: hasSolution ? form.solution : buildTemplateSolution(form),
   };
+  return next;
 }
 
 export function optionMatchesCorrect(opt, correctAnswer) {

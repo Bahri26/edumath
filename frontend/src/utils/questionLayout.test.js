@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { getQuestionLayout } from './questionLayout.js';
+import {
+  buildCombinedQuestionText,
+  getQuestionLayout,
+  isGenericStemPlaceholder,
+  normalizeDisplayOptions,
+  resolveQuestionStem,
+} from './questionLayout.js';
 
 describe('getQuestionLayout', () => {
   it('uses structured Smart Paste layout fields', () => {
@@ -29,7 +35,46 @@ describe('getQuestionLayout', () => {
     expect(result.questionText).toBe('Eksik sayı kaçtır?');
   });
 
-  it('keeps legacy flat questions in fallback mode', () => {
-    expect(getQuestionLayout({ text: '2 + 2 kaçtır?' }).hasStructuredStem).toBe(false);
+  it('splits legacy flat text into intro and question', () => {
+    const result = getQuestionLayout({
+      text: 'Dosyalar bir örüntü oluşturur.\n\nRafta kaç numaralı dosya bulunmaz?',
+    });
+
+    expect(result.introText).toContain('örüntü');
+    expect(result.questionText).toContain('bulunmaz');
+  });
+});
+
+describe('resolveQuestionStem', () => {
+  it('drops generic placeholder intro for image questions', () => {
+    const stem = resolveQuestionStem({
+      text: 'Aşağıdaki soruyu çözünüz.',
+      image: '/uploads/questions/sample.png',
+      assessmentMeta: {
+        parseLayout: {
+          introText: 'Aşağıdaki soruyu çözünüz.',
+          questionLine: 'Buna göre rafta kaç numaralı dosya bulunmaz?',
+        },
+      },
+    });
+
+    expect(stem.showIntro).toBe(false);
+    expect(stem.showQuestion).toBe(true);
+    expect(stem.visualVariant).toBe('compact');
+  });
+});
+
+describe('question layout helpers', () => {
+  it('detects generic stem placeholders', () => {
+    expect(isGenericStemPlaceholder('Aşağıdaki soruyu çözünüz.')).toBe(true);
+    expect(isGenericStemPlaceholder('Bir kitaplıkta örüntü vardır.')).toBe(false);
+  });
+
+  it('builds combined question text', () => {
+    expect(buildCombinedQuestionText('Giriş', 'Soru?')).toBe('Giriş\n\nSoru?');
+  });
+
+  it('filters empty options', () => {
+    expect(normalizeDisplayOptions(['28', '', '32', '35'])).toEqual(['28', '32', '35']);
   });
 });

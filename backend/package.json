@@ -4,7 +4,7 @@
     "dev": "nodemon server.js",
     "lint": "eslint .",
     "lint:syntax": "node scripts/tools/syntaxCheck.js",
-    "test": "node --test scripts/tests/registerRole.test.js scripts/tests/examAccess.test.js scripts/tests/examSchedule.test.js scripts/tests/studentProgress.test.js scripts/tests/studentAnalyticsService.test.js scripts/tests/exerciseAnswer.test.js scripts/tests/authMiddleware.test.js scripts/tests/questionGrading.test.js scripts/tests/questionImageParse.test.js scripts/tests/patternQuestionSolver.test.js scripts/tests/teacherStudentAccess.test.js scripts/tests/idorAccess.test.js scripts/tests/aiPromptSafety.test.js scripts/tests/classLevel.test.js scripts/tests/patternTopicsScope.test.js",
+    "test": "node --test scripts/tests/registerRole.test.js scripts/tests/examAccess.test.js scripts/tests/examSchedule.test.js scripts/tests/studentProgress.test.js scripts/tests/studentAnalyticsService.test.js scripts/tests/exerciseAnswer.test.js scripts/tests/authMiddleware.test.js scripts/tests/questionGrading.test.js scripts/tests/questionImageParse.test.js scripts/tests/patternQuestionSolver.test.js scripts/tests/questionAutoEnrich.test.js scripts/tests/teacherStudentAccess.test.js scripts/tests/idorAccess.test.js scripts/tests/aiPromptSafety.test.js scripts/tests/classLevel.test.js scripts/tests/patternTopicsScope.test.js",
     "seed:test-users": "node scripts/seed/seedTestUsers.js",
     "seed:patterns": "node scripts/seed/seedPatternsCurriculum.js",
     "seed:grade1-patterns-emoji15": "node scripts/seed/seedGrade1PatternsEmoji15.js",

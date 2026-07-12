@@ -1,9 +1,6 @@
 import React from 'react';
 import { renderWithLatex } from '../../utils/latex.jsx';
-
-const optionText = (option) => (
-  typeof option === 'string' ? option : String(option?.text || '')
-);
+import { normalizeDisplayOptions } from '../../utils/questionLayout.js';
 
 export default function QuestionOptionGrid({
   options = [],
@@ -14,10 +11,15 @@ export default function QuestionOptionGrid({
   showCorrect = false,
   ariaLabel = 'Cevap seçenekleri',
 }) {
+  const visibleOptions = normalizeDisplayOptions(options);
+
+  if (!visibleOptions.length) {
+    return null;
+  }
+
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="group" aria-label={ariaLabel}>
-      {options.map((option, index) => {
-        const text = optionText(option);
+      {visibleOptions.map((text, index) => {
         const selected = value === text;
         const correct = showCorrect && text === correctAnswer;
         const letter = String.fromCharCode(65 + index);

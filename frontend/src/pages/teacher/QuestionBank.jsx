@@ -17,11 +17,12 @@ import Card from '../../components/ui/Card.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import SkeletonCard from '../../components/ui/SkeletonCard';
 import { renderWithLatex } from '../../utils/latex.jsx';
-import QuestionVisual from '../../components/questions/QuestionVisual.jsx';
 import QuestionSourceBadge from '../../components/questions/QuestionSourceBadge.jsx';
 import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
 import CollapsiblePanel from '../../components/ui/CollapsiblePanel.jsx';
 import QuestionStemCard from '../../components/questions/QuestionStemCard.jsx';
+import QuestionOptionGrid from '../../components/questions/QuestionOptionGrid.jsx';
+import { getQuestionLayout } from '../../utils/questionLayout.js';
 import { sourceFilterOptions, sourceFilterToApi } from '../../utils/questionSourceLabel';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -32,18 +33,6 @@ import {
   sortPatternTopicsUi,
 } from '../../constants/patternTopicsUi';
 import { enrichQuestionForm } from '../../utils/patternQuestionSolver';
-
-function optionLabel(opt) {
-  if (typeof opt === 'string') return opt.trim();
-  if (opt && typeof opt.text === 'string') return opt.text.trim();
-  return '';
-}
-
-function optionMatchesAnswer(opt, correctAnswer) {
-  const label = optionLabel(opt);
-  const answer = String(correctAnswer || '').trim();
-  return label && answer && (label === answer || label.includes(answer) || answer.includes(label));
-}
 
 const MATH_TOPIC_OPTIONS_FALLBACK = [
   'Tümü',
@@ -132,38 +121,20 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
       </button>
 
       {expanded && (
-        <div className="px-6 pb-6 pt-2 border-t border-slate-50 dark:border-slate-700 space-y-6 animate-in slide-in-from-top-2">
-          <QuestionVisual src={question.image} alt="" className="w-full" />
+        <div className="px-6 pb-6 pt-2 border-t border-slate-50 dark:border-slate-700 space-y-5 animate-in slide-in-from-top-2">
+          <QuestionStemCard question={question} showMeta={false} />
           {question.learningOutcome && (
             <div className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
               <span className="font-black uppercase tracking-wider text-[9px] text-slate-400">Kazanım</span>
               {' '}{question.learningOutcome}
             </div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {question.options?.map((opt, idx) => {
-              const label = optionLabel(opt);
-              const isCorrect = optionMatchesAnswer(opt, question.correctAnswer);
-              return (
-              <div key={idx} className={`p-4 rounded-2xl border-2 flex items-start gap-4 ${
-                isCorrect
-                  ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10'
-                  : 'border-slate-100 dark:border-slate-700'
-              }`}>
-                <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 ${
-                  isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-700'
-                }`}>
-                  {String.fromCharCode(65 + idx)}
-                </span>
-                <div className="flex flex-col gap-2 flex-1 min-w-0">
-                  <span className="text-sm font-semibold">
-                    {label ? renderWithLatex(label) : <span className="text-slate-400 italic">—</span>}
-                  </span>
-                </div>
-              </div>
-              );
-            })}
-          </div>
+          <QuestionOptionGrid
+            options={question.options}
+            correctAnswer={question.correctAnswer}
+            showCorrect
+            disabled
+          />
 
           {(hintText || codeText) && (
             <CollapsiblePanel title="İpucu" className="bg-amber-50/60 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/40">
@@ -461,6 +432,8 @@ export default function QuestionBank() {
       isMath
         ? {
             text: '',
+            introText: '',
+            questionText: '',
             subject: subj,
             topic: PATTERN_TOPIC_ORDER[0],
             learningOutcome: '',
@@ -660,8 +633,11 @@ export default function QuestionBank() {
                       profile.branchApproval === 'approved' && profile.branch
                         ? profile.branch
                         : (question.subject || 'Matematik');
+                    const stem = getQuestionLayout(question);
                     setManualForm({
                       text: question.text || '',
+                      introText: stem.introText,
+                      questionText: stem.questionText,
                       subject: subj,
                       topic: question.topic || '',
                       learningOutcome: question.learningOutcome || '',

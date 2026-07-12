@@ -2,6 +2,7 @@ const {
   buildTopicMongoClause,
   applyPatternQuestionBankScope,
 } = require('../constants/patternTopics');
+const { autoEnrichQuestionPayload, parseAssessmentMeta } = require('../utils/questionAutoEnrich');
 const Question = require('../models/Question');
 const { uploadFile, promoteLocalUpload, promoteAssessmentMetaAssets, toUploadRelativePath, deleteStoredAsset, getStorageUploadErrorHint } = require('../services/storageService');
 const { recordUserActivity } = require('../services/activityLogger');
@@ -358,12 +359,8 @@ exports.createQuestion = async (req, res, next) => {
     const normalizedClassLevel = normalizeClassLevel(classLevel);
 
     const questionText = String(text || '').trim();
-    const answerText = String(correctAnswer || '').trim();
     if (!questionText) {
       return res.status(400).json({ message: 'Soru metni gereklidir.' });
-    }
-    if (!answerText) {
-      return res.status(400).json({ message: 'Doğru cevap gereklidir.' });
     }
 
     const optionsData = toTextOnlyOptions(req.body.options);
@@ -372,6 +369,31 @@ exports.createQuestion = async (req, res, next) => {
       return res.status(400).json({
         message: 'Çoktan seçmeli soru için en az 2 metin şık gereklidir. Görsel yalnızca soru köküne eklenir.',
       });
+    }
+
+    let resolvedAssessmentMeta = parseAssessmentMeta(assessmentMeta);
+    if (resolvedAssessmentMeta) {
+      try {
+        resolvedAssessmentMeta = await promoteAssessmentMetaAssets(resolvedAssessmentMeta);
+      } catch (metaErr) {
+        console.warn('assessmentMeta promote skipped:', metaErr?.message);
+      }
+    }
+
+    const autoEnriched = await autoEnrichQuestionPayload({
+      text: questionText,
+      correctAnswer,
+      solution,
+      options: optionsData,
+      assessmentMeta: resolvedAssessmentMeta,
+      visualPrompt,
+    });
+    const answerText = autoEnriched.correctAnswer;
+    const solutionText = autoEnriched.solution;
+    resolvedAssessmentMeta = autoEnriched.assessmentMeta || resolvedAssessmentMeta;
+
+    if (!answerText) {
+      return res.status(400).json({ message: 'Doğru cevap bulunamadı. Şıkları kontrol edin veya manuel işaretleyin.' });
     }
 
     // Teacher branch enforcement: if teacher has approved branch, lock subject to branch
@@ -429,19 +451,8 @@ exports.createQuestion = async (req, res, next) => {
     // 2. Şıkları İşle (yalnızca metin; şık görseli kabul edilmez)
     // optionsData yukarıda doğrulandı
 
-    let resolvedAssessmentMeta;
-    if (assessmentMeta) {
-      try {
-        const rawMeta = typeof assessmentMeta === 'string' ? JSON.parse(assessmentMeta) : assessmentMeta;
-        resolvedAssessmentMeta = await promoteAssessmentMetaAssets(rawMeta);
-      } catch (metaErr) {
-        console.warn('assessmentMeta parse/promote skipped:', metaErr?.message);
-        resolvedAssessmentMeta = typeof assessmentMeta === 'object' ? assessmentMeta : undefined;
-      }
-    }
-
     const newQuestion = await Question.create({
-      text: questionText, subject: finalSubject, classLevel: normalizedClassLevel, difficulty, type, correctAnswer: answerText, solution, topic,
+      text: questionText, subject: finalSubject, classLevel: normalizedClassLevel, difficulty, type, correctAnswer: answerText, solution: solutionText, topic,
       learningOutcome,
       mebReference,
       curriculumNote,
@@ -504,17 +515,28 @@ exports.batchCreateQuestions = async (req, res, next) => {
       }
     } catch {}
 
-    const payload = questions.map((q) => {
+    const payload = await Promise.all(questions.map(async (q) => {
       const options = toTextOnlyOptions(q.options);
+      const enriched = await autoEnrichQuestionPayload({
+        text: q.text,
+        correctAnswer: q.correctAnswer,
+        solution: q.solution,
+        options,
+        assessmentMeta: parseAssessmentMeta(q.assessmentMeta),
+        visualPrompt: q.visualPrompt,
+      });
       return {
         ...q,
         options,
+        correctAnswer: enriched.correctAnswer || q.correctAnswer,
+        solution: enriched.solution || q.solution,
+        assessmentMeta: enriched.assessmentMeta || q.assessmentMeta,
         type: 'multiple-choice',
         subject: enforcedSubject ? enforcedSubject : (q.subject || 'Matematik'),
         source: q.source || 'AI',
         createdBy: req.user?.id || q.createdBy,
       };
-    });
+    }));
 
     const savedQuestions = await Question.insertMany(payload);
 
@@ -538,7 +560,6 @@ exports.updateQuestion = async (req, res, next) => {
     // Temel alanları güncelle
     const fields = ['text', 'subject', 'classLevel', 'difficulty', 'type', 'correctAnswer', 'solution', 'source', 'topic', 'learningOutcome', 'mebReference', 'curriculumNote', 'visualPrompt', 'interactiveType'];
     fields.forEach(f => { if(req.body[f]) question[f] = req.body[f]; });
-    if (req.body.assessmentMeta !== undefined) question.assessmentMeta = req.body.assessmentMeta;
     if (req.body.interactionData) {
       question.interactionData = parseInteractionData(req.body.interactionData);
     }
@@ -567,6 +588,29 @@ exports.updateQuestion = async (req, res, next) => {
       await clearOptionImages(question.options || []);
       question.options = toTextOnlyOptions(optionPayload);
     }
+
+    let nextAssessmentMeta = req.body.assessmentMeta !== undefined
+      ? parseAssessmentMeta(req.body.assessmentMeta)
+      : question.assessmentMeta;
+    if (nextAssessmentMeta) {
+      try {
+        nextAssessmentMeta = await promoteAssessmentMetaAssets(nextAssessmentMeta);
+      } catch (metaErr) {
+        console.warn('updateQuestion assessmentMeta promote skipped:', metaErr?.message);
+      }
+    }
+
+    const autoEnriched = await autoEnrichQuestionPayload({
+      text: question.text,
+      correctAnswer: question.correctAnswer,
+      solution: question.solution,
+      options: question.options,
+      assessmentMeta: nextAssessmentMeta,
+      visualPrompt: question.visualPrompt,
+    });
+    question.correctAnswer = autoEnriched.correctAnswer || question.correctAnswer;
+    question.solution = autoEnriched.solution || question.solution;
+    question.assessmentMeta = autoEnriched.assessmentMeta || nextAssessmentMeta;
 
     await question.save();
     res.status(200).json({
