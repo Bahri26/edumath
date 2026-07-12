@@ -460,7 +460,7 @@ export default function StudentExercisePlayer() {
               disabled={checking || !hasAnswerReady(currentQ, draftAnswer)}
               onClick={handleCheck}
             >
-              {checking ? t('exercisePlayer.checking') : t('exercisePlayer.check')}
+              {checking ? t('exercisePlayer.checking') : 'Cevapla'}
             </Button>
           ) : (
             <div className="space-y-4">

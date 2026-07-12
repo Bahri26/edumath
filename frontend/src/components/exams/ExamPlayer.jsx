@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { renderWithLatex } from '../../utils/latex.jsx';
 import QuestionOptionGrid from '../questions/QuestionOptionGrid.jsx';
@@ -90,6 +90,22 @@ export default function ExamPlayer({
   };
 
   const hintText = String(q?.assessmentMeta?.hint || '').trim();
+  const isMcQuestion = q && !['matching', 'sequence', 'fill-blank'].includes(q.type);
+  const [pendingMc, setPendingMc] = useState('');
+
+  useEffect(() => {
+    if (!q || !isMcQuestion) {
+      setPendingMc('');
+      return;
+    }
+    const saved = userAnswers[q._id];
+    setPendingMc(typeof saved === 'string' ? saved : '');
+  }, [q?._id, isMcQuestion, userAnswers]);
+
+  const commitMcAnswer = () => {
+    if (!q || !pendingMc.trim()) return;
+    recordAnswer(q._id, pendingMc);
+  };
 
   return (
     <>
@@ -169,11 +185,21 @@ export default function ExamPlayer({
                     onChange={(val) => recordAnswer(q._id, val)}
                   />
                 ) : (
-                  <QuestionOptionGrid
-                    options={q.options}
-                    value={userAnswers[q._id]}
-                    onChange={(optionText) => recordAnswer(q._id, optionText)}
-                  />
+                  <>
+                    <QuestionOptionGrid
+                      options={q.options}
+                      value={pendingMc}
+                      onChange={setPendingMc}
+                    />
+                    <button
+                      type="button"
+                      onClick={commitMcAnswer}
+                      disabled={!pendingMc.trim()}
+                      className="mt-4 w-full rounded-2xl bg-gradient-to-r from-teal-600 to-sky-600 px-5 py-3 text-base font-bold text-white shadow-md shadow-teal-600/20 transition-all hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      Cevapla
+                    </button>
+                  </>
                 )}
 
                 {hintText ? (

@@ -9,6 +9,8 @@ export const PATTERN_INTRO_PLACEHOLDER =
 export const PATTERN_QUESTION_PLACEHOLDER =
   'Buna göre sıradaki değeri bulunuz.';
 
+export const IMAGE_QUESTION_INSTRUCTION = 'Aşağıdaki soruyu çözünüz.';
+
 const GENERIC_STEM_PATTERNS = [
   /^aşağıdaki soruyu çözünüz\.?$/iu,
   /^yukarıdaki soruyu çözünüz\.?$/iu,
@@ -66,9 +68,21 @@ export function sanitizeStemPart(text) {
 }
 
 export function normalizeDisplayOptions(options = [], max = 5) {
+  return normalizeOptionEntries(options, max).map((opt) => opt.text);
+}
+
+export function normalizeOptionEntries(options = [], max = 5) {
   const list = (Array.isArray(options) ? options : [])
-    .map((opt) => (typeof opt === 'string' ? opt : String(opt?.text || '')).trim())
-    .filter(Boolean);
+    .map((opt) => {
+      if (typeof opt === 'string') {
+        return { text: clean(opt), image: '' };
+      }
+      return {
+        text: clean(opt?.text),
+        image: clean(opt?.image),
+      };
+    })
+    .filter((opt) => opt.text || opt.image);
   return list.slice(0, max);
 }
 
@@ -161,6 +175,7 @@ export function resolveQuestionStem(question = {}) {
     showIntro,
     showQuestion,
     imageOnly,
+    showImageInstruction: hasImage,
     useStructuredLayout,
     visualVariant: hasImage ? 'compact' : 'default',
     fallbackText: !useStructuredLayout ? fullText : '',
@@ -169,9 +184,9 @@ export function resolveQuestionStem(question = {}) {
 
 export function getQuestionPreviewText(question = {}) {
   const stem = resolveQuestionStem(question);
+  if (stem.hasImage) return IMAGE_QUESTION_INSTRUCTION;
   const line = stem.questionText || stem.introText || stem.fallbackText;
   if (line) return line;
-  if (stem.hasImage) return 'Görsel soru';
   return fullTextOrEmpty(question?.text) || 'Soru';
 }
 

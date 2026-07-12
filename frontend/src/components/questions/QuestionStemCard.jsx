@@ -1,6 +1,6 @@
 import React from 'react';
 import { renderWithLatex } from '../../utils/latex.jsx';
-import { resolveQuestionStem } from '../../utils/questionLayout.js';
+import { IMAGE_QUESTION_INSTRUCTION, resolveQuestionStem } from '../../utils/questionLayout.js';
 import QuestionTextWithPattern from './QuestionTextWithPattern.jsx';
 import QuestionVisual from './QuestionVisual.jsx';
 
@@ -93,9 +93,16 @@ export default function QuestionStemCard({
     </div>
   ) : null;
 
+  const instructionBlock = stem.showImageInstruction ? (
+    <p className={`text-base font-semibold text-surface-800 dark:text-white ${framed ? 'px-4 pt-4 sm:px-5 sm:pt-5' : 'mb-3'}`}>
+      {IMAGE_QUESTION_INSTRUCTION}
+    </p>
+  ) : null;
+
   if (!framed) {
     return (
       <section className={className}>
+        {instructionBlock}
         {metaBlock}
         {body}
       </section>
@@ -105,6 +112,7 @@ export default function QuestionStemCard({
   return (
     <section className={className}>
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-600 dark:bg-slate-900/50">
+        {instructionBlock}
         {metaBlock}
         {body}
       </div>

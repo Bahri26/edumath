@@ -3,9 +3,11 @@ import {
   buildCombinedQuestionText,
   getQuestionLayout,
   getQuestionPreviewText,
+  IMAGE_QUESTION_INSTRUCTION,
   isGenericStemPlaceholder,
   isWeakStemFragment,
   normalizeDisplayOptions,
+  normalizeOptionEntries,
   resolveQuestionStem,
   sanitizeStemPart,
 } from './questionLayout.js';
@@ -81,6 +83,7 @@ describe('resolveQuestionStem', () => {
     expect(stem.showIntro).toBe(false);
     expect(stem.showQuestion).toBe(false);
     expect(stem.imageOnly).toBe(true);
+    expect(stem.showImageInstruction).toBe(true);
   });
 });
 
@@ -107,7 +110,17 @@ describe('question layout helpers', () => {
           questionLine: 'Aşağıda',
         },
       },
-    })).toBe('Görsel soru');
+    })).toBe(IMAGE_QUESTION_INSTRUCTION);
+  });
+
+  it('keeps option images in normalized entries', () => {
+    expect(normalizeOptionEntries([
+      { text: '15', image: '' },
+      { text: '33', image: '/uploads/options/b.png' },
+    ])).toEqual([
+      { text: '15', image: '' },
+      { text: '33', image: '/uploads/options/b.png' },
+    ]);
   });
 
   it('builds combined question text', () => {

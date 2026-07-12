@@ -1,3 +1,5 @@
+import { hasQuestionImage } from './questionImage.js';
+
 /**
  * Havuz sorusunu bire bir göstermek yerine (playTransform=game_show) aynı doğru cevap
  * anahtarıyla farklı etkileşim yüzeyleri seçer. Eşleştirme / sıralama dokunulmaz.
@@ -12,6 +14,7 @@ export function getExercisePlayPresentation(question, index, playTransform) {
   if (qType === 'matching' || qType === 'sequence') return { key: 'default' };
   if (qType === 'fill-blank') return { key: 'fill_play' };
   if (qType === 'true-false') return { key: 'tf_play' };
+  if (hasQuestionImage(question?.image)) return { key: 'default' };
 
   const opts = question.options || [];
   const ca = String(question.correctAnswer ?? '').trim();
