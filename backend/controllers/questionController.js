@@ -1,4 +1,7 @@
-const { buildTopicMongoClause } = require('../constants/patternTopics');
+const {
+  buildTopicMongoClause,
+  applyPatternQuestionBankScope,
+} = require('../constants/patternTopics');
 const Question = require('../models/Question');
 const { uploadFile, promoteLocalUpload, promoteAssessmentMetaAssets, toUploadRelativePath, deleteStoredAsset, getStorageUploadErrorHint } = require('../services/storageService');
 const { recordUserActivity } = require('../services/activityLogger');
@@ -153,17 +156,17 @@ exports.getQuestions = async (req, res, next) => {
     if (subject && subject !== 'Tümü') query.subject = subject;
     applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
-    const topicClause0 = buildTopicMongoClause(topic, escapeRegex);
-    if (topicClause0) query.topic = topicClause0;
     if (source && source !== 'Tümü' && source !== 'All') query.source = source;
     const searchMeta = buildQuestionSearch(query, search, 'text');
 
     // Eğer istek öğretmenden geliyorsa ve branşı onaylıysa, varsayılan olarak kendi branşındaki (subject) soruları göster
     // (subject filtrelenmemişse veya 'Tümü' ise)
+    let teacherBranch = '';
     try {
       if (req.user && req.user.role === 'teacher') {
         const User = require('../models/User');
         const u = await User.findById(req.user.id).select('branch branchApproval');
+        teacherBranch = u?.branch || '';
         if (u && u.branch && u.branchApproval === 'approved') {
           const noSubjectFilter = !('subject' in req.query) || req.query.subject === 'Tümü' || !query.subject;
           if (noSubjectFilter) {
@@ -173,6 +176,16 @@ exports.getQuestions = async (req, res, next) => {
       }
     } catch {}
 
+    const bankSubject = typeof query.subject === 'string'
+      ? query.subject
+      : (teacherBranch || (subject && subject !== 'Tümü' ? subject : 'Matematik'));
+    if (req.user?.role === 'teacher') {
+      applyPatternQuestionBankScope(query, { subject: bankSubject, topic, escapeRegexFn: escapeRegex });
+    } else {
+      const topicClause0 = buildTopicMongoClause(topic, escapeRegex);
+      if (topicClause0) query.topic = topicClause0;
+    }
+
     let total = await Question.countDocuments(query);
     let effectiveQuery = query;
 
@@ -181,8 +194,7 @@ exports.getQuestions = async (req, res, next) => {
       if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
       applyClassLevelFilter(effectiveQuery, classLevel);
       if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
-      const topicClauseSq = buildTopicMongoClause(topic, escapeRegex);
-      if (topicClauseSq) effectiveQuery.topic = topicClauseSq;
+      if (source && source !== 'Tümü' && source !== 'All') effectiveQuery.source = source;
       buildQuestionSearch(effectiveQuery, search, 'regex');
 
       try {
@@ -197,6 +209,16 @@ exports.getQuestions = async (req, res, next) => {
           }
         }
       } catch {}
+
+      const fallbackSubject = typeof effectiveQuery.subject === 'string'
+        ? effectiveQuery.subject
+        : (teacherBranch || (subject && subject !== 'Tümü' ? subject : 'Matematik'));
+      if (req.user?.role === 'teacher') {
+        applyPatternQuestionBankScope(effectiveQuery, { subject: fallbackSubject, topic, escapeRegexFn: escapeRegex });
+      } else {
+        const topicClauseSq = buildTopicMongoClause(topic, escapeRegex);
+        if (topicClauseSq) effectiveQuery.topic = topicClauseSq;
+      }
 
       total = await Question.countDocuments(effectiveQuery);
     }
@@ -277,9 +299,12 @@ exports.getTeacherQuestions = async (req, res, next) => {
     if (subject && subject !== 'Tümü') query.subject = subject;
     applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
-    const topicClauseT = buildTopicMongoClause(topic, escapeRegex);
-    if (topicClauseT) query.topic = topicClauseT;
     if (source && source !== 'Tümü' && source !== 'All') query.source = source;
+    applyPatternQuestionBankScope(query, {
+      subject: subject && subject !== 'Tümü' ? subject : 'Matematik',
+      topic,
+      escapeRegexFn: escapeRegex,
+    });
     const searchMeta = buildQuestionSearch(query, search, 'text');
 
     let total = await Question.countDocuments(query);
@@ -290,8 +315,12 @@ exports.getTeacherQuestions = async (req, res, next) => {
       if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
       applyClassLevelFilter(effectiveQuery, classLevel);
       if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
-      const topicClauseT2 = buildTopicMongoClause(topic, escapeRegex);
-      if (topicClauseT2) effectiveQuery.topic = topicClauseT2;
+      if (source && source !== 'Tümü' && source !== 'All') effectiveQuery.source = source;
+      applyPatternQuestionBankScope(effectiveQuery, {
+        subject: subject && subject !== 'Tümü' ? subject : 'Matematik',
+        topic,
+        escapeRegexFn: escapeRegex,
+      });
       buildQuestionSearch(effectiveQuery, search, 'regex');
       total = await Question.countDocuments(effectiveQuery);
     }

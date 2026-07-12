@@ -75,6 +75,43 @@ function buildTopicMongoClause(topicRaw, escapeRegexFn) {
   return { $regex: `^${escapeRegexFn(topic)}$`, $options: 'i' };
 }
 
+function isPatternBankSubject(subject) {
+  const value = String(subject || '').trim();
+  return !value || /^matematik$/i.test(value);
+}
+
+/** Alıştırma havuzu (exercise-seed) soru bankasında gösterilmez. */
+function excludeExerciseSeedFromBank(query = {}) {
+  if (typeof query.source === 'string' && query.source) {
+    return;
+  }
+  query.source = query.source && typeof query.source === 'object'
+    ? { ...query.source, $ne: 'exercise-seed' }
+    : { $ne: 'exercise-seed' };
+}
+
+/**
+ * Matematik soru bankası: varsayılan olarak yalnızca Örüntüler ailesi.
+ * topic=Tümü veya boş → ^Örüntüler; açık alt konu seçildiyse buildTopicMongoClause kullanılır.
+ */
+function applyPatternQuestionBankScope(query = {}, { subject, topic, escapeRegexFn } = {}) {
+  excludeExerciseSeedFromBank(query);
+
+  const escape = escapeRegexFn || ((value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const topicClause = buildTopicMongoClause(topic, escape);
+  if (topicClause) {
+    query.topic = topicClause;
+    return;
+  }
+  if (isPatternBankSubject(subject)) {
+    query.topic = { $regex: '^Örüntüler', $options: '' };
+  }
+}
+
+function filterPatternTopicLabels(topics = []) {
+  return (topics || []).filter((topic) => /^Örüntüler/i.test(String(topic || '').trim()));
+}
+
 module.exports = {
   PATTERN_TOPIC_LABELS,
   PATTERN_TOPIC_ORDER,
@@ -82,4 +119,8 @@ module.exports = {
   LEARNING_OUTCOME_BY_LABEL,
   sortPatternTopics,
   buildTopicMongoClause,
+  isPatternBankSubject,
+  excludeExerciseSeedFromBank,
+  applyPatternQuestionBankScope,
+  filterPatternTopicLabels,
 };

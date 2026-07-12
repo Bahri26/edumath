@@ -1,4 +1,10 @@
-const { sortPatternTopics, buildTopicMongoClause } = require('../constants/patternTopics');
+const {
+  sortPatternTopics,
+  buildTopicMongoClause,
+  applyPatternQuestionBankScope,
+  filterPatternTopicLabels,
+  excludeExerciseSeedFromBank,
+} = require('../constants/patternTopics');
 const User = require('../models/User');
 const Student = require('../models/Student');
 const Question = require('../models/Question');
@@ -553,8 +559,7 @@ exports.getMyQuestions = async (req, res) => {
     
     if (subject && subject !== 'Tümü') query.subject = subject;
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
-    const topicClause = buildTopicMongoClause(topic, escapeRegex);
-    if (topicClause) query.topic = topicClause;
+    applyPatternQuestionBankScope(query, { subject, topic, escapeRegexFn: escapeRegex });
     applyQuestionTypeFilter(query, types);
     applyClassLevelFilter(query, classLevel);
     const searchMeta = buildQuestionSearch(query, search, 'text');
@@ -566,8 +571,7 @@ exports.getMyQuestions = async (req, res) => {
       effectiveQuery = { createdBy: teacherId };
       if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
       if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
-      const fc = buildTopicMongoClause(topic, escapeRegex);
-      if (fc) effectiveQuery.topic = fc;
+      applyPatternQuestionBankScope(effectiveQuery, { subject, topic, escapeRegexFn: escapeRegex });
       applyQuestionTypeFilter(effectiveQuery, types);
       applyClassLevelFilter(effectiveQuery, classLevel);
       buildQuestionSearch(effectiveQuery, search, 'regex');
@@ -803,8 +807,7 @@ exports.getSubjectQuestions = async (req, res) => {
 
     // Önce branş (subject) eşleşmesini zorunlu tut
     const query = { subject: { $regex: `^${escapeRegex(subject)}$`, $options: 'i' } };
-    const topicClause = buildTopicMongoClause(topic, escapeRegex);
-    if (topicClause) query.topic = topicClause;
+    applyPatternQuestionBankScope(query, { subject, topic, escapeRegexFn: escapeRegex });
     applyQuestionTypeFilter(query, types);
     applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
@@ -815,8 +818,7 @@ exports.getSubjectQuestions = async (req, res) => {
 
     if (searchMeta?.mode === 'text' && total === 0) {
       effectiveQuery = { subject: { $regex: `^${escapeRegex(subject)}$`, $options: 'i' } };
-      const fc2 = buildTopicMongoClause(topic, escapeRegex);
-      if (fc2) effectiveQuery.topic = fc2;
+      applyPatternQuestionBankScope(effectiveQuery, { subject, topic, escapeRegexFn: escapeRegex });
       applyQuestionTypeFilter(effectiveQuery, types);
       applyClassLevelFilter(effectiveQuery, classLevel);
       if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
@@ -864,10 +866,7 @@ exports.getSubjectQuestions = async (req, res) => {
       if (looseQuery.subject?.$regex) {
         looseQuery.subject = { $regex: subject, $options: 'i' }; // contains, case-insensitive
       }
-      if (topic && topic !== 'Tümü') {
-        const looseClause = buildTopicMongoClause(topic, escapeRegex);
-        if (looseClause) looseQuery.topic = looseClause;
-      }
+      applyPatternQuestionBankScope(looseQuery, { subject, topic, escapeRegexFn: escapeRegex });
       const looseTotal = await Question.countDocuments(looseQuery);
       if (looseTotal > 0) {
         questions = await Question.find(looseQuery, projection)
@@ -890,10 +889,11 @@ exports.getSubjectTopics = async (req, res) => {
     const subject = req.userBranch;
     const classLevel = String(req.query.classLevel || '').trim();
     // Mevcut sorular üzerinden eşsiz topic değerlerini topla
-    const query = { subject };
+    const query = { subject, topic: { $regex: '^Örüntüler' } };
+    excludeExerciseSeedFromBank(query);
     applyClassLevelFilter(query, classLevel);
     const rawTopics = await Question.distinct('topic', query);
-    const topics = sortPatternTopics(rawTopics);
+    const topics = sortPatternTopics(filterPatternTopicLabels(rawTopics));
     res.json({ success: true, topics });
   } catch (err) {
     res.status(500).json({ message: 'Konu listesi alınamadı', error: err.message });

@@ -212,7 +212,13 @@ export default function QuestionBank() {
   const [mainImage, setMainImage] = useState({ file: null, preview: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [filters, setFilters] = useState({ subject: 'Tümü', difficulty: 'Tümü', classLevel: 'Tümü', topic: 'Tümü', source: 'Tümü' });
+  const [filters, setFilters] = useState({
+    subject: 'Tümü',
+    difficulty: 'Tümü',
+    classLevel: 'Tümü',
+    topic: PATTERN_TOPIC_ALL_UNDER,
+    source: 'Tümü',
+  });
   const [topics, setTopics] = useState([]);
     // Load teacher profile for branch/approval
     useEffect(() => {
@@ -288,7 +294,8 @@ export default function QuestionBank() {
     const subject = searchParams.get('subject') || 'Tümü';
     const classLevel = searchParams.get('classLevel') || 'Tümü';
     const difficulty = searchParams.get('difficulty') || 'Tümü';
-    const topic = searchParams.get('topic') || 'Tümü';
+    const topicRaw = searchParams.get('topic') || PATTERN_TOPIC_ALL_UNDER;
+    const topic = topicRaw === 'Tümü' ? PATTERN_TOPIC_ALL_UNDER : topicRaw;
     const p = parseInt(searchParams.get('page') || '1');
     setSearchQuery(s);
     setFilters({ subject, classLevel, difficulty, topic });
@@ -298,6 +305,34 @@ export default function QuestionBank() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const topicFilterOptions = useMemo(() => {
+    const subject =
+      profile.branchApproval === 'approved' && profile.branch
+        ? profile.branch
+        : filters.subject !== 'Tümü'
+          ? filters.subject
+          : 'Matematik';
+    if (subject !== 'Matematik') {
+      return ['Tümü', ...topics.filter(Boolean)];
+    }
+    const merged = sortPatternTopicsUi([
+      PATTERN_TOPIC_ALL_UNDER,
+      ...PATTERN_TOPIC_ORDER,
+      ...topics,
+    ]);
+    return merged;
+  }, [filters.subject, profile.branch, profile.branchApproval, topics]);
+
+  const isPatternBankView = useMemo(() => {
+    const subject =
+      profile.branchApproval === 'approved' && profile.branch
+        ? profile.branch
+        : filters.subject !== 'Tümü'
+          ? filters.subject
+          : 'Matematik';
+    return subject === 'Matematik';
+  }, [filters.subject, profile.branch, profile.branchApproval]);
 
   const aiFilterDefaults = useMemo(() => {
     const subject =
@@ -323,7 +358,13 @@ export default function QuestionBank() {
   useEffect(() => {
     const params = {};
     if (debouncedSearch) params.search = debouncedSearch;
-    Object.entries(filters).forEach(([k, v]) => { if (v !== 'Tümü') params[k] = v; });
+    Object.entries(filters).forEach(([k, v]) => {
+      if (k === 'topic') {
+        if (v && v !== PATTERN_TOPIC_ALL_UNDER) params[k] = v;
+        return;
+      }
+      if (v !== 'Tümü') params[k] = v;
+    });
     if (page !== 1) params.page = String(page);
     if (isAiGenerateOpen) params.aiGenerate = '1';
     setSearchParams(params, { replace: true });
@@ -338,7 +379,10 @@ export default function QuestionBank() {
     setFetchError(null);
     try {
       const filterEntries = Object.entries(filters)
-        .filter(([, v]) => v !== 'Tümü')
+        .filter(([k, v]) => {
+          if (k === 'topic') return Boolean(v) && v !== 'Tümü';
+          return v !== 'Tümü';
+        })
         .map(([k, v]) => (k === 'source' ? [k, sourceFilterToApi(v) || v] : [k, v]))
         .filter(([, v]) => v);
       const params = {
@@ -390,9 +434,9 @@ export default function QuestionBank() {
           const res = await apiClient.get('/teacher/subject/topics', { params });
           const prioritized = sortPatternTopicsUi(res.data?.topics || []);
           setTopics(prioritized);
-          const allowedTopics = new Set(['Tümü', PATTERN_TOPIC_ALL_UNDER, 'Örüntüler', ...prioritized]);
+          const allowedTopics = new Set([PATTERN_TOPIC_ALL_UNDER, 'Örüntüler', ...prioritized]);
           if (!allowedTopics.has(filters.topic)) {
-            setFilters(f => ({ ...f, topic: 'Tümü' }));
+            setFilters((f) => ({ ...f, topic: PATTERN_TOPIC_ALL_UNDER }));
           }
         } catch {
           /* konu listesi alınamadı; filtre yine de çalışır */
@@ -454,11 +498,20 @@ export default function QuestionBank() {
 
   const hasActiveFilters =
     debouncedSearch ||
-    Object.entries(filters).some(([, v]) => v && v !== 'Tümü');
+    Object.entries(filters).some(([key, value]) => {
+      if (key === 'topic') return value && value !== PATTERN_TOPIC_ALL_UNDER;
+      return value && value !== 'Tümü';
+    });
 
   const clearAllFilters = () => {
     setSearchQuery('');
-    setFilters({ subject: 'Tümü', difficulty: 'Tümü', classLevel: 'Tümü', topic: 'Tümü', source: 'Tümü' });
+    setFilters({
+      subject: 'Tümü',
+      difficulty: 'Tümü',
+      classLevel: 'Tümü',
+      topic: PATTERN_TOPIC_ALL_UNDER,
+      source: 'Tümü',
+    });
     setPage(1);
   };
 
@@ -531,8 +584,16 @@ export default function QuestionBank() {
             className="w-full pl-12 pr-4 py-4 bg-white dark:bg-surface-900 border-none rounded-2xl focus:ring-4 focus:ring-teal-500/15 font-medium outline-none"
           />
         </div>
-        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3">
           <FilterSelect icon={<Hash size={14}/>} value={filters.classLevel} onChange={(v) => setFilters({...filters, classLevel: v})} options={['Tümü', ...Array.from({length:12}, (_,i)=>`${i+1}. Sınıf`)]} />
+          {isPatternBankView ? (
+            <FilterSelect
+              icon={<LayoutGrid size={14} />}
+              value={filters.topic}
+              onChange={(v) => { setFilters({ ...filters, topic: v }); setPage(1); }}
+              options={topicFilterOptions}
+            />
+          ) : null}
           <FilterSelect icon={<Star size={14}/>} value={filters.difficulty} onChange={(v) => setFilters({...filters, difficulty: v})} options={['Tümü', 'Kolay', 'Orta', 'Zor']} />
           <FilterSelect icon={<Sparkles size={14}/>} value={filters.source} onChange={(v) => { setFilters({ ...filters, source: v }); setPage(1); }} options={sourceFilterOptions()} />
         </div>
@@ -574,7 +635,7 @@ export default function QuestionBank() {
         ) : (
           questions.map((q, idx) => {
             const topicLine = q.topic || 'Konu belirtilmemiş';
-            const showTopicHeading = ['Tümü', PATTERN_TOPIC_ALL_UNDER, 'Örüntüler'].includes(filters.topic)
+            const showTopicHeading = [PATTERN_TOPIC_ALL_UNDER, 'Örüntüler'].includes(filters.topic)
               && (idx === 0 || (questions[idx - 1].topic || 'Konu belirtilmemiş') !== topicLine);
             return (
               <Fragment key={q._id}>
