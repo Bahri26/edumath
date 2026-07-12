@@ -25,7 +25,7 @@ Son güncelleme: deploy öncesi eksik giderme sprinti (admin mobil, i18n, boş d
 ## Otomatik doğrulama
 
 ```powershell
-cd backend ; npm test ; npm run smoke:predeploy
+cd backend ; npm test ; npm run smoke:predeploy ; npm run smoke:exam
 cd ../frontend ; npm test ; npm run test:e2e
 ```
 
@@ -35,6 +35,28 @@ Tam smoke login için backend çalışırken:
 $env:SMOKE_STUDENT_EMAIL="student@edumath.local"
 $env:SMOKE_STUDENT_PASSWORD="password123"
 cd backend ; npm run smoke:predeploy
+```
+
+Öğretmen soru → sınav → öğrenci çözüm (API E2E):
+
+```powershell
+$env:SMOKE_TEACHER_EMAIL="teacher@edumath.local"
+$env:SMOKE_TEACHER_PASSWORD="password123"
+$env:SMOKE_STUDENT_EMAIL="student@edumath.local"
+$env:SMOKE_STUDENT_PASSWORD="password123"
+$env:SMOKE_CLASS_LEVEL="9. Sınıf"
+cd backend ; npm run smoke:exam
+```
+
+Playwright tam sınav UI (opsiyonel):
+
+```powershell
+$env:E2E_RUN_EXAM_FLOW="1"
+$env:E2E_TEACHER_EMAIL="teacher@edumath.local"
+$env:E2E_TEACHER_PASSWORD="password123"
+$env:E2E_STUDENT_EMAIL="student@edumath.local"
+$env:E2E_STUDENT_PASSWORD="password123"
+cd frontend ; npx playwright test e2e/exam-smoke.spec.js
 ```
 
 ## Render’da sizin doldurmanız gerekenler

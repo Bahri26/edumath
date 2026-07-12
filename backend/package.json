@@ -51,7 +51,8 @@
     "setup:ilkokul-exams": "node scripts/setup/setupIlkokulExams.js",
     "audit:ilkokul": "node scripts/tools/auditGrades1to4.js",
     "test:e2e-exam-exercise": "node scripts/tests/e2eInteractiveExamExercise.js",
-    "smoke:predeploy": "node scripts/tools/smokePreDeploy.js"
+    "smoke:predeploy": "node scripts/tools/smokePreDeploy.js",
+    "smoke:exam": "node scripts/tools/smokeTeacherStudentExam.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1032.0",

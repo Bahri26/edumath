@@ -28,6 +28,11 @@ jobs:
         run: npx playwright install chromium --with-deps
       - name: A11y smoke (static landing)
         run: npx playwright test e2e/a11y-smoke.spec.js
+      - name: Exam shell smoke (skips without credentials)
+        run: npx playwright test e2e/exam-smoke.spec.js e2e/exercise-flow.spec.js
+        env:
+          E2E_USE_SEED: '0'
+          E2E_SKIP_WEBSERVER: '0'
 
   backend:
     runs-on: ubuntu-latest
@@ -44,6 +49,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run smoke:predeploy
+      - run: npm run smoke:exam
       - run: npm audit --audit-level=high
         continue-on-error: true
 
@@ -82,4 +88,13 @@ jobs:
           SMOKE_API_URL: https://edumath-t10n.onrender.com
           SMOKE_EXPECT_STORAGE: gdrive
         run: node scripts/tools/smokePreDeploy.js
+        continue-on-error: true
+      - name: Production teacher→student exam smoke
+        env:
+          SMOKE_API_URL: https://edumath-t10n.onrender.com
+          SMOKE_TEACHER_EMAIL: ${{ secrets.SMOKE_TEACHER_EMAIL }}
+          SMOKE_TEACHER_PASSWORD: ${{ secrets.SMOKE_TEACHER_PASSWORD }}
+          SMOKE_STUDENT_EMAIL: ${{ secrets.SMOKE_STUDENT_EMAIL }}
+          SMOKE_STUDENT_PASSWORD: ${{ secrets.SMOKE_STUDENT_PASSWORD }}
+        run: node scripts/tools/smokeTeacherStudentExam.js
         continue-on-error: true

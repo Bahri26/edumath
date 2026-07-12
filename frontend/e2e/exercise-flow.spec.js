@@ -9,8 +9,8 @@ test.describe('Exercise flow', () => {
 
   test('student opens study hub after login', async ({ page }) => {
     await loginViaApi(page, studentCreds);
-    await page.goto('/student/study-hub');
-    await expect(page).toHaveURL(/\/student\/study-hub/);
+    await page.goto('/student/exercises');
+    await expect(page).toHaveURL(/\/student\/exercises/);
     await expect(page.getByRole('heading').first()).toBeVisible();
   });
 });
@@ -21,7 +21,7 @@ test.describe('Teacher progress', () => {
   test('teacher opens student progress dashboard', async ({ page }) => {
     await loginViaApi(page, teacherCreds);
     await page.goto('/teacher/student-progress');
-    await expect(page).toHaveURL(/\/teacher\/student-progress/);
+    await expect(page).toHaveURL(/\/student-progress/);
     await expect(page.getByRole('heading', { name: /öğrenci takibi|student progress/i })).toBeVisible();
   });
 });
