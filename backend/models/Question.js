@@ -42,7 +42,7 @@ const QuestionSchema = new mongoose.Schema({
   options: [OptionSchema],
   
   // Kaynak (Manuel/AI)
-  source: { type: String, enum: ['Manuel', 'AI'], default: 'Manuel', index: true },
+  source: { type: String, enum: ['Manuel', 'AI', 'exercise-seed'], default: 'Manuel', index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 
   // Adaptif ölçme / şablon meta (UI ve analitik için)

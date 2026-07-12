@@ -21,12 +21,31 @@ import {
   ExerciseTfPlay,
   ExerciseTwoChoiceBlocks,
 } from '../../components/exercises/ExerciseGameInputs.jsx';
+import { MatchingPracticeCard } from '../../components/exams/InteractivePracticeCards.jsx';
+import { parseStoredAnswer } from '../../utils/examAnswerUtils.js';
 import { useQuestionTimer } from '../../hooks/useQuestionTimer.js';
 
 function optionText(opt) {
   if (opt == null) return '';
   if (typeof opt === 'object') return String(opt.text ?? '');
   return String(opt);
+}
+
+function parseMatchingDraft(raw) {
+  const parsed = parseStoredAnswer(raw);
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+}
+
+function isMatchingComplete(question, draft) {
+  const prompts = question?.interactionData?.prompts || [];
+  const selected = parseMatchingDraft(draft);
+  return prompts.length > 0 && prompts.every((p) => selected[p.id]);
+}
+
+function hasAnswerReady(question, draft) {
+  if (!question) return false;
+  if (question.type === 'matching') return isMatchingComplete(question, draft);
+  return String(draft ?? '').trim().length > 0;
 }
 
 export default function StudentExercisePlayer() {
@@ -106,7 +125,12 @@ export default function StudentExercisePlayer() {
   useEffect(() => {
     if (!currentQ) return;
     const saved = answers[currentQ._id];
-    setDraftAnswer(saved?.answer ?? saved ?? '');
+    const raw = saved?.answer ?? saved ?? '';
+    if (currentQ.type === 'matching') {
+      setDraftAnswer(typeof raw === 'string' ? raw : JSON.stringify(raw || {}));
+    } else {
+      setDraftAnswer(typeof raw === 'string' ? raw : String(raw ?? ''));
+    }
     resetQuestionTimer();
     // Intentionally omit `answers` — updating it after check must not reset draft.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -164,16 +188,20 @@ export default function StudentExercisePlayer() {
   };
 
   const handleCheck = async () => {
-    if (!currentQ || !draftAnswer.trim()) {
+    if (!currentQ || !hasAnswerReady(currentQ, draftAnswer)) {
       showToast(t('exercisePlayer.pickAnswer'), 'warning');
       return;
     }
     setChecking(true);
     try {
       const timeSpent = recordAnswerTime(currentQ._id);
+      const answerPayload =
+        currentQ.type === 'matching' && typeof draftAnswer !== 'string'
+          ? JSON.stringify(draftAnswer)
+          : draftAnswer;
       const res = await apiClient.post(`/exercises/${exerciseId}/check-answer`, {
         questionId: currentQ._id,
-        answer: draftAnswer,
+        answer: answerPayload,
       });
       const data = res.data;
       setFeedback((prev) => ({
@@ -186,13 +214,18 @@ export default function StudentExercisePlayer() {
       }));
       setAnswers((prev) => ({
         ...prev,
-        [currentQ._id]: { answer: draftAnswer, timeSpent },
+        [currentQ._id]: { answer: answerPayload, timeSpent },
       }));
     } catch (err) {
       showToast(err.response?.data?.message || t('exercisePlayer.errCheck'), 'error');
     } finally {
       setChecking(false);
     }
+  };
+
+  const handleMatchingChange = (promptId, value) => {
+    const selected = { ...parseMatchingDraft(draftAnswer), [promptId]: value };
+    setDraftAnswer(JSON.stringify(selected));
   };
 
   const goNext = () => {
@@ -204,21 +237,43 @@ export default function StudentExercisePlayer() {
   };
 
   const renderInput = () => {
+    const qType = currentQ.type;
     const opts = (currentQ.options || []).map(optionText).filter(Boolean);
     const pres = presentation.key;
 
-    if (pres === 'num_pad') {
-      return <ExerciseNumberPad value={draftAnswer} onChange={setDraftAnswer} />;
+    if (qType === 'matching') {
+      return (
+        <MatchingPracticeCard
+          examMode
+          question={currentQ}
+          state={{ selected: parseMatchingDraft(draftAnswer) }}
+          onChange={handleMatchingChange}
+        />
+      );
     }
-    if (pres === 'tf_big' || pres === 'tf_play') {
+
+    if (qType === 'fill-blank' || pres === 'fill_play') {
+      return (
+        <ExerciseFillPlay
+          value={typeof draftAnswer === 'string' ? draftAnswer : ''}
+          onChange={setDraftAnswer}
+        />
+      );
+    }
+
+    if (qType === 'true-false' || pres === 'tf_big' || pres === 'tf_play') {
       return (
         <ExerciseTfPlay
-          optionA={opts[0]}
-          optionB={opts[1]}
+          optionA={opts[0] || 'Doğru'}
+          optionB={opts[1] || 'Yanlış'}
           value={draftAnswer}
           onChange={setDraftAnswer}
         />
       );
+    }
+
+    if (pres === 'num_pad') {
+      return <ExerciseNumberPad value={draftAnswer} onChange={setDraftAnswer} />;
     }
     if (pres === 'shape_row') {
       return (
@@ -229,9 +284,6 @@ export default function StudentExercisePlayer() {
           onChange={setDraftAnswer}
         />
       );
-    }
-    if (pres === 'fill_play') {
-      return <ExerciseFillPlay value={draftAnswer} onChange={setDraftAnswer} />;
     }
     if (opts.length === 2) {
       return (
@@ -436,7 +488,7 @@ export default function StudentExercisePlayer() {
             <Button
               variant="primary"
               className="w-full"
-              disabled={checking || !draftAnswer.trim()}
+              disabled={checking || !hasAnswerReady(currentQ, draftAnswer)}
               onClick={handleCheck}
             >
               {checking ? t('exercisePlayer.checking') : t('exercisePlayer.check')}
@@ -456,7 +508,12 @@ export default function StudentExercisePlayer() {
                   {!currentFeedback.isCorrect && (
                     <>
                       <p className="text-sm mt-1">
-                        {t('exercisePlayer.correctAnswerLabel')} <strong>{currentFeedback.correctAnswer}</strong>
+                        {t('exercisePlayer.correctAnswerLabel')}{' '}
+                        <strong>
+                          {typeof currentFeedback.correctAnswer === 'object'
+                            ? JSON.stringify(currentFeedback.correctAnswer)
+                            : String(currentFeedback.correctAnswer ?? '')}
+                        </strong>
                       </p>
                       {currentFeedback.solution ? (
                         <div className="mt-3">
