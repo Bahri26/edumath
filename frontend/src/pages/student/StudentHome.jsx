@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, BookOpen, ArrowRight, Flame } from 'lucide-react';
+import { Clock, BookOpen, ArrowRight, Flame, Sparkles } from 'lucide-react';
 import { studentProfile as staticProfile } from '../../data/studentData';
 import CourseCard from '../../components/ui/CourseCard';
 import Button from '../../components/ui/Button.jsx';
@@ -176,11 +176,12 @@ const StudentHome = () => {
 
   const t = {
     TR: {
-      welcome: 'Tekrar hoş geldin',
+      welcome: 'Hoş geldin',
       myCourses: 'Derslerim',
       upcomingTasks: 'Yaklaşan Ödevler',
       noPendingTasks: 'Henüz yaklaşan ödev yok',
       kidBuddyLine: 'Birlikte matematik macerasına devam edelim!',
+      subtitleStats: '{{streak}} · Bugün {{xp}} XP · Haftalık {{week}} / {{goal}} XP',
       kidTasksProgress: '{{done}} / {{total}} görev',
       guide: 'Kullanım Kılavuzu',
       progressToday: 'Bugün {{xp}} XP',
@@ -206,11 +207,12 @@ const StudentHome = () => {
       seeAllCourses: 'Tüm dersler',
     },
     EN: {
-      welcome: 'Welcome Back',
+      welcome: 'Welcome',
       myCourses: 'My Courses',
       upcomingTasks: 'Upcoming Tasks',
       noPendingTasks: 'No pending assignments',
       kidBuddyLine: 'Let’s keep the math adventure going!',
+      subtitleStats: '{{streak}} · Today {{xp}} XP · Weekly {{week}} / {{goal}} XP',
       kidTasksProgress: '{{done}} / {{total}} tasks',
       guide: 'User guide',
       progressToday: 'Today {{xp}} XP',
@@ -329,195 +331,198 @@ const StudentHome = () => {
 
   const firstName = profile.name?.split(' ')[0] || 'Öğrenci';
   const pendingAssignments = assignments.filter((task) => !task.completed).slice(0, 3);
+  const streakSubtitle =
+    streakDays > 0
+      ? fill(getText('streakLabel'), { n: streakDays })
+      : getText('streakFresh');
+  const homeSubtitle = fill(getText('subtitleStats'), {
+    streak: streakSubtitle,
+    xp: todayXpUtc,
+    week: weekXp,
+    goal: weeklyGoal,
+  });
 
   return (
-    <StudentPageShell
-      title={`${getText('welcome')}, ${firstName}!`}
-      subtitle={getText('kidBuddyLine')}
-      headerAside={(
-        <Button
-          variant="secondary"
-          size="md"
-          onClick={() => setIsGuideOpen(true)}
-          icon={BookOpen}
+    <>
+      <StudentPageShell
+        title={`${getText('welcome')}, ${firstName}`}
+        subtitle={homeSubtitle}
+        headerAside={(
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => setIsGuideOpen(true)}
+            icon={BookOpen}
+          >
+            {getText('guide')}
+          </Button>
+        )}
+      >
+        <section
+          aria-label={getText('nowDoTitle')}
+          className="rounded-2xl border border-teal-200/80 dark:border-teal-800/50 bg-gradient-to-r from-teal-50 via-white to-sky-50 dark:from-teal-950/40 dark:via-slate-800 dark:to-slate-800 p-4 sm:p-5 shadow-sm"
         >
-          {getText('guide')}
-        </Button>
-      )}
-    >
-      <section
-        aria-label={getText('nowDoTitle')}
-        className="rounded-2xl border border-teal-200/70 dark:border-teal-800/40 bg-gradient-to-r from-teal-50/90 via-white to-sky-50/80 dark:from-teal-950/30 dark:via-slate-800 dark:to-slate-800 p-5 sm:p-6"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center gap-5 justify-between">
-          <div className="min-w-0 space-y-1.5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-teal-700 dark:text-teal-300">
-              {getText('nowDoTitle')}
-            </p>
-            <h2 className="font-display text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white truncate">
-              {primaryNext.title}
-            </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">
-              {primaryNext.detail}
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="p-2.5 rounded-xl bg-teal-600 text-white shadow-sm shrink-0">
+                <Sparkles size={18} aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-widest text-teal-700 dark:text-teal-300">
+                  {getText('nowDoTitle')}
+                </p>
+                <h2 className="font-display text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mt-1 truncate">
+                  {primaryNext.title}
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
+                  {primaryNext.detail}
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              className="shrink-0 min-h-[48px]"
+              onClick={() => navigate(primaryNext.path)}
+            >
+              {getText('nowDoCta')}
+              <ArrowRight size={18} aria-hidden />
+            </Button>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate(primaryNext.path)}
-            className="inline-flex items-center justify-center gap-2 shrink-0 min-h-[48px] px-7 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2"
-          >
-            {getText('nowDoCta')}
-            <ArrowRight size={18} aria-hidden />
-          </button>
-        </div>
-      </section>
+        </section>
 
-      <section
-        aria-label={fill(getText('kidTasksProgress'), { done: tasksDoneCount, total: tasksTotal })}
-        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6 px-1"
-      >
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 min-w-0">
-          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-800 dark:text-amber-200">
-            <Flame size={15} className="text-amber-500 shrink-0" aria-hidden />
-            {streakDays > 0
-              ? fill(getText('streakLabel'), { n: streakDays })
-              : getText('streakFresh')}
-          </span>
-          <span className="text-sm text-slate-600 dark:text-slate-300">
-            {fill(getText('progressToday'), { xp: todayXpUtc })}
-            {!goalXpMet && (
-              <span className="text-slate-400 dark:text-slate-500">
-                {' · '}
-                {fill(getText('goalXpSub'), { cur: todayXpUtc, target: XP_GOAL_TODAY })}
+        <section
+          aria-label={fill(getText('kidTasksProgress'), { done: tasksDoneCount, total: tasksTotal })}
+          className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6 px-1"
+        >
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 min-w-0">
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-800 dark:text-amber-200">
+              <Flame size={15} className="text-amber-500 shrink-0" aria-hidden />
+              {streakSubtitle}
+            </span>
+            <span className="text-sm text-slate-600 dark:text-slate-300">
+              {fill(getText('progressToday'), { xp: todayXpUtc })}
+              {!goalXpMet && (
+                <span className="text-slate-400 dark:text-slate-500">
+                  {' · '}
+                  {fill(getText('goalXpSub'), { cur: todayXpUtc, target: XP_GOAL_TODAY })}
+                </span>
+              )}
+            </span>
+            <span className="inline-flex items-center rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 text-xs font-bold px-2.5 py-1">
+              {fill(getText('kidTasksProgress'), { done: tasksDoneCount, total: tasksTotal })}
+            </span>
+          </div>
+          <div className="flex-1 max-w-xs min-w-[10rem]">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                {getText('weeklyGoalTitle')}
               </span>
-            )}
-          </span>
-          <span className="inline-flex items-center rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 text-xs font-bold px-2.5 py-1">
-            {fill(getText('kidTasksProgress'), { done: tasksDoneCount, total: tasksTotal })}
-          </span>
-        </div>
-        <div className="flex-1 max-w-xs min-w-[10rem]">
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              {getText('weeklyGoalTitle')}
-            </span>
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-              {weekGoalMet
-                ? getText('weeklyGoalDone')
-                : fill(getText('weeklyGoalSub'), { cur: weekXp, target: weeklyGoal })}
-            </span>
-          </div>
-          <div
-            className="h-1.5 rounded-full bg-slate-200/80 dark:bg-slate-700 overflow-hidden"
-            role="progressbar"
-            aria-valuenow={weekXp}
-            aria-valuemin={0}
-            aria-valuemax={weeklyGoal}
-            aria-label={fill(getText('weeklyGoalSub'), { cur: weekXp, target: weeklyGoal })}
-          >
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                {weekGoalMet
+                  ? getText('weeklyGoalDone')
+                  : fill(getText('weeklyGoalSub'), { cur: weekXp, target: weeklyGoal })}
+              </span>
+            </div>
             <div
-              className={`h-full transition-all duration-500 ${
-                weekGoalMet ? 'bg-emerald-500' : 'bg-teal-500'
-              }`}
-              style={{ width: `${weekPct}%` }}
-            />
+              className="h-1.5 rounded-full bg-slate-200/80 dark:bg-slate-700 overflow-hidden"
+              role="progressbar"
+              aria-valuenow={weekXp}
+              aria-valuemin={0}
+              aria-valuemax={weeklyGoal}
+              aria-label={fill(getText('weeklyGoalSub'), { cur: weekXp, target: weeklyGoal })}
+            >
+              <div
+                className={`h-full transition-all duration-500 ${
+                  weekGoalMet ? 'bg-emerald-500' : 'bg-teal-500'
+                }`}
+                style={{ width: `${weekPct}%` }}
+              />
+            </div>
           </div>
-          <div
-            className="sr-only"
-            role="progressbar"
-            aria-valuenow={todayXpUtc}
-            aria-valuemin={0}
-            aria-valuemax={XP_GOAL_TODAY}
-            aria-label={fill(getText('goalXpSub'), { cur: todayXpUtc, target: XP_GOAL_TODAY })}
-          >
-            {todayXpPct}%
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-              <BookOpen size={20} className="text-teal-600 dark:text-teal-400" aria-hidden />
-              {getText('myCourses')}
-            </h2>
-            {courses.length > 2 ? (
-              <button
-                type="button"
-                onClick={() => navigate('/student/courses')}
-                className="text-sm font-semibold text-teal-700 dark:text-teal-300 hover:underline"
-              >
-                {getText('seeAllCourses')}
-              </button>
-            ) : null}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {coursesLoading ? (
-              [1, 2].map((i) => (
-                <div key={i} className="h-36 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
-              ))
-            ) : courses.length > 0 ? (
-              courses.slice(0, 2).map((course) => (
-                <CourseCard
-                  key={course.id}
-                  {...course}
-                  onClick={() => navigate('/student/courses')}
-                />
-              ))
-            ) : (
-              <div className="sm:col-span-2 rounded-2xl border border-dashed border-sky-200 dark:border-slate-600 p-8 text-center bg-white/50 dark:bg-slate-800/40">
-                <p className="font-bold text-slate-800 dark:text-white">{getText('coursesEmptyTitle')}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{getText('coursesEmptyHint')}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <BookOpen size={20} className="text-teal-600 dark:text-teal-400" aria-hidden />
+                {getText('myCourses')}
+              </h2>
+              {courses.length > 2 ? (
                 <button
                   type="button"
                   onClick={() => navigate('/student/courses')}
-                  className="mt-4 rounded-xl bg-teal-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-teal-700 min-h-[44px]"
+                  className="text-sm font-semibold text-teal-700 dark:text-teal-300 hover:underline"
                 >
-                  {getText('goCourses')}
+                  {getText('seeAllCourses')}
                 </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-8">
-          <div>
-            <h3 className="font-bold text-base text-slate-800 dark:text-white mb-3 flex items-center gap-2">
-              <Clock size={18} className="text-orange-500" aria-hidden />
-              {getText('upcomingTasks')}
-            </h3>
-            <div className="space-y-2">
-              {pendingAssignments.length > 0 ? (
-                pendingAssignments.map((task) => (
-                  <button
-                    key={task.id}
-                    type="button"
-                    onClick={() => navigate('/student/assignments')}
-                    className={`w-full text-left p-3 rounded-xl border-l-4 min-h-[44px] ${
-                      task.urgent
-                        ? 'border-l-rose-500 bg-rose-50/40 dark:bg-rose-900/10'
-                        : 'border-l-teal-500 bg-white/70 dark:bg-slate-800/60'
-                    } hover:bg-sky-50/80 dark:hover:bg-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400`}
-                  >
-                    <p className="font-semibold text-sm text-slate-800 dark:text-slate-200">{task.title}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{task.due}</p>
-                  </button>
+              ) : null}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {coursesLoading ? (
+                [1, 2].map((i) => (
+                  <div key={i} className="h-36 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                ))
+              ) : courses.length > 0 ? (
+                courses.slice(0, 2).map((course) => (
+                  <CourseCard
+                    key={course.id}
+                    {...course}
+                    onClick={() => navigate('/student/courses')}
+                  />
                 ))
               ) : (
-                <p className="text-slate-500 dark:text-slate-400 text-sm">{getText('noPendingTasks')}</p>
+                <div className="sm:col-span-2 rounded-2xl border border-dashed border-slate-200 dark:border-slate-600 p-8 text-center bg-white dark:bg-slate-800/40">
+                  <p className="font-bold text-slate-800 dark:text-white">{getText('coursesEmptyTitle')}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{getText('coursesEmptyHint')}</p>
+                  <Button variant="primary" size="md" className="mt-4" onClick={() => navigate('/student/courses')}>
+                    {getText('goCourses')}
+                  </Button>
+                </div>
               )}
             </div>
           </div>
-          <WeakTopicsInsightCard
-            compact
-            showPractice
-            onGoHub={() => navigate('/student/exercises')}
-          />
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-bold text-base text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                <Clock size={18} className="text-orange-500" aria-hidden />
+                {getText('upcomingTasks')}
+              </h3>
+              <div className="space-y-2">
+                {pendingAssignments.length > 0 ? (
+                  pendingAssignments.map((task) => (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => navigate('/student/assignments')}
+                      className={`w-full text-left p-3 rounded-xl border-l-4 min-h-[44px] ${
+                        task.urgent
+                          ? 'border-l-rose-500 bg-rose-50/40 dark:bg-rose-900/10'
+                          : 'border-l-teal-500 bg-white dark:bg-slate-800/60'
+                      } hover:bg-sky-50/80 dark:hover:bg-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400`}
+                    >
+                      <p className="font-semibold text-sm text-slate-800 dark:text-slate-200">{task.title}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{task.due}</p>
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">{getText('noPendingTasks')}</p>
+                )}
+              </div>
+            </div>
+            <WeakTopicsInsightCard
+              compact
+              showPractice
+              onGoHub={() => navigate('/student/exercises')}
+            />
+          </div>
         </div>
-      </div>
+      </StudentPageShell>
       <GuideDrawer audience="student" open={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
-    </StudentPageShell>
+    </>
   );
 };
 

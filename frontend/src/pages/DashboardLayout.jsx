@@ -35,7 +35,7 @@ const DashboardLayout = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const studentKid = role === 'student';
+  const studentKid = false;
   const { user, logout } = useContext(AuthContext);
   const { isDarkMode, toggleTheme } = useTheme();
   const { t, language, setLanguage } = useTranslation();

@@ -27,7 +27,7 @@ describe('StudentHome', () => {
         </LanguageProvider>
       </MemoryRouter>
     );
-    expect(screen.getByText(/seriyi başlat|gün seri/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/seriyi başlat|gün seri/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole('button', { name: /kullanım kılavuzu/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /derse devam et/i })).not.toBeInTheDocument();
   });
