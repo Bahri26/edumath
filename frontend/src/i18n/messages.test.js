@@ -13,6 +13,8 @@ describe('i18n messages', () => {
   });
 
   it('settings strings exist in both locales', () => {
+    expect(lookupMessage(MESSAGES.TR, 'settings.menuLabel')).toBe('Ayarlar');
+    expect(lookupMessage(MESSAGES.EN, 'settings.menuLabel')).toBe('Settings');
     expect(lookupMessage(MESSAGES.TR, 'settings.studentTitle')).toBe('Öğrenci ayarları');
     expect(lookupMessage(MESSAGES.EN, 'settings.studentTitle')).toBe('Student settings');
   });

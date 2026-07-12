@@ -117,6 +117,7 @@ const PROGRESS = {
 
 const SETTINGS = {
   TR: {
+    menuLabel: 'Ayarlar',
     loading: 'Ayarlar yükleniyor…',
     studentTitle: 'Öğrenci ayarları',
     teacherTitle: 'Öğretmen ayarları',
@@ -129,6 +130,7 @@ const SETTINGS = {
     prefUpdateError: 'Ayar güncellenemedi',
   },
   EN: {
+    menuLabel: 'Settings',
     loading: 'Loading settings…',
     studentTitle: 'Student settings',
     teacherTitle: 'Teacher settings',

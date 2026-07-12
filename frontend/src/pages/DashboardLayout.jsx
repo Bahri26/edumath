@@ -416,7 +416,7 @@ const DashboardLayout = ({
                     role="menuitem"
                     className="w-full text-left px-4 py-2.5 hover:bg-surface-100 dark:hover:bg-surface-700 flex items-center gap-2"
                   >
-                    <Settings size={16} aria-hidden /> {t('settings')}
+                    <Settings size={16} aria-hidden /> {t('settings.menuLabel')}
                   </button>
                   <button
                     type="button"
