@@ -18,4 +18,17 @@ describe('StudentHome', () => {
     expect(screen.getByLabelText(/şimdi yap/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^başla$/i })).toBeInTheDocument();
   });
+
+  it('renders compact progress status without mission cards', () => {
+    render(
+      <MemoryRouter>
+        <LanguageProvider>
+          <StudentHome />
+        </LanguageProvider>
+      </MemoryRouter>
+    );
+    expect(screen.getByText(/seriyi başlat|gün seri/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /kılavuz/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /derse devam et/i })).not.toBeInTheDocument();
+  });
 });

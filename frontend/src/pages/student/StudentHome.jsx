@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Clock, BookOpen, CircleHelp, Play, Star, Dumbbell, ArrowRight, Flame } from 'lucide-react';
+import { Clock, BookOpen, CircleHelp, ArrowRight, Flame } from 'lucide-react';
 import { studentProfile as staticProfile } from '../../data/studentData';
 import CourseCard from '../../components/ui/CourseCard';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';
@@ -74,7 +74,6 @@ const StudentHome = () => {
       completed: !!task.completed,
     }));
 
-  // Yaklaşan ödevleri API'den çek
   useEffect(() => {
     let cancelled = false;
     const loadAssignments = async () => {
@@ -101,7 +100,6 @@ const StudentHome = () => {
     };
   }, [language]);
 
-  // Sınavlar, egzersizler, bugün XP (trend) — ana sayfa özetleri
   useEffect(() => {
     let cancelled = false;
     const utcKey = new Date().toISOString().slice(0, 10);
@@ -147,7 +145,6 @@ const StudentHome = () => {
     };
   }, []);
 
-  // Öğrenci profili + sınıf konuları (gerçek veri)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -176,102 +173,67 @@ const StudentHome = () => {
     };
   }, []);
 
-  // --- DİL ÇEVIRILERI ---
   const t = {
     TR: {
-      welcome: "Tekrar hoş geldin",
-      continueLesson: "Derse Devam Et",
-      lastTopic: "Son Konu",
-      myCourses: "Derslerim",
-      upcomingTasks: "Yaklaşan Ödevler",
-      noPendingTasks: "Henüz yaklaşan ödev yok",
-      kidBuddyLine: "Birlikte matematik macerasına devam edelim!",
-      kidTodayTitle: "Bugünün görevleri",
-      kidTasksProgress: "{{done}} / {{total}} görev tamamlandı",
-      guide: "Kullanım kılavuzu",
-      progressToday: "Bugün {{xp}} XP",
-      streakLabel: "{{n}} gün seri",
-      streakFresh: "Seriyi başlat",
-      weeklyGoalTitle: "Haftalık hedef",
-      weeklyGoalSub: "{{cur}} / {{target}} XP",
-      weeklyGoalDone: "Haftalık XP hedefin tamam!",
-      kidMissionQuiz: "Sınavlar",
-      kidMissionQuizHint: "Bilgini dene",
-      kidMissionQuizHintOpen: "{{n}} sınav açık",
-      kidPracticePendingHint: "{{n}} egzersiz bekliyor",
-      kidGoalsTitle: "Günlük Hedefler",
-      goalXp: "Bugün XP topla",
-      goalXpSub: "{{cur}} / {{target}} XP (UTC günlük kayıtlar)",
-      goalXpDone: "Bugün için XP hedefin tamam!",
-      goalExercise: "Egzersiz tamamla",
-      goalExerciseSubDone: "Bugün bir çalışma bitirdin.",
-      goalExerciseSubTodo: "Çalışma merkezinden başla",
-      goalExam: "Sınav dene",
-      goalExamSubDone: "Bugün bir sınav sonucun var.",
-      goalExamSubTodo: "Sınıf sınavına katıl",
-      goalNavExercise: "Çalışmalara git",
-      goalNavQuiz: "Sınava git",
-      goalDoneBadge: "Tamam",
-      kidContinueFallback: "Derslerinden devam et",
-      coursesEmptyTitle: "Konuların hazırlanıyor",
-      coursesEmptyHint: "Öğretmenin eklediği konular burada görünecek.",
-      goCourses: "Derslerime Git",
-      nowDoTitle: "Şimdi yap",
-      nowDoCta: "Başla",
-      nowDoAssignment: "Yaklaşan ödevin var",
-      nowDoExam: "{{n}} sınav seni bekliyor",
-      nowDoExercise: "{{n}} egzersiz tamamlanmayı bekliyor",
-      nowDoContinue: "Kaldığın yerden devam et",
-      nowDoFallback: "Çalışma merkezinden pratik yap",
-      seeAllCourses: "Tüm dersler",
+      welcome: 'Tekrar hoş geldin',
+      myCourses: 'Derslerim',
+      upcomingTasks: 'Yaklaşan Ödevler',
+      noPendingTasks: 'Henüz yaklaşan ödev yok',
+      kidBuddyLine: 'Birlikte matematik macerasına devam edelim!',
+      kidTasksProgress: '{{done}} / {{total}} görev',
+      guide: 'Kılavuz',
+      progressToday: 'Bugün {{xp}} XP',
+      streakLabel: '{{n}} gün seri',
+      streakFresh: 'Seriyi başlat',
+      weeklyGoalTitle: 'Haftalık',
+      weeklyGoalSub: '{{cur}} / {{target}} XP',
+      weeklyGoalDone: 'Haftalık hedef tamam',
+      kidMissionQuizHint: 'Bilgini dene',
+      goalXpSub: '{{cur}} / {{target}} XP',
+      goalExerciseSubTodo: 'Çalışma merkezinden başla',
+      kidContinueFallback: 'Derslerinden devam et',
+      coursesEmptyTitle: 'Konuların hazırlanıyor',
+      coursesEmptyHint: 'Öğretmenin eklediği konular burada görünecek.',
+      goCourses: 'Derslerime Git',
+      nowDoTitle: 'Şimdi yap',
+      nowDoCta: 'Başla',
+      nowDoAssignment: 'Yaklaşan ödevin var',
+      nowDoExam: '{{n}} sınav seni bekliyor',
+      nowDoExercise: '{{n}} egzersiz tamamlanmayı bekliyor',
+      nowDoContinue: 'Kaldığın yerden devam et',
+      nowDoFallback: 'Çalışma merkezinden pratik yap',
+      seeAllCourses: 'Tüm dersler',
     },
     EN: {
-      welcome: "Welcome Back",
-      continueLesson: "Continue Lesson",
-      lastTopic: "Last Topic",
-      myCourses: "My Courses",
-      upcomingTasks: "Upcoming Tasks",
-      noPendingTasks: "No pending assignments",
-      kidBuddyLine: "Let’s keep the math adventure going!",
-      kidTodayTitle: "Today’s missions",
-      kidTasksProgress: "{{done}} / {{total}} tasks done",
-      guide: "User guide",
-      progressToday: "Today {{xp}} XP",
-      streakLabel: "{{n}}-day streak",
-      streakFresh: "Start a streak",
-      weeklyGoalTitle: "Weekly goal",
-      weeklyGoalSub: "{{cur}} / {{target}} XP",
-      weeklyGoalDone: "Weekly XP goal done!",
-      kidMissionQuiz: "Quizzes",
-      kidMissionQuizHint: "Try what you learned",
-      kidMissionQuizHintOpen: "{{n}} quiz available",
-      kidPracticePendingHint: "{{n}} practice(s) waiting",
-      kidGoalsTitle: "Daily goals",
-      goalXp: "Earn XP today",
-      goalXpSub: "{{cur}} / {{target}} XP (daily log, UTC)",
-      goalXpDone: "You hit today's XP goal!",
-      goalExercise: "Finish a practice",
-      goalExerciseSubDone: "You completed a practice today.",
-      goalExerciseSubTodo: "Open the study hub",
-      goalExam: "Take a quiz",
-      goalExamSubDone: "You submitted a quiz today.",
-      goalExamSubTodo: "Try a class quiz",
-      goalNavExercise: "Study hub",
-      goalNavQuiz: "Quizzes",
-      goalDoneBadge: "Done",
-      kidContinueFallback: "Continue from your courses",
-      coursesEmptyTitle: "Topics are on the way",
+      welcome: 'Welcome Back',
+      myCourses: 'My Courses',
+      upcomingTasks: 'Upcoming Tasks',
+      noPendingTasks: 'No pending assignments',
+      kidBuddyLine: 'Let’s keep the math adventure going!',
+      kidTasksProgress: '{{done}} / {{total}} tasks',
+      guide: 'Guide',
+      progressToday: 'Today {{xp}} XP',
+      streakLabel: '{{n}}-day streak',
+      streakFresh: 'Start a streak',
+      weeklyGoalTitle: 'Weekly',
+      weeklyGoalSub: '{{cur}} / {{target}} XP',
+      weeklyGoalDone: 'Weekly goal done',
+      kidMissionQuizHint: 'Try what you learned',
+      goalXpSub: '{{cur}} / {{target}} XP',
+      goalExerciseSubTodo: 'Open the study hub',
+      kidContinueFallback: 'Continue from your courses',
+      coursesEmptyTitle: 'Topics are on the way',
       coursesEmptyHint: "Your teacher's topics will show here.",
-      goCourses: "Go to my courses",
-      nowDoTitle: "Do this next",
-      nowDoCta: "Start",
-      nowDoAssignment: "You have an upcoming assignment",
-      nowDoExam: "{{n}} quiz(zes) waiting",
-      nowDoExercise: "{{n}} practice(s) still open",
-      nowDoContinue: "Pick up where you left off",
-      nowDoFallback: "Practice in the study hub",
-      seeAllCourses: "All courses",
-    }
+      goCourses: 'Go to my courses',
+      nowDoTitle: 'Do this next',
+      nowDoCta: 'Start',
+      nowDoAssignment: 'You have an upcoming assignment',
+      nowDoExam: '{{n}} quiz(zes) waiting',
+      nowDoExercise: '{{n}} practice(s) still open',
+      nowDoContinue: 'Pick up where you left off',
+      nowDoFallback: 'Practice in the study hub',
+      seeAllCourses: 'All courses',
+    },
   };
 
   const fill = (str, vars) =>
@@ -281,7 +243,7 @@ const StudentHome = () => {
 
   const getText = (key) => t[language]?.[key] || t.TR[key];
 
-  const firstPendingAssignment = assignments.find((t) => !t.completed);
+  const firstPendingAssignment = assignments.find((task) => !task.completed);
   const assignmentHint = firstPendingAssignment
     ? `${firstPendingAssignment.title}${firstPendingAssignment.due ? ` · ${firstPendingAssignment.due}` : ''}`
     : null;
@@ -295,69 +257,27 @@ const StudentHome = () => {
   }).length;
 
   const openExamCount = examsForClass.filter(
-    (ex) => !(ex.results || []).some((r) => String(r.studentId) === String(uid))
+    (ex) => !(ex.results || []).some((r) => String(r.studentId) === String(uid)),
   ).length;
 
-  const exerciseCompletedToday =
-    exercisesForClass.some((ex) => {
-      const prog = ex.studentProgress;
-      return prog?.status === 'completed' && sameUtcDay(prog.completedAt, utcKey);
-    });
+  const exerciseCompletedToday = exercisesForClass.some((ex) => {
+    const prog = ex.studentProgress;
+    return prog?.status === 'completed' && sameUtcDay(prog.completedAt, utcKey);
+  });
 
-  const examCompletedToday =
-    examsForClass.some((ex) =>
-      (ex.results || []).some(
-        (r) => String(r.studentId) === String(uid) && sameUtcDay(r.submittedAt, utcKey)
-      )
-    );
+  const examCompletedToday = examsForClass.some((ex) =>
+    (ex.results || []).some(
+      (r) => String(r.studentId) === String(uid) && sameUtcDay(r.submittedAt, utcKey),
+    ),
+  );
 
   const goalXpMet = todayXpUtc >= XP_GOAL_TODAY;
   const weekGoalMet = weekXp >= weeklyGoal;
   const weekPct = Math.min(100, Math.round((weekXp / Math.max(weeklyGoal, 1)) * 100));
-
-  const continueCardHint =
-    assignmentHint ||
-    (incompleteExerciseCount > 0
-      ? fill(getText('kidPracticePendingHint'), { n: incompleteExerciseCount })
-      : null);
-
-  const kidMissions = [
-    {
-      titleKey: 'continueLesson',
-      path: continueLearning.lessonId ? `/student/lesson/${continueLearning.lessonId}` : '/student/courses',
-      Icon: Play,
-      accent: 'from-amber-400 to-orange-500',
-      hintFromTopic: true,
-    },
-    { titleKey: 'kidMissionQuiz', hintKey: 'kidMissionQuizHint', path: '/student/quizzes', Icon: Star, accent: 'from-teal-400 to-emerald-500' },
-    { titleKey: 'goalExercise', hintKey: 'goalExerciseSubTodo', path: '/student/exercises', Icon: Dumbbell, accent: 'from-sky-400 to-teal-500' },
-  ];
-
-  const missionSubtitle = (m) => {
-    if (m.hintFromTopic) {
-      return continueCardHint || continueLearning.topic || getText('kidContinueFallback');
-    }
-    if (m.path === '/student/quizzes') {
-      return openExamCount > 0
-        ? fill(getText('kidMissionQuizHintOpen'), { n: openExamCount })
-        : getText(m.hintKey);
-    }
-    if (m.path === '/student/exercises') {
-      return incompleteExerciseCount > 0
-        ? fill(getText('kidPracticePendingHint'), { n: incompleteExerciseCount })
-        : getText(m.hintKey);
-    }
-    return getText(m.hintKey);
-  };
+  const todayXpPct = Math.min(100, Math.round((todayXpUtc / Math.max(XP_GOAL_TODAY, 1)) * 100));
 
   const tasksDoneCount = [goalXpMet, exerciseCompletedToday, examCompletedToday].filter(Boolean).length;
   const tasksTotal = 3;
-
-  const isMissionDone = (m) => {
-    if (m.path === '/student/quizzes') return examCompletedToday;
-    if (m.path === '/student/exercises') return exerciseCompletedToday;
-    return false;
-  };
 
   const primaryNext = useMemo(() => {
     if (firstPendingAssignment) {
@@ -407,6 +327,7 @@ const StudentHome = () => {
   ]);
 
   const firstName = profile.name?.split(' ')[0] || 'Öğrenci';
+  const pendingAssignments = assignments.filter((task) => !task.completed).slice(0, 3);
 
   return (
     <StudentPageShell
@@ -416,33 +337,33 @@ const StudentHome = () => {
         <button
           type="button"
           onClick={() => setIsGuideOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl min-h-[44px] px-4 bg-white dark:bg-slate-800 border border-sky-200 dark:border-slate-600 text-slate-800 dark:text-slate-100 text-sm font-bold hover:bg-sky-50 dark:hover:bg-slate-700 shadow-sm"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-200 min-h-[44px] px-1"
         >
-          <CircleHelp size={18} aria-hidden />
+          <CircleHelp size={16} aria-hidden />
           {getText('guide')}
         </button>
       )}
     >
       <section
         aria-label={getText('nowDoTitle')}
-        className="rounded-2xl border border-teal-200/80 dark:border-teal-800/50 bg-gradient-to-r from-teal-50 via-white to-sky-50 dark:from-teal-950/40 dark:via-slate-800 dark:to-slate-800 p-4 sm:p-5 shadow-sm"
+        className="rounded-2xl border border-teal-200/70 dark:border-teal-800/40 bg-gradient-to-r from-teal-50/90 via-white to-sky-50/80 dark:from-teal-950/30 dark:via-slate-800 dark:to-slate-800 p-5 sm:p-6"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-          <div className="min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-5 justify-between">
+          <div className="min-w-0 space-y-1.5">
             <p className="text-[10px] font-black uppercase tracking-widest text-teal-700 dark:text-teal-300">
               {getText('nowDoTitle')}
             </p>
-            <h2 className="font-display text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mt-1 truncate">
+            <h2 className="font-display text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white truncate">
               {primaryNext.title}
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
+            <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">
               {primaryNext.detail}
             </p>
           </div>
           <button
             type="button"
             onClick={() => navigate(primaryNext.path)}
-            className="inline-flex items-center justify-center gap-2 shrink-0 min-h-[48px] px-6 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700 shadow-sm"
+            className="inline-flex items-center justify-center gap-2 shrink-0 min-h-[48px] px-7 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2"
           >
             {getText('nowDoCta')}
             <ArrowRight size={18} aria-hidden />
@@ -451,52 +372,42 @@ const StudentHome = () => {
       </section>
 
       <section
-        aria-label={getText('kidTodayTitle')}
-        className="rounded-2xl border border-sky-200/70 dark:border-slate-600 bg-white/90 dark:bg-slate-800/90 shadow-sm p-5 sm:p-6"
+        aria-label={fill(getText('kidTasksProgress'), { done: tasksDoneCount, total: tasksTotal })}
+        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6 px-1"
       >
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <h2 className="text-lg font-extrabold text-slate-800 dark:text-white">
-            {getText('kidTodayTitle')}
-          </h2>
-          <span className="text-sm font-semibold text-teal-700 dark:text-teal-300">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 min-w-0">
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-800 dark:text-amber-200">
+            <Flame size={15} className="text-amber-500 shrink-0" aria-hidden />
+            {streakDays > 0
+              ? fill(getText('streakLabel'), { n: streakDays })
+              : getText('streakFresh')}
+          </span>
+          <span className="text-sm text-slate-600 dark:text-slate-300">
+            {fill(getText('progressToday'), { xp: todayXpUtc })}
+            {!goalXpMet && (
+              <span className="text-slate-400 dark:text-slate-500">
+                {' · '}
+                {fill(getText('goalXpSub'), { cur: todayXpUtc, target: XP_GOAL_TODAY })}
+              </span>
+            )}
+          </span>
+          <span className="inline-flex items-center rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 text-xs font-bold px-2.5 py-1">
             {fill(getText('kidTasksProgress'), { done: tasksDoneCount, total: tasksTotal })}
           </span>
         </div>
-        <div
-          className="h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden mb-4"
-          role="progressbar"
-          aria-valuenow={tasksDoneCount}
-          aria-valuemin={0}
-          aria-valuemax={tasksTotal}
-          aria-label={fill(getText('kidTasksProgress'), { done: tasksDoneCount, total: tasksTotal })}
-        >
-          <div
-            className="h-full bg-gradient-to-r from-amber-400 to-teal-500 transition-all duration-500"
-            style={{ width: `${Math.round((tasksDoneCount / tasksTotal) * 100)}%` }}
-          />
-        </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-          {fill(getText('progressToday'), { xp: todayXpUtc })}
-          {!goalXpMet && ` · ${fill(getText('goalXpSub'), { cur: todayXpUtc, target: XP_GOAL_TODAY })}`}
-        </p>
-        <div className="mb-4 rounded-xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/20 px-3 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-amber-800 dark:text-amber-200">
-              <Flame size={16} className="text-amber-500" aria-hidden />
-              {streakDays > 0
-                ? fill(getText('streakLabel'), { n: streakDays })
-                : getText('streakFresh')}
+        <div className="flex-1 max-w-xs min-w-[10rem]">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              {getText('weeklyGoalTitle')}
             </span>
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-              {getText('weeklyGoalTitle')}
-              {' · '}
               {weekGoalMet
                 ? getText('weeklyGoalDone')
                 : fill(getText('weeklyGoalSub'), { cur: weekXp, target: weeklyGoal })}
             </span>
           </div>
           <div
-            className="h-2 rounded-full bg-white/80 dark:bg-slate-800 overflow-hidden"
+            className="h-1.5 rounded-full bg-slate-200/80 dark:bg-slate-700 overflow-hidden"
             role="progressbar"
             aria-valuenow={weekXp}
             aria-valuemin={0}
@@ -505,49 +416,36 @@ const StudentHome = () => {
           >
             <div
               className={`h-full transition-all duration-500 ${
-                weekGoalMet ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-400 to-teal-500'
+                weekGoalMet ? 'bg-emerald-500' : 'bg-teal-500'
               }`}
               style={{ width: `${weekPct}%` }}
             />
           </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {kidMissions.map((m) => {
-            const done = isMissionDone(m);
-            const Icon = m.Icon;
-            return (
-              <button
-                key={m.titleKey}
-                type="button"
-                onClick={() => navigate(m.path)}
-                className={`relative text-left rounded-2xl min-h-[5rem] p-4 text-white shadow-md bg-gradient-to-br ${m.accent} hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-amber-200/80 dark:focus:ring-slate-500 transition-all active:scale-[0.98] ${done ? 'ring-2 ring-emerald-300/80' : ''}`}
-              >
-                {done && (
-                  <span className="absolute top-3 right-3 inline-flex items-center justify-center rounded-full bg-white/25 p-1" aria-hidden>
-                    <CheckCircle size={18} className="text-white" />
-                  </span>
-                )}
-                <Icon size={22} className="mb-2 opacity-95" aria-hidden />
-                <span className="font-bold text-base leading-tight block">{getText(m.titleKey)}</span>
-                <span className="text-xs text-white/90 font-medium line-clamp-2 mt-1">{missionSubtitle(m)}</span>
-              </button>
-            );
-          })}
+          <div
+            className="sr-only"
+            role="progressbar"
+            aria-valuenow={todayXpUtc}
+            aria-valuemin={0}
+            aria-valuemax={XP_GOAL_TODAY}
+            aria-label={fill(getText('goalXpSub'), { cur: todayXpUtc, target: XP_GOAL_TODAY })}
+          >
+            {todayXpPct}%
+          </div>
         </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-              <BookOpen size={22} className="text-teal-600 dark:text-teal-400" aria-hidden />
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <BookOpen size={20} className="text-teal-600 dark:text-teal-400" aria-hidden />
               {getText('myCourses')}
             </h2>
             {courses.length > 2 ? (
               <button
                 type="button"
                 onClick={() => navigate('/student/courses')}
-                className="text-sm font-bold text-teal-700 dark:text-teal-300 hover:underline"
+                className="text-sm font-semibold text-teal-700 dark:text-teal-300 hover:underline"
               >
                 {getText('seeAllCourses')}
               </button>
@@ -567,7 +465,7 @@ const StudentHome = () => {
                 />
               ))
             ) : (
-              <div className="sm:col-span-2 rounded-2xl border-2 border-dashed border-sky-200 dark:border-slate-600 p-8 text-center bg-white/70 dark:bg-slate-800/50">
+              <div className="sm:col-span-2 rounded-2xl border border-dashed border-sky-200 dark:border-slate-600 p-8 text-center bg-white/50 dark:bg-slate-800/40">
                 <p className="font-bold text-slate-800 dark:text-white">{getText('coursesEmptyTitle')}</p>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{getText('coursesEmptyHint')}</p>
                 <button
@@ -582,25 +480,24 @@ const StudentHome = () => {
           </div>
         </div>
 
-        <div className="space-y-6">
-          <WeakTopicsInsightCard
-            compact
-            showPractice
-            onGoHub={() => navigate('/student/exercises')}
-          />
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
+        <div className="space-y-8">
+          <div>
             <h3 className="font-bold text-base text-slate-800 dark:text-white mb-3 flex items-center gap-2">
               <Clock size={18} className="text-orange-500" aria-hidden />
               {getText('upcomingTasks')}
             </h3>
             <div className="space-y-2">
-              {assignments.filter((task) => !task.completed).slice(0, 3).length > 0 ? (
-                assignments.filter((task) => !task.completed).slice(0, 3).map((task) => (
+              {pendingAssignments.length > 0 ? (
+                pendingAssignments.map((task) => (
                   <button
                     key={task.id}
                     type="button"
                     onClick={() => navigate('/student/assignments')}
-                    className={`w-full text-left p-3 rounded-xl border-l-4 min-h-[44px] ${task.urgent ? 'border-l-rose-500 bg-rose-50/50 dark:bg-rose-900/10' : 'border-l-teal-500 bg-slate-50 dark:bg-slate-700/50'} hover:bg-sky-50/80 dark:hover:bg-slate-600/50 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400`}
+                    className={`w-full text-left p-3 rounded-xl border-l-4 min-h-[44px] ${
+                      task.urgent
+                        ? 'border-l-rose-500 bg-rose-50/40 dark:bg-rose-900/10'
+                        : 'border-l-teal-500 bg-white/70 dark:bg-slate-800/60'
+                    } hover:bg-sky-50/80 dark:hover:bg-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400`}
                   >
                     <p className="font-semibold text-sm text-slate-800 dark:text-slate-200">{task.title}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{task.due}</p>
@@ -611,6 +508,11 @@ const StudentHome = () => {
               )}
             </div>
           </div>
+          <WeakTopicsInsightCard
+            compact
+            showPractice
+            onGoHub={() => navigate('/student/exercises')}
+          />
         </div>
       </div>
       <GuideDrawer audience="student" open={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
