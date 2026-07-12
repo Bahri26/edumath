@@ -16,6 +16,7 @@ import Chatbox from '../components/ui/Chatbox';
 import SkipLink from '../components/ui/SkipLink';
 import { useTheme } from '../context/ThemeContext';
 import { getHomePathForRole } from '../utils/roleRoutes';
+import { absolutePublicUrl, getPublicSiteUrl } from '../utils/siteUrl';
 
 // Veriyi İçe Aktar
 import { translations } from '../data/translations';
@@ -26,6 +27,16 @@ import {
   writeStoredLanguage,
 } from '../i18n/locale';
 
+const upsertJsonLd = (data) => {
+  let script = document.head.querySelector('script[data-matova-jsonld="org"]');
+  if (!script) {
+    script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.setAttribute('data-matova-jsonld', 'org');
+    document.head.appendChild(script);
+  }
+  script.textContent = JSON.stringify(data);
+};
 const LandingPage = () => {
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -111,7 +122,8 @@ const LandingPage = () => {
           htmlLang: 'en',
         };
 
-    const baseUrl = (import.meta.env.VITE_PUBLIC_SITE_URL && String(import.meta.env.VITE_PUBLIC_SITE_URL).replace(/\/$/, '')) || window.location.origin;
+    const baseUrl = getPublicSiteUrl();
+    const ogImage = absolutePublicUrl('/og-image.png');
 
     document.title = metadata.title;
     document.documentElement.lang = metadata.htmlLang;
@@ -120,10 +132,22 @@ const LandingPage = () => {
     upsertMeta('meta[property="og:title"]', 'content', metadata.ogTitle);
     upsertMeta('meta[property="og:description"]', 'content', metadata.ogDescription);
     upsertMeta('meta[property="og:url"]', 'content', `${baseUrl}/`);
+    upsertMeta('meta[property="og:image"]', 'content', ogImage);
     upsertMeta('meta[property="og:locale"]', 'content', metadata.locale);
     upsertMeta('meta[name="twitter:title"]', 'content', metadata.ogTitle);
     upsertMeta('meta[name="twitter:description"]', 'content', metadata.ogDescription);
+    upsertMeta('meta[name="twitter:image"]', 'content', ogImage);
     updateCanonical(`${baseUrl}/`);
+    upsertJsonLd({
+      '@context': 'https://schema.org',
+      '@type': 'EducationalOrganization',
+      name: 'Matova',
+      url: `${baseUrl}/`,
+      logo: absolutePublicUrl('/icon-512.png'),
+      image: ogImage,
+      description: metadata.description,
+      sameAs: [],
+    });
   }, [lang]);
 
   // Login Başarılı Olduğunda Yönlendirme

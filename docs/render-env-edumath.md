@@ -123,7 +123,7 @@ Service account yeterliyse OAuth gerekmez. Kişisel Drive için:
 |------------|--------|
 | `VITE_API_URL` | `https://edumath-t10n.onrender.com` |
 | `VITE_SENTRY_DSN` | Opsiyonel |
-| `VITE_PUBLIC_SITE_URL` | `https://edumath-client.onrender.com` |
+| `VITE_PUBLIC_SITE_URL` | `https://edumath-client.onrender.com` (OG/canonical; `matova.app` olunca güncelle) |
 
 Drive kullanıldığında `VITE_ASSET_BASE_URL` **gerekmez**.
 

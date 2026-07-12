@@ -10,6 +10,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { translations } from '../data/translations';
 import { getHomePathForRole } from '../utils/roleRoutes';
+import { absolutePublicUrl } from '../utils/siteUrl';
 import { QUICK_GUIDE } from '../data/quickGuideContent';
 import QuickGuideBlockList from '../components/help/QuickGuideBlockList.jsx';
 
@@ -256,7 +257,8 @@ const AudienceLandingPage = ({ audience }) => {
 
   useEffect(() => {
     const pageTitle = `Matova | ${content.title}`;
-    const canonicalUrl = `${window.location.origin}${canonicalPath}`;
+    const canonicalUrl = absolutePublicUrl(canonicalPath);
+    const ogImage = absolutePublicUrl('/og-image.png');
 
     document.title = pageTitle;
     document.documentElement.lang = lang;
@@ -265,9 +267,11 @@ const AudienceLandingPage = ({ audience }) => {
     upsertMeta('meta[property="og:title"]', 'content', pageTitle);
     upsertMeta('meta[property="og:description"]', 'content', content.seoDescription);
     upsertMeta('meta[property="og:url"]', 'content', canonicalUrl);
+    upsertMeta('meta[property="og:image"]', 'content', ogImage);
     upsertMeta('meta[property="og:locale"]', 'content', lang === 'tr' ? 'tr_TR' : 'en_US');
     upsertMeta('meta[name="twitter:title"]', 'content', pageTitle);
     upsertMeta('meta[name="twitter:description"]', 'content', content.seoDescription);
+    upsertMeta('meta[name="twitter:image"]', 'content', ogImage);
     updateCanonical(canonicalUrl);
     upsertJsonLd({
       '@context': 'https://schema.org',
@@ -275,8 +279,12 @@ const AudienceLandingPage = ({ audience }) => {
       name: pageTitle,
       description: content.seoDescription,
       url: canonicalUrl,
-      about: audience,
-      inLanguage: lang,
+      isPartOf: {
+        '@type': 'WebSite',
+        name: 'Matova',
+        url: absolutePublicUrl('/'),
+      },
+      primaryImageOfPage: ogImage,
     });
   }, [audience, canonicalPath, content.seoDescription, content.title, lang]);
 
