@@ -85,7 +85,7 @@ export default function StudentExercisePlayer() {
     if (timeLeft == null || finished) return undefined;
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1) {
+        if (prev == null || prev <= 1) {
           clearInterval(timerRef.current);
           return 0;
         }
@@ -93,7 +93,8 @@ export default function StudentExercisePlayer() {
       });
     }, 1000);
     return () => clearInterval(timerRef.current);
-  }, [timeLeft, finished, exercise]);
+    // Only (re)start when exercise loads / finish toggles — not every tick.
+  }, [finished, exercise?.timeLimit]);
 
   useEffect(() => {
     if (timeLeft === 0 && exercise && !finished && !submitting) {
@@ -107,7 +108,9 @@ export default function StudentExercisePlayer() {
     const saved = answers[currentQ._id];
     setDraftAnswer(saved?.answer ?? saved ?? '');
     resetQuestionTimer();
-  }, [currentIndex, currentQ, answers, resetQuestionTimer]);
+    // Intentionally omit `answers` — updating it after check must not reset draft.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex, currentQ?._id, resetQuestionTimer]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -119,6 +122,18 @@ export default function StudentExercisePlayer() {
     if (!currentQ || !exercise) return { key: 'default' };
     return getExercisePlayPresentation(currentQ, currentIndex, exercise.playTransform);
   }, [currentQ, currentIndex, exercise]);
+
+  // Must stay above early returns — conditional hooks trigger React #310.
+  const questionImageAlt = useMemo(() => {
+    if (!currentQ) return t('exercisePlayer.questionImageAlt');
+    const snippet = String(currentQ.text || currentQ.topic || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 100);
+    return snippet
+      ? `${t('exercisePlayer.questionImageAlt')}: ${snippet}`
+      : t('exercisePlayer.questionImageAlt');
+  }, [currentQ, t]);
 
   const handleFinish = async () => {
     if (submitting) return;
@@ -365,17 +380,6 @@ export default function StudentExercisePlayer() {
   }
 
   const progress = questions.length ? Math.round(((currentIndex + (isAnswered ? 1 : 0)) / questions.length) * 100) : 0;
-
-  const questionImageAlt = useMemo(() => {
-    if (!currentQ) return t('exercisePlayer.questionImageAlt');
-    const snippet = String(currentQ.text || currentQ.topic || '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 100);
-    return snippet
-      ? `${t('exercisePlayer.questionImageAlt')}: ${snippet}`
-      : t('exercisePlayer.questionImageAlt');
-  }, [currentQ, t]);
 
   return (
     <StudentPageShell
