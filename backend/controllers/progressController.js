@@ -2,6 +2,39 @@ const Progress = require('../models/Progress');
 const LearningEvent = require('../models/LearningEvent');
 const UserProgress = require('../models/UserProgress');
 
+const DEFAULT_DAILY_XP_GOAL = 30;
+const DEFAULT_WEEKLY_XP_GOAL = 100;
+
+function utcDayKey(date = new Date()) {
+  return new Date(date).toISOString().slice(0, 10);
+}
+
+/** İki UTC gün anahtarı arasındaki gün farkı (b - a) */
+function utcDayDiff(fromKey, toKey) {
+  const a = Date.parse(`${fromKey}T00:00:00.000Z`);
+  const b = Date.parse(`${toKey}T00:00:00.000Z`);
+  return Math.round((b - a) / 86400000);
+}
+
+function applyStreakOnActivity(progress, now = new Date()) {
+  const today = utcDayKey(now);
+  const last = progress.lastActive ? utcDayKey(progress.lastActive) : null;
+  if (!last) {
+    progress.streak = 1;
+  } else {
+    const gap = utcDayDiff(last, today);
+    if (gap === 0) {
+      if (!progress.streak || progress.streak < 1) progress.streak = 1;
+    } else if (gap === 1) {
+      progress.streak = (progress.streak || 0) + 1;
+    } else if (gap > 1) {
+      progress.streak = 1;
+    }
+  }
+  progress.lastActive = now;
+  return progress;
+}
+
 exports.getMyProgress = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -18,23 +51,14 @@ exports.addXP = async (req, res, next) => {
     let p = await Progress.findOne({ userId });
     const now = new Date();
     if (!p) {
-      p = await Progress.create({ userId, xp: 0, streak: 0, lastActive: now });
+      p = await Progress.create({ userId, xp: 0, streak: 0, lastActive: null });
     }
-    // Streak logic: if lastActive was yesterday, increment; if older than 1 day gap, reset
-    if (p.lastActive) {
-      const days = Math.floor((now - p.lastActive) / (1000*60*60*24));
-      if (days === 1) p.streak += 1; else if (days > 1) p.streak = 1; // first day back
-    } else {
-      p.streak = 1;
-    }
-    p.lastActive = now;
+    applyStreakOnActivity(p, now);
     p.xp += xp;
-    // Basic skill point accumulation + mastery update
     const skill = p.skills.find(s => s.subject === subject && (s.topic || '') === (topic || ''));
     if (skill) {
       skill.points += xp;
       skill.lastUpdated = now;
-      // mastery hesaplaması: basit eşik, her 100 puanda seviye, yüzdelik kalan
       const level = Math.floor(skill.points / 100) + 1;
       const mastery = Math.min(100, Math.round((skill.points % 100)));
       skill.level = level;
@@ -45,7 +69,6 @@ exports.addXP = async (req, res, next) => {
       const mastery = Math.min(100, Math.round(points % 100));
       p.skills.push({ subject, topic, level, points, mastery, lastUpdated: now });
     }
-    // LearningEvent kaydı (xp)
     await LearningEvent.create({ userId, type: 'xp', subject, topic, xp, meta: { source: 'addXP' } });
     await p.save();
     res.json({ success: true, data: p });
@@ -66,7 +89,6 @@ exports.getLeaderboard = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-// Öğrencinin beceri/ustalık özetini getirir
 exports.getSkills = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -84,7 +106,6 @@ exports.getSkills = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-// Son X gün için günlük XP trendleri
 exports.getTrends = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -103,24 +124,38 @@ exports.getTrends = async (req, res, next) => {
     ];
 
     const raw = await LearningEvent.aggregate(pipeline);
-    // Günleri doldur (eksik günler 0)
     const map = new Map(raw.map(r => [r._id, r.totalXp]));
     const out = [];
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
-      const key = d.toISOString().slice(0,10);
+      const key = d.toISOString().slice(0, 10);
       out.push({ day: key, xp: map.get(key) || 0 });
     }
 
     const p = await Progress.findOne({ userId });
-    res.json({ success: true, data: { streak: p?.streak || 0, days: out } });
+    const weekSlice = out.slice(-7);
+    const weekXp = weekSlice.reduce((sum, d) => sum + Number(d.xp || 0), 0);
+    const activeDaysThisWeek = weekSlice.filter((d) => Number(d.xp || 0) > 0).length;
+    const dailyGoal = Number(p?.dailyGoal) > 0 ? Number(p.dailyGoal) : DEFAULT_DAILY_XP_GOAL;
+    const weeklyGoal = Math.max(DEFAULT_WEEKLY_XP_GOAL, dailyGoal * 5);
+
+    res.json({
+      success: true,
+      data: {
+        streak: p?.streak || 0,
+        days: out,
+        weekXp,
+        weeklyGoal,
+        dailyGoal,
+        activeDaysThisWeek,
+      },
+    });
   } catch (e) {
     console.error('getTrends error:', e);
     next(e);
   }
 };
 
-// Ders quiz ilerlemesi (konu ağacı / derslerim kartları)
 exports.getLessonProgress = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -133,7 +168,6 @@ exports.getLessonProgress = async (req, res, next) => {
   }
 };
 
-// Genel öğrenme olayı kaydı (ipucu, yanlış türü vb.)
 exports.logEvent = async (req, res, next) => {
   try {
     const userId = req.user.id;

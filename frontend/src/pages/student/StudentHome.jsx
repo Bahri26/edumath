@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Clock, BookOpen, CircleHelp, Play, Star, Dumbbell, ArrowRight } from 'lucide-react';
+import { CheckCircle, Clock, BookOpen, CircleHelp, Play, Star, Dumbbell, ArrowRight, Flame } from 'lucide-react';
 import { studentProfile as staticProfile } from '../../data/studentData';
 import CourseCard from '../../components/ui/CourseCard';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';
@@ -26,6 +26,7 @@ const sameUtcDay = (d, utcKey) => {
 };
 
 const XP_GOAL_TODAY = 25;
+const WEEKLY_XP_FALLBACK = 100;
 
 const StudentHome = () => {
   const navigate = useNavigate();
@@ -37,6 +38,9 @@ const StudentHome = () => {
   const [assignments, setAssignments] = useState([]);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [todayXpUtc, setTodayXpUtc] = useState(0);
+  const [streakDays, setStreakDays] = useState(0);
+  const [weekXp, setWeekXp] = useState(0);
+  const [weeklyGoal, setWeeklyGoal] = useState(WEEKLY_XP_FALLBACK);
   const [examsForClass, setExamsForClass] = useState([]);
   const [exercisesForClass, setExercisesForClass] = useState([]);
 
@@ -119,11 +123,21 @@ const StudentHome = () => {
         const days = trendPayload?.days || [];
         const todayEntry = Array.isArray(days) ? days.find((d) => d.day === utcKey) : null;
         setTodayXpUtc(Number(todayEntry?.xp ?? 0));
+        setStreakDays(Number(trendPayload?.streak ?? 0));
+        const computedWeek =
+          Number(trendPayload?.weekXp) ||
+          (Array.isArray(days)
+            ? days.slice(-7).reduce((sum, d) => sum + Number(d.xp || 0), 0)
+            : 0);
+        setWeekXp(computedWeek);
+        setWeeklyGoal(Number(trendPayload?.weeklyGoal) > 0 ? Number(trendPayload.weeklyGoal) : WEEKLY_XP_FALLBACK);
       } catch {
         if (!cancelled) {
           setExamsForClass([]);
           setExercisesForClass([]);
           setTodayXpUtc(0);
+          setStreakDays(0);
+          setWeekXp(0);
         }
       }
     };
@@ -176,6 +190,11 @@ const StudentHome = () => {
       kidTasksProgress: "{{done}} / {{total}} görev tamamlandı",
       guide: "Kullanım kılavuzu",
       progressToday: "Bugün {{xp}} XP",
+      streakLabel: "{{n}} gün seri",
+      streakFresh: "Seriyi başlat",
+      weeklyGoalTitle: "Haftalık hedef",
+      weeklyGoalSub: "{{cur}} / {{target}} XP",
+      weeklyGoalDone: "Haftalık XP hedefin tamam!",
       kidMissionQuiz: "Sınavlar",
       kidMissionQuizHint: "Bilgini dene",
       kidMissionQuizHintOpen: "{{n}} sınav açık",
@@ -218,6 +237,11 @@ const StudentHome = () => {
       kidTasksProgress: "{{done}} / {{total}} tasks done",
       guide: "User guide",
       progressToday: "Today {{xp}} XP",
+      streakLabel: "{{n}}-day streak",
+      streakFresh: "Start a streak",
+      weeklyGoalTitle: "Weekly goal",
+      weeklyGoalSub: "{{cur}} / {{target}} XP",
+      weeklyGoalDone: "Weekly XP goal done!",
       kidMissionQuiz: "Quizzes",
       kidMissionQuizHint: "Try what you learned",
       kidMissionQuizHintOpen: "{{n}} quiz available",
@@ -288,6 +312,8 @@ const StudentHome = () => {
     );
 
   const goalXpMet = todayXpUtc >= XP_GOAL_TODAY;
+  const weekGoalMet = weekXp >= weeklyGoal;
+  const weekPct = Math.min(100, Math.round((weekXp / Math.max(weeklyGoal, 1)) * 100));
 
   const continueCardHint =
     assignmentHint ||
@@ -449,10 +475,42 @@ const StudentHome = () => {
             style={{ width: `${Math.round((tasksDoneCount / tasksTotal) * 100)}%` }}
           />
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
           {fill(getText('progressToday'), { xp: todayXpUtc })}
           {!goalXpMet && ` · ${fill(getText('goalXpSub'), { cur: todayXpUtc, target: XP_GOAL_TODAY })}`}
         </p>
+        <div className="mb-4 rounded-xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/20 px-3 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-amber-800 dark:text-amber-200">
+              <Flame size={16} className="text-amber-500" aria-hidden />
+              {streakDays > 0
+                ? fill(getText('streakLabel'), { n: streakDays })
+                : getText('streakFresh')}
+            </span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+              {getText('weeklyGoalTitle')}
+              {' · '}
+              {weekGoalMet
+                ? getText('weeklyGoalDone')
+                : fill(getText('weeklyGoalSub'), { cur: weekXp, target: weeklyGoal })}
+            </span>
+          </div>
+          <div
+            className="h-2 rounded-full bg-white/80 dark:bg-slate-800 overflow-hidden"
+            role="progressbar"
+            aria-valuenow={weekXp}
+            aria-valuemin={0}
+            aria-valuemax={weeklyGoal}
+            aria-label={fill(getText('weeklyGoalSub'), { cur: weekXp, target: weeklyGoal })}
+          >
+            <div
+              className={`h-full transition-all duration-500 ${
+                weekGoalMet ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-400 to-teal-500'
+              }`}
+              style={{ width: `${weekPct}%` }}
+            />
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {kidMissions.map((m) => {
             const done = isMissionDone(m);

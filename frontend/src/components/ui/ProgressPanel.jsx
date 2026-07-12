@@ -7,6 +7,8 @@ const ProgressPanel = ({ days = 14 }) => {
   const [error, setError] = useState(null);
   const [xp, setXp] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [weekXp, setWeekXp] = useState(0);
+  const [weeklyGoal, setWeeklyGoal] = useState(100);
   const [skills, setSkills] = useState([]);
   const [trends, setTrends] = useState([]);
 
@@ -22,6 +24,8 @@ const ProgressPanel = ({ days = 14 }) => {
         setStreak(me?.streak || tr?.streak || 0);
         setSkills(sk?.skills || []);
         setTrends(tr?.days || []);
+        setWeekXp(Number(tr?.weekXp) || 0);
+        setWeeklyGoal(Number(tr?.weeklyGoal) || 100);
       } catch (err) {
         setError(err?.response?.data?.message || err.message || 'Yükleme hatası');
       } finally {
@@ -51,8 +55,12 @@ const ProgressPanel = ({ days = 14 }) => {
           <div className="flex items-center gap-2 text-slate-500"><Flame size={18} /> Streak</div>
           <div className="text-2xl font-bold">{streak} gün</div>
         </div>
-        <div className="p-4 rounded-xl border bg-white dark:bg-slate-900 col-span-2">
-          <div className="flex items-center gap-2 text-slate-500"><TrendingUp size={18} /> Son {days} gün XP</div>
+        <div className="p-4 rounded-xl border bg-white dark:bg-slate-900">
+          <div className="flex items-center gap-2 text-slate-500"><TrendingUp size={18} /> Haftalık XP</div>
+          <div className="text-2xl font-bold">{weekXp}<span className="text-sm font-medium text-slate-400"> / {weeklyGoal}</span></div>
+        </div>
+        <div className="p-4 rounded-xl border bg-white dark:bg-slate-900 col-span-2 md:col-span-1">
+          <div className="flex items-center gap-2 text-slate-500"><TrendingUp size={18} /> Son {days} gün</div>
           <div className="mt-2 flex items-end gap-1 h-20">
             {trends.map((d) => (
               <div key={d.day} title={`${d.day}: ${d.xp}`} className="bg-teal-500/70 w-2 rounded" style={{ height: Math.min(100, d.xp) + '%' }} />
