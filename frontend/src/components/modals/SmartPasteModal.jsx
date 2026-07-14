@@ -14,11 +14,43 @@ const stripDiagramPlaceholder = (text) =>
 const buildCombinedQuestionText = ({ introText = '', questionText = '' }) =>
   [introText, questionText].map((s) => String(s || '').trim()).filter(Boolean).join('\n\n');
 
-const padOptions = (options, size = 5) => {
+const padOptions = (options, size = 4) => {
   const list = Array.isArray(options) ? options.map((o) => String(o || '').trim()) : [];
   while (list.length < size) list.push('');
   return list.slice(0, size);
 };
+
+const LETTERS = ['A', 'B', 'C', 'D'];
+
+const letterFromCorrectAnswer = (options = [], correctAnswer = '') => {
+  const ca = String(correctAnswer || '').trim();
+  if (!ca) return '';
+  if (/^[A-D]$/i.test(ca)) return ca.toUpperCase();
+  const idx = options.findIndex((o) => optionMatchesCorrect(o, ca));
+  if (idx >= 0 && idx < 4) return LETTERS[idx];
+  return '';
+};
+
+const answerFromLetter = (letter, options = []) => {
+  const L = String(letter || '').toUpperCase();
+  const idx = LETTERS.indexOf(L);
+  if (idx < 0) return '';
+  const opt = String(options[idx] || '').trim();
+  // Prefer stored option text when present; otherwise letter (image questions).
+  return opt && !/^[A-D]$/i.test(opt) ? opt : L;
+};
+
+const toMultiDraft = (item = {}, fallback = {}) => ({
+  questionText: String(item.questionText || item.text || '').trim(),
+  options: padOptions(item.options || fallback.options, 4),
+  correctLetter: letterFromCorrectAnswer(item.options || [], item.correctAnswer || ''),
+  difficulty: item.difficulty || fallback.difficulty || 'Orta',
+  learningOutcome: item.learningOutcome || fallback.learningOutcome || '',
+  solution: item.solution || '',
+  assessmentMeta: item.assessmentMeta || null,
+  imagePath: item.imagePath || '',
+});
+
 
 const mapServerParseToForm = (data = {}, layout = null) => {
   const intro = data.introText ?? layout?.introText ?? '';
@@ -114,13 +146,14 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     questionText: '',
     stepLabels: '',
     visualPrompt: '',
-    options: ['', '', '', '', ''],
+    options: ['', '', '', ''],
     correctAnswer: '',
     solution: '',
     topic: '',
     subject: 'Matematik',
     classLevel: '9. Sınıf',
     difficulty: 'Orta',
+    learningOutcome: '',
     imagePath: '',
     assessmentMeta: null,
   });
@@ -128,6 +161,17 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   const [ocrPreview, setOcrPreview] = useState('');
   const [parseLayout, setParseLayout] = useState(null);
   const [multiItems, setMultiItems] = useState([]);
+  const [multiDrafts, setMultiDrafts] = useState([]);
+  const [sharedMeta, setSharedMeta] = useState({
+    introText: '',
+    topic: '',
+    classLevel: '5. Sınıf',
+    imagePath: '',
+  });
+
+  const updateMultiDraft = (index, patch) => {
+    setMultiDrafts((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  };
 
   const processImageFile = useCallback(async (file) => {
     if (!file || !String(file.type || '').startsWith('image/')) {
@@ -150,6 +194,13 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       setParseMode(mode);
       setOcrPreview(body?.ocrPreview || '');
       setMultiItems(items);
+      setMultiDrafts(items.map((item) => toMultiDraft(item, data)));
+      setSharedMeta({
+        introText: data.introText || items[0]?.introText || items[0]?.assessmentMeta?.sharedStem || '',
+        topic: data.topic || 'Şekil örüntüleri',
+        classLevel: data.classLevel || '5. Sınıf',
+        imagePath: data.imagePath || items[0]?.imagePath || '',
+      });
       const layout = body?.meta?.layout || data?.assessmentMeta?.parseLayout || null;
       setParseLayout(layout);
 
@@ -183,9 +234,10 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       }
     } catch (err) {
       setMultiItems([]);
+      setMultiDrafts([]);
       setParsedData((prev) => ({
         ...prev,
-        options: prev.options?.length ? padOptions(prev.options) : ['', '', '', '', ''],
+        options: prev.options?.length ? padOptions(prev.options) : ['', '', '', ''],
         subject: prev.subject || 'Matematik',
         classLevel: prev.classLevel || '9. Sınıf',
         difficulty: prev.difficulty || 'Orta',
@@ -327,46 +379,67 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       base = enrichQuestionForm(base);
       setParsedData(base);
 
-      if (multiItems.length >= 2) {
-        const sharedImage = multiItems[0]?.imagePath
+      if (multiDrafts.length >= 2) {
+        const sharedImage = sharedMeta.imagePath
+          || multiItems[0]?.imagePath
           || base.imagePath
           || parseLayout?.diagramImagePath
           || '';
-        for (let i = 0; i < multiItems.length; i += 1) {
-          const item = multiItems[i];
-          const editedFirst = i === 0
-            ? {
-                ...item,
-                questionText: base.questionText || item.questionText,
-                options: base.options?.length ? base.options : item.options,
-                correctAnswer: base.correctAnswer || item.correctAnswer,
-                solution: base.solution || item.solution,
-                classLevel: base.classLevel || item.classLevel,
-                topic: base.topic || item.topic,
-                difficulty: base.difficulty || item.difficulty,
-              }
-            : item;
+        const groupId = multiItems[0]?.assessmentMeta?.groupId || `multi-${Date.now().toString(36)}`;
+        const stem = String(sharedMeta.introText || '').trim();
+
+        for (let i = 0; i < multiDrafts.length; i += 1) {
+          const draft = multiDrafts[i];
+          const questionLine = String(draft.questionText || '').trim();
+          if (!questionLine) {
+            showToast(`${i + 1}. soru metni boş.`, 'error');
+            return;
+          }
+          if (!draft.correctLetter) {
+            showToast(`${i + 1}. soru için doğru cevabı (A–D) seçin.`, 'error');
+            return;
+          }
+          const options = padOptions(draft.options, 4).map((opt, idx) => {
+            const text = String(opt || '').trim();
+            return text || LETTERS[idx];
+          });
+          const correctAnswer = answerFromLetter(draft.correctLetter, options);
+          const text = [stem, questionLine].filter(Boolean).join('\n\n');
           const payload = {
-            ...editedFirst,
+            text,
+            introText: stem,
+            questionText: questionLine,
+            options,
+            correctAnswer,
+            solution: draft.solution || '',
+            learningOutcome: draft.learningOutcome || '',
+            subject: 'Matematik',
+            classLevel: sharedMeta.classLevel || '5. Sınıf',
+            topic: sharedMeta.topic || 'Şekil örüntüleri',
+            difficulty: draft.difficulty || 'Orta',
+            type: 'multiple-choice',
             source: 'Manuel',
-            imagePath: sharedImage || editedFirst.imagePath,
+            imagePath: sharedImage || undefined,
             assessmentMeta: {
-              ...(editedFirst.assessmentMeta || {}),
-              sharedImage: sharedImage || editedFirst.assessmentMeta?.sharedImage || '',
+              ...(draft.assessmentMeta || multiItems[i]?.assessmentMeta || {}),
+              groupId,
+              groupIndex: i + 1,
+              groupSize: multiDrafts.length,
+              sharedStem: stem,
+              sharedImage: sharedImage || '',
+              sharedPrompt: 'Aşağıdaki soruları yukarıdaki bilgilere göre cevaplayınız.',
               source: 'smart-parse-multi',
+              parseLayout: {
+                introText: stem,
+                questionLine,
+              },
             },
           };
-          if (!payload.text?.trim() && !payload.questionText?.trim()) {
-            showToast(`Soru ${i + 1} metni boş.`, 'error');
-            return;
-          }
-          if (!String(payload.correctAnswer || '').trim()) {
-            showToast(`Soru ${i + 1} için doğru cevap gerekli.`, 'error');
-            return;
-          }
-          await postQuestionPayload(payload, { attachUpload: i === 0 && !sharedImage?.includes('/temp/') });
+          await postQuestionPayload(payload, {
+            attachUpload: i === 0 && Boolean(uploadedFile) && !String(sharedImage).includes('/temp/'),
+          });
         }
-        showToast(`${multiItems.length} bağlı soru havuza kaydedildi.`, 'success');
+        showToast(`${multiDrafts.length} bağlı soru havuza kaydedildi.`, 'success');
         onParsed();
         onClose();
         return;
@@ -480,6 +553,153 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                 </div>
               )}
             </div>
+          ) : multiDrafts.length >= 2 ? (
+            <div className="space-y-6">
+              <div
+                className="rounded-xl border border-teal-300 bg-teal-50 px-4 py-3 text-sm text-teal-950 dark:border-teal-800 dark:bg-teal-950/30 dark:text-teal-100"
+                role="status"
+              >
+                <strong className="font-black">{multiDrafts.length} bağlı soru</strong> — her madde için metin,
+                doğru cevap (A–D), zorluk, kazanım ve çözüm girin. Şık metinleri görselde; burada yalnızca harf seçilir.
+              </div>
+
+              <section className="space-y-3 rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-900/40">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Ortak görsel / giriş</p>
+                {(diagramSrc || localPreviewUrl) ? (
+                  <img
+                    src={diagramSrc || localPreviewUrl}
+                    alt="Ortak soru görseli"
+                    className="max-h-56 w-full rounded-xl border border-slate-200 bg-white object-contain dark:border-slate-600 dark:bg-slate-900"
+                    onError={(ev) => {
+                      if (localPreviewUrl && ev.currentTarget.src !== localPreviewUrl) {
+                        ev.currentTarget.src = localPreviewUrl;
+                      }
+                    }}
+                  />
+                ) : null}
+                <textarea
+                  value={sharedMeta.introText}
+                  onChange={(e) => setSharedMeta((s) => ({ ...s, introText: e.target.value }))}
+                  rows={2}
+                  className="w-full rounded-xl border-none bg-white p-3 text-sm outline-none ring-teal-400 focus:ring-2 dark:bg-slate-900"
+                  placeholder="Ortak giriş metni (üst açıklama)"
+                />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">Konu</label>
+                    <input
+                      value={sharedMeta.topic}
+                      onChange={(e) => setSharedMeta((s) => ({ ...s, topic: e.target.value }))}
+                      className="w-full rounded-xl border-none bg-white p-3 text-sm font-medium outline-none dark:bg-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">Sınıf</label>
+                    <select
+                      value={sharedMeta.classLevel}
+                      onChange={(e) => setSharedMeta((s) => ({ ...s, classLevel: e.target.value }))}
+                      className="w-full rounded-xl border-none bg-white p-3 text-sm font-bold outline-none dark:bg-slate-800"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => `${i + 1}. Sınıf`).map((cl) => (
+                        <option key={cl}>{cl}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </section>
+
+              {multiDrafts.map((draft, index) => (
+                <section
+                  key={`multi-${index}`}
+                  className="space-y-4 rounded-[1.5rem] border-2 border-teal-200/80 bg-white p-5 dark:border-teal-900/50 dark:bg-surface-800"
+                >
+                  <h4 className="font-display text-lg font-semibold text-teal-800 dark:text-teal-200">
+                    {index + 1}. Soru
+                  </h4>
+
+                  <div>
+                    <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      Soru metni
+                    </label>
+                    <textarea
+                      value={draft.questionText}
+                      onChange={(e) => updateMultiDraft(index, { questionText: e.target.value })}
+                      rows={3}
+                      className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm font-medium outline-none ring-teal-500 focus:ring-2 dark:bg-slate-900"
+                      placeholder={`${index + 1}. sorunun metni`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      Doğru cevap (4 şık · A–D)
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {LETTERS.map((letter) => {
+                        const selected = draft.correctLetter === letter;
+                        return (
+                          <button
+                            key={letter}
+                            type="button"
+                            onClick={() => updateMultiDraft(index, { correctLetter: letter })}
+                            className={`flex h-12 w-12 items-center justify-center rounded-xl border-2 text-lg font-black transition-all ${
+                              selected
+                                ? 'border-teal-500 bg-teal-50 text-teal-800 ring-2 ring-teal-300/40 dark:bg-teal-950/40 dark:text-teal-100'
+                                : 'border-slate-200 bg-white text-slate-600 hover:border-teal-300 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200'
+                            }`}
+                            aria-pressed={selected}
+                            aria-label={`${index + 1}. soru doğru cevap ${letter}`}
+                          >
+                            {letter}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Zorluk seviyesi
+                      </label>
+                      <select
+                        value={draft.difficulty}
+                        onChange={(e) => updateMultiDraft(index, { difficulty: e.target.value })}
+                        className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm font-bold outline-none dark:bg-slate-900"
+                      >
+                        {['Kolay', 'Orta', 'Zor'].map((lv) => (
+                          <option key={lv}>{lv}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Kazanım
+                      </label>
+                      <input
+                        value={draft.learningOutcome}
+                        onChange={(e) => updateMultiDraft(index, { learningOutcome: e.target.value })}
+                        className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm outline-none dark:bg-slate-900"
+                        placeholder="Öğrenme kazanımı"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      Çözüm
+                    </label>
+                    <textarea
+                      value={draft.solution}
+                      onChange={(e) => updateMultiDraft(index, { solution: e.target.value })}
+                      rows={2}
+                      className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm outline-none dark:bg-slate-900"
+                      placeholder="Kısa çözüm"
+                    />
+                  </div>
+                </section>
+              ))}
+            </div>
           ) : (
             <div className="space-y-6">
               <div
@@ -489,15 +709,6 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                 <strong className="font-black">Doğrulama gerekli:</strong> Kaydetmeden önce soru metnini, şıkları ve
                 işaretli doğru cevabı kontrol edin. OCR/AI hatalı okuyabilir.
               </div>
-              {multiItems.length >= 2 ? (
-                <div
-                  className="rounded-xl border border-teal-300 bg-teal-50 dark:bg-teal-950/30 dark:border-teal-800 px-4 py-3 text-sm text-teal-950 dark:text-teal-100"
-                  role="status"
-                >
-                  <strong className="font-black">Çoklu soru:</strong> Bu görselde {multiItems.length} bağlı madde
-                  bulundu. «Havuza Kaydet» hepsini ortak köklü ayrı sorular olarak ekler (önizleme ilk madde).
-                </div>
-              ) : null}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-500">
               <div className="space-y-5">
                 {hasShapeSection ? (
@@ -573,7 +784,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
               <div className="space-y-5">
                 <section className="rounded-[1.75rem] border-2 border-emerald-200/90 bg-emerald-50/25 dark:bg-emerald-950/20 p-5 space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 dark:text-emerald-200">3 · Şıklar ve doğru cevap</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 dark:text-emerald-200">3 · Doğru cevap (A–D)</p>
                     <button
                       type="button"
                       onClick={handleAutoSolve}
@@ -582,40 +793,28 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                       <Wand2 size={12} /> Çöz ve işaretle
                     </button>
                   </div>
-                  {parsedData.correctAnswer?.trim() ? (
-                    <p className="text-xs font-bold text-emerald-700">
-                      Doğru şık: {correctOptionLabel(parsedData.options, parsedData.correctAnswer)}
-                    </p>
-                  ) : (
-                    <p className="text-xs font-bold text-amber-600">Doğru şık henüz işaretlenmedi.</p>
-                  )}
-                  <div className="space-y-3">
-                    {parsedData.options.map((opt, idx) => {
-                      const isCorrect = optionMatchesCorrect(opt, parsedData.correctAnswer);
+                  <div className="flex flex-wrap gap-2">
+                    {LETTERS.map((letter, idx) => {
+                      const opt = parsedData.options[idx] || letter;
+                      const selected = optionMatchesCorrect(opt, parsedData.correctAnswer)
+                        || letterFromCorrectAnswer(parsedData.options, parsedData.correctAnswer) === letter;
                       return (
-                        <div key={idx} className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${isCorrect ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-100 dark:border-slate-700'}`}>
-                          <button
-                            type="button"
-                            onClick={() => setParsedData({ ...parsedData, correctAnswer: opt })}
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'}`}
-                          >
-                            {isCorrect ? <CheckCircle size={14} /> : String.fromCharCode(65 + idx)}
-                          </button>
-                          <input
-                            value={opt}
-                            onChange={(e) => {
-                              const newOpts = [...parsedData.options];
-                              const prevVal = newOpts[idx];
-                              newOpts[idx] = e.target.value;
-                              const next = { ...parsedData, options: newOpts };
-                              if (optionMatchesCorrect(prevVal, parsedData.correctAnswer)) {
-                                next.correctAnswer = e.target.value;
-                              }
-                              setParsedData(next);
-                            }}
-                            className="bg-transparent border-none outline-none text-sm font-bold flex-1"
-                          />
-                        </div>
+                        <button
+                          key={letter}
+                          type="button"
+                          onClick={() => setParsedData({
+                            ...parsedData,
+                            options: padOptions(parsedData.options, 4).map((o, i) => o || LETTERS[i]),
+                            correctAnswer: answerFromLetter(letter, parsedData.options),
+                          })}
+                          className={`flex h-12 w-12 items-center justify-center rounded-xl border-2 text-lg font-black ${
+                            selected
+                              ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                              : 'border-slate-200 bg-white text-slate-600'
+                          }`}
+                        >
+                          {letter}
+                        </button>
                       );
                     })}
                   </div>
@@ -651,6 +850,15 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                       {['1. Sınıf', '2. Sınıf', '3. Sınıf', '4. Sınıf', '5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf', '9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf'].map((cl) => <option key={cl}>{cl}</option>)}
                     </select>
                   </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block tracking-widest">Kazanım</label>
+                  <input
+                    value={parsedData.learningOutcome || ''}
+                    onChange={(e) => setParsedData({ ...parsedData, learningOutcome: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border-none rounded-xl text-sm outline-none"
+                    placeholder="Öğrenme kazanımı"
+                  />
                 </div>
                 <details className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
                   <summary className="text-[10px] font-black uppercase text-slate-500 cursor-pointer">Kaynak görsel (tam ekran)</summary>
@@ -690,7 +898,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                 disabled={loading}
               >
                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />}{' '}
-                {multiItems.length >= 2 ? `${multiItems.length} Soruyu Kaydet` : 'Havuza Kaydet'}
+                {multiDrafts.length >= 2 ? `${multiDrafts.length} Soruyu Kaydet` : 'Havuza Kaydet'}
               </Button>
             </div>
           )}
