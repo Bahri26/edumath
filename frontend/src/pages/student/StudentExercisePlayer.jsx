@@ -25,6 +25,7 @@ import {
 import { MatchingPracticeCard } from '../../components/exams/InteractivePracticeCards.jsx';
 import { parseStoredAnswer } from '../../utils/examAnswerUtils.js';
 import { hasQuestionImage } from '../../utils/questionImage.js';
+import { shouldUseLetterOnlyOptions } from '../../utils/questionLayout.js';
 import { useQuestionTimer } from '../../hooks/useQuestionTimer.js';
 import {
   formatGroupProgressLabel,
@@ -302,7 +303,8 @@ export default function StudentExercisePlayer() {
         value={draftAnswer}
         onChange={setDraftAnswer}
         disabled={isAnswered}
-        letterOnly={hasQuestionImage(currentQ?.image)}
+        variant="list"
+        letterOnly={shouldUseLetterOnlyOptions(displayQ || currentQ)}
       />
     );
   };
@@ -413,11 +415,15 @@ export default function StudentExercisePlayer() {
 
   const progress = questions.length ? Math.round(((currentIndex + (isAnswered ? 1 : 0)) / questions.length) * 100) : 0;
 
+  const playerMaxWidth = hasQuestionImage(displayQ?.image || currentQ?.image)
+    ? 'max-w-4xl'
+    : 'max-w-2xl';
+
   return (
     <StudentPageShell
       title={exercise.name}
       subtitle={exercise.description || `${exercise.totalQuestions} soru · ${exercise.classLevel}`}
-      maxWidthClass="max-w-2xl"
+      maxWidthClass={playerMaxWidth}
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <button

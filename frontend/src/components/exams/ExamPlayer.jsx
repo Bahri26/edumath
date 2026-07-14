@@ -16,7 +16,7 @@ import {
   formatGroupProgressLabel,
   resolveGroupedDisplayQuestion,
 } from '../../utils/questionGroup.js';
-import { hasQuestionImage } from '../../utils/questionImage.js';
+import { shouldUseLetterOnlyOptions } from '../../utils/questionLayout.js';
 
 /**
  * Canlı sınav oturumu UI + cevap kayıt mantığı.
@@ -208,7 +208,8 @@ export default function ExamPlayer({
                       options={q.options}
                       value={pendingMc}
                       onChange={setPendingMc}
-                      letterOnly={hasQuestionImage(displayQ.image)}
+                      variant="list"
+                      letterOnly={shouldUseLetterOnlyOptions(displayQ)}
                     />
                     <button
                       type="button"

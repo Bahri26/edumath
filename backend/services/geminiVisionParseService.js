@@ -40,8 +40,9 @@ async function parseQuestionImageWithGemini(imagePath) {
   const schema = {
     type: SchemaType.OBJECT,
     properties: {
-      introText: { type: SchemaType.STRING, description: 'Üst açıklama / giriş cümlesi (varsa)' },
-      questionText: { type: SchemaType.STRING, description: 'Asıl soru cümlesi (şıklar hariç)' },
+      introText: { type: SchemaType.STRING, description: 'Üst açıklama / ortak giriş (çoklu soruda ortak kök)' },
+      sharedPrompt: { type: SchemaType.STRING, description: 'Aşağıdaki soruları… gibi yönerge' },
+      questionText: { type: SchemaType.STRING, description: 'Tek soru ise asıl soru cümlesi' },
       stepLabels: {
         type: SchemaType.ARRAY,
         items: { type: SchemaType.STRING },
@@ -50,29 +51,44 @@ async function parseQuestionImageWithGemini(imagePath) {
       options: {
         type: SchemaType.ARRAY,
         items: { type: SchemaType.STRING },
-        description: '4-5 şık metni (A) öneki olmadan',
+        description: 'Tek soru ise 4-5 şık metni (A) öneki olmadan',
       },
-      correctAnswer: { type: SchemaType.STRING, description: 'Doğru şıkkın tam metni' },
-      solution: { type: SchemaType.STRING, description: 'Kısa adım adım çözüm' },
+      correctAnswer: { type: SchemaType.STRING, description: 'Tek soru doğru şık metni' },
+      solution: { type: SchemaType.STRING, description: 'Kısa çözüm' },
       topic: { type: SchemaType.STRING },
       classLevel: { type: SchemaType.STRING },
       difficulty: { type: SchemaType.STRING },
       hasDiagram: { type: SchemaType.BOOLEAN },
+      items: {
+        type: SchemaType.ARRAY,
+        description: 'Numaralı birden fazla soru varsa her madde; yoksa boş dizi',
+        items: {
+          type: SchemaType.OBJECT,
+          properties: {
+            questionText: { type: SchemaType.STRING },
+            options: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+            correctAnswer: { type: SchemaType.STRING },
+            solution: { type: SchemaType.STRING },
+          },
+          required: ['questionText', 'options'],
+        },
+      },
     },
     required: ['questionText', 'options'],
   };
 
   const instruction = `
-Bu görseldeki TEK matematik sorusunu oku. Şekil/diyagram varsa metne dahil etme; yalnızca yazılı kısımları çıkar.
+Bu görseldeki matematik soru(lar)ını oku. Şekil/diyagramı metne yazma; yalnızca yazılı kısımları çıkar.
 JSON döndür:
-- introText: varsa üst giriş cümlesi
-- questionText: asıl soru kökü (Türkçe, şıklar hariç)
-- stepLabels: "1. Adım", "2. Adım" gibi etiketler (varsa)
+- introText: ortak giriş / üst açıklama (varsa)
+- sharedPrompt: "Aşağıdaki soruları…" gibi yönerge (varsa)
+- Eğer görselde 1. 2. 3. gibi BİRDEN FAZLA soru varsa:
+  - items: her madde için { questionText, options, correctAnswer, solution }
+  - questionText/options: ilk maddeyi de doldur (uyumluluk)
+- Tek soruysa items boş dizi [] bırak; questionText + options kullan
 - options: 4-5 şık (sadece değer; "A)" öneki yok)
 - correctAnswer: doğru şık metni (mümkünse çözerek bul)
-- solution: 2-4 adımlık kısa çözüm
-- topic, classLevel, difficulty: tahmin
-- hasDiagram: görselde şekil/diyagram var mı
+- topic, classLevel, difficulty, hasDiagram
 Sadece JSON.
 `;
 
@@ -111,6 +127,8 @@ Sadece JSON.
     difficulty: String(parsed.difficulty || 'Orta').trim(),
     topic: String(parsed.topic || '').trim(),
     hasDiagram: Boolean(parsed.hasDiagram),
+    sharedPrompt: String(parsed.sharedPrompt || '').trim(),
+    items: Array.isArray(parsed.items) ? parsed.items : [],
   };
 }
 

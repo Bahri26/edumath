@@ -127,6 +127,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
   const [parseMode, setParseMode] = useState('');
   const [ocrPreview, setOcrPreview] = useState('');
   const [parseLayout, setParseLayout] = useState(null);
+  const [multiItems, setMultiItems] = useState([]);
 
   const processImageFile = useCallback(async (file) => {
     if (!file || !String(file.type || '').startsWith('image/')) {
@@ -145,8 +146,10 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       const data = body?.data || {};
       const mode = body?.meta?.parseMode || '';
       const serverMessage = body?.message;
+      const items = Array.isArray(body?.multiItems) ? body.multiItems : [];
       setParseMode(mode);
       setOcrPreview(body?.ocrPreview || '');
+      setMultiItems(items);
       const layout = body?.meta?.layout || data?.assessmentMeta?.parseLayout || null;
       setParseLayout(layout);
 
@@ -158,7 +161,12 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       setParsedData(form);
       setStep('editing');
 
-      if (form.correctAnswer?.trim()) {
+      if (items.length >= 2) {
+        showToast(
+          serverMessage || `${items.length} bağlı soru bulundu. Kaydedince hepsi ayrı kayıt olur.`,
+          'success',
+        );
+      } else if (form.correctAnswer?.trim()) {
         showToast(
           layout?.diagramImagePath
             ? `Diyagram kırpıldı ve çözüldü. Doğru şık: ${correctOptionLabel(form.options, form.correctAnswer)}`
@@ -174,6 +182,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         );
       }
     } catch (err) {
+      setMultiItems([]);
       setParsedData((prev) => ({
         ...prev,
         options: prev.options?.length ? padOptions(prev.options) : ['', '', '', '', ''],
@@ -289,6 +298,28 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
     }
   };
 
+  const postQuestionPayload = async (payload, { attachUpload = false } = {}) => {
+    const useDiagramPath = Boolean(
+      payload.imagePath?.includes('/temp/crops/')
+      || payload.assessmentMeta?.parseLayout?.diagramImagePath
+      || parseLayout?.diagramImagePath
+    );
+    if (useDiagramPath && payload.imagePath) {
+      await apiClient.post('/questions', payload);
+      return;
+    }
+    if (attachUpload && uploadedFile) {
+      const form = new FormData();
+      appendQuestionFormFields(form, payload);
+      form.append('image', uploadedFile);
+      await apiClient.post('/questions', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return;
+    }
+    await apiClient.post('/questions', payload);
+  };
+
   const handleFinalSave = async (dataToSave) => {
     setLoading(true);
     try {
@@ -296,12 +327,52 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
       base = enrichQuestionForm(base);
       setParsedData(base);
 
+      if (multiItems.length >= 2) {
+        const sharedImage = multiItems[0]?.imagePath
+          || base.imagePath
+          || parseLayout?.diagramImagePath
+          || '';
+        for (let i = 0; i < multiItems.length; i += 1) {
+          const item = multiItems[i];
+          const editedFirst = i === 0
+            ? {
+                ...item,
+                questionText: base.questionText || item.questionText,
+                options: base.options?.length ? base.options : item.options,
+                correctAnswer: base.correctAnswer || item.correctAnswer,
+                solution: base.solution || item.solution,
+                classLevel: base.classLevel || item.classLevel,
+                topic: base.topic || item.topic,
+                difficulty: base.difficulty || item.difficulty,
+              }
+            : item;
+          const payload = {
+            ...editedFirst,
+            source: 'Manuel',
+            imagePath: sharedImage || editedFirst.imagePath,
+            assessmentMeta: {
+              ...(editedFirst.assessmentMeta || {}),
+              sharedImage: sharedImage || editedFirst.assessmentMeta?.sharedImage || '',
+              source: 'smart-parse-multi',
+            },
+          };
+          if (!payload.text?.trim() && !payload.questionText?.trim()) {
+            showToast(`Soru ${i + 1} metni boş.`, 'error');
+            return;
+          }
+          if (!String(payload.correctAnswer || '').trim()) {
+            showToast(`Soru ${i + 1} için doğru cevap gerekli.`, 'error');
+            return;
+          }
+          await postQuestionPayload(payload, { attachUpload: i === 0 && !sharedImage?.includes('/temp/') });
+        }
+        showToast(`${multiItems.length} bağlı soru havuza kaydedildi.`, 'success');
+        onParsed();
+        onClose();
+        return;
+      }
+
       const payload = { ...buildSavePayload(base, parseLayout), source: 'Manuel' };
-      const useDiagramPath = Boolean(
-        parseLayout?.diagramImagePath
-        || payload.imagePath?.includes('/temp/crops/')
-        || payload.assessmentMeta?.parseLayout?.diagramImagePath
-      );
 
       if (!payload.text?.trim()) {
         showToast('Soru metni boş olamaz.', 'error');
@@ -312,18 +383,7 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
         return;
       }
 
-      if (useDiagramPath && payload.imagePath) {
-        await apiClient.post('/questions', payload);
-      } else if (uploadedFile) {
-        const form = new FormData();
-        appendQuestionFormFields(form, payload);
-        form.append('image', uploadedFile);
-        await apiClient.post('/questions', form, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-      } else {
-        await apiClient.post('/questions', payload);
-      }
+      await postQuestionPayload(payload, { attachUpload: true });
 
       showToast('Soru başarıyla havuza kaydedildi!', 'success');
       onParsed();
@@ -429,6 +489,15 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                 <strong className="font-black">Doğrulama gerekli:</strong> Kaydetmeden önce soru metnini, şıkları ve
                 işaretli doğru cevabı kontrol edin. OCR/AI hatalı okuyabilir.
               </div>
+              {multiItems.length >= 2 ? (
+                <div
+                  className="rounded-xl border border-teal-300 bg-teal-50 dark:bg-teal-950/30 dark:border-teal-800 px-4 py-3 text-sm text-teal-950 dark:text-teal-100"
+                  role="status"
+                >
+                  <strong className="font-black">Çoklu soru:</strong> Bu görselde {multiItems.length} bağlı madde
+                  bulundu. «Havuza Kaydet» hepsini ortak köklü ayrı sorular olarak ekler (önizleme ilk madde).
+                </div>
+              ) : null}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-500">
               <div className="space-y-5">
                 {hasShapeSection ? (
@@ -620,7 +689,8 @@ export default function SmartPasteModal({ isOpen, onClose, onParsed }) {
                 onClick={() => handleFinalSave()}
                 disabled={loading}
               >
-                {loading ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />} Havuza Kaydet
+                {loading ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />}{' '}
+                {multiItems.length >= 2 ? `${multiItems.length} Soruyu Kaydet` : 'Havuza Kaydet'}
               </Button>
             </div>
           )}

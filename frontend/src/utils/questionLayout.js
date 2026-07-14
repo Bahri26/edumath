@@ -88,6 +88,20 @@ export function getOptionAnswerValue(entry, index) {
   return getOptionLetter(index);
 }
 
+/** Görselli soruda şık metni varsa harf-only büyük kutular kullanma. */
+export function shouldUseLetterOnlyOptions(question = {}) {
+  if (!hasQuestionImage(question?.image)) return false;
+  const entries = normalizeOptionEntries(question?.options || [], 8);
+  if (!entries.length) return true;
+  const meaningful = entries.filter((entry) => {
+    const text = clean(entry.text);
+    if (!text) return false;
+    if (/^[A-E]$/i.test(text)) return false;
+    return text.length > 1;
+  });
+  return meaningful.length < 2;
+}
+
 export function isOptionAnswerSelected(selectedValue, entry, index) {
   const value = clean(selectedValue);
   if (!value) return false;

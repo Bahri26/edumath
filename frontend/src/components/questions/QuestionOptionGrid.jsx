@@ -31,7 +31,7 @@ export default function QuestionOptionGrid({
 
   const isSquare = variant === 'square';
   const gridClass = letterOnly
-    ? 'mx-auto grid w-full max-w-md grid-cols-2 gap-3 sm:max-w-lg sm:grid-cols-4'
+    ? 'mx-auto flex w-full max-w-lg flex-wrap justify-center gap-2'
     : isSquare
       ? 'mx-auto grid w-full max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4'
       : 'grid grid-cols-1 gap-3 sm:grid-cols-2';
@@ -51,12 +51,14 @@ export default function QuestionOptionGrid({
             type="button"
             disabled={disabled}
             aria-pressed={selected}
-            aria-label={`${letter} şıkkı`}
+            aria-label={`${letter} şıkkı${text ? `: ${text}` : ''}`}
             onClick={() => onChange?.(answerValue)}
             className={`group relative rounded-2xl border-2 transition-all duration-200 ${
-              isSquare || letterOnly
-                ? 'flex aspect-square flex-col items-center justify-center p-3 text-center'
-                : 'min-h-[86px] p-4 text-left'
+              letterOnly
+                ? 'flex h-12 min-w-[3rem] items-center justify-center px-4 text-center'
+                : isSquare
+                  ? 'flex aspect-square flex-col items-center justify-center p-3 text-center'
+                  : 'min-h-[72px] p-3 text-left'
             } ${
               correct
                 ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
@@ -66,7 +68,7 @@ export default function QuestionOptionGrid({
             } ${disabled ? 'cursor-default opacity-80' : 'cursor-pointer'}`}
           >
             {letterOnly ? (
-              <span className="text-3xl font-black text-surface-800 dark:text-white sm:text-4xl">
+              <span className="text-lg font-black text-surface-800 dark:text-white sm:text-xl">
                 {letter}
               </span>
             ) : (

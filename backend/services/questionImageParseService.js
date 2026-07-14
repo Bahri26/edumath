@@ -5,6 +5,10 @@ const { enrichParsedQuestionAsync } = require('./patternQuestionSolver');
 const { recognizeText, recognizeTextFromRegions } = require('./ocrImageService');
 const { shouldUseGeminiForSmartParse, parseQuestionImageWithGemini } = require('./geminiVisionParseService');
 const mlServiceClient = require('./mlServiceClient');
+const {
+  normalizeParsedMultiItems,
+  buildGroupedQuestionPayloads,
+} = require('../utils/multiQuestionSplit');
 
 function buildDefaultParsedQuestion(overrides = {}) {
   return {
@@ -422,10 +426,47 @@ async function finalizeImageParseResult(parsed, filePath, imageUrl, { parseMode,
 
   delete data.layout;
 
+  const multi = normalizeParsedMultiItems({
+    ...parsed,
+    ...data,
+    items: parsed.items,
+    sharedPrompt: parsed.sharedPrompt,
+  });
+  let multiItems = [];
+  if (multi?.items?.length >= 2) {
+    multiItems = buildGroupedQuestionPayloads({
+      multi,
+      sharedImage: questionImagePath || imageUrl,
+      classLevel: data.classLevel,
+      topic: data.topic || inferTopicFromText(combinedText),
+      difficulty: data.difficulty,
+      subject: data.subject || 'Matematik',
+    });
+    // Preview first item in the form; client can save all multiItems.
+    const first = multiItems[0];
+    data.introText = first.introText;
+    data.questionText = first.questionText;
+    data.text = first.text;
+    data.options = first.options;
+    data.correctAnswer = first.correctAnswer || data.correctAnswer;
+    data.solution = first.solution || data.solution;
+    data.assessmentMeta = {
+      ...mergedMeta,
+      ...first.assessmentMeta,
+      parseLayout: {
+        ...mergedLayout,
+        introText: first.introText,
+        questionLine: first.questionText,
+      },
+    };
+  }
+
   const hasAnswer = Boolean(String(data.correctAnswer || '').trim());
   const cropped = Boolean(diagramPath);
   let finalMessage = message;
-  if (hasAnswer && cropped) {
+  if (multiItems.length >= 2) {
+    finalMessage = `${multiItems.length} bağlı soru tespit edildi (ortak kök). Kaydedince hepsi ayrı kayıt olur.`;
+  } else if (hasAnswer && cropped) {
     finalMessage = 'Diyagram kırpıldı, metin okundu ve doğru şık hesaplandı. Lütfen kontrol edin.';
   } else if (hasAnswer) {
     finalMessage = 'Metin okundu ve doğru şık hesaplandı. Lütfen kontrol edin.';
@@ -435,10 +476,13 @@ async function finalizeImageParseResult(parsed, filePath, imageUrl, { parseMode,
 
   return {
     data,
-    layout: mergedLayout,
-    parseMode: cropped ? `${parseMode}+diagram` : parseMode,
+    layout: data.assessmentMeta?.parseLayout || mergedLayout,
+    parseMode: multiItems.length >= 2
+      ? `${parseMode}+multi`
+      : (cropped ? `${parseMode}+diagram` : parseMode),
     message: finalMessage,
     ocrPreview,
+    multiItems,
   };
 }
 
@@ -475,6 +519,8 @@ async function buildGeminiParseResult(geminiFields, filePath, imageUrl) {
       topic: geminiFields.topic || inferTopicFromText(text),
       imagePath: imageUrl,
     }),
+    sharedPrompt: geminiFields.sharedPrompt || '',
+    items: Array.isArray(geminiFields.items) ? geminiFields.items : [],
     layout: {
       ...layout,
       hasDiagram: Boolean(geminiFields.hasDiagram || layout.hasDiagram),

@@ -454,154 +454,22 @@ exports.smartParse = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "Lütfen bir resim yükleyin." });
 
-    const imageUrl = `/uploads/temp/${pathLib.basename(req.file.path)}`;
-    const imagePart = fileToGenerativePart(req.file.path, req.file.mimetype);
-
-    const schema = {
-      description: "Tek bir soru şeması",
-      type: SchemaType.OBJECT,
-      properties: {
-        text: { type: SchemaType.STRING, description: "LaTeX içerebilen soru metni" },
-        options: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING }, description: "4 adet seçenek" },
-        correctAnswer: { type: SchemaType.STRING, description: "Doğru cevabın metni" },
-        solution: { type: SchemaType.STRING, description: "Adım adım çözüm, LaTeX destekli" },
-        subject: { type: SchemaType.STRING },
-        classLevel: { type: SchemaType.STRING },
-        difficulty: { type: SchemaType.STRING },
-      },
-      required: ["text", "options", "correctAnswer"],
-    };
-
-    const instruction = `
-      Aşağıdaki görseldeki soruyu tespit et ve aşağıdaki alanlarla JSON döndür:
-      - text: Soru metni (LaTeX ifadelerini $...$ içinde ver)
-      - options: 4 adet kısa seçenek (string array)
-      - correctAnswer: Doğru cevabın tam metni (seçeneklerden biri)
-      - solution: Kısa, adım adım çözüm (LaTeX destekli)
-      - subject: Konu (örn: Matematik)
-      - classLevel: (örn: 9. Sınıf)
-      - difficulty: Kolay/Orta/Zor (tahmin)
-      JSON dışında metin ekleme.
-    `;
-
-    if (isLocalAi() || isOllamaAi()) {
-      const { parseQuestionFromImage } = require('../services/questionImageParseService');
-      const result = await parseQuestionFromImage(req.file.path, req.file.mimetype);
-      return res.json({
-        success: true,
-        data: result.data,
-        meta: {
-          parseMode: result.parseMode,
-          layout: result.layout || result.data?.assessmentMeta?.parseLayout || {},
-          autoFilled: Boolean(
-            result.data.text?.trim() || result.data.options?.some((option) => String(option).trim())
-          ),
-        },
-        message: result.message,
-        ocrPreview: result.ocrPreview || '',
-      });
-    }
-
-    let data;
-    let parseMode = 'ai';
-    const isQuotaError = (err) => /429|quota|Too Many Requests|RESOURCE_EXHAUSTED/i.test(String(err?.message || err || ''));
-
-    const runGeminiParse = async (modelName) => {
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: schema,
-          temperature: 0.2,
-        },
-      });
-      const result = await model.generateContent([instruction, imagePart]);
-      const raw = result.response.text();
-      let parsed;
-      try { parsed = JSON.parse(raw); } catch (e) { parsed = {}; }
-      return buildDefaultParsedQuestion({
-        text: parsed.text || '',
-        options: normalizeOptions(parsed.options),
-        correctAnswer: parsed.correctAnswer || '',
-        solution: parsed.solution || '',
-        subject: parsed.subject || 'Matematik',
-        classLevel: parsed.classLevel || '9. Sınıf',
-        difficulty: parsed.difficulty || 'Orta',
-        imagePath: imageUrl,
-      });
-    };
-
-    try {
-      data = await runGeminiParse(MODEL_NAME);
-      const hasUsefulAiResult = data.text.trim() || data.options.some((option) => option.trim());
-      if (!hasUsefulAiResult) {
-        throw new Error('AI parse returned empty fields');
-      }
-    } catch (aiErr) {
-      const fallbackModel = process.env.GEMINI_FALLBACK_MODEL?.trim();
-      if (fallbackModel && fallbackModel !== MODEL_NAME && isQuotaError(aiErr)) {
-        try {
-          console.warn('smartParse primary model quota, trying fallback:', fallbackModel);
-          data = await runGeminiParse(fallbackModel);
-          const hasUseful = data.text.trim() || data.options.some((option) => option.trim());
-          if (!hasUseful) throw new Error('AI parse returned empty fields');
-          parseMode = 'ai-fallback';
-          return res.json({
-            success: true,
-            data,
-            meta: { parseMode, autoFilled: true },
-            message: 'Görsel yedek model ile ayrıştırıldı.',
-          });
-        } catch (fallbackErr) {
-          console.warn('smartParse fallback model failed:', fallbackErr?.message);
-        }
-      }
-
-      console.warn('smartParse AI error, fallback to OCR:', aiErr?.message);
-      parseMode = 'ocr';
-      try {
-        const ocrText = await extractTextFromImageWithOcr(req.file.path);
-        const { parseStructuredQuestionText: parseFromImageService } = require('../services/questionImageParseService');
-        const parsed = await parseFromImageService(ocrText, { imagePath: imageUrl });
-        const { layout: ocrLayout, assessmentMeta, ...fields } = parsed;
-        data = { ...fields, imagePath: imageUrl, assessmentMeta };
-        parseMode = 'ocr';
-        return res.json({
-          success: true,
-          data,
-          meta: {
-            parseMode,
-            layout: ocrLayout || assessmentMeta?.parseLayout || {},
-            autoFilled: Boolean(data.text?.trim() || data.options?.some((o) => String(o).trim())),
-            quotaLimited: isQuotaError(aiErr),
-          },
-          message: isQuotaError(aiErr)
-            ? 'Gemini kotası doldu; OCR ile alanlar dolduruldu. Kontrol edin.'
-            : 'AI kullanılamadı, OCR ile alanlar dolduruldu.',
-          ocrPreview: ocrText.slice(0, 2000),
-        });
-      } catch (ocrErr) {
-        console.warn('smartParse OCR fallback failed, fallback to manual:', ocrErr?.message);
-        parseMode = 'manual';
-        data = buildDefaultParsedQuestion({
-        imagePath: imageUrl,
-        });
-      }
-    }
-
-    // Dosyayı sakla (temp klasörde erişilebilir), temizleme yok
+    const { parseQuestionFromImage } = require('../services/questionImageParseService');
+    const result = await parseQuestionFromImage(req.file.path, req.file.mimetype);
     return res.json({
       success: true,
-      data,
+      data: result.data,
       meta: {
-        parseMode,
-        autoFilled: Boolean(data.text.trim() || data.options.some((option) => option.trim())),
+        parseMode: result.parseMode,
+        layout: result.layout || result.data?.assessmentMeta?.parseLayout || {},
+        autoFilled: Boolean(
+          result.data?.text?.trim() || result.data?.options?.some((option) => String(option).trim())
+        ),
+        multiCount: Array.isArray(result.multiItems) ? result.multiItems.length : 0,
       },
-      message: parseMode === 'ai'
-        ? 'Görsel AI ile ayrıştırıldı.'
-        : parseMode === 'ocr'
-          ? 'AI kullanılamadı, OCR ile alanlar dolduruldu.'
-          : 'AI ve OCR kullanılamadı, alanları manuel doldurun.',
+      multiItems: result.multiItems || [],
+      message: result.message,
+      ocrPreview: result.ocrPreview || '',
     });
   } catch (error) {
     console.error("smartParse Hatası:", error);

@@ -32,8 +32,8 @@ function QuestionVisualInner({
           alt={alt}
           className={
             compact
-              ? 'block max-h-[min(340px,55vh)] w-auto max-w-full h-auto'
-              : 'max-h-[min(360px,calc(65vh-8rem))] w-auto max-w-full object-contain'
+              ? 'block max-h-[min(520px,70vh)] w-auto max-w-full h-auto'
+              : 'max-h-[min(560px,calc(75vh-6rem))] w-auto max-w-full object-contain'
           }
           loading={loading}
           decoding="async"

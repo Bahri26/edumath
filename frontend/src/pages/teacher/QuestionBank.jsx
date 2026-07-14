@@ -138,7 +138,7 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
             correctAnswer={question.correctAnswer}
             showCorrect
             disabled
-            letterOnly={isImageQuestion}
+            letterOnly={false}
           />
 
           {(hintText || codeText) && (
