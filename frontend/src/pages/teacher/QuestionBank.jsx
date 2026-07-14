@@ -9,7 +9,7 @@ import {
   Sparkles, Hash,
   LayoutGrid, Wand2,
 } from 'lucide-react';
-import apiClient, { resolveAssetUrl } from '../../services/api';
+import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import 'katex/dist/katex.min.css';
 import Button from '../../components/ui/Button.jsx';
@@ -21,7 +21,7 @@ import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
 import CollapsiblePanel from '../../components/ui/CollapsiblePanel.jsx';
 import QuestionStemCard from '../../components/questions/QuestionStemCard.jsx';
 import QuestionOptionGrid from '../../components/questions/QuestionOptionGrid.jsx';
-import { getQuestionPreviewText, IMAGE_QUESTION_INSTRUCTION, getQuestionLayout } from '../../utils/questionLayout.js';
+import { IMAGE_QUESTION_INSTRUCTION, getQuestionLayout } from '../../utils/questionLayout.js';
 import { hasQuestionImage } from '../../utils/questionImage.js';
 import { sourceFilterOptions, sourceFilterToApi } from '../../utils/questionSourceLabel';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
@@ -68,9 +68,8 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
 
   const { topicLabel, code: topicCode } = extractTopicAndCode(question);
   const hintText = getHintText(question);
-  const codeText = getCodeText(question);
+  const codeText = getCodeText(question) || topicCode;
   const isImageQuestion = hasQuestionImage(question.image);
-  const imageSrc = isImageQuestion ? resolveAssetUrl(question.image) : '';
 
   return (
     <div className={expanded ? 'col-span-full' : ''}>
@@ -91,43 +90,17 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
           aria-label={expanded ? 'Soru detayını gizle' : 'Soru detayını göster'}
         >
           {!expanded ? (
-            <>
-              {isImageQuestion ? (
-                <p className="mb-2 line-clamp-1 text-[11px] font-semibold text-surface-700 dark:text-surface-200">
-                  {IMAGE_QUESTION_INSTRUCTION}
-                </p>
-              ) : (
-                <p className="mb-2 line-clamp-3 flex-1 text-sm font-medium leading-snug text-surface-700 dark:text-surface-200">
-                  {getQuestionPreviewText(question)}
-                </p>
-              )}
-
-              {isImageQuestion ? (
-                <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-900/40">
-                  <img
-                    src={imageSrc}
-                    alt=""
-                    className="max-h-full max-w-full object-contain"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-              ) : null}
-
-              <div className="mt-2 flex flex-wrap gap-1">
-                <span className="rounded-full bg-surface-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-surface-600 dark:bg-surface-700 dark:text-surface-300">
-                  {question.classLevel}
-                </span>
-                <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${difficultyStyles[question.difficulty] || difficultyStyles['Orta']}`}>
-                  {question.difficulty}
-                </span>
-                {topicLabel ? (
-                  <span className="line-clamp-1 rounded-full border border-sky-100 bg-sky-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-sky-800 dark:border-sky-800/40 dark:bg-sky-900/25 dark:text-sky-300">
-                    {topicLabel}
-                  </span>
-                ) : null}
-              </div>
-            </>
+            <div className="flex h-full flex-col items-center justify-center gap-2 px-2 text-center">
+              <span className="rounded-full bg-surface-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-surface-600 dark:bg-surface-700 dark:text-surface-300">
+                {question.classLevel || 'Sınıf yok'}
+              </span>
+              <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${difficultyStyles[question.difficulty] || difficultyStyles['Orta']}`}>
+                {question.difficulty || 'Orta'}
+              </span>
+              <span className="max-w-full truncate rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-sky-800 dark:border-sky-800/40 dark:bg-sky-900/25 dark:text-sky-300">
+                {topicLabel || 'Konu yok'}
+              </span>
+            </div>
           ) : (
             <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">Soru detayı — kapatmak için tıklayın</p>
           )}
