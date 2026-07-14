@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Sparkles, Loader2, Image as ImageIcon, Check, ArrowRight, Wand2, CheckCircle, ClipboardPaste } from 'lucide-react';
+import { X, Sparkles, Loader2, Image as ImageIcon, Check, ArrowRight, Wand2, ClipboardPaste } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { describeApiError } from '../../utils/errorMessage';
 import apiClient, { resolveAssetUrl } from '../../services/api';
