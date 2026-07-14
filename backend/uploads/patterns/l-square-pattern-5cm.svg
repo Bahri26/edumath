@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320">
+  <rect width="900" height="320" fill="#f8fafc"/>
+  <text x="28" y="36" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0f766e">^ekil örüntüsü  L kareler (kenar 5 cm)</text>
+
+  <!-- Step 1: 3 squares -->
+  <g transform="translate(70,70)">
+    <text x="28" y="-12" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#334155">1. Ad1m</text>
+    <rect x="0" y="0" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+    <rect x="0" y="44" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+    <rect x="44" y="44" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+  </g>
+
+  <!-- Step 2: 5 squares -->
+  <g transform="translate(290,70)">
+    <text x="40" y="-12" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#334155">2. Ad1m</text>
+    <rect x="0" y="0" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+    <rect x="0" y="44" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+    <rect x="0" y="88" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+    <rect x="44" y="88" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+    <rect x="88" y="88" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+  </g>
+
+  <!-- Step 3: 7 squares -->
+  <g transform="translate(560,40)">
+    <text x="52" y="-12" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#334155">3. Ad1m</text>
+    <rect x="0" y="0" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+    <rect x="0" y="44" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+    <rect x="0" y="88" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+    <rect x="0" y="132" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+    <rect x="44" y="132" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+    <rect x="88" y="132" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+    <rect x="132" y="132" width="44" height="44" rx="4" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+  </g>
+
+  <text x="28" y="290" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#64748b">Her karenin kenar uzunluu 5 cmdir.</text>
+</svg>

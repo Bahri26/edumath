@@ -26,6 +26,10 @@ import { MatchingPracticeCard } from '../../components/exams/InteractivePractice
 import { parseStoredAnswer } from '../../utils/examAnswerUtils.js';
 import { hasQuestionImage } from '../../utils/questionImage.js';
 import { useQuestionTimer } from '../../hooks/useQuestionTimer.js';
+import {
+  formatGroupProgressLabel,
+  resolveGroupedDisplayQuestion,
+} from '../../utils/questionGroup.js';
 
 function optionText(opt) {
   if (opt == null) return '';
@@ -73,6 +77,11 @@ export default function StudentExercisePlayer() {
 
   const questions = exercise?.questions || [];
   const currentQ = questions[currentIndex];
+  const displayQ = useMemo(
+    () => (currentQ ? resolveGroupedDisplayQuestion(currentQ, questions) : null),
+    [currentQ, questions],
+  );
+  const groupLabel = displayQ ? formatGroupProgressLabel(displayQ) : '';
   const currentFeedback = currentQ ? feedback[currentQ._id] : null;
   const isAnswered = currentQ ? !!feedback[currentQ._id] : false;
 
@@ -434,6 +443,9 @@ export default function StudentExercisePlayer() {
           )}
           <span className="text-sm font-bold text-slate-500">
             {currentIndex + 1} / {questions.length}
+            {groupLabel ? (
+              <span className="ml-2 font-semibold text-teal-700 dark:text-teal-300">{groupLabel}</span>
+            ) : null}
           </span>
         </div>
       </div>
@@ -445,12 +457,18 @@ export default function StudentExercisePlayer() {
         />
       </div>
 
-      {currentQ && (
+      {currentQ && displayQ && (
         <div className="rounded-[1.25rem] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm space-y-4">
+          {displayQ.assessmentMeta?.sharedPrompt ? (
+            <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
+              {displayQ.assessmentMeta.sharedPrompt}
+            </p>
+          ) : null}
           <QuestionStemCard
-            question={currentQ}
+            question={displayQ}
             questionLabel={`Soru ${currentIndex + 1}`}
             framed={false}
+            showImageInstruction={false}
           />
 
           {renderInput()}

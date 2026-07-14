@@ -14,6 +14,7 @@
     "seed:exercise-types": "node scripts/seed/seedExerciseTypesByGrade.js",
     "seed:exercises-by-grade": "node scripts/seed/seedExercisesByGrade.js",
     "bootstrap:exercise-types": "node scripts/seed/bootstrapExerciseTypes.js",
+    "seed:multi-l-pattern": "node scripts/seed/seedMultiLSquarePattern.js",
     "seed:grade2-patterns-pack15": "node scripts/seed/seedGrade2PatternsPack15.js",
     "seed:grade3-patterns-pack15": "node scripts/seed/seedGrade3PatternsPack15.js",
     "seed:grade4-patterns-pack15": "node scripts/seed/seedGrade4PatternsPack15.js",
