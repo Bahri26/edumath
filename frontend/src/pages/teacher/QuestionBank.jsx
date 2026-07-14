@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, Fragment, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import QuestionFormModal from '../../components/exams/QuestionFormModal';
-import SmartPasteModal from '../../components/modals/SmartPasteModal';
 import AiGenerateQuizModal from '../../components/modals/AiGenerateQuizModal';
 import {
   Plus, Edit2, Trash2, Search, FileText,
@@ -32,8 +31,6 @@ import {
   PATTERN_TOPIC_ALL_UNDER,
   sortPatternTopicsUi,
 } from '../../constants/patternTopicsUi';
-import { enrichQuestionForm } from '../../utils/patternQuestionSolver';
-
 const MATH_TOPIC_OPTIONS_FALLBACK = [
   'Tümü',
   PATTERN_TOPIC_ALL_UNDER,
@@ -181,7 +178,6 @@ export default function QuestionBank() {
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSmartPasteOpen, setIsSmartPasteOpen] = useState(false);
   const [isAiGenerateOpen, setIsAiGenerateOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [manualForm, setManualForm] = useState(null);
@@ -514,18 +510,6 @@ export default function QuestionBank() {
           </Button>
 
           <Button
-            variant="outline"
-            size="md"
-            onClick={() => setIsSmartPasteOpen(true)}
-            disabled={profile.branchApproval !== 'approved'}
-            title={profile.branchApproval !== 'approved' ? t('questionBank.branchPending') : ''}
-            className="w-full sm:w-auto justify-center border-2 border-teal-600 text-teal-700 dark:text-teal-300"
-            icon={Sparkles}
-          >
-            {t('questionBank.smartPaste')}
-          </Button>
-
-          <Button
             variant="primary"
             size="md"
             disabled={profile.branchApproval !== 'approved'}
@@ -689,41 +673,6 @@ export default function QuestionBank() {
           lockedSubject={profile.branchApproval === 'approved' ? profile.branch : undefined}
           onClose={() => { setIsModalOpen(false); setEditingQuestion(null); setManualForm(null); setMainImage({file:null, preview:''}); }}
           onSave={() => { fetchQuestions(); setIsModalOpen(false); setEditingQuestion(null); setManualForm(null); setMainImage({file:null, preview:''}); }}
-        />
-      )}
-
-      {isSmartPasteOpen && (
-        <SmartPasteModal 
-          isOpen={isSmartPasteOpen}
-          onClose={() => setIsSmartPasteOpen(false)}
-          onParsed={(parsed, imageFile) => {
-            const resolvedSubject =
-              profile.branchApproval === 'approved'
-                ? (profile.branch || 'Matematik')
-                : (parsed.subject || 'Matematik');
-            const enriched = enrichQuestionForm({
-              text: parsed.text || '',
-              subject: resolvedSubject,
-              topic: resolvedSubject === 'Matematik' ? (parsed.topic || PATTERN_TOPIC_ORDER[0]) : (parsed.topic || ''),
-              learningOutcome: parsed.learningOutcome || '',
-              classLevel: parsed.classLevel || '9. Sınıf',
-              difficulty: parsed.difficulty || 'Orta',
-              correctAnswer: parsed.correctAnswer || '',
-              solution: parsed.solution || '',
-              options: Array.isArray(parsed.options) ? parsed.options.concat(Array(5).fill('')).slice(0,5) : ['', '', '', '', ''],
-              source: 'Manuel',
-              assessmentMeta: parsed.assessmentMeta || { origin: 'smart-parse', parseMode: parsed.parseMode || 'smart-parse' },
-            });
-            setManualForm(enriched);
-            if (imageFile) {
-              const preview = URL.createObjectURL(imageFile);
-              setMainImage({ file: imageFile, preview });
-            } else {
-              setMainImage({ file: null, preview: '' });
-            }
-            setIsSmartPasteOpen(false);
-            setIsModalOpen(true);
-          }}
         />
       )}
 
