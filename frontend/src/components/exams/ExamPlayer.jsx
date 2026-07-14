@@ -208,7 +208,7 @@ export default function ExamPlayer({
                       options={q.options}
                       value={pendingMc}
                       onChange={setPendingMc}
-                      letterOnly={hasQuestionImage(q.image)}
+                      letterOnly={hasQuestionImage(displayQ.image)}
                     />
                     <button
                       type="button"
