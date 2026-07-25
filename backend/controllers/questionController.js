@@ -566,12 +566,21 @@ exports.updateQuestion = async (req, res, next) => {
 
     // Ana Resim Güncellemesi
     const mainImgFile = req.files ? req.files.find(f => f.fieldname === 'image') : null;
+    const removeImage = String(req.body.removeImage || '').toLowerCase() === 'true';
     if (mainImgFile) {
       await deleteStoredAsset({ key: question.imageKey, provider: question.imageProvider, url: question.image });
       const uploaded = await uploadFile(mainImgFile, 'questions');
       question.image = uploaded.url;
       question.imageKey = uploaded.key;
       question.imageProvider = uploaded.provider;
+    } else if (removeImage) {
+      // Metin moduna geçiş: mevcut görseli tamamen kaldır
+      if (question.image || question.imageKey) {
+        await deleteStoredAsset({ key: question.imageKey, provider: question.imageProvider, url: question.image });
+      }
+      question.image = '';
+      question.imageKey = '';
+      question.imageProvider = '';
     } else if (req.body.imagePath) {
       const nextImagePath = normalizeStoredImagePath(req.body.imagePath);
       if (nextImagePath !== question.image) {

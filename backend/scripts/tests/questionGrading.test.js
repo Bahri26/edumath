@@ -12,6 +12,26 @@ test('gradeQuestionAnswer matches trimmed multiple choice', () => {
   assert.equal(gradeQuestionAnswer(q, 'A'), false);
 });
 
+test('gradeQuestionAnswer treats letter answer and option text as equivalent', () => {
+  const q = {
+    type: 'multiple-choice',
+    correctAnswer: 'B',
+    options: [{ text: '15' }, { text: '33' }, { text: '48' }, { text: '52' }],
+  };
+  assert.equal(gradeQuestionAnswer(q, '33'), true);
+  assert.equal(gradeQuestionAnswer(q, 'B'), true);
+  assert.equal(gradeQuestionAnswer(q, '48'), false);
+
+  const q2 = {
+    type: 'multiple-choice',
+    correctAnswer: '33',
+    options: ['15', '33', '48', '52'],
+  };
+  assert.equal(gradeQuestionAnswer(q2, 'B'), true);
+  assert.equal(gradeQuestionAnswer(q2, '33'), true);
+  assert.equal(gradeQuestionAnswer(q2, 'C'), false);
+});
+
 test('gradeQuestionAnswer validates matching pairs', () => {
   const q = {
     type: 'matching',

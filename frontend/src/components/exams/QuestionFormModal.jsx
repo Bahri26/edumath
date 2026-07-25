@@ -111,14 +111,38 @@ const QuestionFormModal = ({
     assessmentMeta: effectiveForm?.assessmentMeta || null,
   }), [effectiveForm, layoutFromForm.introText, layoutFromForm.questionText, lockedSubject]);
 
-  const isImageMode = contentMode === 'image' || Boolean(effectiveMainImage?.preview || effectiveMainImage?.file);
+  const isImageMode = contentMode === 'image';
   const isMulti = !editingId && questionCount > 1 && wizardStep === 'form';
+
+  const applyContentMode = (mode) => {
+    setContentMode(mode);
+    if (mode === 'text') {
+      effectiveSetMainImage({ file: null, preview: '' });
+    }
+    if (mode === 'image') {
+      setDrafts((prev) => prev.map((row) => ({
+        ...row,
+        options: ['', '', '', ''],
+      })));
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
-    if (editingId || manualForm) {
+    // AI aktarımı gibi önceden doldurulmuş formlar da doğrudan form adımına gitsin
+    const prefilled = Boolean(
+      String(manualForm?.text || '').trim()
+      || String(manualForm?.questionText || '').trim()
+      || String(manualForm?.correctAnswer || '').trim()
+      || (manualForm?.options || []).some((o) => String(typeof o === 'object' ? o?.text : o || '').trim())
+    );
+    if (editingId || prefilled) {
+      const savedMode = manualForm?.assessmentMeta?.contentMode;
+      const resolvedMode = savedMode === 'text' || savedMode === 'image'
+        ? savedMode
+        : (mainImage?.preview ? 'image' : 'text');
       setWizardStep('form');
-      setContentMode(manualForm?.assessmentMeta?.contentMode === 'text' ? 'text' : (mainImage?.preview ? 'image' : 'text'));
+      setContentMode(resolvedMode);
       setQuestionCount(1);
       setSharedIntro(manualForm?.introText || layoutFromForm.introText || '');
       setSharedTopic(manualForm?.topic || '');
@@ -133,14 +157,16 @@ const QuestionFormModal = ({
         label: '1. Soru',
       }]);
     } else {
+      // Yeni soru: önce resimli / metinli işaretlensin
       setWizardStep('format');
       setContentMode('image');
       setQuestionCount(1);
-      setSharedIntro('');
-      setSharedTopic('');
-      setSharedClassLevel('5. Sınıf');
+      setSharedIntro(manualForm?.introText || '');
+      setSharedTopic(manualForm?.topic || '');
+      setSharedClassLevel(manualForm?.classLevel || '5. Sınıf');
       setDrafts([emptyDraft(0)]);
       setMarkAsExpert(false);
+      effectiveSetMainImage({ file: null, preview: '' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, editingId]);
@@ -220,6 +246,10 @@ const QuestionFormModal = ({
     if (attachImage && effectiveMainImage?.file) {
       formData.append('image', effectiveMainImage.file);
     }
+    if (editingId && contentMode === 'text') {
+      // Metin moduna geçildi: sunucudaki eski görseli kaldır
+      formData.append('removeImage', 'true');
+    }
 
     const endpoint = editingId ? `/questions/${editingId}` : '/questions';
     const method = editingId ? 'put' : 'post';
@@ -232,8 +262,26 @@ const QuestionFormModal = ({
     e?.preventDefault?.();
     if (wizardStep !== 'form') return;
 
-    if (contentMode === 'image' && !editingId && !(effectiveMainImage?.file || effectiveMainImage?.preview)) {
+    if (isImageMode && !(effectiveMainImage?.file || effectiveMainImage?.preview)) {
       return showToast('Resimli soru için görsel yükleyin.', 'error');
+    }
+
+    if (!isMulti) {
+      const d = drafts[0] || emptyDraft(0);
+      const intro = String(sharedIntro || form.introText || '').trim();
+      const question = String(d.questionText || form.questionText || '').trim();
+      if (!isImageMode && !intro && !question) {
+        return showToast('Metin sorusu için soru metni girin.', 'error');
+      }
+      if (!d.correctLetter && !form.correctAnswer) {
+        return showToast('Doğru cevabı (A–D) seçin.', 'error');
+      }
+      const previewOptions = isImageMode
+        ? [...LETTERS]
+        : (d.options?.length ? d.options : form.options).map((o, idx) => String(o || '').trim() || LETTERS[idx]).slice(0, 4);
+      if (!isImageMode && previewOptions.filter((o) => o && !/^[A-D]$/i.test(o)).length < 2) {
+        return showToast('En az 2 şık metni girin.', 'error');
+      }
     }
 
     setIsSaving(true);
@@ -244,7 +292,7 @@ const QuestionFormModal = ({
         for (let i = 0; i < drafts.length; i += 1) {
           const d = drafts[i];
           const qLine = String(d.questionText || '').trim();
-          if (!qLine) {
+          if (!isImageMode && !qLine) {
             showToast(`${i + 1}. soru metni boş.`, 'error');
             setIsSaving(false);
             return;
@@ -254,19 +302,19 @@ const QuestionFormModal = ({
             setIsSaving(false);
             return;
           }
-          const options = contentMode === 'image'
+          const options = isImageMode
             ? [...LETTERS]
             : (d.options || []).map((o, idx) => String(o || '').trim() || LETTERS[idx]).slice(0, 4);
-          if (contentMode === 'text' && options.filter((o) => o && !/^[A-D]$/i.test(o)).length < 2) {
+          if (!isImageMode && options.filter((o) => o && !/^[A-D]$/i.test(o)).length < 2) {
             showToast(`${i + 1}. soruda en az 2 şık metni girin.`, 'error');
             setIsSaving(false);
             return;
           }
           await postOneQuestion({
             introText: stem,
-            questionText: qLine,
+            questionText: qLine || (isImageMode ? 'Aşağıdaki soruyu çözünüz.' : ''),
             options,
-            correctAnswer: answerFromLetter(d.correctLetter, options, contentMode === 'image'),
+            correctAnswer: answerFromLetter(d.correctLetter, options, isImageMode),
             solution: d.solution || '',
             learningOutcome: d.learningOutcome || '',
             difficulty: d.difficulty || 'Orta',
@@ -279,8 +327,9 @@ const QuestionFormModal = ({
               sharedStem: stem,
               sharedPrompt: 'Aşağıdaki soruları yukarıdaki bilgilere göre cevaplayınız.',
               source: 'manual-multi',
+              contentMode,
             },
-            attachImage: i === 0,
+            attachImage: isImageMode && i === 0,
           });
         }
         showToast(`${drafts.length} soru bankaya eklendi.`, 'success');
@@ -292,28 +341,25 @@ const QuestionFormModal = ({
       const d = drafts[0] || emptyDraft(0);
       const intro = String(sharedIntro || form.introText || '').trim();
       const question = String(d.questionText || form.questionText || '').trim();
-      if (!intro && !question && !(effectiveMainImage?.file || effectiveMainImage?.preview)) {
-        return showToast('Soru metni veya görsel gerekli.', 'error');
-      }
-      if (!d.correctLetter && !form.correctAnswer) {
-        return showToast('Doğru cevabı (A–D) seçin.', 'error');
-      }
-      const options = contentMode === 'image' || (editingId && isImageMode && !(d.options || []).some((o) => String(o).trim().length > 1))
+      const options = isImageMode
         ? [...LETTERS]
         : (d.options?.length ? d.options : form.options).map((o, idx) => String(o || '').trim() || LETTERS[idx]).slice(0, 4);
       const letter = d.correctLetter || letterFromAnswer(options, form.correctAnswer);
       await postOneQuestion({
         introText: intro,
-        questionText: question,
+        questionText: question || (isImageMode ? 'Aşağıdaki soruyu çözünüz.' : ''),
         options,
-        correctAnswer: answerFromLetter(letter, options, contentMode === 'image'),
+        correctAnswer: answerFromLetter(letter, options, isImageMode),
         solution: d.solution || form.solution || '',
         learningOutcome: d.learningOutcome || form.learningOutcome || '',
         difficulty: d.difficulty || form.difficulty || 'Orta',
         topic: sharedTopic || form.topic || '',
         classLevel: sharedClassLevel || form.classLevel || '9. Sınıf',
-        assessmentMeta: form.assessmentMeta,
-        attachImage: true,
+        assessmentMeta: {
+          ...(form.assessmentMeta || {}),
+          contentMode,
+        },
+        attachImage: isImageMode,
       });
       showToast(editingId ? 'Soru güncellendi!' : 'Soru bankasına eklendi!', 'success');
       onSave();
@@ -364,9 +410,11 @@ const QuestionFormModal = ({
               {editingId ? 'Soruyu Güncelle' : 'Soru Bankasına Ekle'}
             </h3>
             <p className="text-teal-100 text-sm font-medium mt-1 opacity-90">
-              {wizardStep === 'format' && 'Önce soru türünü seçin'}
+              {wizardStep === 'format' && 'Soru resimli mi, metin mi? İşaretleyin'}
               {wizardStep === 'count' && 'Tek soru mu, birden fazla mı?'}
-              {wizardStep === 'form' && (contentMode === 'image' ? 'Resimli soru — şık metni yok, yalnızca A–D' : 'Metin sorusu')}
+              {wizardStep === 'form' && (isImageMode
+                ? 'Resimli soru — görsel yükleyin, doğru cevabı A–D işaretleyin'
+                : 'Metin sorusu — soru ve şık metinlerini girin')}
             </p>
           </div>
           <button type="button" onClick={onClose} className="z-10 p-2 hover:bg-white/20 rounded-full transition-colors" aria-label="Kapat">
@@ -377,29 +425,34 @@ const QuestionFormModal = ({
 
         <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
           {!editingId && wizardStep === 'format' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => { setContentMode('image'); setWizardStep('count'); }}
-                className="rounded-[1.5rem] border-2 border-teal-200 bg-teal-50/50 p-6 text-left hover:border-teal-500 hover:shadow-md transition-all dark:bg-teal-950/20"
-              >
-                <Images className="text-teal-600 mb-3" size={32} />
-                <p className="font-display text-lg font-semibold text-slate-900 dark:text-white">Resimli soru</p>
-                <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                  Görsel yüklenir; şıklar görselde kalır. Siz yalnızca A–D doğru cevabı seçersiniz.
-                </p>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setContentMode('text'); setWizardStep('count'); }}
-                className="rounded-[1.5rem] border-2 border-sky-200 bg-sky-50/50 p-6 text-left hover:border-sky-500 hover:shadow-md transition-all dark:bg-sky-950/20"
-              >
-                <FileText className="text-sky-600 mb-3" size={32} />
-                <p className="font-display text-lg font-semibold text-slate-900 dark:text-white">Metin soru</p>
-                <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                  Soru ve 4 şık metin olarak girilir; doğru cevap A–D ile işaretlenir.
-                </p>
-              </button>
+            <div className="space-y-4">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                Önce sorunun türünü işaretleyin. Buna göre ya görsel ya da metin girişi açılır.
+              </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => { applyContentMode('image'); setWizardStep('count'); }}
+                  className="rounded-[1.5rem] border-2 border-teal-200 bg-teal-50/50 p-6 text-left transition-all hover:border-teal-500 hover:shadow-md dark:bg-teal-950/20"
+                >
+                  <Images className="mb-3 text-teal-600" size={32} />
+                  <p className="font-display text-lg font-semibold text-slate-900 dark:text-white">Resimli soru</p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                    Soru görseli yüklenir. Şık metni girilmez; yalnızca A–D doğru cevap işaretlenir.
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { applyContentMode('text'); setWizardStep('count'); }}
+                  className="rounded-[1.5rem] border-2 border-sky-200 bg-sky-50/50 p-6 text-left transition-all hover:border-sky-500 hover:shadow-md dark:bg-sky-950/20"
+                >
+                  <FileText className="mb-3 text-sky-600" size={32} />
+                  <p className="font-display text-lg font-semibold text-slate-900 dark:text-white">Metin soru</p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                    Soru metni ve A–D şık metinleri yazılır. Görsel gerekmez.
+                  </p>
+                </button>
+              </div>
             </div>
           ) : null}
 
@@ -447,10 +500,52 @@ const QuestionFormModal = ({
           {wizardStep === 'form' ? (
             <form onSubmit={handleFormSubmit} className="space-y-6">
               {!editingId ? (
-                <button type="button" onClick={() => setWizardStep('count')} className="text-sm font-semibold text-teal-700">
-                  ← Tür / adet değiştir
+                <button type="button" onClick={() => setWizardStep('format')} className="text-sm font-semibold text-teal-700">
+                  ← Tür seçimine dön
                 </button>
               ) : null}
+
+              <section className="rounded-[1.5rem] border border-slate-200 p-4 dark:border-slate-700">
+                <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Soru türü
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Soru türü">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={isImageMode}
+                    onClick={() => applyContentMode('image')}
+                    className={`flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all ${
+                      isImageMode
+                        ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-300/30 dark:bg-teal-950/30'
+                        : 'border-slate-200 hover:border-teal-300 dark:border-slate-600'
+                    }`}
+                  >
+                    <Images className={isImageMode ? 'text-teal-600' : 'text-slate-400'} size={22} />
+                    <span>
+                      <span className="block font-bold text-slate-900 dark:text-white">Resimli</span>
+                      <span className="mt-0.5 block text-xs text-slate-500">Görsel yüklenir, şıklar A–D</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={!isImageMode}
+                    onClick={() => applyContentMode('text')}
+                    className={`flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all ${
+                      !isImageMode
+                        ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-300/30 dark:bg-sky-950/30'
+                        : 'border-slate-200 hover:border-sky-300 dark:border-slate-600'
+                    }`}
+                  >
+                    <FileText className={!isImageMode ? 'text-sky-600' : 'text-slate-400'} size={22} />
+                    <span>
+                      <span className="block font-bold text-slate-900 dark:text-white">Metin</span>
+                      <span className="mt-0.5 block text-xs text-slate-500">Soru ve şık metinleri yazılır</span>
+                    </span>
+                  </button>
+                </div>
+              </section>
 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <QuestionSourceBadge
@@ -458,19 +553,19 @@ const QuestionFormModal = ({
                   size="lg"
                 />
                 {form.source === 'AI' && !markAsExpert ? (
-                  <label className="inline-flex items-center gap-2 text-xs font-semibold text-teal-800 cursor-pointer">
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-teal-800">
                     <input type="checkbox" checked={markAsExpert} onChange={(e) => setMarkAsExpert(e.target.checked)} />
                     Uzman olarak doğruladım
                   </label>
                 ) : null}
               </div>
 
-              {(contentMode === 'image' || editingId) ? (
-                <section className="space-y-3 rounded-[1.5rem] border border-slate-200 p-5 dark:border-slate-700">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                    <ImageIcon size={14} /> Soru görseli
+              {isImageMode ? (
+                <section className="space-y-3 rounded-[1.5rem] border border-teal-200 bg-teal-50/30 p-5 dark:border-teal-900/40 dark:bg-teal-950/10">
+                  <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-teal-700 dark:text-teal-300">
+                    <ImageIcon size={14} /> Soru görseli (zorunlu)
                   </label>
-                  <div className="relative h-44 border-4 border-dashed border-slate-100 dark:border-slate-700 rounded-[1.5rem] hover:border-teal-300 transition-all flex items-center justify-center overflow-hidden">
+                  <div className="relative flex h-44 items-center justify-center overflow-hidden rounded-[1.5rem] border-4 border-dashed border-teal-200 transition-all hover:border-teal-400 dark:border-teal-800">
                     <input
                       type="file"
                       accept="image/*"
@@ -486,41 +581,48 @@ const QuestionFormModal = ({
                         <button
                           type="button"
                           onClick={(e) => { e.preventDefault(); effectiveSetMainImage({ file: null, preview: '' }); }}
-                          className="absolute top-2 right-2 z-30 rounded-lg bg-rose-500 p-1.5 text-white"
+                          className="absolute right-2 top-2 z-30 rounded-lg bg-rose-500 p-1.5 text-white"
                         >
                           <Trash2 size={14} />
                         </button>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-2 text-slate-400">
+                      <div className="flex flex-col items-center gap-2 text-teal-700/70 dark:text-teal-300/70">
                         <PlusCircle size={32} />
                         <span className="text-xs font-bold uppercase">Görsel yükle</span>
                       </div>
                     )}
                   </div>
                 </section>
-              ) : null}
+              ) : (
+                <div className="rounded-2xl border border-sky-100 bg-sky-50/50 px-4 py-3 text-sm text-sky-800 dark:border-sky-900/40 dark:bg-sky-950/20 dark:text-sky-200">
+                  Metin sorusu seçildi. Görsel yüklenmez; soru ve şık metinlerini aşağıya yazın.
+                </div>
+              )}
 
               <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="sm:col-span-3">
-                  <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Ortak giriş / üst açıklama
-                  </label>
-                  <textarea
-                    ref={firstInputRef}
-                    rows={2}
-                    value={sharedIntro}
-                    onChange={(e) => {
-                      setSharedIntro(e.target.value);
-                      setField('introText', e.target.value);
-                    }}
-                    className="w-full rounded-2xl border-none bg-slate-50 p-3 text-sm outline-none dark:bg-slate-900"
-                    placeholder={PATTERN_INTRO_PLACEHOLDER}
-                  />
-                </div>
+                {!isImageMode || isMulti ? (
+                  <div className="sm:col-span-3">
+                    <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      {isMulti ? 'Ortak giriş / üst açıklama' : 'Giriş metni (isteğe bağlı)'}
+                    </label>
+                    <textarea
+                      ref={firstInputRef}
+                      rows={2}
+                      value={sharedIntro}
+                      onChange={(e) => {
+                        setSharedIntro(e.target.value);
+                        setField('introText', e.target.value);
+                      }}
+                      className="w-full rounded-2xl border-none bg-slate-50 p-3 text-sm outline-none dark:bg-slate-900"
+                      placeholder={PATTERN_INTRO_PLACEHOLDER}
+                    />
+                  </div>
+                ) : null}
                 <div>
                   <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">Konu</label>
                   <input
+                    ref={isImageMode && !isMulti ? firstInputRef : undefined}
                     value={sharedTopic}
                     onChange={(e) => { setSharedTopic(e.target.value); setField('topic', e.target.value); }}
                     className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm font-medium outline-none dark:bg-slate-900"
@@ -547,22 +649,37 @@ const QuestionFormModal = ({
                     {index + 1}. Soru
                   </h4>
 
-                  <div>
-                    <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
-                      Soru metni
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={draft.questionText}
-                      onChange={(e) => updateDraft(index, { questionText: e.target.value })}
-                      className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm font-medium outline-none dark:bg-slate-900"
-                      placeholder={PATTERN_QUESTION_PLACEHOLDER}
-                    />
-                  </div>
+                  {!isImageMode ? (
+                    <div>
+                      <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Soru metni
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={draft.questionText}
+                        onChange={(e) => updateDraft(index, { questionText: e.target.value })}
+                        className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm font-medium outline-none dark:bg-slate-900"
+                        placeholder={PATTERN_QUESTION_PLACEHOLDER}
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Soru cümlesi (isteğe bağlı)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={draft.questionText}
+                        onChange={(e) => updateDraft(index, { questionText: e.target.value })}
+                        className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm font-medium outline-none dark:bg-slate-900"
+                        placeholder="Boş bırakılabilir — görseldeki soru yeterlidir"
+                      />
+                    </div>
+                  )}
 
                   {renderLetterPicker(draft, index)}
 
-                  {contentMode === 'text' ? (
+                  {!isImageMode ? (
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {LETTERS.map((letter, optIdx) => (
                         <div key={letter} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2 dark:border-slate-700">
@@ -644,8 +761,11 @@ const QuestionFormModal = ({
                       introText: sharedIntro,
                       questionText: drafts[0]?.questionText,
                       text: buildCombinedQuestionText(sharedIntro, drafts[0]?.questionText),
-                      image: effectiveMainImage?.preview || '',
-                      assessmentMeta: { parseLayout: { introText: sharedIntro, questionLine: drafts[0]?.questionText } },
+                      image: isImageMode ? (effectiveMainImage?.preview || '') : '',
+                      assessmentMeta: {
+                        contentMode,
+                        parseLayout: { introText: sharedIntro, questionLine: drafts[0]?.questionText },
+                      },
                     }}
                     showMeta={Boolean(sharedTopic)}
                     showImageInstruction={false}

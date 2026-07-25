@@ -39,6 +39,35 @@ function gradeSequenceAnswer(question, userAnswer) {
   return order.every((id, i) => id === correctOrder[i]);
 }
 
+function optionTextAt(question, letter) {
+  const idx = letter.charCodeAt(0) - 65;
+  const options = Array.isArray(question?.options) ? question.options : [];
+  if (idx < 0 || idx >= options.length) return '';
+  return normalizeMcAnswer(options[idx]).trim();
+}
+
+/** Harf (A–E) ile şık metnini eşdeğer sayarak karşılaştırır. */
+function mcAnswersMatch(question, userAnswer, correctAnswer) {
+  const user = normalizeMcAnswer(userAnswer).trim();
+  const correct = normalizeMcAnswer(correctAnswer).trim();
+  if (!user || !correct) return false;
+  if (user === correct) return true;
+
+  const userLetter = /^[A-E]$/i.test(user) ? user.toUpperCase() : '';
+  const correctLetter = /^[A-E]$/i.test(correct) ? correct.toUpperCase() : '';
+
+  // correctAnswer harf, cevap şık metni (veya tersi) olabilir
+  if (correctLetter && !userLetter) {
+    const text = optionTextAt(question, correctLetter);
+    if (text && text === user) return true;
+  }
+  if (userLetter && !correctLetter) {
+    const text = optionTextAt(question, userLetter);
+    if (text && text === correct) return true;
+  }
+  return false;
+}
+
 /**
  * @param {object} question Mongoose doc or lean object
  * @param {string} userAnswer
@@ -55,10 +84,11 @@ function gradeQuestionAnswer(question, userAnswer) {
     return gradeSequenceAnswer(question, userAnswer);
   }
 
-  return normalizeMcAnswer(userAnswer).trim() === normalizeMcAnswer(ca).trim();
+  return mcAnswersMatch(question, userAnswer, ca);
 }
 
 module.exports = {
   gradeQuestionAnswer,
+  mcAnswersMatch,
   normalizeMcAnswer,
 };

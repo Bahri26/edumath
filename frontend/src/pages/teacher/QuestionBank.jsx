@@ -20,7 +20,7 @@ import SolutionDisplay from '../../components/questions/SolutionDisplay.jsx';
 import CollapsiblePanel from '../../components/ui/CollapsiblePanel.jsx';
 import QuestionStemCard from '../../components/questions/QuestionStemCard.jsx';
 import QuestionOptionGrid from '../../components/questions/QuestionOptionGrid.jsx';
-import { IMAGE_QUESTION_INSTRUCTION, getQuestionLayout } from '../../utils/questionLayout.js';
+import { IMAGE_QUESTION_INSTRUCTION, getQuestionLayout, shouldUseLetterOnlyOptions } from '../../utils/questionLayout.js';
 import { hasQuestionImage } from '../../utils/questionImage.js';
 import { sourceFilterOptions, sourceFilterToApi } from '../../utils/questionSourceLabel';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
@@ -135,7 +135,7 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
             correctAnswer={question.correctAnswer}
             showCorrect
             disabled
-            letterOnly={false}
+            letterOnly={shouldUseLetterOnlyOptions(question)}
           />
 
           {(hintText || codeText) && (
