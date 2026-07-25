@@ -386,8 +386,14 @@ export default function QuestionBank() {
         const subjectParam = profile.branch && profile.branchApproval === 'approved' ? profile.branch : filters.subject;
         try {
           res = await apiClient.get('/teacher/subject/questions', { params: rest });
-        } catch {
-          res = await apiClient.get('/questions', { params: { ...rest, subject: subjectParam } });
+        } catch (err) {
+          const status = err?.response?.status;
+          // Branş onayı yoksa kendi sorularına düş; sunucu hatasında genel listeye düş
+          if (status === 403 || status === 401) {
+            res = await apiClient.get('/teacher/questions', { params });
+          } else {
+            res = await apiClient.get('/questions', { params: { ...rest, subject: subjectParam } });
+          }
         }
       } else {
         res = await apiClient.get('/teacher/questions', { params });

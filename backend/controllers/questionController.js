@@ -153,12 +153,11 @@ exports.getQuestions = async (req, res, next) => {
     const sortByTopic = String(sortBy || '').toLowerCase() === 'topic';
 
     const query = {};
-    
+
     if (subject && subject !== 'Tümü') query.subject = subject;
     applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
     if (source && source !== 'Tümü' && source !== 'All') query.source = source;
-    const searchMeta = buildQuestionSearch(query, search, 'text');
 
     // Eğer istek öğretmenden geliyorsa ve branşı onaylıysa, varsayılan olarak kendi branşındaki (subject) soruları göster
     // (subject filtrelenmemişse veya 'Tümü' ise)
@@ -175,7 +174,7 @@ exports.getQuestions = async (req, res, next) => {
           }
         }
       }
-    } catch {}
+    } catch { /* branch lookup optional */ }
 
     const bankSubject = typeof query.subject === 'string'
       ? query.subject
@@ -187,8 +186,44 @@ exports.getQuestions = async (req, res, next) => {
       if (topicClause0) query.topic = topicClause0;
     }
 
-    let total = await Question.countDocuments(query);
+    let searchMeta = null;
+    try {
+      searchMeta = buildQuestionSearch(query, search, 'text');
+    } catch {
+      searchMeta = buildQuestionSearch(query, search, 'regex');
+    }
+
+    let total;
     let effectiveQuery = query;
+    try {
+      total = await Question.countDocuments(query);
+    } catch (countErr) {
+      // $text indeksi yoksa veya geçersizse regex aramaya düş
+      if (searchMeta?.mode === 'text') {
+        console.warn('getQuestions text search failed, falling back to regex:', countErr?.message);
+        effectiveQuery = {};
+        if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
+        applyClassLevelFilter(effectiveQuery, classLevel);
+        if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
+        if (source && source !== 'Tümü' && source !== 'All') effectiveQuery.source = source;
+        if (teacherBranch && (!effectiveQuery.subject)) {
+          effectiveQuery.subject = { $regex: `^${escapeRegex(teacherBranch)}$`, $options: 'i' };
+        }
+        const fallbackSubject = typeof effectiveQuery.subject === 'string'
+          ? effectiveQuery.subject
+          : (teacherBranch || (subject && subject !== 'Tümü' ? subject : 'Matematik'));
+        if (req.user?.role === 'teacher') {
+          applyPatternQuestionBankScope(effectiveQuery, { subject: fallbackSubject, topic, escapeRegexFn: escapeRegex });
+        } else {
+          const topicClauseSq = buildTopicMongoClause(topic, escapeRegex);
+          if (topicClauseSq) effectiveQuery.topic = topicClauseSq;
+        }
+        searchMeta = buildQuestionSearch(effectiveQuery, search, 'regex');
+        total = await Question.countDocuments(effectiveQuery);
+      } else {
+        throw countErr;
+      }
+    }
 
     if (searchMeta?.mode === 'text' && total === 0) {
       effectiveQuery = {};
@@ -196,21 +231,9 @@ exports.getQuestions = async (req, res, next) => {
       applyClassLevelFilter(effectiveQuery, classLevel);
       if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
       if (source && source !== 'Tümü' && source !== 'All') effectiveQuery.source = source;
-      buildQuestionSearch(effectiveQuery, search, 'regex');
-
-      try {
-        if (req.user && req.user.role === 'teacher') {
-          const User = require('../models/User');
-          const u = await User.findById(req.user.id).select('branch branchApproval');
-          if (u && u.branch && u.branchApproval === 'approved') {
-            const noSubjectFilter = !('subject' in req.query) || req.query.subject === 'Tümü' || !effectiveQuery.subject;
-            if (noSubjectFilter) {
-              effectiveQuery.subject = { $regex: `^${u.branch}$`, $options: 'i' };
-            }
-          }
-        }
-      } catch {}
-
+      if (teacherBranch && (!effectiveQuery.subject)) {
+        effectiveQuery.subject = { $regex: `^${escapeRegex(teacherBranch)}$`, $options: 'i' };
+      }
       const fallbackSubject = typeof effectiveQuery.subject === 'string'
         ? effectiveQuery.subject
         : (teacherBranch || (subject && subject !== 'Tümü' ? subject : 'Matematik'));
@@ -220,7 +243,7 @@ exports.getQuestions = async (req, res, next) => {
         const topicClauseSq = buildTopicMongoClause(topic, escapeRegex);
         if (topicClauseSq) effectiveQuery.topic = topicClauseSq;
       }
-
+      searchMeta = buildQuestionSearch(effectiveQuery, search, 'regex');
       total = await Question.countDocuments(effectiveQuery);
     }
 
@@ -245,7 +268,10 @@ exports.getQuestions = async (req, res, next) => {
       solution: 1,
       assessmentMeta: 1,
     };
-    const sort = searchMeta?.mode === 'text' && effectiveQuery.$and?.some((clause) => clause.$text)
+    const usesTextScore = searchMeta?.mode === 'text'
+      && Array.isArray(effectiveQuery.$and)
+      && effectiveQuery.$and.some((clause) => clause.$text);
+    const sort = usesTextScore
       ? { score: { $meta: 'textScore' }, createdAt: -1 }
       : sortByTopic
         ? { topic: 1, createdAt: -1 }
@@ -253,7 +279,7 @@ exports.getQuestions = async (req, res, next) => {
 
     let questions = await Question.find(effectiveQuery, {
       ...projection,
-      ...(sort.score ? { score: { $meta: 'textScore' } } : {}),
+      ...(usesTextScore ? { score: { $meta: 'textScore' } } : {}),
     })
       .sort(sort)
       .skip((page - 1) * limit)
@@ -262,7 +288,13 @@ exports.getQuestions = async (req, res, next) => {
 
     // Hiç sonuç yoksa, subject için daha gevşek bir eşleşme dene
     if (total === 0 && effectiveQuery.subject?.$regex && !searchMeta) {
-      const looseQuery = { ...effectiveQuery, subject: { $regex: req.user?.role === 'teacher' ? req.userBranch || '' : '', $options: 'i' } };
+      const looseQuery = {
+        ...effectiveQuery,
+        subject: {
+          $regex: req.user?.role === 'teacher' ? (teacherBranch || req.userBranch || '') : '',
+          $options: 'i',
+        },
+      };
       const looseTotal = await Question.countDocuments(looseQuery);
       if (looseTotal > 0) {
         questions = await Question.find(looseQuery, projection)
@@ -270,6 +302,7 @@ exports.getQuestions = async (req, res, next) => {
           .skip((page - 1) * limit)
           .limit(limit)
           .lean();
+        total = looseTotal;
       }
     }
 
@@ -279,9 +312,8 @@ exports.getQuestions = async (req, res, next) => {
       totalPages: Math.ceil(total / limit),
       page: page,
       total: total,
-      data: questions.map(mapQuestionRecord)
+      data: questions.map(mapQuestionRecord),
     });
-
   } catch (error) {
     next(error);
   }
