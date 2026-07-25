@@ -4,8 +4,19 @@ import { AuthContext } from '../context/AuthContext';
 import { getHomePathForRole } from '../utils/roleRoutes';
 import { useTranslation } from '../i18n/useTranslation';
 
+const readToken = () => {
+  const direct = localStorage.getItem('token');
+  if (direct) return direct;
+  try {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser)?.token : null;
+  } catch {
+    return null;
+  }
+};
+
 const ProtectedRoute = ({ children, requiredRole = null }) => {
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading, logout } = useContext(AuthContext);
   const { t } = useTranslation();
 
   if (loading) {
@@ -19,7 +30,15 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     );
   }
 
-  if (!user) {
+  const token = readToken();
+  if (!user || !token) {
+    if (user && !token) {
+      try {
+        logout?.('unauthorized');
+      } catch {
+        /* ignore */
+      }
+    }
     return <Navigate to="/" replace />;
   }
 

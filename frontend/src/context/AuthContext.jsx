@@ -1,8 +1,19 @@
 import React, { createContext, useState, useEffect, useRef, useCallback } from 'react';
-import { registerAuthFailureHandler } from '../services/api';
+import { registerAuthFailureHandler, getBackendOrigin } from '../services/api';
 import { useToast } from './ToastContext';
 
 export const AuthContext = createContext();
+
+const readStoredToken = () => {
+  const direct = localStorage.getItem('token');
+  if (direct) return direct;
+  try {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser)?.token : null;
+  } catch {
+    return null;
+  }
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -11,41 +22,86 @@ export const AuthProvider = ({ children }) => {
   const timeoutRef = useRef(null);
   const { showToast } = useToast();
 
+  // Session timer başlat
+  const startSessionTimer = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    timeoutRef.current = setTimeout(() => {
+      logoutRef.current?.();
+      showToast?.('Oturum süreniz doldu. Lütfen yeniden giriş yapın.', 'info', 4000);
+    }, sessionTimeout);
+  }, [sessionTimeout, showToast]);
+
+  const logoutRef = useRef(null);
+
+  const logout = useCallback((reason) => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (refreshToken) {
+      try {
+        const apiOrigin = getBackendOrigin();
+        const logoutUrl = apiOrigin ? `${apiOrigin}/api/auth/logout` : '/api/auth/logout';
+        fetch(logoutUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        }).catch(() => {});
+      } catch { /* ignore */ }
+    }
+
+    setUser(null);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    localStorage.clear();
+    sessionStorage.clear();
+
+    if (reason === 'unauthorized') {
+      showToast?.('Oturumunuz sonlandı. Lütfen tekrar giriş yapın.', 'info', 4000);
+    } else if (reason === 'logout') {
+      showToast?.('Çıkış yapıldı.', 'success', 2500);
+    }
+
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 100);
+  }, [showToast]);
+
+  logoutRef.current = logout;
+
   // Uygulama ilk açıldığında localStorage'dan kullanıcıyı geri yükle
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    const storedToken = localStorage.getItem('token');
+    const storedToken = readStoredToken();
     const loginTime = localStorage.getItem('loginTime');
 
     if (storedUser && storedToken) {
       const now = Date.now();
-      const timeElapsed = now - (loginTime ? parseInt(loginTime) : now);
-      
-      // Session zaman aşımı kontrolü
+      const timeElapsed = now - (loginTime ? parseInt(loginTime, 10) : now);
+
       if (timeElapsed > sessionTimeout) {
         localStorage.clear();
         sessionStorage.clear();
       } else {
-        setUser(JSON.parse(storedUser));
-        startSessionTimer();
+        try {
+          const parsed = JSON.parse(storedUser);
+          localStorage.setItem('token', storedToken);
+          localStorage.setItem('user', JSON.stringify({ ...parsed, token: storedToken }));
+          setUser({ ...parsed, token: storedToken });
+          startSessionTimer();
+        } catch {
+          localStorage.clear();
+          sessionStorage.clear();
+        }
       }
+    } else if (storedUser && !storedToken) {
+      // Kullanıcı kaydı var ama token yok → yarım oturumu temizle
+      localStorage.clear();
+      sessionStorage.clear();
     }
     setLoading(false);
-  }, [sessionTimeout]);
-
-  // Session timer başlat
-  const startSessionTimer = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    
-    timeoutRef.current = setTimeout(() => {
-      logout();
-      showToast?.('Oturum süreniz doldu. Lütfen yeniden giriş yapın.', 'info', 4000);
-    }, sessionTimeout);
-  };
+  }, [sessionTimeout, startSessionTimer]);
 
   // Kullanıcı aktivitesi saptanırsa timer reset et
   useEffect(() => {
-    if (!user) return;
+    if (!user) return undefined;
 
     const resetTimer = () => {
       startSessionTimer();
@@ -61,55 +117,25 @@ export const AuthProvider = ({ children }) => {
       window.removeEventListener('keydown', resetTimer);
       window.removeEventListener('touchstart', resetTimer);
     };
-  }, [user, sessionTimeout]);
+  }, [user, startSessionTimer]);
 
-  // 🚨 LOGIN FONKSİYONU (Token Kaydetme)
   const login = (userData, token) => {
-    // 1. Verileri State'e at
-    setUser(userData);
-    
-    // 2. Verileri Tarayıcı Hafızasına (LocalStorage) kaydet
-    localStorage.setItem('user', JSON.stringify(userData));
+    if (!token) {
+      console.warn('login çağrıldı ama token yok');
+      return;
+    }
+
+    const nextUser = { ...(userData || {}), token };
+    setUser(nextUser);
+
+    localStorage.setItem('user', JSON.stringify(nextUser));
     localStorage.setItem('token', token);
     localStorage.setItem('loginTime', Date.now().toString());
     localStorage.setItem('lastActivity', Date.now().toString());
-    
-    // Timer başlat
+
     startSessionTimer();
   };
 
-  const logout = useCallback((reason) => {
-    // Backend refresh token revoke
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (refreshToken) {
-      try {
-        fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken })
-        }).catch(() => {});
-      } catch {}
-    }
-
-    // Tüm session verilerini temizle
-    setUser(null);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    localStorage.clear();
-    sessionStorage.clear();
-
-    if (reason === 'unauthorized') {
-      showToast?.('Oturumunuz sonlandı. Lütfen tekrar giriş yapın.', 'info', 4000);
-    } else if (reason === 'logout') {
-      showToast?.('Çıkış yapıldı.', 'success', 2500);
-    }
-
-    // Hızlı ana sayfaya git
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 100);
-  }, [showToast]);
-
-  // API katmanından gelen 401 -> tek noktadan logout
   useEffect(() => {
     registerAuthFailureHandler(() => logout('unauthorized'));
     return () => registerAuthFailureHandler(null);
