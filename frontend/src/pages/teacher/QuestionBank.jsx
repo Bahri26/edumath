@@ -22,6 +22,10 @@ import QuestionStemCard from '../../components/questions/QuestionStemCard.jsx';
 import QuestionOptionGrid from '../../components/questions/QuestionOptionGrid.jsx';
 import { IMAGE_QUESTION_INSTRUCTION, getQuestionLayout, shouldUseLetterOnlyOptions } from '../../utils/questionLayout.js';
 import { hasQuestionImage } from '../../utils/questionImage.js';
+import {
+  formatGroupProgressLabel,
+  resolveGroupedDisplayQuestion,
+} from '../../utils/questionGroup.js';
 import { sourceFilterOptions, sourceFilterToApi } from '../../utils/questionSourceLabel';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -56,17 +60,19 @@ const extractTopicAndCode = (question) => {
 const getHintText = (question) => String(question?.assessmentMeta?.hint || '').trim();
 const getCodeText = (question) => String(question?.assessmentMeta?.code || '').trim();
 
-const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
+const QuestionCard = ({ question, allQuestions = [], expanded, onToggle, onEdit, onDelete }) => {
   const difficultyStyles = {
     'Kolay': 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400',
     'Orta': 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400',
     'Zor': 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400',
   };
 
-  const { topicLabel, code: topicCode } = extractTopicAndCode(question);
-  const hintText = getHintText(question);
-  const codeText = getCodeText(question) || topicCode;
-  const isImageQuestion = hasQuestionImage(question.image);
+  const displayQuestion = resolveGroupedDisplayQuestion(question, allQuestions);
+  const { topicLabel, code: topicCode } = extractTopicAndCode(displayQuestion);
+  const hintText = getHintText(displayQuestion);
+  const codeText = getCodeText(displayQuestion) || topicCode;
+  const isImageQuestion = hasQuestionImage(displayQuestion.image);
+  const groupLabel = formatGroupProgressLabel(displayQuestion);
 
   return (
     <div className={expanded ? 'col-span-full' : ''}>
@@ -89,17 +95,24 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
           {!expanded ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 px-2 text-center">
               <span className="rounded-full bg-surface-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-surface-600 dark:bg-surface-700 dark:text-surface-300">
-                {question.classLevel || 'Sınıf yok'}
+                {displayQuestion.classLevel || 'Sınıf yok'}
               </span>
-              <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${difficultyStyles[question.difficulty] || difficultyStyles['Orta']}`}>
-                {question.difficulty || 'Orta'}
+              <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${difficultyStyles[displayQuestion.difficulty] || difficultyStyles['Orta']}`}>
+                {displayQuestion.difficulty || 'Orta'}
               </span>
               <span className="max-w-full truncate rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-sky-800 dark:border-sky-800/40 dark:bg-sky-900/25 dark:text-sky-300">
                 {topicLabel || 'Konu yok'}
               </span>
+              {groupLabel ? (
+                <span className="rounded-full border border-teal-100 bg-teal-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-teal-800 dark:border-teal-800/40 dark:bg-teal-900/25 dark:text-teal-300">
+                  {groupLabel}
+                </span>
+              ) : null}
             </div>
           ) : (
-            <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">Soru detayı — kapatmak için tıklayın</p>
+            <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">
+              {groupLabel ? `${groupLabel} — kapatmak için tıklayın` : 'Soru detayı — kapatmak için tıklayın'}
+            </p>
           )}
         </button>
 
@@ -107,7 +120,7 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
           className="absolute right-2 top-2 flex gap-1 opacity-70 transition-opacity group-hover:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
-          <button type="button" onClick={() => onEdit(question)} aria-label="Soruyu düzenle" className="rounded-lg border border-slate-200 bg-white p-2 text-slate-400 shadow-sm hover:text-teal-600 dark:border-slate-600 dark:bg-slate-800">
+          <button type="button" onClick={() => onEdit(displayQuestion)} aria-label="Soruyu düzenle" className="rounded-lg border border-slate-200 bg-white p-2 text-slate-400 shadow-sm hover:text-teal-600 dark:border-slate-600 dark:bg-slate-800">
             <Edit2 size={16} aria-hidden />
           </button>
           <button type="button" onClick={() => onDelete(question._id)} aria-label="Soruyu sil" className="rounded-lg border border-slate-200 bg-white p-2 text-slate-400 shadow-sm hover:text-rose-600 dark:border-slate-600 dark:bg-slate-800">
@@ -123,19 +136,19 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
               {IMAGE_QUESTION_INSTRUCTION}
             </p>
           ) : null}
-          <QuestionStemCard question={question} showMeta={false} showImageInstruction={false} />
-          {question.learningOutcome && (
+          <QuestionStemCard question={displayQuestion} showMeta={false} showImageInstruction={false} />
+          {displayQuestion.learningOutcome && (
             <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] leading-snug text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
               <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Kazanım</span>
-              {' '}{question.learningOutcome}
+              {' '}{displayQuestion.learningOutcome}
             </div>
           )}
           <QuestionOptionGrid
-            options={question.options}
-            correctAnswer={question.correctAnswer}
+            options={displayQuestion.options}
+            correctAnswer={displayQuestion.correctAnswer}
             showCorrect
             disabled
-            letterOnly={shouldUseLetterOnlyOptions(question)}
+            letterOnly={shouldUseLetterOnlyOptions(displayQuestion)}
           />
 
           {(hintText || codeText) && (
@@ -154,8 +167,8 @@ const QuestionCard = ({ question, expanded, onToggle, onEdit, onDelete }) => {
           )}
 
           <CollapsiblePanel title="Adım adım çözüm" defaultOpen={false} className="bg-teal-50/50 dark:bg-teal-900/10 border-teal-100 dark:border-teal-800/50">
-            {question.solution ? (
-              <SolutionDisplay text={question.solution} className="italic" />
+            {displayQuestion.solution ? (
+              <SolutionDisplay text={displayQuestion.solution} className="italic" />
             ) : (
               <div className="text-sm text-slate-600 dark:text-slate-300">Çözüm eklenmemiş.</div>
             )}
@@ -612,6 +625,7 @@ export default function QuestionBank() {
                 )}
                 <QuestionCard
                   question={q}
+                  allQuestions={questions}
                   expanded={expandedId === q._id}
                   onToggle={() => setExpandedId(expandedId === q._id ? null : q._id)}
                   onDelete={handleDelete}
@@ -624,6 +638,9 @@ export default function QuestionBank() {
                         ? profile.branch
                         : (question.subject || 'Matematik');
                     const stem = getQuestionLayout(question);
+                    const previewImage = question.image
+                      || question.assessmentMeta?.sharedImage
+                      || '';
                     setManualForm({
                       text: question.text || '',
                       introText: stem.introText,
@@ -639,7 +656,7 @@ export default function QuestionBank() {
                       source: question.source || 'Manuel',
                       assessmentMeta: question.assessmentMeta || null,
                     });
-                    setMainImage(question.image ? { file: null, preview: question.image } : { file: null, preview: '' });
+                    setMainImage(previewImage ? { file: null, preview: previewImage } : { file: null, preview: '' });
                     setIsModalOpen(true);
                   }}
                 />

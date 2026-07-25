@@ -253,9 +253,10 @@ const QuestionFormModal = ({
 
     const endpoint = editingId ? `/questions/${editingId}` : '/questions';
     const method = editingId ? 'put' : 'post';
-    await apiClient[method](endpoint, formData, {
+    const res = await apiClient[method](endpoint, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return res?.data?.data || null;
   };
 
   const handleFormSubmit = async (e) => {
@@ -289,6 +290,7 @@ const QuestionFormModal = ({
       if (isMulti) {
         const groupId = `manual-multi-${Date.now().toString(36)}`;
         const stem = String(sharedIntro || '').trim();
+        let sharedImageUrl = '';
         for (let i = 0; i < drafts.length; i += 1) {
           const d = drafts[i];
           const qLine = String(d.questionText || '').trim();
@@ -310,7 +312,7 @@ const QuestionFormModal = ({
             setIsSaving(false);
             return;
           }
-          await postOneQuestion({
+          const saved = await postOneQuestion({
             introText: stem,
             questionText: qLine || (isImageMode ? 'Aşağıdaki soruyu çözünüz.' : ''),
             options,
@@ -325,12 +327,16 @@ const QuestionFormModal = ({
               groupIndex: i + 1,
               groupSize: drafts.length,
               sharedStem: stem,
+              sharedImage: sharedImageUrl || undefined,
               sharedPrompt: 'Aşağıdaki soruları yukarıdaki bilgilere göre cevaplayınız.',
               source: 'manual-multi',
               contentMode,
             },
             attachImage: isImageMode && i === 0,
           });
+          if (i === 0 && isImageMode) {
+            sharedImageUrl = String(saved?.image || '').trim();
+          }
         }
         showToast(`${drafts.length} soru bankaya eklendi.`, 'success');
         onSave();

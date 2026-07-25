@@ -50,6 +50,25 @@ describe('questionGroup', () => {
     expect(display.assessmentMeta.parseLayout.questionLine).toBe('Soru 2?');
   });
 
+  it('uses sharedImage meta when sibling is not on the same page', () => {
+    const q2Alone = {
+      _id: 'b',
+      text: 'Soru 2?',
+      image: '',
+      assessmentMeta: {
+        groupId: 'l-pattern',
+        groupIndex: 2,
+        groupSize: 3,
+        sharedStem,
+        sharedImage: '/uploads/patterns/l-square-pattern.svg',
+        parseLayout: { questionLine: 'Soru 2?' },
+      },
+    };
+    const display = resolveGroupedDisplayQuestion(q2Alone, [q2Alone]);
+    expect(display.image).toBe('/uploads/patterns/l-square-pattern.svg');
+    expect(formatGroupProgressLabel(display)).toBe('Çoklu soru · 2/3');
+  });
+
   it('formats progress label', () => {
     expect(
       formatGroupProgressLabel({
