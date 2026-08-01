@@ -30,8 +30,14 @@ MEB_REF = "MEB Matematik Öğretim Programı (2018) — sınıf düzeyine uygun 
 ELEMENTARY_THEMES = [
     (["kırmızı", "mavi"], "renkli boncuklar", "boncuk"),
     (["elma", "armut"], "meyve tabağı", "meyve"),
+    (["yıldız", "ay"], "gökyüzü kartları", "kart"),
+    (["kedi", "köpek"], "hayvan figürleri", "figür"),
+    (["üçgen", "kare"], "şekil kartları", "şekil"),
+    (["mavi", "sarı"], "boya kutusu", "boya"),
     (["2", "4"], "oyun alanı", "sayı"),
     (["5", "10"], "sayı doğrusu", "sayı"),
+    (["3", "6"], "puan tablosu", "sayı"),
+    (["4", "8"], "kutu etiketleri", "sayı"),
 ]
 
 
@@ -119,19 +125,25 @@ def _generate_elementary_pattern(class_level: str, difficulty: str, seed: str) -
     if diff.startswith("kol") or grade <= 2:
         a, b = theme_items
         if unit == "sayı":
+            # Sabit tema sayıları yerine seed'e bağlı çift üret — aksi halde bu dal
+            # tema başına tek bir metne sıkışıp count>tema sayısı olduğunda tekrar üretirdi.
+            num_a = rng.randint(2, 6)
+            num_b = num_a + rng.randint(2, 5)
+            opts = list(dict.fromkeys([str(num_b), str(num_a), str(num_a + num_b), str(num_b + 1)]))[:4]
             return {
-                "text": f"{theme_label.capitalize()} üzerinde {a}, {b}, {a}, {b}, {a}, ... sayı örüntüsü var. Boşluğa hangi sayı gelmelidir?",
-                "options": [str(b), str(a), str(int(a) + int(b)), str(int(b) + 1)],
-                "correctAnswer": str(b),
+                "text": f"{theme_label.capitalize()} üzerinde {num_a}, {num_b}, {num_a}, {num_b}, {num_a}, ... sayı örüntüsü var. Boşluğa hangi sayı gelmelidir?",
+                "options": opts,
+                "correctAnswer": str(num_b),
                 "solution": _build_solution_lines([
-                    f"Sayılar {a} ve {b} olarak sırayla tekrar ediyor.",
-                    f"{a} sayısından sonra {b} gelir.",
-                    f"Doğru cevap {b} şıkkıdır.",
+                    f"Sayılar {num_a} ve {num_b} olarak sırayla tekrar ediyor.",
+                    f"{num_a} sayısından sonra {num_b} gelir.",
+                    f"Doğru cevap {num_b} şıkkıdır.",
                 ]),
                 "learningOutcome": "Tekrar eden sayı örüntüsünde sıradaki terimi bulur.",
                 "templateKey": "elementary-repeat",
             }
-        opts = list(dict.fromkeys([a, b, "sarı", "yeşil"]))[:4]
+        distractor_pool = ["sarı", "yeşil", "mor", "turuncu", "pembe", "siyah"]
+        opts = list(dict.fromkeys([a, b, *distractor_pool]))[:4]
         return {
             "text": f"{theme_label.capitalize()} dizisinde {a}, {b}, {a}, {b}, ... örüntüsü var. Sıradaki {unit} hangisidir?",
             "options": opts,
@@ -535,7 +547,12 @@ def generate_questions_from_pool(payload: dict[str, Any]) -> dict[str, Any]:
     Havuz örneklerinden yeni sorular üret.
     poolSamples: [{ text, options, correctAnswer, solution, topic, ... }]
     """
-    count = min(20, max(1, int(payload.get("count") or 5)))
+    raw_count = payload.get("count")
+    try:
+        count = int(raw_count) if raw_count is not None else 5
+    except (TypeError, ValueError):
+        count = 5
+    count = min(20, max(1, count))
     params = {
         "topic": str(payload.get("topic") or "").strip(),
         "difficulty": str(payload.get("difficulty") or "Orta").strip(),
@@ -568,8 +585,10 @@ def generate_questions_from_pool(payload: dict[str, Any]) -> dict[str, Any]:
             q = _template_question(default_kind, params, i)
 
         text_key = (q.get("text") or "")[:120].lower()
-        if text_key in seen_text:
-            q = _template_question(default_kind, params, i + count)
+        attempt = 0
+        while text_key in seen_text and attempt < 5:
+            attempt += 1
+            q = _template_question(default_kind, params, i + count * (attempt + 1))
             text_key = (q.get("text") or "")[:120].lower()
         seen_text.add(text_key)
 

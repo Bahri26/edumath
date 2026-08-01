@@ -294,6 +294,52 @@ def solve_algebraic_rule_pattern(text: str, options: list[str], extra_text: str 
     )
 
 
+LINEAR_EQUATION_RE = re.compile(r"(-?\d*)\s*x\s*([+-]\s*\d+)?\s*=\s*(-?\d+)", re.I)
+
+
+def solve_linear_equation_pattern(text: str, options: list[str]) -> SolveResult | None:
+    """Tek bilinmeyenli basit doğrusal denklem: 'ax + b = c ise x kaçtır?' sorularını çözer."""
+    combined = str(text or "")
+    if not re.search(r"x\s*(kaç[ıi]?t[ıi]r|de[ğg]eri|kaç[ıi]d[ıi]r)", combined, re.I):
+        return None
+
+    match = LINEAR_EQUATION_RE.search(combined)
+    if not match:
+        return None
+
+    a_raw, b_raw, c_raw = match.groups()
+    if a_raw in (None, "", "-"):
+        a = -1 if a_raw == "-" else 1
+    else:
+        a = int(a_raw)
+    if a == 0:
+        return None
+    b = int(b_raw.replace(" ", "")) if b_raw else 0
+    c = int(c_raw)
+
+    numerator = c - b
+    if numerator % a != 0:
+        return None
+    x_value = numerator // a
+
+    match_opt = find_option_by_value(options, x_value)
+    if not match_opt:
+        return None
+
+    a_label = "x" if a == 1 else "-x" if a == -1 else f"{a}x"
+    equation_label = f"{a_label} {'+' if b >= 0 else '-'} {abs(b)} = {c}" if b else f"{a_label} = {c}"
+    numerator_label = f"{c} - {b}" if b >= 0 else f"{c} + {abs(b)}"
+    return _to_result(
+        match_opt,
+        [
+            f"Denklem: {equation_label}.",
+            f"x = ({numerator_label}) / {a} = {x_value}.",
+            f"Doğru cevap {chr(65 + match_opt['index'])}) {match_opt['value']} şıkkıdır.",
+        ],
+        "linear-equation",
+    )
+
+
 def extract_comma_number_tokens(text: str) -> list[int | None]:
     """Metinden virgülle ayrılmış sayı dizisi çıkarır; ? veya boşluk eksik terimdir."""
     combined = str(text or "")
@@ -560,6 +606,7 @@ def solve_pattern_question(payload: dict[str, Any]) -> dict[str, Any] | None:
         return None
 
     solvers: list[Callable[..., SolveResult | None]] = [
+        solve_linear_equation_pattern,
         lambda t, o: solve_algebraic_rule_pattern(t, o, extra),
         solve_square_count_pattern,
         solve_hexagon_count_pattern,

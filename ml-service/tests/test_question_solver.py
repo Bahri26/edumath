@@ -1,5 +1,6 @@
 from services.question_solver import (
     solve_hexagon_count_pattern,
+    solve_linear_equation_pattern,
     solve_pattern_question,
     solve_square_count_pattern,
     solve_square_numbers_pattern,
@@ -56,6 +57,37 @@ def test_two_step():
     assert result is not None
     assert result.correct_answer == "10"
     assert result.solver_name == "two-step"
+
+
+def test_linear_equation_positive_offset():
+    result = solve_linear_equation_pattern("3x + 5 = 20 ise x kaçtır?", ["3", "4", "5", "6"])
+    assert result is not None
+    assert result.correct_answer == "5"
+    assert result.solver_name == "linear-equation"
+
+
+def test_linear_equation_negative_offset():
+    result = solve_linear_equation_pattern("2x - 3 = 7 ise x kaçtır?", ["3", "4", "5", "6"])
+    assert result is not None
+    assert result.correct_answer == "5"
+
+
+def test_linear_equation_implicit_coefficient():
+    result = solve_linear_equation_pattern("x + 4 = 9 ise x değeri kaçtır?", ["3", "4", "5", "6"])
+    assert result is not None
+    assert result.correct_answer == "5"
+
+
+def test_linear_equation_ignores_unrelated_text():
+    assert solve_linear_equation_pattern("Bu soru alakasız bir metin.", ["1", "2"]) is None
+
+
+def test_linear_equation_via_solve_pattern_question():
+    payload = {"text": "3x + 5 = 20 ise x kaçtır?", "options": ["3", "4", "5", "6"]}
+    result = solve_pattern_question(payload)
+    assert result is not None
+    assert result["correctAnswer"] == "5"
+    assert result["solverName"] == "linear-equation"
 
 
 def test_solve_pattern_question_integration():
