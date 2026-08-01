@@ -7,6 +7,17 @@
 const errorHandler = (err, req, res, next) => {
     console.error(err.stack);
 
+    if (err.name === 'MulterError') {
+        const isTooLarge = err.code === 'LIMIT_FILE_SIZE';
+        return res.status(isTooLarge ? 413 : 400).json({
+            success: false,
+            message: isTooLarge
+                ? 'Görsel çok büyük. Lütfen daha küçük bir dosya seçin veya sıkıştırıp tekrar deneyin.'
+                : 'Dosya yüklenemedi. Lütfen tekrar deneyin.',
+            code: err.code,
+        });
+    }
+
     const statusCode = err.statusCode || 500;
     const isProd = process.env.NODE_ENV === 'production';
 
