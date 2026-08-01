@@ -82,12 +82,25 @@ export default function ExamResultsModal({ examId, onClose }) {
         </div>
 
         <div className="p-5 overflow-y-auto flex-1 space-y-6">
-          {loading && <p className="text-slate-500">Yükleniyor…</p>}
+          {loading && (
+            <div className="space-y-6 animate-pulse">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-20 rounded-xl bg-slate-100 dark:bg-slate-800" />
+                ))}
+              </div>
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-16 rounded-xl bg-slate-100 dark:bg-slate-800" />
+                ))}
+              </div>
+            </div>
+          )}
           {error && <p className="text-rose-600">{error}</p>}
 
           {!loading && !error && summary && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                 <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-950/30 border border-brand-100 dark:border-brand-900">
                   <div className="text-xs font-bold text-brand-600 uppercase">Katılım</div>
                   <div className="text-2xl font-black text-brand-700 dark:text-brand-300">{summary.participantCount}</div>
@@ -239,7 +252,12 @@ export default function ExamResultsModal({ examId, onClose }) {
           )}
         </div>
 
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+          {summary ? (
+            <span className="text-sm text-slate-500 dark:text-slate-400">
+              {summary.participantCount} / {summary.rosterCount ?? '—'} öğrenci tamamladı
+            </span>
+          ) : <span />}
           <Button variant="outline" onClick={onClose}>Kapat</Button>
         </div>
       </div>

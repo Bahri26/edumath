@@ -298,7 +298,11 @@ export default function AiGenerateQuizModal({
           )}
         </div>
 
-        <div className="p-6 pt-0 flex flex-wrap gap-3 justify-end border-t border-slate-100 dark:border-slate-700">
+        <div className="p-6 pt-0 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-700">
+          <span className="text-xs font-bold uppercase tracking-wider text-surface-400">
+            Adım {step === 'form' ? 1 : 2} / 2
+          </span>
+          <div className="flex flex-wrap gap-3">
           {step === 'preview' && (
             <Button variant="outline" size="md" onClick={() => setStep('form')} disabled={loading || saving}>
               Geri
@@ -339,6 +343,7 @@ export default function AiGenerateQuizModal({
               </Button>
             </>
           )}
+          </div>
         </div>
       </div>
     </div>

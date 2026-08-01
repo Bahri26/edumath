@@ -406,7 +406,8 @@ export default function TeacherExamsPage() {
 
   if (view === 'studio') {
     return (
-      <div className="p-6 space-y-8 animate-in slide-in-from-right duration-500">
+      <TeacherPageShell maxWidthClass="max-w-6xl">
+      <div className="space-y-8 animate-in slide-in-from-right duration-500">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Button
             type="button"
@@ -558,6 +559,7 @@ export default function TeacherExamsPage() {
           </div>
         </div>
       </div>
+      </TeacherPageShell>
     );
   }
 

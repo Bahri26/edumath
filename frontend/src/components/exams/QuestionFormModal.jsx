@@ -47,6 +47,9 @@ const answerFromLetter = (letter, options = [], imageMode = false) => {
   return opt || LETTERS[idx];
 };
 
+const WIZARD_STEP_NUMBERS = { format: 1, count: 2, form: 3 };
+const WIZARD_STEP_COUNT = 3;
+
 const QuestionFormModal = ({
   isOpen,
   onClose,
@@ -443,24 +446,28 @@ const QuestionFormModal = ({
                 <button
                   type="button"
                   onClick={() => { applyContentMode('image'); setWizardStep('count'); }}
-                  className="rounded-[1.5rem] border-2 border-teal-200 bg-teal-50/50 p-6 text-left transition-all hover:border-teal-500 hover:shadow-md dark:bg-teal-950/20"
+                  className="flex min-h-[13rem] flex-col justify-between rounded-[1.5rem] border-2 border-teal-200 bg-teal-50/50 p-7 text-left transition-all hover:border-teal-500 hover:shadow-md dark:bg-teal-950/20"
                 >
-                  <Images className="mb-3 text-teal-600" size={32} />
-                  <p className="font-display text-lg font-semibold text-slate-900 dark:text-white">Resimli soru</p>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    Soru görseli yüklenir. Şık metni girilmez; yalnızca A–D doğru cevap işaretlenir.
-                  </p>
+                  <Images className="text-teal-600" size={36} />
+                  <div>
+                    <p className="font-display text-lg font-semibold text-slate-900 dark:text-white">Resimli soru</p>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                      Soru görseli yüklenir. Şık metni girilmez; yalnızca A–D doğru cevap işaretlenir.
+                    </p>
+                  </div>
                 </button>
                 <button
                   type="button"
                   onClick={() => { applyContentMode('text'); setWizardStep('count'); }}
-                  className="rounded-[1.5rem] border-2 border-sky-200 bg-sky-50/50 p-6 text-left transition-all hover:border-sky-500 hover:shadow-md dark:bg-sky-950/20"
+                  className="flex min-h-[13rem] flex-col justify-between rounded-[1.5rem] border-2 border-sky-200 bg-sky-50/50 p-7 text-left transition-all hover:border-sky-500 hover:shadow-md dark:bg-sky-950/20"
                 >
-                  <FileText className="mb-3 text-sky-600" size={32} />
-                  <p className="font-display text-lg font-semibold text-slate-900 dark:text-white">Metin soru</p>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    Soru metni ve A–D şık metinleri yazılır. Görsel gerekmez.
-                  </p>
+                  <FileText className="text-sky-600" size={36} />
+                  <div>
+                    <p className="font-display text-lg font-semibold text-slate-900 dark:text-white">Metin soru</p>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                      Soru metni ve A–D şık metinleri yazılır. Görsel gerekmez.
+                    </p>
+                  </div>
                 </button>
               </div>
             </div>
@@ -475,20 +482,24 @@ const QuestionFormModal = ({
                 <button
                   type="button"
                   onClick={() => buildSlots(1)}
-                  className="rounded-[1.5rem] border-2 border-slate-200 p-6 text-left hover:border-teal-500 transition-all"
+                  className="flex min-h-[11rem] flex-col justify-between rounded-[1.5rem] border-2 border-slate-200 p-7 text-left hover:border-teal-500 transition-all"
                 >
-                  <HelpCircle className="text-slate-500 mb-3" size={28} />
-                  <p className="font-semibold text-lg">Tek soru</p>
-                  <p className="text-sm text-slate-500 mt-1">Bir soru kaydı oluşturur.</p>
+                  <HelpCircle className="text-slate-500" size={32} />
+                  <div>
+                    <p className="font-semibold text-lg">Tek soru</p>
+                    <p className="text-sm text-slate-500 mt-1">Bir soru kaydı oluşturur.</p>
+                  </div>
                 </button>
                 <button
                   type="button"
                   onClick={() => buildSlots(3)}
-                  className="rounded-[1.5rem] border-2 border-slate-200 p-6 text-left hover:border-teal-500 transition-all"
+                  className="flex min-h-[11rem] flex-col justify-between rounded-[1.5rem] border-2 border-slate-200 p-7 text-left hover:border-teal-500 transition-all"
                 >
-                  <ListOrdered className="text-slate-500 mb-3" size={28} />
-                  <p className="font-semibold text-lg">Birden fazla soru</p>
-                  <p className="text-sm text-slate-500 mt-1">Ortak kök + 3 madde (1–2–3. soru) otomatik açılır.</p>
+                  <ListOrdered className="text-slate-500" size={32} />
+                  <div>
+                    <p className="font-semibold text-lg">Birden fazla soru</p>
+                    <p className="text-sm text-slate-500 mt-1">Ortak kök + 3 madde (1–2–3. soru) otomatik açılır.</p>
+                  </div>
                 </button>
               </div>
               <div className="flex flex-wrap gap-2 pt-2">
@@ -858,7 +869,13 @@ const QuestionFormModal = ({
           ) : null}
         </div>
 
-        <div className="p-8 bg-slate-50 dark:bg-slate-900 flex justify-end gap-4 border-t border-slate-100 dark:border-slate-700 shrink-0">
+        <div className="p-8 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-700 shrink-0">
+          {!editingId ? (
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Adım {WIZARD_STEP_NUMBERS[wizardStep] || 1} / {WIZARD_STEP_COUNT}
+            </span>
+          ) : <span />}
+          <div className="flex items-center gap-4">
           <button type="button" onClick={onClose} className="px-8 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-200 transition-all">
             İptal
           </button>
@@ -875,6 +892,7 @@ const QuestionFormModal = ({
                 : (drafts.length > 1 ? `${drafts.length} Soruyu Kaydet` : 'Soru Bankasına Ekle')}
             </button>
           ) : null}
+          </div>
         </div>
       </div>
     </div>

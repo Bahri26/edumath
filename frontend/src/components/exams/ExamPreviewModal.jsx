@@ -51,7 +51,35 @@ export default function ExamPreviewModal({ examId, onClose }) {
 
         <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
           {loading ? (
-            <div>Yükleniyor...</div>
+            <div className="space-y-8 animate-pulse">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="space-y-2">
+                  <div className="h-7 w-56 rounded-lg bg-slate-200 dark:bg-slate-700" />
+                  <div className="h-4 w-40 rounded bg-slate-200 dark:bg-slate-700" />
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-20 rounded-xl bg-slate-200 dark:bg-slate-700" />
+                  <div className="h-8 w-20 rounded-xl bg-slate-200 dark:bg-slate-700" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-5">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="p-5 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="h-5 w-16 rounded bg-slate-200 dark:bg-slate-700" />
+                      <div className="h-5 w-12 rounded bg-slate-200 dark:bg-slate-700" />
+                    </div>
+                    <div className="h-4 w-full rounded bg-slate-200 dark:bg-slate-700 mb-2" />
+                    <div className="h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-700 mb-4" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {Array.from({ length: 4 }).map((__, j) => (
+                        <div key={j} className="h-10 rounded-xl bg-slate-200 dark:bg-slate-700" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : error ? (
             <div className="text-red-600">{error}</div>
           ) : exam ? (
