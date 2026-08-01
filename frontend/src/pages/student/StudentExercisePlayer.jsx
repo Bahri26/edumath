@@ -28,9 +28,13 @@ import { hasQuestionImage } from '../../utils/questionImage.js';
 import { shouldUseLetterOnlyOptions } from '../../utils/questionLayout.js';
 import { useQuestionTimer } from '../../hooks/useQuestionTimer.js';
 import {
+  findAdjacentWorksheetIndex,
   formatGroupProgressLabel,
+  getGroupedWorksheetMembers,
+  getQuestionGroupMeta,
   resolveGroupedDisplayQuestion,
 } from '../../utils/questionGroup.js';
+import GroupedQuestionWorksheet from '../../components/questions/GroupedQuestionWorksheet.jsx';
 
 function optionText(opt) {
   if (opt == null) return '';
@@ -66,6 +70,7 @@ export default function StudentExercisePlayer() {
   const [exercise, setExercise] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [draftAnswer, setDraftAnswer] = useState('');
+  const [worksheetPending, setWorksheetPending] = useState({});
   const [answers, setAnswers] = useState({});
   const [feedback, setFeedback] = useState({});
   const [checking, setChecking] = useState(false);
@@ -188,26 +193,28 @@ export default function StudentExercisePlayer() {
     }
   };
 
-  const handleCheck = async () => {
-    if (!currentQ || !hasAnswerReady(currentQ, draftAnswer)) {
+  const handleCheck = async (questionOverride = null, answerOverride = null) => {
+    const targetQ = questionOverride || currentQ;
+    const answerValue = answerOverride != null ? answerOverride : draftAnswer;
+    if (!targetQ || !hasAnswerReady(targetQ, answerValue)) {
       showToast(t('exercisePlayer.pickAnswer'), 'warning');
       return;
     }
     setChecking(true);
     try {
-      const timeSpent = recordAnswerTime(currentQ._id);
+      const timeSpent = recordAnswerTime(targetQ._id);
       const answerPayload =
-        currentQ.type === 'matching' && typeof draftAnswer !== 'string'
-          ? JSON.stringify(draftAnswer)
-          : draftAnswer;
+        targetQ.type === 'matching' && typeof answerValue !== 'string'
+          ? JSON.stringify(answerValue)
+          : answerValue;
       const res = await apiClient.post(`/exercises/${exerciseId}/check-answer`, {
-        questionId: currentQ._id,
+        questionId: targetQ._id,
         answer: answerPayload,
       });
       const data = res.data;
       setFeedback((prev) => ({
         ...prev,
-        [currentQ._id]: {
+        [targetQ._id]: {
           isCorrect: data.isCorrect,
           correctAnswer: data.correctAnswer,
           solution: data.solution,
@@ -215,7 +222,7 @@ export default function StudentExercisePlayer() {
       }));
       setAnswers((prev) => ({
         ...prev,
-        [currentQ._id]: { answer: answerPayload, timeSpent },
+        [targetQ._id]: { answer: answerPayload, timeSpent },
       }));
     } catch (err) {
       showToast(err.response?.data?.message || t('exercisePlayer.errCheck'), 'error');
@@ -230,8 +237,9 @@ export default function StudentExercisePlayer() {
   };
 
   const goNext = () => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex((i) => i + 1);
+    const next = findAdjacentWorksheetIndex(questions, currentIndex, 1);
+    if (next !== currentIndex) {
+      setCurrentIndex(next);
     } else {
       handleFinish();
     }
@@ -413,6 +421,12 @@ export default function StudentExercisePlayer() {
     );
   }
 
+  const groupMembers = currentQ ? getGroupedWorksheetMembers(currentQ, questions) : [];
+  const useWorksheet = groupMembers.length >= 2 && Boolean(getQuestionGroupMeta(currentQ));
+  const groupAllAnswered = useWorksheet
+    ? groupMembers.every((m) => Boolean(feedback[m._id]))
+    : isAnswered;
+
   const progress = questions.length ? Math.round(((currentIndex + (isAnswered ? 1 : 0)) / questions.length) * 100) : 0;
 
   const playerMaxWidth = hasQuestionImage(displayQ?.image || currentQ?.image)
@@ -448,8 +462,10 @@ export default function StudentExercisePlayer() {
             </span>
           )}
           <span className="text-sm font-bold text-slate-500">
-            {currentIndex + 1} / {questions.length}
-            {groupLabel ? (
+            {useWorksheet
+              ? `Çoklu soru · ${groupMembers.length} madde`
+              : `${currentIndex + 1} / ${questions.length}`}
+            {!useWorksheet && groupLabel ? (
               <span className="ml-2 font-semibold text-teal-700 dark:text-teal-300">{groupLabel}</span>
             ) : null}
           </span>
@@ -463,7 +479,64 @@ export default function StudentExercisePlayer() {
         />
       </div>
 
-      {currentQ && displayQ && (
+      {currentQ && displayQ && useWorksheet && (
+        <div className="rounded-[1.25rem] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm space-y-4">
+          <GroupedQuestionWorksheet
+            questions={groupMembers}
+            allQuestions={questions}
+            answers={Object.fromEntries(
+              groupMembers.map((m) => [String(m._id), answers[m._id]?.answer || '']),
+            )}
+            pendingById={worksheetPending}
+            onPendingChange={(id, value) => setWorksheetPending((prev) => ({ ...prev, [id]: value }))}
+            onCommit={(id, value) => {
+              const target = groupMembers.find((m) => String(m._id) === String(id));
+              if (target) handleCheck(target, value);
+            }}
+            disabledIds={Object.fromEntries(
+              groupMembers.map((m) => [String(m._id), Boolean(feedback[m._id])]),
+            )}
+            showCorrect={false}
+            framed={false}
+            commitLabel={checking ? t('exercisePlayer.checking') : 'Cevapla'}
+          />
+
+          {groupMembers.map((m) => {
+            const fb = feedback[m._id];
+            if (!fb) return null;
+            return (
+              <div
+                key={`fb-${m._id}`}
+                className={`p-3 rounded-xl text-sm ${
+                  fb.isCorrect
+                    ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200'
+                    : 'bg-rose-50 text-rose-800 dark:bg-rose-950/30 dark:text-rose-200'
+                }`}
+              >
+                <strong>{getQuestionGroupMeta(m)?.groupIndex || ''}. madde:</strong>{' '}
+                {fb.isCorrect ? t('exercisePlayer.correct') : t('exercisePlayer.wrong')}
+                {!fb.isCorrect ? (
+                  <span className="ml-1">
+                    ({t('exercisePlayer.correctAnswerLabel')} {String(fb.correctAnswer ?? '')})
+                  </span>
+                ) : null}
+              </div>
+            );
+          })}
+
+          {groupAllAnswered ? (
+            <Button variant="primary" className="w-full" onClick={goNext} disabled={submitting}>
+              {findAdjacentWorksheetIndex(questions, currentIndex, 1) !== currentIndex ? (
+                <>{t('exercisePlayer.nextQuestion')} <ArrowRight size={16} className="ml-1 inline" aria-hidden /></>
+              ) : (
+                submitting ? t('exercisePlayer.saving') : t('exercisePlayer.finishSave')
+              )}
+            </Button>
+          ) : null}
+        </div>
+      )}
+
+      {currentQ && displayQ && !useWorksheet && (
         <div className="rounded-[1.25rem] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm space-y-4">
           {displayQ.assessmentMeta?.sharedPrompt ? (
             <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
@@ -484,7 +557,7 @@ export default function StudentExercisePlayer() {
               variant="primary"
               className="w-full"
               disabled={checking || !hasAnswerReady(currentQ, draftAnswer)}
-              onClick={handleCheck}
+              onClick={() => handleCheck()}
             >
               {checking ? t('exercisePlayer.checking') : 'Cevapla'}
             </Button>

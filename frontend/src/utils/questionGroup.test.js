@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatGroupProgressLabel,
+  findAdjacentWorksheetIndex,
+  getGroupedWorksheetMembers,
   getQuestionGroupMeta,
   resolveGroupedDisplayQuestion,
 } from './questionGroup.js';
@@ -75,5 +77,17 @@ describe('questionGroup', () => {
         assessmentMeta: { groupId: 'x', groupIndex: 3, groupSize: 3 },
       }),
     ).toBe('Çoklu soru · 3/3');
+  });
+
+  it('finds adjacent worksheet index skipping same group', () => {
+    const list = [
+      { _id: '1', assessmentMeta: { groupId: 'g', groupIndex: 1, groupSize: 3 } },
+      { _id: '2', assessmentMeta: { groupId: 'g', groupIndex: 2, groupSize: 3 } },
+      { _id: '3', assessmentMeta: { groupId: 'g', groupIndex: 3, groupSize: 3 } },
+      { _id: '4', assessmentMeta: {} },
+    ];
+    expect(findAdjacentWorksheetIndex(list, 0, 1)).toBe(3);
+    expect(findAdjacentWorksheetIndex(list, 3, -1)).toBe(0);
+    expect(getGroupedWorksheetMembers(list[1], list)).toHaveLength(3);
   });
 });

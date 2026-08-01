@@ -96,3 +96,40 @@ export function formatGroupProgressLabel(question) {
   if (index) return `Çoklu soru · ${index}`;
   return 'Çoklu soru';
 }
+
+/** Mevcut sorunun grubundaki tüm üyeler (yoksa [question]). */
+export function getGroupedWorksheetMembers(question, allQuestions = []) {
+  if (!question) return [];
+  const group = getQuestionGroupMeta(question);
+  if (!group?.groupId) return [question];
+  const members = findGroupMembers(allQuestions, group.groupId);
+  return members.length ? members : [question];
+}
+
+/**
+ * Grup çalışma sayfasında gezinme: önceki/sonraki "sayfa" indeksini bulur.
+ * Aynı gruptaki maddeler tek sayfa sayılır.
+ */
+export function findAdjacentWorksheetIndex(questions = [], currentIndex, direction) {
+  const list = Array.isArray(questions) ? questions : [];
+  if (!list.length) return currentIndex;
+  const cur = list[currentIndex];
+  const curGroup = getQuestionGroupMeta(cur)?.groupId || '';
+  const step = direction < 0 ? -1 : 1;
+  let i = currentIndex + step;
+  while (i >= 0 && i < list.length) {
+    const g = getQuestionGroupMeta(list[i])?.groupId || '';
+    if (!curGroup || g !== curGroup) {
+      // Gruba girerken ilk üyeye hizala
+      const landGroup = g;
+      if (landGroup) {
+        const first = list.findIndex((q) => clean(q?.assessmentMeta?.groupId) === landGroup);
+        return first >= 0 ? first : i;
+      }
+      return i;
+    }
+    i += step;
+  }
+  return currentIndex;
+}
+

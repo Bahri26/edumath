@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { renderWithLatex } from '../../utils/latex.jsx';
 import QuestionOptionGrid from '../questions/QuestionOptionGrid.jsx';
 import QuestionStemCard from '../questions/QuestionStemCard.jsx';
+import GroupedQuestionWorksheet from '../questions/GroupedQuestionWorksheet.jsx';
 import { MatchingPracticeCard, SequencePracticeCard } from './InteractivePracticeCards.jsx';
 import StudentHint from '../StudentHint.jsx';
 import { ExerciseFillPlay } from '../exercises/ExerciseGameInputs.jsx';
@@ -13,7 +14,9 @@ import {
   formatExamClock,
 } from '../../utils/examAnswerUtils.js';
 import {
-  formatGroupProgressLabel,
+  findAdjacentWorksheetIndex,
+  getGroupedWorksheetMembers,
+  getQuestionGroupMeta,
   resolveGroupedDisplayQuestion,
 } from '../../utils/questionGroup.js';
 import { shouldUseLetterOnlyOptions } from '../../utils/questionLayout.js';
@@ -41,9 +44,12 @@ export default function ExamPlayer({
   const idx = Math.min(questionIndex, Math.max(0, totalQuestions - 1));
   const q = exam.questions[idx];
   const displayQ = q ? resolveGroupedDisplayQuestion(q, exam.questions) : null;
-  const groupLabel = displayQ ? formatGroupProgressLabel(displayQ) : '';
-  const isFirst = idx === 0;
-  const isLast = idx >= totalQuestions - 1;
+  const groupMembers = q ? getGroupedWorksheetMembers(q, exam.questions) : [];
+  const useWorksheet = groupMembers.length >= 2 && Boolean(getQuestionGroupMeta(q));
+  const prevIdx = findAdjacentWorksheetIndex(exam.questions, idx, -1);
+  const nextIdx = findAdjacentWorksheetIndex(exam.questions, idx, 1);
+  const isFirst = prevIdx === idx;
+  const isLast = nextIdx === idx;
   const answeredCount = exam.questions.filter((item) =>
     isExamQuestionAnswered(item, userAnswers[item._id]),
   ).length;
@@ -99,6 +105,8 @@ export default function ExamPlayer({
   const hintText = String(q?.assessmentMeta?.hint || '').trim();
   const isMcQuestion = q && !['matching', 'sequence', 'fill-blank'].includes(q.type);
   const [pendingMc, setPendingMc] = useState('');
+  const memberIdsKey = groupMembers.map((m) => String(m._id)).join('|');
+  const [pendingById, setPendingById] = useState({});
 
   useEffect(() => {
     if (!q || !isMcQuestion) {
@@ -109,9 +117,26 @@ export default function ExamPlayer({
     setPendingMc(typeof saved === 'string' ? saved : '');
   }, [q?._id, isMcQuestion, userAnswers]);
 
+  useEffect(() => {
+    if (!useWorksheet) return;
+    setPendingById((prev) => {
+      const next = { ...prev };
+      memberIdsKey.split('|').filter(Boolean).forEach((id) => {
+        const saved = userAnswers[id];
+        if (typeof saved === 'string' && next[id] == null) next[id] = saved;
+      });
+      return next;
+    });
+  }, [useWorksheet, memberIdsKey, userAnswers]);
+
   const commitMcAnswer = () => {
     if (!q || !pendingMc.trim()) return;
     recordAnswer(q._id, pendingMc);
+  };
+
+  const goWorksheetNav = (direction) => {
+    const target = findAdjacentWorksheetIndex(exam.questions, idx, direction);
+    if (target !== idx) setQuestionIndex(target);
   };
 
   return (
@@ -136,7 +161,9 @@ export default function ExamPlayer({
               {exam.title}
             </h2>
             <p className="text-sm text-surface-500 dark:text-surface-400">
-              {labels.questionProgress({ current: idx + 1, total: totalQuestions })}
+              {useWorksheet
+                ? `Çoklu soru · ${groupMembers.length} madde`
+                : labels.questionProgress({ current: idx + 1, total: totalQuestions })}
               {answeredCount > 0 && ` · ${labels.answeredCount({ n: answeredCount })}`}
             </p>
           </div>
@@ -155,18 +182,23 @@ export default function ExamPlayer({
 
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <div className="max-w-3xl mx-auto p-4 sm:p-6 animate-fade-in">
-            {q && displayQ ? (
+            {q && displayQ && useWorksheet ? (
               <article className="bg-white/95 dark:bg-surface-800/95 p-5 sm:p-7 rounded-[1.35rem] shadow-card dark:shadow-card-dark border border-surface-200/80 dark:border-surface-700 backdrop-blur-sm">
-                {groupLabel ? (
-                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-teal-700 dark:text-teal-300">
-                    {groupLabel}
-                  </p>
-                ) : null}
-                {displayQ.assessmentMeta?.sharedPrompt ? (
-                  <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
-                    {displayQ.assessmentMeta.sharedPrompt}
-                  </p>
-                ) : null}
+                <GroupedQuestionWorksheet
+                  questions={groupMembers}
+                  allQuestions={exam.questions}
+                  answers={userAnswers}
+                  pendingById={pendingById}
+                  onPendingChange={(id, value) => setPendingById((prev) => ({ ...prev, [id]: value }))}
+                  onCommit={(id, value) => {
+                    if (!String(value || '').trim()) return;
+                    recordAnswer(id, value);
+                  }}
+                  framed={false}
+                />
+              </article>
+            ) : q && displayQ ? (
+              <article className="bg-white/95 dark:bg-surface-800/95 p-5 sm:p-7 rounded-[1.35rem] shadow-card dark:shadow-card-dark border border-surface-200/80 dark:border-surface-700 backdrop-blur-sm">
                 <QuestionStemCard
                   question={displayQ}
                   questionLabel={labels.questionLabel({ n: idx + 1 })}
@@ -256,12 +288,26 @@ export default function ExamPlayer({
             <nav className="flex flex-wrap gap-2 justify-center mt-6 px-1" aria-label="Soru numaraları">
               {exam.questions.map((item, qIdx) => {
                 const answered = isExamQuestionAnswered(item, userAnswers[item._id]);
-                const current = qIdx === idx;
+                const itemGroup = getQuestionGroupMeta(item)?.groupId || '';
+                const curGroup = getQuestionGroupMeta(q)?.groupId || '';
+                const current = useWorksheet
+                  ? Boolean(itemGroup && itemGroup === curGroup)
+                  : qIdx === idx;
                 return (
                   <button
                     key={item._id}
                     type="button"
-                    onClick={() => setQuestionIndex(qIdx)}
+                    onClick={() => {
+                      const landGroup = getQuestionGroupMeta(item)?.groupId;
+                      if (landGroup) {
+                        const first = exam.questions.findIndex(
+                          (qq) => String(qq?.assessmentMeta?.groupId || '') === landGroup,
+                        );
+                        setQuestionIndex(first >= 0 ? first : qIdx);
+                      } else {
+                        setQuestionIndex(qIdx);
+                      }
+                    }}
                     className={`w-9 h-9 min-w-[36px] rounded-xl text-sm font-bold transition-all duration-200 ${
                       current
                         ? 'bg-teal-600 text-white ring-2 ring-teal-300 scale-105 shadow-md'
@@ -284,7 +330,7 @@ export default function ExamPlayer({
           <button
             type="button"
             disabled={isFirst}
-            onClick={() => setQuestionIndex((n) => Math.max(0, n - 1))}
+            onClick={() => goWorksheetNav(-1)}
             className="inline-flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl font-semibold border border-surface-200 dark:border-surface-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
           >
             <ChevronLeft size={18} aria-hidden /> {labels.prev}
@@ -293,7 +339,7 @@ export default function ExamPlayer({
             {!isLast ? (
               <button
                 type="button"
-                onClick={() => setQuestionIndex((n) => Math.min(totalQuestions - 1, n + 1))}
+                onClick={() => goWorksheetNav(1)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl font-bold bg-gradient-to-r from-teal-600 to-sky-600 text-white hover:brightness-105 shadow-md shadow-teal-600/20"
               >
                 {labels.next} <ChevronRight size={18} aria-hidden />

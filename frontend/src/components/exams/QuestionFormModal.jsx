@@ -381,9 +381,9 @@ const QuestionFormModal = ({
   const renderLetterPicker = (draft, index) => (
     <div>
       <label className="mb-2 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
-        Doğru cevap (A–D)
+        {isMulti ? `${index + 1}. sorunun doğru cevabı (A–D)` : 'Doğru cevap (A–D)'}
       </label>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" role="group" aria-label={`${index + 1}. soru A–D şıkları`}>
         {LETTERS.map((letter) => {
           const selected = draft.correctLetter === letter;
           return (
@@ -403,6 +403,11 @@ const QuestionFormModal = ({
           );
         })}
       </div>
+      {isMulti ? (
+        <p className="mt-2 text-[11px] text-slate-500">
+          Bu maddenin A–D şıkları yalnızca bu soruya aittir; diğer maddelerden ayrıdır.
+        </p>
+      ) : null}
     </div>
   );
 
@@ -757,25 +762,84 @@ const QuestionFormModal = ({
                 </section>
               ))}
 
-              {(sharedIntro.trim() || drafts[0]?.questionText?.trim() || effectiveMainImage?.preview) ? (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-600 dark:bg-slate-900/40">
-                  <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Önizleme (1. soru)</p>
-                  <QuestionStemCard
-                    question={{
-                      topic: sharedTopic,
-                      classLevel: sharedClassLevel,
-                      introText: sharedIntro,
-                      questionText: drafts[0]?.questionText,
-                      text: buildCombinedQuestionText(sharedIntro, drafts[0]?.questionText),
-                      image: isImageMode ? (effectiveMainImage?.preview || '') : '',
-                      assessmentMeta: {
-                        contentMode,
-                        parseLayout: { introText: sharedIntro, questionLine: drafts[0]?.questionText },
-                      },
-                    }}
-                    showMeta={Boolean(sharedTopic)}
-                    showImageInstruction={false}
-                  />
+              {(sharedIntro.trim() || drafts.some((d) => d.questionText?.trim()) || effectiveMainImage?.preview) ? (
+                <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-600 dark:bg-slate-900/40">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Önizleme{isMulti ? ` · ${drafts.length} madde` : ' (1. soru)'}
+                  </p>
+                  {isMulti ? (
+                    <div className="space-y-4">
+                      {(isImageMode && effectiveMainImage?.preview) || sharedIntro.trim() ? (
+                        <QuestionStemCard
+                          question={{
+                            topic: sharedTopic,
+                            classLevel: sharedClassLevel,
+                            introText: sharedIntro,
+                            questionText: '',
+                            text: sharedIntro,
+                            image: isImageMode ? (effectiveMainImage?.preview || '') : '',
+                            assessmentMeta: {
+                              contentMode,
+                              parseLayout: { introText: sharedIntro, questionLine: '' },
+                            },
+                          }}
+                          showMeta={Boolean(sharedTopic)}
+                          showImageInstruction={false}
+                        />
+                      ) : null}
+                      {drafts.map((draft, index) => (
+                        <div
+                          key={`preview-${index}`}
+                          className="rounded-xl border border-teal-100 bg-white p-4 dark:border-teal-900/40 dark:bg-surface-800"
+                        >
+                          <p className="mb-2 text-sm font-semibold text-surface-800 dark:text-white">
+                            <span className="mr-2 font-black text-teal-700">{index + 1}.</span>
+                            {draft.questionText?.trim() || (isImageMode ? 'Görseldeki soru' : 'Soru metni')}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {LETTERS.map((letter) => (
+                              <span
+                                key={letter}
+                                className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 text-sm font-black ${
+                                  draft.correctLetter === letter
+                                    ? 'border-teal-500 bg-teal-50 text-teal-800'
+                                    : 'border-slate-200 text-slate-500'
+                                }`}
+                              >
+                                {letter}
+                              </span>
+                            ))}
+                          </div>
+                          {!isImageMode ? (
+                            <ul className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                              {LETTERS.map((letter, optIdx) => (
+                                <li key={letter}>
+                                  <strong>{letter})</strong> {draft.options[optIdx] || '—'}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <QuestionStemCard
+                      question={{
+                        topic: sharedTopic,
+                        classLevel: sharedClassLevel,
+                        introText: sharedIntro,
+                        questionText: drafts[0]?.questionText,
+                        text: buildCombinedQuestionText(sharedIntro, drafts[0]?.questionText),
+                        image: isImageMode ? (effectiveMainImage?.preview || '') : '',
+                        assessmentMeta: {
+                          contentMode,
+                          parseLayout: { introText: sharedIntro, questionLine: drafts[0]?.questionText },
+                        },
+                      }}
+                      showMeta={Boolean(sharedTopic)}
+                      showImageInstruction={false}
+                    />
+                  )}
                 </div>
               ) : null}
             </form>
