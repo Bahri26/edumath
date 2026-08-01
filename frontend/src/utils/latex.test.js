@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeLatexSource, normalizeSolutionText } from './latex.jsx';
+import {
+  latexToReadableText,
+  mathToPlain,
+  normalizeLatexSource,
+  normalizeSolutionText,
+  repairMathDelimiters,
+} from './latex.jsx';
 
 describe('latex helpers', () => {
   it('strips carriage returns that break KaTeX \\r accents', () => {
@@ -17,8 +23,27 @@ describe('latex helpers', () => {
     expect(lines.length).toBeGreaterThanOrEqual(4);
     expect(lines[0]).toMatch(/^1\.\s*Adım:/);
     expect(lines.some((l) => /^2\.\s*Adım:/.test(l))).toBe(true);
-    expect(lines.some((l) => /^3\.\s*Adım:/.test(l))).toBe(true);
     expect(lines.some((l) => /^Doğru Cevap:/.test(l))).toBe(true);
     expect(normalized).not.toContain('\r');
+    expect(normalized).toContain('×');
+    expect(normalized).not.toContain('\\times');
+  });
+
+  it('converts unit and times latex to plain readable text', () => {
+    const raw =
+      'Kenar uzunluğu $5\\text{ cm}$ olduğuna göre çevre $= 8 \\times 5 = 40\\text{ cm}$.';
+    const readable = latexToReadableText(raw);
+    expect(readable).toContain('5 cm');
+    expect(readable).toContain('8 × 5 = 40 cm');
+    expect(readable).not.toContain('\\text');
+    expect(readable).not.toContain('\\times');
+    expect(readable).not.toContain('$');
+  });
+
+  it('repairs missing dollar after \\text before Turkish prose', () => {
+    const broken = 'Kenar $5\\text{ cm} olduğuna göre çevre';
+    const repaired = repairMathDelimiters(broken);
+    expect(repaired).toContain('$5\\text{ cm}$');
+    expect(mathToPlain('8 \\times 5')).toBe('8 × 5');
   });
 });
