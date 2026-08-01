@@ -126,7 +126,6 @@ Notlar:
 - Admin kullanıcıyı manuel eklemek isterseniz MongoDB’de `users` koleksiyonuna rolü `admin` olan bir kayıt ekleyin (şifre `bcrypt` hash olmalı).
 
 ## Katkı ve Yol Haritası
-- Swagger dokümantasyonu ve CI (GitHub Actions) eklenebilir.
 - Bildirim merkezi için ayrı bir sayfa ve gelişmiş filtreleme.
 - Audit log görselleştirmeleri ve yönetim raporları.
 
