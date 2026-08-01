@@ -23,10 +23,11 @@ const NotificationDropdown = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
+  const retryTimeoutRef = useRef(null);
   const role = user?.role || 'student';
   const settingsPath = `/${role}/settings`;
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (opts = {}) => {
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
     try {
       const res = await apiClient.get('/notifications?limit=20');
@@ -46,7 +47,13 @@ const NotificationDropdown = () => {
           : list.filter((n) => !n.isRead).length,
       );
     } catch (error) {
-      console.warn('Bildirim alınamadı', error?.response?.status);
+      console.warn('Bildirim alınamadı', error?.code || error?.response?.status || error?.message);
+      // Sunucu uyanıyor olabilir (Render cold-start, yanıt hiç gelmemiş) — bir kez kısa
+      // gecikmeyle tekrar dene, aksi halde bir sonraki 60sn'lik döngüye kadar boş kalır.
+      if (!opts.isRetry && !error?.response) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = setTimeout(() => fetchNotifications({ isRetry: true }), 5000);
+      }
     }
   }, []);
 
@@ -57,6 +64,7 @@ const NotificationDropdown = () => {
     window.addEventListener('focus', onFocus);
     return () => {
       clearInterval(interval);
+      clearTimeout(retryTimeoutRef.current);
       window.removeEventListener('focus', onFocus);
     };
   }, [fetchNotifications]);
