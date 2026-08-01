@@ -16,6 +16,7 @@ import {
   PATTERN_INTRO_PLACEHOLDER,
   PATTERN_QUESTION_PLACEHOLDER,
 } from '../../utils/questionLayout.js';
+import { normalizeSolutionText } from '../../utils/latex.jsx';
 
 const LETTERS = ['A', 'B', 'C', 'D'];
 const CLASS_LEVELS = Array.from({ length: 12 }, (_, i) => `${i + 1}. Sınıf`);
@@ -216,7 +217,7 @@ const QuestionFormModal = ({
       questionText,
       options,
       correctAnswer,
-      solution,
+      solution: normalizeSolutionText(solution || ''),
       learningOutcome,
       difficulty,
       topic,
@@ -750,8 +751,21 @@ const QuestionFormModal = ({
                       rows={2}
                       value={draft.solution}
                       onChange={(e) => updateDraft(index, { solution: e.target.value })}
+                      onBlur={(e) => {
+                        const next = normalizeSolutionText(e.target.value);
+                        if (next !== String(draft.solution || '').trim()) {
+                          updateDraft(index, { solution: next });
+                        }
+                      }}
+                      onPaste={(e) => {
+                        const pasted = e.clipboardData?.getData('text');
+                        if (!pasted) return;
+                        e.preventDefault();
+                        const next = normalizeSolutionText(pasted);
+                        updateDraft(index, { solution: next });
+                      }}
                       className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm outline-none dark:bg-slate-900"
-                      placeholder="Kısa çözüm"
+                      placeholder="Kısa çözüm — yapıştırınca adımlar otomatik ayrılır"
                     />
                     {draft.solution?.trim() ? (
                       <div className="mt-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700">

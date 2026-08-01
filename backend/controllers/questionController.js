@@ -312,9 +312,21 @@ exports.getQuestions = async (req, res, next) => {
       totalPages: Math.ceil(total / limit),
       page: page,
       total: total,
-      data: questions.map(mapQuestionRecord),
+      data: questions.map((q) => {
+        try {
+          return mapQuestionRecord(q);
+        } catch (mapErr) {
+          console.warn('mapQuestionRecord failed', q?._id, mapErr?.message);
+          return {
+            ...q,
+            classLevel: q.classLevel || q.class_level || q.grade_level || '',
+            options: Array.isArray(q.options) ? q.options : [],
+          };
+        }
+      }),
     });
   } catch (error) {
+    console.error('getQuestions failed:', error?.message, error?.stack);
     next(error);
   }
 };
