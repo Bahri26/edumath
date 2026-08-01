@@ -15,6 +15,13 @@ const {
   buildFallbackPracticeQuestions,
 } = require('../services/practiceQuestionBank');
 
+/** Gemini kota/billing limiti hatası mı? (429 / quota / resource_exhausted) */
+function isGeminiQuotaError(error) {
+  const status = Number(error?.status || 0);
+  const msg = String(error?.message || '');
+  return status === 429 || /quota|resource.?exhausted/i.test(msg);
+}
+
 // 7. GELİŞMİŞ SINAV SONUCU DEĞERLENDİRME & ANALİZ
 exports.examResultAnalysis = async (req, res) => {
   try {
@@ -221,9 +228,8 @@ exports.getHint = async (req, res) => {
 
     res.json({ hint: hintText });
   } catch (error) {
-    const status = Number(error?.status || 0);
     const msg = String(error?.message || '');
-    if (status === 429 || /quota|resource.?exhausted/i.test(msg)) {
+    if (isGeminiQuotaError(error)) {
       return res.status(429).json({
         message: 'AI kotası dolu, ipucu üretilemedi.',
         hint: 'Birazdan tekrar dene.',
@@ -441,6 +447,9 @@ exports.solveFromImage = async (req, res) => {
     res.json({ solution, provider: isLocalAi() ? 'local-ocr' : 'gemini' });
   } catch (error) {
     console.error("AI Vision Hatası:", error);
+    if (isGeminiQuotaError(error)) {
+      return res.status(429).json({ message: 'AI kotası dolu, görsel analiz edilemedi.', hint: 'Birazdan tekrar dene.' });
+    }
     res.status(500).json({ message: "Görsel analiz edilemedi.", error: error.message });
   }
 };
@@ -665,6 +674,9 @@ exports.analyzePerformance = async (req, res) => {
     const result = await model.generateContent(prompt);
     res.json({ analysis: result.response.text() });
   } catch (error) {
+    if (isGeminiQuotaError(error)) {
+      return res.status(429).json({ message: 'AI kotası dolu, analiz yapılamadı.', hint: 'Birazdan tekrar dene.' });
+    }
     res.status(500).json({ message: "Analiz yapılamadı." });
   }
 };
@@ -703,6 +715,9 @@ exports.createStudyPlan = async (req, res) => {
     res.json({ plan: result.response.text() });
   } catch (error) {
     console.error("Plan Oluşturma Hatası:", error);
+    if (isGeminiQuotaError(error)) {
+      return res.status(429).json({ message: 'AI kotası dolu, plan oluşturulamadı.', hint: 'Birazdan tekrar dene.' });
+    }
     res.status(500).json({ message: "Plan oluşturulamadı." });
   }
 };
