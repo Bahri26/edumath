@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import { Clock, FileText, Plus, Trash2, Play, CheckCircle, AlertTriangle, X, GripVertical, Download, Link2, Loader2 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { generatePracticeQuestions } from '../../services/aiService';

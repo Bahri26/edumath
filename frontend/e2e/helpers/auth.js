@@ -33,12 +33,14 @@ export async function loginViaApi(page, { email, password, apiUrl }) {
 }
 
 export function e2eCredentials(role = 'student') {
-  const prefix = role === 'teacher' ? 'E2E_TEACHER' : 'E2E_STUDENT';
+  const prefix = role === 'teacher' ? 'E2E_TEACHER' : role === 'admin' ? 'E2E_ADMIN' : 'E2E_STUDENT';
   const useSeed = process.env.E2E_USE_SEED !== '0';
   const seedDefaults =
     role === 'teacher'
       ? { email: 'teacher@edumath.local', password: 'password123' }
-      : { email: 'student@edumath.local', password: 'password123' };
+      : role === 'admin'
+        ? { email: 'admin@edumath.local', password: 'password123' }
+        : { email: 'student@edumath.local', password: 'password123' };
   const email = process.env[`${prefix}_EMAIL`] || (useSeed ? seedDefaults.email : undefined);
   const password = process.env[`${prefix}_PASSWORD`] || (useSeed ? seedDefaults.password : undefined);
   const apiUrl = process.env.E2E_API_URL || 'http://localhost:8000';

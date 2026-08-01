@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router';
 import { AuthContext } from '../context/AuthContext';
 import { getHomePathForRole } from '../utils/roleRoutes';
 import { useTranslation } from '../i18n/useTranslation';

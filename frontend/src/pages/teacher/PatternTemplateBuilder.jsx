@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import apiClient from '../../services/api';
 import { generatePatternQuestionPack } from '../../services/aiService';
 import Card from '../../components/ui/Card.jsx';

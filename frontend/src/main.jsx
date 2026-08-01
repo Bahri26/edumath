@@ -1,7 +1,7 @@
 // src/main.jsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom'; // 🚨 BU BURADA OLMALI
+import { BrowserRouter } from 'react-router'; // 🚨 BU BURADA OLMALI
 import App from './App.jsx';
 import './index.css';
 import 'katex/dist/katex.min.css';

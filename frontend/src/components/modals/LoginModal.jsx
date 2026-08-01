@@ -1,6 +1,6 @@
 // src/components/modals/LoginModal.jsx
 import React, { useState, useContext, useId, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { X, Mail, Lock, User, BookOpen, Briefcase, Loader2, ArrowRight, LogIn, UserPlus, AlertCircle, CheckCircle, GraduationCap } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import apiClient, { withAuthRequestConfig, AUTH_TIMEOUT } from '../../services/api';

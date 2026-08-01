@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router';
 import DashboardLayout from '../pages/DashboardLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import RouteLoadingFallback from '../components/ui/RouteLoadingFallback';

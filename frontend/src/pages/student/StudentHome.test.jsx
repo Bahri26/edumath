@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import StudentHome from './StudentHome';
 import { LanguageProvider } from '../../context/LanguageContext';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 describe('StudentHome', () => {
   it('renders welcome message and primary next action', () => {

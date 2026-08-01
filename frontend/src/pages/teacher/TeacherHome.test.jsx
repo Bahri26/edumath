@@ -8,7 +8,7 @@ global.IntersectionObserver = class {
 
 import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import TeacherHome from './TeacherHome';
 import { AuthContext } from '../../context/AuthContext';
 import { LanguageContext } from '../../context/LanguageContext';

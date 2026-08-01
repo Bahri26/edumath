@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useContext, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Loader2, X } from 'lucide-react';
 import { LanguageContext } from '../../context/LanguageContext';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';

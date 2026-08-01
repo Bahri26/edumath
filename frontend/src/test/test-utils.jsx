@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { LanguageContext } from '../context/LanguageContext';
 import { TestToastProvider } from '../context/ToastContext';
 import { ThemeProvider } from '../context/ThemeContext';

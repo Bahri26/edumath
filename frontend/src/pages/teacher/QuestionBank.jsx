@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, Fragment, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 import QuestionFormModal from '../../components/exams/QuestionFormModal';
 import AiGenerateQuizModal from '../../components/modals/AiGenerateQuizModal';
 import {

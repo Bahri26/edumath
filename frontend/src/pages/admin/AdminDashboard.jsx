@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { ArrowUpRight, Loader2 } from 'lucide-react';
 import adminService from '../../services/adminService';
 import { admin as a } from '../../components/admin/adminUi';

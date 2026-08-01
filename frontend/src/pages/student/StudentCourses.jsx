@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { Search, Sparkles, Compass } from 'lucide-react';
 import CourseCard from '../../components/ui/CourseCard';
 import { LanguageContext } from '../../context/LanguageContext';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import useClickOutside from '../../hooks/useClickOutside';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import {
   Menu, X, Home, User, BookOpen, Mail, ChevronRight, GraduationCap,
   BrainCircuit, Moon, Sun, Globe, LogIn, Settings, FileText, UserCircle, LogOut,

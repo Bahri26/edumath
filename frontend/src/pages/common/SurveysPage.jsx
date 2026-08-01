@@ -3,7 +3,7 @@ import { Plus, Trash2, FileText, Send, CheckCircle, X, Circle, Dot } from 'lucid
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import SkeletonCard from '../../components/ui/SkeletonCard';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';
 import { useConfirmAction } from '../../hooks/useConfirmAction';
 

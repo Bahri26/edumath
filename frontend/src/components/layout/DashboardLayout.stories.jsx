@@ -1,5 +1,5 @@
 import React from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { BookOpen, FileText, CheckCircle, Trophy, Calendar, Settings, User, LayoutGrid, Users, BarChart2, ClipboardList, MessageSquare } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { LanguageContext } from '../../context/LanguageContext';

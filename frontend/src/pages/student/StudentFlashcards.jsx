@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Layers, RotateCcw, ChevronLeft, ChevronRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import apiClient from '../../services/api';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';

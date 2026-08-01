@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import SurveysPage from './SurveysPage';
 import { ToastProvider } from '../../context/ToastContext';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 vi.mock('../../services/api', () => ({
   default: {

@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { Loader2, Lock, Sparkles } from 'lucide-react';
 import apiClient, { withAuthRequestConfig, AUTH_TIMEOUT } from '../../services/api';
 import { wakeBackend } from '../../services/backendWake';

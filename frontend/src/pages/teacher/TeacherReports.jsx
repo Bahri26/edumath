@@ -12,7 +12,7 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import {
   LineChart,
   Line,

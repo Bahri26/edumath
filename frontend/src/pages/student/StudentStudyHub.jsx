@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { BookOpen, Clock, Play, Trophy, CheckCircle2, X, Layers } from 'lucide-react';
 import apiClient from '../../services/api';
 import StudentPageShell from '../../components/student/StudentPageShell.jsx';

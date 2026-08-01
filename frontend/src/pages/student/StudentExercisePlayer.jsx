@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router';
 import {
   ArrowLeft, ArrowRight, CheckCircle, Clock, Loader2, Trophy, XCircle,
 } from 'lucide-react';

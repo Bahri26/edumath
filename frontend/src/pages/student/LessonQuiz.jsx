@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import apiClient from "../../services/api";
 import { useToast } from "../../context/ToastContext";
 import StudentHint from "../../components/StudentHint.jsx";

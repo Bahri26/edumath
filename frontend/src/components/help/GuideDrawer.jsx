@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useMemo } from 'react';
 import { X, BookOpen, ExternalLink } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import { LanguageContext } from '../../context/LanguageContext';
 import { QUICK_GUIDE, orderGuideBlocks } from '../../data/quickGuideContent';
 import QuickGuideBlockList from './QuickGuideBlockList.jsx';

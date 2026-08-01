@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { X, Send, Bot, Loader2 } from 'lucide-react';
 import apiClient from '../../services/api';
 import { MESSAGES, lookupMessage, formatMessage } from '../../i18n/messages';

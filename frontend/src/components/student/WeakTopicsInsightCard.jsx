@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { Brain, Loader2, Sparkles } from 'lucide-react';
 import { fetchStudentInsights, generatePracticeQuestions } from '../../services/aiService';
 import { useTranslation } from '../../i18n/useTranslation';
