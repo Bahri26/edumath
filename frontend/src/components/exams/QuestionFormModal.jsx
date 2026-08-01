@@ -254,9 +254,7 @@ const QuestionFormModal = ({
 
     const endpoint = editingId ? `/questions/${editingId}` : '/questions';
     const method = editingId ? 'put' : 'post';
-    const res = await apiClient[method](endpoint, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const res = await apiClient[method](endpoint, formData);
     return res?.data?.data || null;
   };
 

@@ -61,6 +61,8 @@ app.use(cors({
         return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Access-Token', 'Accept'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 }));
 
 // Security headers (disable CORP to allow static files)

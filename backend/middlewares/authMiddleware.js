@@ -1,11 +1,26 @@
 const jwt = require('jsonwebtoken');
 
+function extractBearerToken(req) {
+  const auth = req.header('Authorization') || req.header('authorization') || '';
+  if (auth.toLowerCase().startsWith('bearer ')) {
+    return auth.slice(7).trim();
+  }
+  const alt = req.header('X-Access-Token') || req.header('x-access-token');
+  if (alt) return String(alt).trim();
+  return '';
+}
+
 module.exports = (req, res, next) => {
-  // 1. Token'ı al (Header'dan)
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+  const token = extractBearerToken(req);
 
   if (!token) {
-    return res.status(401).json({ message: "Yetkisiz erişim! Token yok." });
+    const wantsHtml = String(req.headers?.accept || '').includes('text/html');
+    return res.status(401).json({
+      message: wantsHtml
+        ? 'Oturum gerekli. Lütfen https://edumath-client.onrender.com adresinden giriş yapın; API adresini tarayıcıda doğrudan açmayın.'
+        : 'Yetkisiz erişim! Token yok. Lütfen yeniden giriş yapın.',
+      code: 'NO_TOKEN',
+    });
   }
 
   try {
@@ -13,14 +28,10 @@ module.exports = (req, res, next) => {
     if (!secret || String(secret).trim() === '') {
       return res.status(500).json({ message: 'Sunucu yapılandırma hatası: JWT_SECRET eksik.' });
     }
-    // 2. Token'ı çöz
     const decoded = jwt.verify(token, secret);
-    
-    // 3. Kullanıcı bilgisini isteğe ekle (req.user artık kullanılabilir)
-    req.user = decoded; 
-    
+    req.user = decoded;
     next();
   } catch (err) {
-    res.status(401).json({ message: "Geçersiz Token." });
+    res.status(401).json({ message: 'Geçersiz Token. Lütfen yeniden giriş yapın.', code: 'INVALID_TOKEN' });
   }
 };

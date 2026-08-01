@@ -224,18 +224,58 @@ export const withRequestConfig = (config = {}, timeout = DEFAULT_TIMEOUT) => ({
 export const withAuthRequestConfig = (config = {}) => withRequestConfig(config, AUTH_TIMEOUT);
 export const withAiRequestConfig = (config = {}) => withRequestConfig(config, AI_TIMEOUT);
 
+const getStoredAccessToken = () => {
+    try {
+        const direct = localStorage.getItem('token');
+        if (direct && direct !== 'undefined' && direct !== 'null') {
+            return direct;
+        }
+        const userRaw = localStorage.getItem('user');
+        if (!userRaw) return null;
+        const parsed = JSON.parse(userRaw);
+        const fromUser = parsed?.token;
+        if (fromUser && fromUser !== 'undefined' && fromUser !== 'null') {
+            return fromUser;
+        }
+    } catch {
+        /* ignore */
+    }
+    return null;
+};
+
+const setAuthHeader = (headers, token) => {
+    if (!headers || !token) return;
+    if (typeof headers.set === 'function') {
+        headers.set('Authorization', `Bearer ${token}`);
+        headers.set('X-Access-Token', token);
+        return;
+    }
+    headers.Authorization = `Bearer ${token}`;
+    headers['X-Access-Token'] = token;
+};
+
 // 🚨 1. İSTEK INTERCEPTOR (Token Ekleme)
 apiClient.interceptors.request.use(
     (config) => {
-        // Token'ı localStorage'dan al (AuthContext ile uyumlu)
-        let token = localStorage.getItem('token');
-        if (!token) {
-            const user = localStorage.getItem('user');
-            token = user ? JSON.parse(user)?.token : null;
+        const token = getStoredAccessToken();
+        config.headers = config.headers || {};
+
+        // FormData gönderirken axios'un boundary ekleyebilmesi için Content-Type silinmeli
+        const isFormData = typeof FormData !== 'undefined' && config.data instanceof FormData;
+        if (isFormData) {
+            if (typeof config.headers.delete === 'function') {
+                config.headers.delete('Content-Type');
+            } else {
+                delete config.headers['Content-Type'];
+                delete config.headers['content-type'];
+            }
         }
 
         if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+            setAuthHeader(config.headers, token);
+            config.__hadAuthToken = true;
+        } else {
+            config.__hadAuthToken = false;
         }
         return config;
     },
@@ -309,6 +349,12 @@ apiClient.interceptors.response.use(
         }
 
         if (status === 401) {
+            // Token hiç yokken gelen 401 (ör. API URL tarayıcıda açıldı / oturum yok)
+            // → refresh deneme ve logout spam yapma
+            if (config && config.__hadAuthToken === false && !getStoredAccessToken()) {
+                return Promise.reject(error);
+            }
+
             if (config && !config.__isRetryAfterRefresh && !shouldSkipRefresh(config)) {
                 try {
                     if (!refreshInFlight) {
@@ -318,7 +364,8 @@ apiClient.interceptors.response.use(
                     }
                     const newToken = await refreshInFlight;
                     config.headers = config.headers || {};
-                    config.headers.Authorization = `Bearer ${newToken}`;
+                    setAuthHeader(config.headers, newToken);
+                    config.__hadAuthToken = true;
                     config.__isRetryAfterRefresh = true;
                     return apiClient(config);
                 } catch (refreshError) {

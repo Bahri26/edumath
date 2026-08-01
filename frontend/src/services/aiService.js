@@ -5,10 +5,7 @@ import apiClient, { withAiRequestConfig } from './api';
 export async function smartParseImage(file) {
   const formData = new FormData();
   formData.append('image', file);
-  const res = await apiClient.post('/ai/smart-parse', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    ...withAiRequestConfig(),
-  });
+  const res = await apiClient.post('/ai/smart-parse', formData, withAiRequestConfig());
   return res.data;
 }
 
@@ -20,10 +17,7 @@ export async function smartParseText(content) {
 export async function solveFromImage(file) {
   const formData = new FormData();
   formData.append('image', file);
-  const res = await apiClient.post('/ai/solve-image', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    ...withAiRequestConfig(),
-  });
+  const res = await apiClient.post('/ai/solve-image', formData, withAiRequestConfig());
   return res.data;
 }
 
