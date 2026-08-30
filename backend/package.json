@@ -38,6 +38,7 @@
     "migrate:reset-students": "node scripts/migrations/resetStudents.js",
     "migrate:reset-bank": "node scripts/migrations/resetAndSeedMathQuestionBank.js",
     "import:pattern-pdf": "node scripts/import/importPatternPdfPack.js",
+    "import:extracted-patterns": "node scripts/import/importExtractedPatternQuestions.js",
     "import:pattern-pdf-review": "node scripts/import/exportPatternPdfReviewList.js",
     "import:pattern-pdf-patch": "node scripts/import/patchPatternPdfEnrich.js",
     "import:pattern-pdf-keys": "node scripts/import/applyPatternPdfAnswerKeys.js",

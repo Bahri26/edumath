@@ -755,8 +755,6 @@ exports.getMyExams = async (req, res) => {
 // ✅ 10. BRANŞ TALEBİ (Öğretmen branş seçer ve onaya gönderir)
 exports.requestBranchApproval = async (req, res) => {
   try {
-    console.log('[branch-request] headers:', req.headers.authorization ? 'auth present' : 'no auth');
-    console.log('[branch-request] body:', req.body);
     const teacherId = req.user.id;
     const { branch } = req.body;
     if (!branch || typeof branch !== 'string') {

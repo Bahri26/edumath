@@ -29,6 +29,9 @@ exports.examResultAnalysis = async (req, res) => {
     if (!answers || !Array.isArray(answers) || !studentId) {
       return res.status(400).json({ message: "Eksik parametre." });
     }
+    if (answers.length === 0) {
+      return res.status(400).json({ message: "En az bir cevap gerekli." });
+    }
     let total = 0, correct = 0, totalTime = 0;
     let feedbacks = [], topicStats = {}, slowQuestions = [];
     for (const ans of answers) {
@@ -101,7 +104,8 @@ exports.teacherReport = async (req, res) => {
     let allStats = {}, allSlow = {}, allScores = [];
     for (const result of examResults) {
       let correct = 0, total = 0, totalTime = 0, topicStats = {};
-      for (const ans of result.answers) {
+      const resultAnswers = Array.isArray(result?.answers) ? result.answers : [];
+      for (const ans of resultAnswers) {
         const isCorrect = ans.answer === ans.correctAnswer;
         if (isCorrect) correct++;
         total++;
@@ -115,7 +119,7 @@ exports.teacherReport = async (req, res) => {
           allSlow[result.studentId].push(ans.questionId);
         }
       }
-      const score = Math.round((correct / total) * 100);
+      const score = total > 0 ? Math.round((correct / total) * 100) : 0;
       allScores.push({ studentId: result.studentId, score, totalTimeMs: totalTime });
       for (const [topic, stat] of Object.entries(topicStats)) {
         if (!allStats[topic]) allStats[topic] = { total: 0, correct: 0 };

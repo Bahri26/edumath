@@ -144,6 +144,46 @@ function normalizeClassLevel(value) {
   return fixed;
 }
 
+// Ortak sorgu inşası — getQuestions içinde 3 kez (ilk kurulum + 2 fallback) tekrar
+// eden mantığı tek yerde toplar, filtre eklendiğinde tek noktadan güncellenir.
+async function buildBaseQuestionQuery({ subject, classLevel, difficulty, source, topic, user }) {
+  const query = {};
+
+  if (subject && subject !== 'Tümü') query.subject = subject;
+  applyClassLevelFilter(query, classLevel);
+  if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
+  if (source && source !== 'Tümü' && source !== 'All') query.source = source;
+
+  // Eğer istek öğretmenden geliyorsa ve branşı onaylıysa, varsayılan olarak kendi branşındaki (subject) soruları göster
+  // (subject filtrelenmemişse veya 'Tümü' ise)
+  let teacherBranch = '';
+  try {
+    if (user && user.role === 'teacher') {
+      const User = require('../models/User');
+      const u = await User.findById(user.id).select('branch branchApproval');
+      teacherBranch = u?.branch || '';
+      if (u && u.branch && u.branchApproval === 'approved') {
+        const noSubjectFilter = !subject || subject === 'Tümü' || !query.subject;
+        if (noSubjectFilter) {
+          query.subject = { $regex: `^${escapeRegex(u.branch)}$`, $options: 'i' };
+        }
+      }
+    }
+  } catch { /* branch lookup optional */ }
+
+  const bankSubject = typeof query.subject === 'string'
+    ? query.subject
+    : (teacherBranch || (subject && subject !== 'Tümü' ? subject : 'Matematik'));
+  if (user?.role === 'teacher') {
+    applyPatternQuestionBankScope(query, { subject: bankSubject, topic, escapeRegexFn: escapeRegex });
+  } else {
+    const topicClause = buildTopicMongoClause(topic, escapeRegex);
+    if (topicClause) query.topic = topicClause;
+  }
+
+  return { query, teacherBranch };
+}
+
 // --- 1. SORULARI GETİR (Filtreleme + Pagination) ---
 exports.getQuestions = async (req, res, next) => {
   try {
@@ -151,40 +191,9 @@ exports.getQuestions = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 12;
     const { search, subject, classLevel, difficulty, topic, sortBy, source } = req.query;
     const sortByTopic = String(sortBy || '').toLowerCase() === 'topic';
+    const isPrivileged = req.user?.role === 'teacher' || req.user?.role === 'admin';
 
-    const query = {};
-
-    if (subject && subject !== 'Tümü') query.subject = subject;
-    applyClassLevelFilter(query, classLevel);
-    if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
-    if (source && source !== 'Tümü' && source !== 'All') query.source = source;
-
-    // Eğer istek öğretmenden geliyorsa ve branşı onaylıysa, varsayılan olarak kendi branşındaki (subject) soruları göster
-    // (subject filtrelenmemişse veya 'Tümü' ise)
-    let teacherBranch = '';
-    try {
-      if (req.user && req.user.role === 'teacher') {
-        const User = require('../models/User');
-        const u = await User.findById(req.user.id).select('branch branchApproval');
-        teacherBranch = u?.branch || '';
-        if (u && u.branch && u.branchApproval === 'approved') {
-          const noSubjectFilter = !('subject' in req.query) || req.query.subject === 'Tümü' || !query.subject;
-          if (noSubjectFilter) {
-            query.subject = { $regex: `^${u.branch}$`, $options: 'i' };
-          }
-        }
-      }
-    } catch { /* branch lookup optional */ }
-
-    const bankSubject = typeof query.subject === 'string'
-      ? query.subject
-      : (teacherBranch || (subject && subject !== 'Tümü' ? subject : 'Matematik'));
-    if (req.user?.role === 'teacher') {
-      applyPatternQuestionBankScope(query, { subject: bankSubject, topic, escapeRegexFn: escapeRegex });
-    } else {
-      const topicClause0 = buildTopicMongoClause(topic, escapeRegex);
-      if (topicClause0) query.topic = topicClause0;
-    }
+    const { query, teacherBranch } = await buildBaseQuestionQuery({ subject, classLevel, difficulty, source, topic, user: req.user });
 
     let searchMeta = null;
     try {
@@ -201,23 +210,7 @@ exports.getQuestions = async (req, res, next) => {
       // $text indeksi yoksa veya geçersizse regex aramaya düş
       if (searchMeta?.mode === 'text') {
         console.warn('getQuestions text search failed, falling back to regex:', countErr?.message);
-        effectiveQuery = {};
-        if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
-        applyClassLevelFilter(effectiveQuery, classLevel);
-        if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
-        if (source && source !== 'Tümü' && source !== 'All') effectiveQuery.source = source;
-        if (teacherBranch && (!effectiveQuery.subject)) {
-          effectiveQuery.subject = { $regex: `^${escapeRegex(teacherBranch)}$`, $options: 'i' };
-        }
-        const fallbackSubject = typeof effectiveQuery.subject === 'string'
-          ? effectiveQuery.subject
-          : (teacherBranch || (subject && subject !== 'Tümü' ? subject : 'Matematik'));
-        if (req.user?.role === 'teacher') {
-          applyPatternQuestionBankScope(effectiveQuery, { subject: fallbackSubject, topic, escapeRegexFn: escapeRegex });
-        } else {
-          const topicClauseSq = buildTopicMongoClause(topic, escapeRegex);
-          if (topicClauseSq) effectiveQuery.topic = topicClauseSq;
-        }
+        ({ query: effectiveQuery } = await buildBaseQuestionQuery({ subject, classLevel, difficulty, source, topic, user: req.user }));
         searchMeta = buildQuestionSearch(effectiveQuery, search, 'regex');
         total = await Question.countDocuments(effectiveQuery);
       } else {
@@ -226,28 +219,14 @@ exports.getQuestions = async (req, res, next) => {
     }
 
     if (searchMeta?.mode === 'text' && total === 0) {
-      effectiveQuery = {};
-      if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
-      applyClassLevelFilter(effectiveQuery, classLevel);
-      if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
-      if (source && source !== 'Tümü' && source !== 'All') effectiveQuery.source = source;
-      if (teacherBranch && (!effectiveQuery.subject)) {
-        effectiveQuery.subject = { $regex: `^${escapeRegex(teacherBranch)}$`, $options: 'i' };
-      }
-      const fallbackSubject = typeof effectiveQuery.subject === 'string'
-        ? effectiveQuery.subject
-        : (teacherBranch || (subject && subject !== 'Tümü' ? subject : 'Matematik'));
-      if (req.user?.role === 'teacher') {
-        applyPatternQuestionBankScope(effectiveQuery, { subject: fallbackSubject, topic, escapeRegexFn: escapeRegex });
-      } else {
-        const topicClauseSq = buildTopicMongoClause(topic, escapeRegex);
-        if (topicClauseSq) effectiveQuery.topic = topicClauseSq;
-      }
+      ({ query: effectiveQuery } = await buildBaseQuestionQuery({ subject, classLevel, difficulty, source, topic, user: req.user }));
       searchMeta = buildQuestionSearch(effectiveQuery, search, 'regex');
       total = await Question.countDocuments(effectiveQuery);
     }
 
-    // Sadece özet alanlar + correctAnswer ve solution
+    // Sadece özet alanlar. correctAnswer/solution SADECE öğretmen/admin'e döner —
+    // aksi halde bu liste endpoint'i (protect ile herkese açık) öğrencilere
+    // doğru cevapları doğrudan API üzerinden sızdırır.
     const projection = {
       text: 1,
       subject: 1,
@@ -264,9 +243,8 @@ exports.getQuestions = async (req, res, next) => {
       imageKey: 1,
       imageProvider: 1,
       options: 1,
-      correctAnswer: 1,
-      solution: 1,
       assessmentMeta: 1,
+      ...(isPrivileged ? { correctAnswer: 1, solution: 1 } : {}),
     };
     const usesTextScore = searchMeta?.mode === 'text'
       && Array.isArray(effectiveQuery.$and)
@@ -339,8 +317,11 @@ exports.getTeacherQuestions = async (req, res, next) => {
     const { search, subject, classLevel, difficulty, topic, sortBy, source } = req.query;
     const sortByTopic = String(sortBy || '').toLowerCase() === 'topic';
 
-    const query = {};
-    
+    // "my-questions" — yalnızca isteği yapan öğretmenin kendi eklediği sorular.
+    // (Daha önce bu filtre eksikti ve endpoint tüm öğretmenlerin sorularını
+    // döndürüyordu — isim ve amacıyla çelişiyordu.)
+    const query = { createdBy: req.user.id };
+
     if (subject && subject !== 'Tümü') query.subject = subject;
     applyClassLevelFilter(query, classLevel);
     if (difficulty && difficulty !== 'Tümü') query.difficulty = difficulty;
@@ -356,7 +337,7 @@ exports.getTeacherQuestions = async (req, res, next) => {
     let effectiveQuery = query;
 
     if (searchMeta?.mode === 'text' && total === 0) {
-      effectiveQuery = {};
+      effectiveQuery = { createdBy: req.user.id };
       if (subject && subject !== 'Tümü') effectiveQuery.subject = subject;
       applyClassLevelFilter(effectiveQuery, classLevel);
       if (difficulty && difficulty !== 'Tümü') effectiveQuery.difficulty = difficulty;
@@ -600,6 +581,9 @@ exports.updateQuestion = async (req, res, next) => {
   try {
     let question = await Question.findById(req.params.id);
     if (!question) return res.status(404).json({ message: "Soru bulunamadı" });
+    if (req.user.role !== 'admin' && question.createdBy && question.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Bu soruyu düzenleme yetkiniz yok.' });
+    }
 
     // Temel alanları güncelle
     const fields = ['text', 'subject', 'classLevel', 'difficulty', 'type', 'correctAnswer', 'solution', 'source', 'topic', 'learningOutcome', 'mebReference', 'curriculumNote', 'visualPrompt', 'interactiveType'];
@@ -682,6 +666,9 @@ exports.deleteQuestion = async (req, res, next) => {
     const question = await Question.findById(req.params.id);
     if (!question) {
       return res.status(404).json({ success: false, message: 'Soru bulunamadı.' });
+    }
+    if (req.user.role !== 'admin' && question.createdBy && question.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Bu soruyu silme yetkiniz yok.' });
     }
 
     await deleteStoredAsset({ key: question.imageKey, provider: question.imageProvider, url: question.image });

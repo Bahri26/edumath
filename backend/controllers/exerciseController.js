@@ -640,6 +640,11 @@ exports.getExerciseResults = async (req, res, next) => {
       return res.status(403).json({ message: 'Bu egzersizin sonuçlarını görme yetkiniz yok' });
     }
 
+    // Sınıf mevcudu (roster), görüntüleyen kişinin değil egzersizin GERÇEK sahibi
+    // öğretmenin öğrencilerine göre hesaplanmalı (admin başka bir öğretmenin
+    // sonuçlarını görüntülerken bu ayrım önemli).
+    const ownerTeacherId = exercise.createdBy?._id?.toString?.() || exercise.createdBy?.toString?.() || teacherId;
+
     const submissions = (exercise.submissions || []).filter((s) => s.status === 'completed');
     const scores = submissions.map((s) => Number(s.score) || 0);
     const times = submissions
@@ -647,7 +652,7 @@ exports.getExerciseResults = async (req, res, next) => {
       .filter((t) => t != null && Number.isFinite(t));
 
     const rosterCount = await Student.countDocuments({
-      teacherId,
+      teacherId: ownerTeacherId,
       grade: exercise.classLevel,
     });
 
