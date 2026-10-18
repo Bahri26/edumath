@@ -1,5 +1,6 @@
 import { normalizeStemFields } from './normalizeStemFields.js';
 import { hasQuestionImage } from './questionImage.js';
+import { withLocalPatternSource } from './localPatternSource.js';
 
 const clean = (value) => String(value || '').trim();
 
@@ -90,7 +91,9 @@ export function getOptionAnswerValue(entry, index) {
 
 /** Görselli soruda şık metni varsa harf-only büyük kutular kullanma. */
 export function shouldUseLetterOnlyOptions(question = {}) {
+  question = withLocalPatternSource(question);
   if (!hasQuestionImage(question?.image)) return false;
+  if (question?.assessmentMeta?.imageRole === 'full-question') return true;
   const entries = normalizeOptionEntries(question?.options || [], 8);
   if (!entries.length) return true;
   const meaningful = entries.filter((entry) => {
@@ -178,6 +181,16 @@ export function getQuestionLayout(question = {}) {
 
 export function resolveQuestionStem(question = {}) {
   const hasImage = hasQuestionImage(question?.image);
+  // Source crops already contain the complete stem and visual choices.
+  // Keep the searchable text in the record without showing it twice in exams.
+  if (hasImage && question?.assessmentMeta?.imageRole === 'full-question') {
+    return {
+      introText: '', questionText: '', hasImage: true,
+      showIntro: false, showQuestion: false, imageOnly: true,
+      showImageInstruction: true, useStructuredLayout: true,
+      visualVariant: 'compact', fallbackText: '',
+    };
+  }
   const fullText = clean(question?.text);
   const layout = getQuestionLayout(question);
   let introText = sanitizeStemPart(layout.introText);

@@ -29,11 +29,11 @@ export default function QuestionOptionGrid({
     return null;
   }
 
-  const isSquare = variant === 'square';
+  const isSquare = variant === 'square' && visibleOptions.every(opt => opt.image || opt.text.length <= 24);
   const gridClass = letterOnly
     ? 'mx-auto flex w-full max-w-lg flex-wrap justify-center gap-2'
     : isSquare
-      ? 'mx-auto grid w-full max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4'
+      ? `mx-auto grid w-full max-w-2xl grid-cols-2 gap-3 ${visibleOptions.length === 5 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`
       : 'grid grid-cols-1 gap-3 sm:grid-cols-2';
 
   return (
@@ -53,7 +53,7 @@ export default function QuestionOptionGrid({
             aria-pressed={selected}
             aria-label={`${letter} şıkkı${text ? `: ${text}` : ''}`}
             onClick={() => onChange?.(answerValue)}
-            className={`group relative rounded-2xl border-2 transition-all duration-200 ${
+            className={`group relative min-w-0 break-words rounded-2xl border-2 transition-all duration-200 ${
               letterOnly
                 ? 'flex h-12 min-w-[3rem] items-center justify-center px-4 text-center'
                 : isSquare
@@ -76,7 +76,7 @@ export default function QuestionOptionGrid({
                 <span className={`text-sm font-bold text-surface-600 dark:text-surface-300 ${isSquare ? 'absolute left-3 top-3' : 'mb-2 block text-[11px] uppercase tracking-[0.14em] text-surface-500 dark:text-surface-400'}`}>
                   {letter})
                 </span>
-                <span className={`flex flex-1 flex-col items-center justify-center ${isSquare ? 'w-full text-center' : ''}`}>
+                <span className={`flex min-w-0 flex-1 flex-col items-center justify-center ${isSquare ? 'w-full text-center' : ''}`}>
                   {opt.image ? (
                     <img
                       src={resolveAssetUrl(opt.image)}

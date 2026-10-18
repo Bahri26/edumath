@@ -135,7 +135,7 @@ const buildDifficultyCounts = async (query) => {
 // İç mantık: Öğretmen istatistiklerini hesapla
 async function buildTeacherStats(teacherId) {
   // Öğretmen bilgisi
-  const teacher = await User.findById(teacherId).select('role branch').lean();
+  const teacher = await User.findById(teacherId).select('role branch branchApproval').lean();
   if (!teacher || teacher.role !== 'teacher') {
     return {
       totalStudents: 0,
@@ -160,8 +160,8 @@ async function buildTeacherStats(teacherId) {
   todayEnd.setHours(23, 59, 59, 999);
   const teacherObjectId = new mongoose.Types.ObjectId(String(teacherId));
 
-  const [teacherStudents, totalQuestions, todayQuestions, totalExams, todayExams, totalSurveys, todaySurveys, activeExams, totalTeachers] = await Promise.all([
-    Student.find({ teacherId: teacher._id }).select('averageScore').lean(),
+  const [teacherStudents, totalQuestions, todayQuestions, totalExams, todayExams, totalSurveys, todaySurveys, totalTeachers] = await Promise.all([
+    Student.find({ teacherId: teacher._id }).select('userId grade').lean(),
     Question.countDocuments({ createdBy: teacherObjectId }),
     Question.countDocuments({
       createdBy: teacherObjectId,
@@ -177,18 +177,14 @@ async function buildTeacherStats(teacherId) {
       createdBy: teacherObjectId,
       createdAt: { $gte: todayStart, $lte: todayEnd },
     }),
-    Exam.countDocuments({ createdBy: teacherObjectId, status: 'active' }),
     User.countDocuments({ role: 'teacher' }),
   ]);
 
   const totalStudents = teacherStudents.length;
 
-  let classAverage = 0;
-  if (teacherStudents.length > 0) {
-    classAverage = Number(
-      (teacherStudents.reduce((sum, student) => sum + (student.averageScore || 0), 0) / teacherStudents.length).toFixed(1)
-    );
-  }
+  const visibleExams = await Exam.find(buildTeacherExamFilter(teacherId,teacher)).select('classLevel status startAt endAt results createdBy subject').lean();
+  const overviewStats = require('../utils/teacherOverview').buildOverview(teacherStudents,visibleExams.filter(e=>canManageExam({...teacher,id:teacherId},e))).stats;
+  const classAverage = overviewStats.classAverage;
 
   return {
     totalStudents,
@@ -201,7 +197,8 @@ async function buildTeacherStats(teacherId) {
     todayExams,
     classAverage,
     topTopic: branch || '',
-    activeExams,
+    activeExams: overviewStats.activeExams,
+    measuredStudents: overviewStats.measuredStudents,
     timestamp: new Date(),
   };
 }
@@ -421,31 +418,20 @@ exports.getClassStudents = async (req, res) => {
 
     const teacher = await User.findById(teacherId).select('role branch branchApproval').lean();
     const examDocs = await Exam.find(buildTeacherExamFilter(teacherId, teacher))
-      .select('results createdBy subject')
+      .select('results createdBy subject classLevel status startAt endAt')
       .lean();
     const actor = { ...teacher, id: teacherId };
     const visibleExams = examDocs.filter((ex) => canManageExam(actor, ex));
-    const avgMap = buildExamAverageByUserId(visibleExams);
-
-    const normalizedStudents = students.map((student) => {
-      const uid = String(student.userId?._id || student.userId || '');
-      return {
-        _id: student._id,
-        userId: student.userId?._id || null,
-        name: student.userId?.name || '',
-        email: student.userId?.email || '',
-        status: student.userId?.status || 'active',
-        grade: student.grade,
-        averageScore: avgMap.has(uid) ? avgMap.get(uid) : 0,
-      };
-    });
+    const overview = require('../utils/teacherOverview').buildOverview(students,visibleExams);
+    const normalizedStudents = overview.students.map(row=>({...row,
+      email: students.find(s=>String(s._id)===String(row._id))?.userId?.email || '',
+      status: students.find(s=>String(s._id)===String(row._id))?.userId?.status || 'active',
+    }));
 
     res.json({
       totalStudents: normalizedStudents.length,
       students: normalizedStudents,
-      classAverage: normalizedStudents.length > 0 
-        ? (normalizedStudents.reduce((sum, s) => sum + (s.averageScore || 0), 0) / normalizedStudents.length).toFixed(1)
-        : 0
+      classAverage: overview.stats.classAverage
     });
   } catch (err) {
     res.status(500).json({ message: 'Öğrenciler alınamadı', error: err.message });
@@ -537,7 +523,7 @@ exports.getStudentProgress = async (req, res) => {
     const exams = mapStudentExamResults(visibleExams, student.userId);
     const averageScore = exams.length
       ? Math.round(exams.reduce((sum, e) => sum + (Number(e.score) || 0), 0) / exams.length)
-      : 0;
+      : null;
 
     return res.json({ progress, exercises, exams, averageScore });
   } catch (err) {
@@ -633,80 +619,22 @@ exports.getMyQuestions = async (req, res) => {
 exports.getDashboardSummary = async (req, res) => {
   try {
     const teacherId = req.user.id;
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const teacherObjectId = new mongoose.Types.ObjectId(String(teacherId));
-
-    const [stats, teacherStudents, topicPerformance, dailyTrend, recentQuestions, recentExams] = await Promise.all([
-      buildTeacherStats(teacherId),
-      Student.find({ teacherId })
-        .select('grade averageScore createdAt')
-        .sort({ createdAt: -1 })
-        .lean(),
-      Question.aggregate([
-        {
-          $match: {
-            createdBy: teacherObjectId,
-            topic: { $exists: true, $ne: '' },
-          },
-        },
-        {
-          $group: {
-            _id: '$topic',
-            total: { $sum: 1 },
-            avgDifficulty: {
-              $avg: {
-                $cond: [
-                  { $eq: ['$difficulty', 'Kolay'] },
-                  1,
-                  { $cond: [{ $eq: ['$difficulty', 'Orta'] }, 2, 3] },
-                ],
-              },
-            },
-          },
-        },
-        { $sort: { total: -1 } },
-      ]),
-      Exam.aggregate([
-        {
-          $match: {
-            createdBy: teacherObjectId,
-            createdAt: { $gte: sevenDaysAgo },
-          },
-        },
-        {
-          $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-            count: { $sum: 1 },
-          },
-        },
-        { $sort: { _id: 1 } },
-      ]),
-      Question.find({ createdBy: teacherObjectId })
-        .select('text difficulty classLevel createdAt image topic')
-        .sort({ createdAt: -1 })
-        .limit(8)
-        .lean(),
-      Exam.find({ createdBy: teacherObjectId })
-        .select('title classLevel createdAt status results')
-        .sort({ createdAt: -1 })
-        .limit(8)
-        .lean(),
+    await syncTeacherRosterFromTeacherContent(teacherId);
+    const teacher = await User.findById(teacherId).select('role branch branchApproval').lean();
+    const classLevel = req.query.classLevel && req.query.classLevel !== 'Tümü' ? String(req.query.classLevel) : '';
+    const days = [7,30].includes(Number(req.query.days)) ? Number(req.query.days) : 0;
+    const owned = {createdBy:new mongoose.Types.ObjectId(String(teacherId)), ...(classLevel ? {classLevel} : {})};
+    const [students, exams, recentQuestions, totalQuestions, reviewQuestions] = await Promise.all([
+      Student.find({teacherId}).select('userId grade').populate('userId','name').lean(),
+      Exam.find(buildTeacherExamFilter(teacherId,teacher)).select('title classLevel startAt endAt status results createdAt createdBy subject').lean(),
+      Question.find(owned).select('text topic classLevel createdAt').sort({createdAt:-1}).limit(5).lean(),
+      Question.countDocuments(owned),
+      Question.countDocuments({...owned,'assessmentMeta.needsReview':true}),
     ]);
-
-    res.json({
-      stats,
-      reports: {
-        topicPerformance,
-        dailyTrend,
-        recentQuestions,
-        recentExams,
-        recentStudents: teacherStudents,
-        generatedAt: new Date(),
-      },
-    });
-  } catch (err) {
-    res.status(500).json({ message: 'Özet alınamadı', error: err.message });
-  }
+    const {buildOverview} = require('../utils/teacherOverview');
+    const overview = buildOverview(students,exams.filter(e=>canManageExam({...teacher,id:teacherId},e)),{classLevel,days});
+    res.json({...overview,stats:{...overview.stats,totalQuestions,reviewQuestions},recentQuestions});
+  } catch (err) { res.status(500).json({message:'Genel bakış yüklenemedi.'}); }
 };
 
 // ✅ 9. ÖĞRETMENİN OLUŞTURDUĞU SINAVLARI GETİR
@@ -844,6 +772,7 @@ exports.getSubjectQuestions = async (req, res) => {
       correctAnswer: 1,
       solution: 1,
     };
+    projection.assessmentMeta = 1;
     const sort = searchMeta?.mode === 'text' && effectiveQuery.$and?.some((clause) => clause.$text)
       ? { score: { $meta: 'textScore' }, createdAt: -1 }
       : sortByTopic

@@ -77,7 +77,7 @@ async function autoEnrichQuestionPayload({
   };
 
   return {
-    correctAnswer: String(enriched.correctAnswer || input.correctAnswer || '').trim(),
+    correctAnswer: String(input.correctAnswer || enriched.correctAnswer || '').trim(),
     solution: String(enriched.solution || input.solution || '').trim(),
     assessmentMeta: nextMeta,
   };

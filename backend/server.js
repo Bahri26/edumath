@@ -50,6 +50,7 @@ const allowedOrigins = [
     process.env.FRONTEND_URL,
     ...(process.env.ALLOWED_ORIGINS || '').split(',').map((value) => value.trim()),
     'http://localhost:5173',
+    'http://localhost:5180',
 ].filter(Boolean);
 
 app.use(cors({
@@ -128,6 +129,16 @@ ensureLocalUploadDirs();
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Geriye dönük uyumluluk: eski kayıtlar /api/uploads ile gelebilir
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
+// Local PDF source images avoid third-party Drive restrictions during development.
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/uploads/pattern-pdf-source/:grade/:file', (req, res) => {
+    const { grade, file } = req.params;
+    if (!/^(5|6|7|9)-sinif$/.test(grade) || !/^source-p\d+-q\d+\.png$/.test(file)) {
+      return res.sendStatus(404);
+    }
+    return res.sendFile(path.join(__dirname, 'data', 'pattern-pdf-import', grade, file));
+  });
+}
 
 // --- VERİTABANI BAĞLANTISI ---
 let dbConnected = false;

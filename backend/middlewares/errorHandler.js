@@ -4,7 +4,9 @@
  * Global Hata Yakalama Middleware'i.
  * Controller'lar tarafından next(error) ile fırlatılan tüm hataları burada yakalarız.
  */
+const { recordAuthDiagnostic } = require('../utils/authDiagnostics');
 const errorHandler = (err, req, res, next) => {
+    if (req.path === '/api/auth/login') recordAuthDiagnostic('login-middleware', err);
     console.error(err.stack);
 
     if (err.name === 'MulterError') {

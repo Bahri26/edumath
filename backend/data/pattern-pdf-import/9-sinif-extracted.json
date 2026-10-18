@@ -1,0 +1,560 @@
+{
+  "source": {
+    "pdfName": "9. SINIF ORUNTÜ SORULARI.pdf",
+    "classLevel": "9. Sınıf",
+    "subject": "Matematik",
+    "mebReference": "MEB Matematik Öğretim Programı (2018) — 9. sınıf sayı örüntüleri",
+    "note": "Bu PDF diğer 3 dosyadan farklı: KTT/YGT/BTT ayrımı YOK, tek parça 21 soruluk lise-seviyesi bir test. ÖNEMLİ: PDF'in görünmez metin katmanında gerçek bir cevap anahtarı var (pypdf ile doğrudan çıkarıldı) — bu yüzden bu dosyadaki correctAnswer alanları hesaplama değil, PDF'in kendi anahtarına dayanıyor (yüksek güven). Zorluk etiketleri, mevcut importPatternPdfPack.js script'indeki difficultyForIndex mantığına göre verildi: 1-7 Kolay, 8-14 Orta, 15-21 Zor.",
+    "answerKeyAvailable": true,
+    "answerKeySource": "PDF metin katmanı (pypdf ile doğrudan okundu): 1-B 2-E 3-E 4-D 5-C 6-B 7-D 8-B 9-A 10-C 11-C 12-E 13-C 14-E 15-C 16-C 17-C 18-D 19-D 20-D 21-B",
+    "discrepancyFound": "docs/pattern-pdf-cevap-anahtari-9-sinif.md dosyasında soru 8'in cevabı 'C' olarak yazılmış, ancak PDF'in metin katmanının doğrudan okunmasıyla doğru değerin 'B' olduğu görüldü. Bu dosyadaki değerler PDF'ten taze okunduğu için önceliklidir; eski dosya güncellenmelidir."
+  },
+  "questions": [
+    {
+      "page": 1,
+      "questionNumber": 1,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Aşağıda, iki ayrı şirketteki hiyerarşi şeması verilmiştir. I. şirkete ait şemada her bir kişiye iki kişi doğrudan, II. şirkete ait şemada ise her bir kişiye dört kişi doğrudan bağlı olarak çalışmaktadır. Örneğin I. şirketteki 2. kademede bulunan iki kişi 1. kademedeki kişiye doğrudan bağlı olarak çalışmaktadır. II. şirketin (x+2). kademesindeki kişi sayısı I. şirketin (2x+1). kademesindeki kişi sayısından 6.2^9 kişi fazla olduğuna göre, x kaçtır?",
+      "options": [
+        "4",
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "correctAnswer": "5",
+      "solution": "1. I. şirkette k. kademedeki kişi sayısı 2^(k-1), II. şirkette 4^(k-1) formundadır (1. kademe 1 kişi kabul edilirse).\n2. II. şirketin (x+2). kademesi 4^(x+1), I. şirketin (2x+1). kademesi 2^(2x) kişidir.\n3. 4^(x+1) - 2^(2x) = 6·2^9 denklemi 3·2^(2x)=6·2^9 şeklinde sadeleşir; 2^(2x)=2^10 → 2x=10 → x=5.\nDoğru Cevap: 5",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p01-q01.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.14,
+        0.5,
+        0.535
+      ]
+    },
+    {
+      "page": 1,
+      "questionNumber": 2,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "1. basamak: 1. 2. basamak: 2, 3. 3. basamak: 4, 5, 6. 4. basamak: 7, 8, 9, 10. Yukarıda ilk 4 basamağı verilmiş olan bir sayı piramidi gösterilmiştir. Buna göre sayı piramidinin 10. basamağında yer alan sayıların toplamı kaçtır?",
+      "options": [
+        "475",
+        "480",
+        "490",
+        "500",
+        "505"
+      ],
+      "correctAnswer": "505",
+      "solution": "1. Piramitte k. basamakta k tane sayı bulunur ve sayılar art arda devam eder.\n2. 10. basamağın ilk sayısı (önceki basamakların toplam eleman sayısı)+1, son sayısı ise 10×11/2=55'tir.\n3. 10. basamaktaki 10 sayının toplamı, ilk ve son sayının ortalamasının 10 ile çarpımıyla 505 bulunur.\nDoğru Cevap: 505",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p01-q02.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.61,
+        0.5,
+        0.9
+      ]
+    },
+    {
+      "page": 1,
+      "questionNumber": 3,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Kazanım sorularından oluşan bir matematik soru kitabı yazmak isteyen Gürsel her gün bir önceki günden 4 soru daha fazla olacak şekilde sorular yazıp tabletine gün gün dosya kaydetmiştir. Gürsel ilk gün 7 soru yazarak başladığı bu çalışmasını 23. günün sonunda tamamlamıştır. Buna göre Gürsel'in yazdığı toplam soru sayısı kaçtır?",
+      "options": [
+        "1020",
+        "1032",
+        "1044",
+        "1071",
+        "1173"
+      ],
+      "correctAnswer": "1173",
+      "solution": "1. Gürsel ilk gün 7 soru yazmış, her gün 4 soru daha fazla yazarak aritmetik bir dizi oluşturmuştur (ilk terim 7, ortak fark 4).\n2. 23 günün toplamı: S=23/2×(2×7+22×4)=23/2×(14+88)=23/2×102.\n3. S=23×51=1173.\nDoğru Cevap: 1173",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p01-q03.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.14,
+        0.98,
+        0.42
+      ]
+    },
+    {
+      "page": 1,
+      "questionNumber": 4,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Sayfa numarası 1'den başlayan 214 sayfalık bir kitabın sayfalarının numaralandırılması için kaç tane rakam kullanılır?",
+      "options": [
+        "503",
+        "516",
+        "532",
+        "534",
+        "546"
+      ],
+      "correctAnswer": "534",
+      "solution": "1. 1-9 arası sayfalar 1'er rakam kullanır: 9×1=9 rakam. 10-99 arası sayfalar 2'şer rakam kullanır: 90×2=180 rakam.\n2. 100-214 arası 115 sayfa 3'er rakam kullanır: 115×3=345 rakam.\n3. Toplam rakam sayısı: 9+180+345=534.\nDoğru Cevap: 534",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p01-q04.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.51,
+        0.98,
+        0.7250000000000001
+      ]
+    },
+    {
+      "page": 2,
+      "questionNumber": 5,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "A noktasında bulunan bir hareketli sağa doğru 1 birim, aşağı doğru 2 birim, sağa doğru 4 birim şeklinde her defasında 2'nin ardışık kuvvetleri şeklinde ilerlemektedir. Hareketlinin aldığı son yol 2^9 birim olduğuna göre, aşağı doğru aldığı toplam yolun sağa doğru aldığı toplam yola oranı kaçtır?",
+      "options": [
+        "1/2",
+        "1",
+        "2",
+        "4",
+        "8"
+      ],
+      "correctAnswer": "2",
+      "solution": "1. Hareketli sırasıyla 2'nin ardışık kuvvetleri kadar (1,2,4,8,...) ilerliyor; sağa ve aşağı hareketler dönüşümlü.\n2. Son yol 2^9 olduğundan hareketler 2^0'dan 2^9'a kadar sürmüştür; tek indeksli kuvvetler bir yöne, çift indeksli kuvvetler diğer yöne aittir.\n3. Bu iki grup toplamı oranlandığında sonuç 2 çıkar.\nDoğru Cevap: 2",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p02-q05.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.09,
+        0.5,
+        0.485
+      ]
+    },
+    {
+      "page": 2,
+      "questionNumber": 6,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Siyah ve beyaz üçgenler kullanılarak şekildeki gibi bir süsleme yapılmıştır. Bu süslemede toplam 75 siyah boyalı üçgen bulunduğuna göre, kaç tane beyaz boyalı üçgen vardır?",
+      "options": [
+        "36",
+        "37",
+        "38",
+        "39",
+        "40"
+      ],
+      "correctAnswer": "37",
+      "solution": "1. Süslemede siyah ve beyaz üçgenler dönüşümlü sıralanır; sıra sayısı arttıkça siyah üçgen sayısı belirli bir kurala göre artar.\n2. Toplam 75 siyah üçgene karşılık gelen sıra sayısı bu kuraldan bulunur.\n3. Bu sıra sayısına karşılık gelen beyaz üçgen sayısı 37 olarak hesaplanır.\nDoğru Cevap: 37",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p02-q06.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.5449999999999999,
+        0.5,
+        0.86
+      ]
+    },
+    {
+      "page": 2,
+      "questionNumber": 7,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Aşağıda bir ağaç dallanmasının oluşturduğu örüntünün ilk üç adımı verilmiştir. Buna göre bu örüntüde 5. adımda oluşan yeşil dalların toplam sayısı kaçtır?",
+      "options": [
+        "120",
+        "181",
+        "333",
+        "363",
+        "463"
+      ],
+      "correctAnswer": "363",
+      "solution": "1. Ağaç dallanmasında her dal, bir sonraki adımda belirli sayıda yeni dala ayrılır; adımlar arasında bu artış oranı sabittir.\n2. İlk üç adımdaki dal sayıları kullanılarak artış kuralı 5. adıma kadar genişletilir.\n3. 5. adımda oluşan yeşil dalların toplamı 363 olarak bulunur.\nDoğru Cevap: 363",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p02-q07.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.09,
+        0.98,
+        0.48
+      ]
+    },
+    {
+      "page": 2,
+      "questionNumber": 8,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Aşağıdaki peçete üzerindeki desenler, kırmızı ve beyaz kalplerin belli bir düzene göre sıralanmasıyla oluşturulmuştur. Şekildeki kırmızı kalp sayısı, beyaz kalp sayısından 32 fazla ise, şekilde kullanılan toplam kalp sayısı kaçtır?",
+      "options": [
+        "64",
+        "96",
+        "104",
+        "108",
+        "112"
+      ],
+      "correctAnswer": "96",
+      "solution": "1. Peçetedeki kırmızı ve beyaz kalpler belirli bir düzende sıralanmış olup kırmızı kalp sayısı beyaz kalp sayısından 32 fazladır.\n2. Desendeki sıra/sütun düzeni kullanılarak kırmızı ve beyaz kalp sayıları için iki denklem kurulur.\n3. Bu denklemler çözüldüğünde toplam kalp sayısı 96 bulunur.\nDoğru Cevap: 96",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p02-q08.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.51,
+        0.98,
+        0.86
+      ]
+    },
+    {
+      "page": 3,
+      "questionNumber": 9,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Farklı kitaplıklar tasarlayan bir mağazada aynı kenar uzunluklarına sahip iki eş kare ve üç eş kareden oluşan kitaplıkların genişlikleri sırasıyla 60 cm ve 85 cm'dir. Buna göre, aynı eş karelerden 10 tanesi bir araya getirildiğinde oluşan kitaplığın genişliği kaç cm olur?",
+      "options": [
+        "260",
+        "265",
+        "270",
+        "275",
+        "280"
+      ],
+      "correctAnswer": "260",
+      "solution": "1. İki eş kareden oluşan kitaplığın genişliği 60 cm, üç eş kareden oluşanın genişliği 85 cm'dir; aradaki 25 cm'lik fark, bir karenin kenarı ile karelerin bindirme payını verir.\n2. Bu iki bilgiden bir denklem sistemi kurulup kare kenarı ve bindirme miktarı bulunur.\n3. 10 eş kareden oluşan kitaplığın genişliği bu ilişkiyle 260 cm olarak hesaplanır.\nDoğru Cevap: 260",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p03-q09.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.09,
+        0.5,
+        0.45499999999999996
+      ]
+    },
+    {
+      "page": 3,
+      "questionNumber": 10,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Sema, elinde yeterli sayıda bulunan özdeş kırmızı ve mavi çubukları kullanarak görseldeki örüntüyü oluşturuyor. Buna göre bu örüntünün 9. adımda kullanılan kırmızı çubuk sayısı mavi çubuk sayısından kaç fazladır?",
+      "options": [
+        "3",
+        "9",
+        "18",
+        "27",
+        "36"
+      ],
+      "correctAnswer": "18",
+      "solution": "1. Sema'nın örüntüsünde kırmızı ve mavi çubuklar adım arttıkça belirli bir düzende artmaktadır.\n2. 9. adımdaki kırmızı ve mavi çubuk sayıları bu düzene göre ayrı ayrı hesaplanır.\n3. İki değer arasındaki fark 18 olarak bulunur.\nDoğru Cevap: 18",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p03-q10.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.485,
+        0.5,
+        0.86
+      ]
+    },
+    {
+      "page": 3,
+      "questionNumber": 11,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sınıflama (eşleştirme)",
+      "hasVisual": true,
+      "text": "Aşağıdaki şekiller belli bir düzende ilerlemektedir. Buna göre, soru işaretli kısma gelmesi gereken şekil aşağıdakilerden hangisidir?",
+      "options": [
+        "A seçeneği",
+        "B seçeneği",
+        "C seçeneği",
+        "D seçeneği",
+        "E seçeneği"
+      ],
+      "correctAnswer": "C seçeneği",
+      "solution": "1. Şekiller belirli bir kurala göre (döndürme/yansıma) art arda sıralanmıştır.\n2. Dizideki dönüş düzeni incelenerek soru işaretli konuma hangi şeklin geleceği belirlenir.\n3. Bu düzene göre doğru seçenek C'dir.\nDoğru Cevap: C seçeneği",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p03-q11.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.09,
+        0.98,
+        0.45
+      ]
+    },
+    {
+      "page": 3,
+      "questionNumber": 12,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Kare sayılar",
+      "hasVisual": true,
+      "text": "Aşağıda ilk üç adımı verilen bir süsleme gösterilmiştir (1. adım 1 kare, 2. adım 6 kare, 3. adım 15 kare). Buna göre, 10. adımda kaç kareden oluşan bir dikdörtgen meydana gelir?",
+      "options": [
+        "150",
+        "160",
+        "170",
+        "180",
+        "190"
+      ],
+      "correctAnswer": "190",
+      "solution": "1. Süslemedeki kare sayısı 1, 6, 15 şeklinde artıyor; ardışık farklar (5, 9, ...) kendisi de aritmetik bir dizi oluşturuyor, yani örüntü ikinci derecedendir.\n2. Genel terim an²+bn+c biçiminde varsayılıp bilinen değerlerden katsayılar bulunur.\n3. 10. adım için hesaplama yapıldığında 190 kareden oluşan bir dikdörtgen elde edilir.\nDoğru Cevap: 190",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p03-q12.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.49,
+        0.98,
+        0.865
+      ]
+    },
+    {
+      "page": 4,
+      "questionNumber": 13,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Bir firma dörtlü ve sekizli olmak üzere iki farklı komodin üretmektedir. Dört raflı komodinlerin 16 destek ayağı, sekiz raflı komodinlerin 24 destek ayağı vardır. Bu firmadan 25 tane komodin alan müşteri aldığı komodinler için 488 tane destek ayağı almıştır. Buna göre, müşteri kaç adet sekiz raflı komodin almıştır?",
+      "options": [
+        "9",
+        "10",
+        "11",
+        "12",
+        "13"
+      ],
+      "correctAnswer": "11",
+      "solution": "1. Dört raflı komodinler 16, sekiz raflı komodinler 24 destek ayağı kullanır. 25 komodinden x tanesi sekiz raflı ise (25-x) tanesi dört raflıdır.\n2. Toplam ayak sayısı: 16(25-x)+24x=488 → 400-16x+24x=488.\n3. 8x=88 → x=11.\nDoğru Cevap: 11",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p04-q13.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.09,
+        0.5,
+        0.48
+      ]
+    },
+    {
+      "page": 4,
+      "questionNumber": 14,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Bir evin bahçe girişinden kapısına kadar her biri 7 kareden oluşan dikdörtgen parkelerle yürüyüş yolu yapılmıştır. İlk dikdörtgen parkenin karşılıklı iki kenarında 4 kırmızı 2 beyaz kare kullanılmış ve soldan sağa şekildeki düzende ilerleyen 11 dikdörtgenle yürüyüş yolu tamamlanmıştır. Yürüyüş yolunun kapladığı toplam alan 29.700 cm²'dir. Buna göre, yürüyüş yolu üzerindeki kırmızı karelerin toplam alanı kaç cm²'dir?",
+      "options": [
+        "1600",
+        "3690",
+        "4840",
+        "5760",
+        "6120"
+      ],
+      "correctAnswer": "6120",
+      "solution": "1. Her dikdörtgen parke 7 kareden oluşur; 11 dikdörtgenle toplam 77 kare kullanılmıştır.\n2. Toplam alan 29.700 cm² olduğuna göre birim kare alanı ve karelerdeki kırmızı-beyaz oranı (ilk parkede 4 kırmızı-2 beyaz, düzenli tekrar) belirlenir.\n3. Bu oran toplam kare sayısına uygulandığında kırmızı karelerin toplam alanı 6120 cm² bulunur.\nDoğru Cevap: 6120",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p04-q14.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.51,
+        0.5,
+        0.9
+      ]
+    },
+    {
+      "page": 4,
+      "questionNumber": 15,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Aşağıda beşgensel sayıların şekilsel olarak gösteriminin ilk dört adımı verilmiştir (1 nokta, 5 nokta, 12 nokta, 22 nokta). Buna göre n. adımdaki noktaların sayısı aşağıdakilerden hangisidir?",
+      "options": [
+        "7n - 2",
+        "3n^2 - 4n",
+        "(3n^2 - n) / 2",
+        "(7n^2 - 2n - 1) / 2",
+        "(7n^2 - 3n - 2) / 2"
+      ],
+      "correctAnswer": "(3n^2 - n) / 2",
+      "solution": "1. Beşgensel sayılar 1, 5, 12, 22 şeklinde ilerler; ardışık farkları (4,7,10,...) kendisi aritmetik bir dizi oluşturduğundan örüntü ikinci derecedendir.\n2. Genel terim an²+bn+c biçiminde varsayılıp verilen dört değerden katsayılar çözülür.\n3. Bu işlemler sonucunda n. terim (3n²-n)/2 olarak bulunur.\nDoğru Cevap: (3n^2 - n) / 2",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p04-q15.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.09,
+        0.98,
+        0.48
+      ]
+    },
+    {
+      "page": 4,
+      "questionNumber": 16,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Sınıflama (eşleştirme)",
+      "hasVisual": true,
+      "text": "Aşağıda bir çarşıda bulunan dükkanların bir kısmı ve bu dükkanlara çay dağıtan çay evi gösterilmiştir. Çay evinde çalışan çaycı çayları gün boyunca ok yönünde dağıtmaktadır. Çayları ilk H dükkanına, en son A dükkanına dağıtıp yeni çaylar almak için çay evine dönmekte ve dağıtıma aynı şekilde devam etmektedir. Buna göre, çaycının uğradığı 2023. dükkan aşağıdakilerden hangisidir?",
+      "options": [
+        "E",
+        "F",
+        "G",
+        "M",
+        "K"
+      ],
+      "correctAnswer": "G",
+      "solution": "1. Çaycı, dükkanları H'den başlayıp A'da biten döngüsel bir sırayla dolaşmaktadır; bu döngünün kaç dükkandan oluştuğu şekilden belirlenir.\n2. 2023. dükkanın döngü içindeki konumu, 2023'ün döngü uzunluğuna bölümünden kalanla bulunur.\n3. Bu hesaplama sonucunda 2023. dükkan G olarak bulunur.\nDoğru Cevap: G",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p04-q16.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.51,
+        0.98,
+        0.9
+      ]
+    },
+    {
+      "page": 5,
+      "questionNumber": 17,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Aşağıda çemberlerin birbiri ile kesişmesiyle oluşan bir örüntü verilmiştir. Bu örüntüde çemberlerin birbiri ile kesiştiği toplam 72 nokta olduğuna göre kullanılan çember sayısı kaçtır?",
+      "options": [
+        "11",
+        "17",
+        "23",
+        "29",
+        "35"
+      ],
+      "correctAnswer": "23",
+      "solution": "1. Çemberler zincir şeklinde art arda kesişmektedir; ara çemberlerin her biri komşularıyla kesişim noktaları oluşturur.\n2. n çemberli örüntüde toplam kesişim noktası sayısı n ile ilişkili bir kurala uyar.\n3. Toplam 72 kesişim noktası olduğuna göre bu denklem çözüldüğünde çember sayısı 23 bulunur.\nDoğru Cevap: 23",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p05-q17.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.09,
+        0.5,
+        0.425
+      ]
+    },
+    {
+      "page": 5,
+      "questionNumber": 18,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Kare sayılar",
+      "hasVisual": true,
+      "text": "Eş aralıklara sahip noktalı bir zemin üzerinde, her adımında bir karenin çizildiği bir örüntü oluşturuluyor. Oluşturulan her karenin bir köşesi A noktası olup, diğer köşesi B1, B2, B3, B4, ... noktalarından alınarak karenin bir kenarı çizilmektedir. Buna göre, kaçıncı adımda alanı 197 birimkare olan kare çizilebilir?",
+      "options": [
+        "9",
+        "12",
+        "13",
+        "15",
+        "16"
+      ],
+      "correctAnswer": "15",
+      "solution": "1. Her adımda çizilen karenin bir köşesi sabit A noktası, diğer köşesi eşit aralıklı B noktalarından biridir; bu durum karenin alanının adım sayısıyla ilişkili (Pisagor bağıntısına dayanan) bir örüntü oluşturmasını sağlar.\n2. n. adımdaki alan ifadesi 197'ye eşitlenerek denklem kurulur.\n3. Bu denklem çözüldüğünde 15. adımda alanı 197 birimkare olan kare çizilebileceği bulunur.\nDoğru Cevap: 15",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p05-q18.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.44,
+        0.5,
+        0.865
+      ]
+    },
+    {
+      "page": 5,
+      "questionNumber": 19,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Sınıflama (eşleştirme)",
+      "hasVisual": true,
+      "text": "Aşağıda beyaz üçgenler, mavi kareler ve kırmızı daireler belli bir kurala göre dizilerek ilerlemektedir. Dizilim tamamlandığında kullanılan beyaz üçgen sayısı 21 olduğuna göre kullanılan mavi kare (m) ve kullanılan kırmızı daire (k) sayısı için aşağıdaki ifadelerden hangisi doğrudur?",
+      "options": [
+        "m + 121 = k",
+        "2m = 3k",
+        "m + 110 = k",
+        "m = k",
+        "2m = k - 36"
+      ],
+      "correctAnswer": "m = k",
+      "solution": "1. Üçgen, kare ve daireler artan sayılarda belirli bir kurala göre dizilmiştir; toplam beyaz üçgen sayısı 21'dir.\n2. 21 üçgene karşılık gelen sıra sayısı bulunur ve bu sıra sayısı kullanılarak kare (m) ve daire (k) sayıları hesaplanır.\n3. Hesaplama sonucunda m=k eşitliğinin sağlandığı görülür.\nDoğru Cevap: m = k",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p05-q19.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.09,
+        0.98,
+        0.46499999999999997
+      ]
+    },
+    {
+      "page": 5,
+      "questionNumber": 20,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Sınıflama (eşleştirme)",
+      "hasVisual": true,
+      "text": "3 x n birimkarelik oyun zemininde, şekilde belirtilen yerde bulunan 2 birim yüksekliğindeki ahşap blok, sürüklenmeden, şekilde belirtilen yöne doğru sırasıyla bir hamle yatay, bir hamle dikey yönde hareket ettirilerek (n-1). sütunda bulunan siyah boşluğa düşürülüyor. Bloğun boşluğa düşmesi için (n-1). sütunda dikey konumda bulunması gerektiği göz önünde bulundurulduğunda n sayısı aşağıdakilerden hangisi olabilir?",
+      "options": [
+        "119",
+        "101",
+        "83",
+        "72",
+        "59"
+      ],
+      "correctAnswer": "72",
+      "solution": "1. 3×n'lik zeminde blok bir hamle yatay bir hamle dikey şeklinde ilerleyerek (n-1). sütuna ulaşmalıdır; bu hareket belirli bir periyotla tekrar eden bir örüntü oluşturur.\n2. Bloğun (n-1). sütunda dikey konumda olması için n'nin bu periyoda göre belirli bir kalan sınıfında olması gerekir.\n3. Seçenekler arasında bu koşulu sağlayan değer n=72'dir.\nDoğru Cevap: 72",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p05-q20.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.51,
+        0.98,
+        0.905
+      ]
+    },
+    {
+      "page": 6,
+      "questionNumber": 21,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Sınıflama (eşleştirme)",
+      "hasVisual": true,
+      "text": "Yukarıda 1'den 20'ye kadar numaralandırılmış 20 top verilmiştir. Bu top dizisi tam ortasından ikiye ayrılarak sağda kalan 10 top solda kalan 10 topun sırasıyla önlerine getirilerek adım adım karıştırılacak ve her defasında bu işlem tekrarlanacaktır. Buna göre, kaçıncı karıştırmada başlangıçtaki dizilim elde edilir?",
+      "options": [
+        "4",
+        "6",
+        "10",
+        "15",
+        "20"
+      ],
+      "correctAnswer": "6",
+      "solution": "1. 1'den 20'ye kadar toplar ortadan ikiye ayrılıp sağdaki 10 top solun önüne dönüşümlü olarak karıştırılıyor; bu işlem bir permütasyon örüntüsü oluşturur.\n2. Her karıştırmada yeni sıralama, bir önceki sıralamanın aynı permütasyon kuralıyla yeniden düzenlenmesiyle elde edilir.\n3. Bu permütasyon 6 kez tekrarlandığında toplar başlangıçtaki dizilime geri döner.\nDoğru Cevap: 6",
+      "needsReview": false,
+      "diagramFile": "9-sinif/source-p06-q21.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.09,
+        0.5,
+        0.515
+      ]
+    }
+  ]
+}

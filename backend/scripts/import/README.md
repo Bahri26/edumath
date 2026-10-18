@@ -1,76 +1,74 @@
-# Örüntü PDF İçe Aktarım
+# Resimli örüntü soru paketi
 
-Doktora tezi KTT/BTT örüntü PDF paketlerini Edumath soru bankasına yükler.
+Dört PDF'nin tamamı `backend/data/pattern-pdf-import` altında metin, seçenek,
+doğru cevap, çözüm ve özgün soru görseli olarak saklanır.
 
-## Gereksinimler
+| Sınıf | Soru ve görsel | Kolay | Orta | Zor |
+|---|---:|---:|---:|---:|
+| 5 | 22 | 12 | 6 | 4 |
+| 6 | 30 | 20 | 6 | 4 |
+| 7 | 22 | 12 | 6 | 4 |
+| 9 | 21 | 7 | 7 | 7 |
+| Toplam | 95 | 51 | 25 | 19 |
 
-- Python 3 + `pymupdf`, `pillow`, `numpy`
-- Node.js bağımlılıkları (`tesseract.js`, `sharp`)
-- `backend/.env` içinde `MONGODB_URI`
-- PDF dosyaları varsayılan klasörde:
-  `OneDrive\Masaüstü\Bahri\Doktora Tezi\`
+## Soru biçimi
 
-## PDF dosyaları
+Kaynaklar çoktan seçmelidir: 5–7. sınıfta dört, 9. sınıfta beş seçenek vardır.
+`assessmentMeta.imageRole = full-question` metin, şekil ve görsel seçenekleri
+birlikte gösterir. Aranabilir metin kayıtta tutulur; sınavda ikinci kez gösterilmez.
+5. sınıf sayfa 4 ve 6. sınıf sayfa 3 sorularına ortak açıklama ayrıca eklenmiştir.
 
-| Sınıf | Dosya |
-|-------|-------|
-| 5 | `5 sınıf örüntü başlık.pdf` |
-| 6 | `6 sınıf örüntü - başlık.pdf` |
-| 7 | `7 sınıf örüntü başlık.pdf` |
-| 9 | `9. SINIF ORUNTÜ SORULARI.pdf` |
+5–7. sınıf zorlukları test ailesine göre başlangıç etiketleridir. 9. sınıfın 7/7/7
+ayrımı geçici editoryal etikettir; PDF'de zorluk bölümleri yoktur. Öğrenci
+performansına dayalı kalibrasyon ayrıca yapılmalıdır.
 
-Her sınıf: **21 soru** → sırayla **7 Kolay + 7 Orta + 7 Zor** etiketlenir.
+## Yerel kontrol ve önizleme
 
-## Çalıştırma
+Backend klasöründe, veritabanına bağlanmadan:
 
-```bash
-cd backend
-CONFIRM_PATTERN_PDF_IMPORT=YES npm run import:pattern-pdf
+```powershell
+node scripts/import/importExtractedPatternQuestions.js --local-preview
+node scripts/import/previewExtractedPatternQuestions.js
+node --test scripts/tests/extractedPatternPack.test.js
 ```
 
-### Ortam değişkenleri
+`data/pattern-pdf-import/preview.html` tüm soruları sınıfa göre filtreler ve
+cevap/çözümünü açar. Eksik görsel, yinelenen kaynak kimliği, şıklarda bulunmayan
+cevap veya inceleme bekleyen soru aktarımı durdurur. Cevap tahmin edilmez.
 
-| Değişken | Varsayılan | Açıklama |
-|----------|------------|----------|
-| `PATTERN_PDF_DIR` | OneDrive Doktora Tezi | PDF klasörü |
-| `PATTERN_PDF_REPLACE` | `true` | İlgili sınıfın eski örüntü sorularını siler |
-| `PATTERN_PDF_GRADES` | (boş = hepsi) | Örn. `5,9` veya `9. Sınıf` |
-| `ML_SERVICE_URL` | (opsiyonel) | Çözüm adımı zenginleştirme |
+## Veritabanını güncelleme
 
-## Akış
+Önce salt okunur denetim:
 
-1. Python: PDF → PNG sayfalar + cevap anahtarı (9. sınıf metin katmanından)
-2. Node OCR (Tesseract): her soru bölgesinden metin + şıklar
-3. ML servis / yerel çözücü: çözüm adımları + eksik doğru cevap
-4. Görsel tespit: diyagramlı sorulara kırpılmış görsel yüklenir
-5. MongoDB: 21 soru + sınıf başına tarama sınavı kaydı
-
-## Düzeltme listesi
-
-```bash
-cd backend
-npm run import:pattern-pdf-review
+```powershell
+node scripts/import/importExtractedPatternQuestions.js
 ```
 
-Çıktılar:
-- `docs/pattern-pdf-duzeltme-listesi.md` — soru soru inceleme rehberi
-- `docs/pattern-pdf-duzeltme-ozet.csv` — Excel’de filtrelemek için özet
-- `docs/pattern-pdf-cevap-anahtari-9-sinif.md` — 9. sınıf PDF anahtarı
+Ardından aktarım:
 
-## ML ile yeniden zenginleştirme
-
-```bash
-CONFIRM_PATTERN_PDF_PATCH=YES npm run import:pattern-pdf-patch
+```powershell
+$env:CONFIRM_EXTRACTED_PATTERN_IMPORT='YES'
+npm run import:extracted-patterns
 ```
 
-## 9. sınıf cevap anahtarı uygulama
+`.env` içindeki MongoDB ve depolama ayarları kullanılır. Yalnızca
+`pattern-pdf-extracted-2026-08` kaynaklı kayıtlar güncellenir. Mevcut soru
+kimlikleri ve sınav referansları korunur; tekrar aktarım soruları çoğaltmaz.
+Sınıf başına 22/30/22/21 soruluk sınav güncellenir. Diğer sorular silinmez.
+`EXTRACTED_PATTERN_GRADES=5,9` sınıf filtresidir.
+`EXTRACTED_PATTERN_CREATE_EXAM=false` sınav güncellemesini kapatır.
+Görsel yüklenemediğinde eksik görselli soru kaydedilmez.
+Silerek yeniden aktaran `EXTRACTED_PATTERN_REPLACE_MINE` artık desteklenmez.
 
-```bash
-node scripts/import/applyPatternPdfAnswerKeys.js
+## Görselleri yeniden üretme
+
+Python + Pillow ve PATH üzerinde Poppler `pdftoppm` gerekir:
+
+```powershell
+python scripts/import/preparePatternPdfImages.py --pdf-dir 'C:/Users/kocba/OneDrive/Masaüstü/Bahri/Doktora Tezi'
+node scripts/import/previewExtractedPatternQuestions.js
 ```
 
-## Not
-
-- **5–7. sınıf:** Ayrı cevap anahtarı PDF’i yok; şık/cevap OCR + ML tahminidir.
-- **9. sınıf:** PDF anahtarı var; şık metinleri yine OCR ile kontrol edilmeli.
-- Taranmış PDF’lerde öğretmen panelinden metin/şık düzeltmesi önerilir.
+PDF'ler değiştirilmez. Soru bölgeleri kırpılır; cevap anahtarı görsellere dahil
+edilmez. Kaynak kırpım koordinatları `sourceCrop` alanında saklanır.
+Eski OCR betikleri `_archive-ocr-pdf-pipeline` içindedir; bu paket için kullanılmaz.

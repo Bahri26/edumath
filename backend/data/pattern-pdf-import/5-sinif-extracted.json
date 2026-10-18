@@ -1,0 +1,608 @@
+{
+  "source": {
+    "pdfName": "5 sınıf örüntü başlık.pdf",
+    "classLevel": "5. Sınıf",
+    "subject": "Matematik",
+    "mebReference": "MEB Matematik Öğretim Programı (2018) — 5. sınıf örüntü kazanımı",
+    "note": "Bu dosyada 3 ayrı test bulunuyor (renk kodlarına göre): KTT (turuncu, Konu Tarama Testi, Test 14) -> Kolay, YGT (mavi, Yeni Nesile Geçiş Testi, Test 15) -> Orta, BTT (kırmızı, Beceri Temelli Test, Test 16) -> Zor. Mevcut import script'i (importPatternPdfPack.js) 21 soruyu düz sırayla 7-7-7 bölüyordu; bu PDF'te gerçek dağılım 12 Kolay + 6 Orta + 4 Zor = 22 soru. Zorluk artık test kaynağına göre etiketlendi, sıraya göre değil.",
+    "answerKeyAvailable": false,
+    "extractionMethod": "Claude görsel okuma (OCR yerine) + elle matematiksel çözüm. Cevap anahtarı PDF'te yok; correctAnswer alanları hesaplanarak bulundu.",
+    "reviewNeeded": "needsReview:true olan sorularda şekil/görsel eleman sayımı belirsiz olabilir; öğretmen panelinden görselle karşılaştırıp onaylayın."
+  },
+  "questions": [
+    {
+      "testCode": "KTT",
+      "testName": "Konu Tarama Testi (Test 14)",
+      "page": 1,
+      "questionNumber": 1,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Belirli bir kurala göre dizilmiş sayılar aşağıda verilmiştir: 3 – 9 – ▧(turuncu) – 21 – 27 – ▧(mavi) – ... Buna göre turuncu ve mavi kutudaki sayıların toplamı kaçtır?",
+      "options": [
+        "15",
+        "33",
+        "48",
+        "52"
+      ],
+      "correctAnswer": "48",
+      "solution": "1. Sabit fark 6'dır: 3, 9, 15, 21, 27, 33 dizisini yazarız.\n2. Turuncu kutu 3. terim: 15. Mavi kutu 6. terim: 33.\n3. 15 + 33 = 48 bulunur.\nDoğru Cevap: 48",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p01-q01.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.5,
+        0.305
+      ]
+    },
+    {
+      "testCode": "KTT",
+      "testName": "Konu Tarama Testi (Test 14)",
+      "page": 1,
+      "questionNumber": 2,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "15 – 19 – 23 – 25 – 27 – 31 dizisinin bir örüntü oluşturması için hangi sayı çıkarılmalıdır?",
+      "options": [
+        "15",
+        "23",
+        "25",
+        "31"
+      ],
+      "correctAnswer": "25",
+      "solution": "1. Dizi 15-19-23-25-27-31 olarak verilmiş.\n2. 25 sayısı çıkarılırsa 15, 19, 23, 27, 31 kalır ve ardışık fark hep 4 olur.\n3. Bu yüzden çıkarılması gereken sayı 25'tir.\nDoğru Cevap: 25",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p01-q02.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.36,
+        0.5,
+        0.535
+      ]
+    },
+    {
+      "testCode": "KTT",
+      "testName": "Konu Tarama Testi (Test 14)",
+      "page": 1,
+      "questionNumber": 3,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir kitaplığın rafındaki dosya numaraları 12, 16, 20, 24, ..., 40 şeklinde bir örüntü oluşturmaktadır. Buna göre rafta kaç numaralı dosya bulunmaz?",
+      "options": [
+        "28",
+        "32",
+        "35",
+        "36"
+      ],
+      "correctAnswer": "35",
+      "solution": "1. Dosya numaraları 12'den başlayıp 4'er artıyor: 12, 16, 20, 24, 28, 32, 36, 40.\n2. Bu örüntüdeki her sayı 12'den başlayarak 4'ün katları şeklinde ilerler.\n3. 35 sayısı bu örüntüye uymaz, çünkü 4'e tam bölünmez; diğer seçenekler (28, 32, 36) örüntüye uyar.\nDoğru Cevap: 35",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p01-q03.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.6,
+        0.5,
+        0.905
+      ]
+    },
+    {
+      "testCode": "KTT",
+      "testName": "Konu Tarama Testi (Test 14)",
+      "page": 1,
+      "questionNumber": 4,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "İlk üç adımı verilen ve karelerden oluşan şekil örüntüsünde 4. adımda kaç kare kullanılır?",
+      "options": [
+        "6",
+        "7",
+        "9",
+        "10"
+      ],
+      "correctAnswer": "7",
+      "solution": "Kare sayıları 1, 3, 5 şeklindedir. Kural 2n−1 olduğundan 4. adımda 7 kare vardır.",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p01-q04.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.075,
+        0.98,
+        0.315
+      ]
+    },
+    {
+      "testCode": "KTT",
+      "testName": "Konu Tarama Testi (Test 14)",
+      "page": 1,
+      "questionNumber": 5,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Dikildiğinde 15 cm olan bir fidanın boyu her hafta düzenli olarak 2 cm uzamaktadır. Buna göre 4. haftanın sonunda fidanın boyu kaç cm olur?",
+      "options": [
+        "21",
+        "23",
+        "25",
+        "27"
+      ],
+      "correctAnswer": "23",
+      "solution": "1. Fidan dikildiğinde 15 cm'dir ve her hafta 2 cm uzar.\n2. 4. haftanın sonunda toplam uzama: 4 × 2 = 8 cm.\n3. Fidanın son boyu: 15 + 8 = 23 cm.\nDoğru Cevap: 23",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p01-q05.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.36,
+        0.98,
+        0.55
+      ]
+    },
+    {
+      "testCode": "KTT",
+      "testName": "Konu Tarama Testi (Test 14)",
+      "page": 1,
+      "questionNumber": 6,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "6 – 12 – 18 – 24 – 30 – ... İlk beş adımı verilen örüntünün kuralı aşağıdakilerden hangisidir?",
+      "options": [
+        "Adım sayısının 5 fazlası",
+        "Adım sayısının 10 katının 4 eksiği",
+        "Adım sayısının 6 katı",
+        "Adım sayısının 3 katının 3 fazlası"
+      ],
+      "correctAnswer": "Adım sayısının 6 katı",
+      "solution": "1. Dizi 6, 12, 18, 24, 30 şeklinde verilmiş, her terim bir öncekinden 6 fazla.\n2. 1. adım 6×1=6, 2. adım 6×2=12; yani her terim adım sayısının 6 katına eşit.\n3. Bu yüzden kural 'Adım sayısının 6 katı'dır.\nDoğru Cevap: Adım sayısının 6 katı",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p01-q06.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.6,
+        0.98,
+        0.8450000000000001
+      ]
+    },
+    {
+      "testCode": "KTT",
+      "testName": "Konu Kavrama Testi (Test 14)",
+      "page": 2,
+      "questionNumber": 7,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Birim küplerle oluşturulmuş bir örüntünün ilk üç adımı verilmiştir. Buna göre örüntünün kuralı aşağıdakilerden hangisidir?",
+      "options": [
+        "4 x (Adım Sayısı)",
+        "2 x (Adım sayısı) + 2",
+        "5 x (Adım Sayısı) - 1",
+        "3 x (Adım Sayısı)"
+      ],
+      "correctAnswer": "2 x (Adım sayısı) + 2",
+      "solution": "Küp sayıları 4, 6, 8 şeklindedir. Her adımda 2 küp eklenir; genel kural 2n+2 olur.",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p02-q07.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.5,
+        0.365
+      ]
+    },
+    {
+      "testCode": "KTT",
+      "testName": "Konu Kavrama Testi (Test 14)",
+      "page": 2,
+      "questionNumber": 8,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "24 – 30 – 36 – 42 – 48 – ... Bir örüntünün ilk beş adımı verildiğine göre 50. adımı kaçtır?",
+      "options": [
+        "246",
+        "300",
+        "318",
+        "600"
+      ],
+      "correctAnswer": "318",
+      "solution": "1. Dizi 24, 30, 36, 42, 48 şeklinde, sabit fark 6.\n2. Genel terim: 6×(Adım Sayısı) + 18 (1. terim için 6×1+18=24 doğrulanır).\n3. 50. adım için: 6×50 + 18 = 318.\nDoğru Cevap: 318",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p02-q08.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.38999999999999996,
+        0.5,
+        0.5750000000000001
+      ]
+    },
+    {
+      "testCode": "KTT",
+      "testName": "Konu Kavrama Testi (Test 14)",
+      "page": 2,
+      "questionNumber": 9,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Yukarıda bir örüntünün ilk üç adımı verilmiştir. I. 2 x (Adım Sayısı) - 1  II. 2 x (Adım Sayısı) - 3  III. Adım Sayısı + 2  ifadelerinden hangileri örüntünün kuralı olabilir?",
+      "options": [
+        "Yalnız I",
+        "I ve II",
+        "II ve III",
+        "I, II ve III"
+      ],
+      "correctAnswer": "Yalnız I",
+      "solution": "Kare sayıları 1, 3, 5 şeklindedir. Yalnız I, yani 2n−1 bu sayıları verir.",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p02-q09.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.595,
+        0.5,
+        0.905
+      ]
+    },
+    {
+      "testCode": "KTT",
+      "testName": "Konu Kavrama Testi (Test 14)",
+      "page": 2,
+      "questionNumber": 10,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Altıgenlerle oluşturulmuş bir örüntünün ilk üç adımı verilmiştir. Buna göre örüntünün 42. adımında kaç tane altıgen vardır?",
+      "options": [
+        "21",
+        "42",
+        "84",
+        "168"
+      ],
+      "correctAnswer": "84",
+      "solution": "Altıgen sayıları 2, 4, 6 şeklindedir. Genel kural 2n; 42. adımda 84 altıgen vardır.",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p02-q10.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.49,
+        0.075,
+        0.98,
+        0.375
+      ]
+    },
+    {
+      "testCode": "KTT",
+      "testName": "Konu Kavrama Testi (Test 14)",
+      "page": 2,
+      "questionNumber": 11,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Kenar uzunlukları 2 cm olan eşkenar üçgenlerle oluşturulmuş bir örüntü verilmiştir. Buna göre örüntünün 5. adımında oluşan şeklin çevre uzunluğu kaç cm'dir?",
+      "options": [
+        "11",
+        "17",
+        "22",
+        "28"
+      ],
+      "correctAnswer": "22",
+      "solution": "Şeritte 1, 3, 5 üçgen vardır. n. adımda dış sınır 2n+1 tane 2 cm kenardan oluşur. 5. adımın çevresi (2×5+1)×2=22 cm olur.",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p02-q11.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.49,
+        0.38999999999999996,
+        0.98,
+        0.665
+      ]
+    },
+    {
+      "testCode": "KTT",
+      "testName": "Konu Kavrama Testi (Test 14)",
+      "page": 2,
+      "questionNumber": 12,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Bir örüntünün kuralı \"adım sayısının 2 katının 1 fazlası\" olduğuna göre bu örüntü aşağıdakilerden hangisi olabilir?",
+      "options": [
+        "2-4-6-8-...",
+        "3-6-9-12-...",
+        "3-5-7-9-...",
+        "1-3-5-7-9-..."
+      ],
+      "correctAnswer": "3-5-7-9-...",
+      "solution": "1. Kural 'adım sayısının 2 katının 1 fazlası' cebirsel olarak 2n + 1'dir.\n2. n=1,2,3,4 için: 2(1)+1=3, 2(2)+1=5, 2(3)+1=7, 2(4)+1=9.\n3. Bu değerler 3-5-7-9-... dizisini oluşturur.\nDoğru Cevap: 3-5-7-9-...",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p02-q12.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.49,
+        0.6699999999999999,
+        0.98,
+        0.905
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 15)",
+      "page": 3,
+      "questionNumber": 1,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sınıflama (eşleştirme)",
+      "hasVisual": true,
+      "text": "Dokuz tane eş kareye ayrılan bir kağıt sırasıyla sarı, turuncu ve mor renge boyanıyor. Buna göre kaç kare sarı renge boyanmıştır?",
+      "options": [
+        "1",
+        "3",
+        "6",
+        "9"
+      ],
+      "correctAnswer": "3",
+      "solution": "1. 9 kare sırasıyla sarı, turuncu, mor renklerinin tekrarıyla boyanıyor (3'lük döngü).\n2. 9 karede bu döngü tam 3 kez tekrar eder: sarı-turuncu-mor, sarı-turuncu-mor, sarı-turuncu-mor.\n3. Her döngüde 1 sarı kare olduğundan toplam 3 kare sarıya boyanmıştır.\nDoğru Cevap: 3",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p03-q01.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.5,
+        0.295
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 15)",
+      "page": 3,
+      "questionNumber": 2,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sınıflama (eşleştirme)",
+      "hasVisual": true,
+      "text": "Bir deneme sınavının yoklama listesi \"ad soyad ve imza\" şeklinde eş bölmelerden oluşmaktadır. Yoklama listesinde toplam 20 bölme olduğuna göre bölmelerin kaç tanesi imza için ayrılmıştır?",
+      "options": [
+        "5",
+        "10",
+        "15",
+        "20"
+      ],
+      "correctAnswer": "10",
+      "solution": "1. Yoklama listesi 'Ad Soyad, İmza' şeklinde 2'lik bir döngüyle devam ediyor.\n2. 20 bölmenin yarısı Ad Soyad'a, yarısı İmza'ya ayrılmıştır.\n3. İmza için ayrılan bölme sayısı: 20 ÷ 2 = 10.\nDoğru Cevap: 10",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p03-q02.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.075,
+        0.98,
+        0.305
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 15)",
+      "page": 3,
+      "questionNumber": 3,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sınıflama (eşleştirme)",
+      "hasVisual": true,
+      "text": "Kenar uzunlukları 6 cm ve 234 cm olan dikdörtgen şeklinde bir karton, kenar uzunluğu 6 cm olan kare şeklindeki eş parçalara ayrılarak sırasıyla turuncu, pembe, mavi, mavi, yeşil olacak şekilde boyanıyor. Buna göre kaç parça mavi renge boyanmıştır?",
+      "options": [
+        "13",
+        "14",
+        "15",
+        "16"
+      ],
+      "correctAnswer": "16",
+      "solution": "1. Karton 234 ÷ 6 = 39 eş kareye bölünmüştür.\n2. Renkler 5'lik bir döngüyle tekrar ediyor: turuncu, pembe, mavi, mavi, yeşil (her döngüde 2 mavi kare).\n3. 39 = 7×5 + 4 olduğundan 7 tam döngüde 14 mavi, kalan 4 parçada (turuncu, pembe, mavi, mavi) 2 mavi daha vardır; toplam 16 mavi kare.\nDoğru Cevap: 16",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p03-q03.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.49,
+        0.98,
+        0.8150000000000001
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 15)",
+      "page": 4,
+      "questionNumber": 4,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Kenar uzunluğu 5 cm olan karelerle oluşturulmuş bir şekil örüntüsünün ilk üç adımı görselde verilmiştir. Bu örüntüdeki kare sayısını veren kural aşağıdakilerden hangisi olabilir?",
+      "options": [
+        "3 x (Adım Sayısı)",
+        "2 x (Adım Sayısı) + 1",
+        "5 x (Adım Sayısı) - 2",
+        "(Adım Sayısı) + 2"
+      ],
+      "correctAnswer": "2 x (Adım Sayısı) + 1",
+      "solution": "L şeklindeki kare sayıları 3, 5, 7 şeklindedir. Genel kural 2n+1 olur.",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p04-q04.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.365,
+        0.98,
+        0.505
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 15)",
+      "page": 4,
+      "questionNumber": 5,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Bu örüntüdeki şeklin çevre uzunluğunu veren kural aşağıdakilerden hangisi olabilir?",
+      "options": [
+        "2 x (Adım Sayısı) + 1",
+        "40 x (Adım Sayısı)",
+        "20 x (Adım Sayısı) + 20",
+        "60 x (Adım Sayısı) - 20"
+      ],
+      "correctAnswer": "20 x (Adım Sayısı) + 20",
+      "solution": "L şeklinin iki kolu n+1 kare uzunluğundadır. Dış sınırda 4n+4 tane 5 cm kenar bulunur: çevre 20n+20 cm olur.",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p04-q05.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.5449999999999999,
+        0.98,
+        0.685
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 15)",
+      "page": 4,
+      "questionNumber": 6,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Bu örüntünün 40. adımındaki şeklin çevre uzunluğu kaç cm'dir?",
+      "options": [
+        "81",
+        "800",
+        "820",
+        "1000"
+      ],
+      "correctAnswer": "820",
+      "solution": "Ortak görselde çevre kuralı 20n+20 cm olur. 40. adımda 20×40+20=820 cm bulunur.",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p04-q06.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.74,
+        0.98,
+        0.87
+      ]
+    },
+    {
+      "testCode": "BTT",
+      "testName": "Beceri Temelli Test (Test 16)",
+      "page": 5,
+      "questionNumber": 1,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Sınıflama (eşleştirme)",
+      "hasVisual": true,
+      "text": "Üçüncü adımları eşit olan iki örüntü Görsel-1'de verilmiştir (1-6-11-16-21 ve 5-8-11-14-17). Bu örüntüler eşit adımları üst üste gelecek şekilde Görsel-2'deki gibi bir araya getirildiğinde oluşan şekle kurdele örüntüsü denmektedir. Buna göre aşağıda verilen şekillerden hangisi kurdele örüntüsü değildir?",
+      "options": [
+        "A seçeneği",
+        "B seçeneği",
+        "C seçeneği",
+        "D seçeneği"
+      ],
+      "correctAnswer": "C seçeneği",
+      "solution": "Kurdelede iki aritmetik dizinin üçüncü terimleri eşit olmalıdır. A: merkez 14, B: merkez 32, D: merkez 37 her iki kolda aynıdır. C: 39 ve 51 uçlarının merkezi 45; diğer kolda 36 ikinci, 57 beşinci terimdir ve merkez 43 olur. Merkezler farklı olduğundan C kurdele örüntüsü değildir.",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p05-q01.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.98,
+        0.505
+      ]
+    },
+    {
+      "testCode": "BTT",
+      "testName": "Beceri Temelli Test (Test 16)",
+      "page": 5,
+      "questionNumber": 2,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Derin, renkleri farklı olan kartonlardan üçgen ve daire keserek ilk üç adımı verilen örüntüyü oluşturmuştur. Derin, üçgen ve dairelerin her birini eşit sürede keserek bu şekil örüntüsünün 1. adımını 5 dakikada oluşturmuştur. Buna göre Derin'in bu örüntünün 10. adımını oluşturmak için kaç dakikaya ihtiyacı vardır?",
+      "options": [
+        "29",
+        "30",
+        "32",
+        "35"
+      ],
+      "correctAnswer": "32",
+      "solution": "1. adımda 4 üçgen ve 1 daire, toplam 5 parça vardır. Her parça 1 dakikada kesilir. n. adımda 2n+2 üçgen ve n daire vardır; toplam 3n+2 parça olur. 10. adım 32 dakika sürer.",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p05-q02.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.51,
+        0.98,
+        0.8550000000000001
+      ]
+    },
+    {
+      "testCode": "BTT",
+      "testName": "Beceri Temelli Test (Test 16)",
+      "page": 6,
+      "questionNumber": 3,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Kibrit çöpleri ile oluşturulan bir şekil örüntüsünün ilk üç adımı aşağıda verilmiştir. Buna göre bu örüntü ile ilgili aşağıda verilenlerden hangisi yanlıştır?",
+      "options": [
+        "Örüntüdeki kibrit çöpü sayısını veren kural \"4 x (Adım Sayısı) + 1\" dir.",
+        "Örüntünün 6. adımında kullanılan kibrit çöpü sayısı bir doğal sayının karesine eşittir.",
+        "Örüntünün ilk beş adımını oluşturmak için 65 kibrit çöpü kullanılır.",
+        "Her adımda bir önceki adıma göre kibrit çöpü sayısı beşer beşer artmıştır."
+      ],
+      "correctAnswer": "Her adımda bir önceki adıma göre kibrit çöpü sayısı beşer beşer artmıştır.",
+      "solution": "1. Kural '4×(Adım Sayısı) + 1' doğruysa adımlar sırasıyla 5, 9, 13, 17, 21, 25 kibrit çöpü kullanır.\n2. 6. adım = 25 = 5², yani bir doğal sayının karesidir (B doğru); ilk 5 adım toplamı 5+9+13+17+21=65 (C doğru).\n3. Her adımdaki artış miktarı sabit 4'tür, 5 değil; bu yüzden 'beşer beşer artmıştır' ifadesi (D) yanlıştır.\nDoğru Cevap: Her adımda bir önceki adıma göre kibrit çöpü sayısı beşer beşer artmıştır.",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p06-q03.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.98,
+        0.42
+      ]
+    },
+    {
+      "testCode": "BTT",
+      "testName": "Beceri Temelli Test (Test 16)",
+      "page": 6,
+      "questionNumber": 4,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Kutularla oluşturulan bir şekil örüntüsünün ilk üç adımı aşağıda verilmiştir. Buna göre bu örüntünün 40. adımında kullanılan kutu sayısı kaçtır?",
+      "options": [
+        "198",
+        "200",
+        "202",
+        "204"
+      ],
+      "correctAnswer": "198",
+      "solution": "Görselde kutu sayıları 3, 8, 13 olur (ikinci ve üçüncü yapıda yinelenen orta sıralar vardır). Her adımda 5 kutu eklenir. Kural 5n−2; 40. adımda 198 kutu vardır.",
+      "needsReview": false,
+      "diagramFile": "5-sinif/source-p06-q04.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.45999999999999996,
+        0.98,
+        0.785
+      ]
+    }
+  ]
+}

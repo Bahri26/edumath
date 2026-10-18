@@ -3,6 +3,7 @@ import { renderWithLatex } from '../../utils/latex.jsx';
 import { IMAGE_QUESTION_INSTRUCTION, resolveQuestionStem } from '../../utils/questionLayout.js';
 import QuestionTextWithPattern from './QuestionTextWithPattern.jsx';
 import QuestionVisual from './QuestionVisual.jsx';
+import { withLocalPatternSource } from '../../utils/localPatternSource.js';
 
 export default function QuestionStemCard({
   question,
@@ -13,6 +14,7 @@ export default function QuestionStemCard({
   showImageInstruction = null,
   className = '',
 }) {
+  question = withLocalPatternSource(question);
   const stem = resolveQuestionStem(question);
   const displayInstruction = showImageInstruction ?? stem.showImageInstruction;
   const topic = String(question?.topic || '').trim();
@@ -43,6 +45,8 @@ export default function QuestionStemCard({
               src={question?.image}
               alt={visualAlt}
               variant={stem.visualVariant}
+              dimensions={question?.assessmentMeta?.imageDimensions}
+              fallback={stem.imageOnly ? <p className="mt-3 whitespace-pre-wrap break-words">{question?.text}</p> : null}
             />
           ) : null}
 

@@ -1,0 +1,607 @@
+{
+  "source": {
+    "pdfName": "7 sınıf örüntü başlık.pdf",
+    "classLevel": "7. Sınıf",
+    "subject": "Matematik",
+    "mebReference": "MEB Matematik Öğretim Programı (2018) — 7. sınıf örüntü kazanımı",
+    "note": "3 test, 3 renk kodu: KKT turuncu (Test 11, Kazanım Kavrama Testi, 12 soru) -> Kolay, YGT mavi (Test 12, 6 soru) -> Orta, BTT kırmızı (Test 13, 4 soru) -> Zor. Toplam 22 soru (5. sınıfla aynı yapı: 12+6+4).",
+    "answerKeyAvailable": false,
+    "extractionMethod": "Claude görsel okuma + elle matematiksel çözüm. Cevap anahtarı PDF'te yok."
+  },
+  "questions": [
+    {
+      "testCode": "KKT",
+      "testName": "Kazanım Kavrama Testi (Test 11)",
+      "page": 1,
+      "questionNumber": 1,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Kartların üzerinde yazan sayılardan dört tanesi bir örüntü adımlarını oluşturmaktadır: 30, 16, 23, 28, 37. Buna göre bu örüntüye ait olmayan terim aşağıdakilerden hangisidir?",
+      "options": [
+        "16",
+        "23",
+        "28",
+        "37"
+      ],
+      "correctAnswer": "28",
+      "solution": "1. Kartlardaki 16, 23, 30, 37 sayıları incelendiğinde aralarında sabit 7 fark olduğu görülür.\n2. 16, 23, 30, 37 dizisi düzgün bir aritmetik dizi oluşturur.\n3. 28 sayısı bu diziye uymadığından örüntüye ait olmayan terimdir.\nDoğru Cevap: 28",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p01-q01.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.06,
+        0.075,
+        0.51,
+        0.29
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Kazanım Kavrama Testi (Test 11)",
+      "page": 1,
+      "questionNumber": 2,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir örüntünün genel kuralı aşağıda verilmiştir: 8n - 3. Buna göre bu örüntünün 16. terimi aşağıdaki üslü ifadelerden hangisine eşittir?",
+      "options": [
+        "3^6",
+        "5^3",
+        "7^3",
+        "11^2"
+      ],
+      "correctAnswer": "5^3",
+      "solution": "1. Kural 8n-3'te n=16 yazılır.\n2. 8×16-3=128-3=125.\n3. 125=5³ olduğundan doğru üslü ifade 5³'tür.\nDoğru Cevap: 5^3",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p01-q02.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.06,
+        0.32999999999999996,
+        0.51,
+        0.55
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Kazanım Kavrama Testi (Test 11)",
+      "page": 1,
+      "questionNumber": 3,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir örüntünün ilk beş adımı aşağıda verilmiştir: 4, 9, 14, 19, 24, ... Bu örüntünün genel kuralı aşağıdakilerden hangisidir?",
+      "options": [
+        "5n - 1",
+        "3n + 1",
+        "5n + 4",
+        "3n - 1"
+      ],
+      "correctAnswer": "5n - 1",
+      "solution": "1. Dizi 4,9,14,19,24 sabit fark 5 ile ilerliyor.\n2. 5n-1 kuralı denendiğinde n=1→4, n=2→9 çıkar.\n3. Bu yüzden genel kural 5n-1'dir.\nDoğru Cevap: 5n - 1",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p01-q03.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.06,
+        0.64,
+        0.51,
+        0.88
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Kazanım Kavrama Testi (Test 11)",
+      "page": 1,
+      "questionNumber": 4,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir örüntünün genel kuralı aşağıda verilmiştir: 6n + 4. Buna göre bu örüntünün ilk beş adımı aşağıdakilerden hangisinde doğru verilmiştir?",
+      "options": [
+        "4, 10, 16, 22, 28",
+        "4, 8, 12, 16, 20",
+        "10, 16, 22, 28, 34",
+        "10, 14, 18, 22, 26"
+      ],
+      "correctAnswer": "10, 16, 22, 28, 34",
+      "solution": "1. Kural 6n+4'te n=1,2,3,4,5 yazılır.\n2. 6(1)+4=10, 6(2)+4=16, 6(3)+4=22, 6(4)+4=28, 6(5)+4=34.\n3. İlk beş adım: 10,16,22,28,34.\nDoğru Cevap: 10, 16, 22, 28, 34",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p01-q04.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.075,
+        0.98,
+        0.29
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Kazanım Kavrama Testi (Test 11)",
+      "page": 1,
+      "questionNumber": 5,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir örüntünün ilk beş adımı aşağıda verilmiştir: 20, 16, 12, 8, 4, ... Bu örüntünün genel kuralı aşağıdakilerden hangisidir?",
+      "options": [
+        "4n + 16",
+        "20 - 4n",
+        "4n + 20",
+        "24 - 4n"
+      ],
+      "correctAnswer": "24 - 4n",
+      "solution": "1. Dizi 20,16,12,8,4 azalarak gidiyor, sabit fark -4.\n2. 24-4n kuralı denendiğinde n=1→24-4=20 çıkar ve dizi ile örtüşür.\n3. Bu yüzden kural 24-4n'dir.\nDoğru Cevap: 24 - 4n",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p01-q05.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.32999999999999996,
+        0.98,
+        0.555
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Kazanım Kavrama Testi (Test 11)",
+      "page": 1,
+      "questionNumber": 6,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir örüntünün genel kuralı aşağıda verilmiştir: 3n - 2. Buna göre bu örüntünün kaçıncı terimi 49'dur?",
+      "options": [
+        "15",
+        "17",
+        "19",
+        "21"
+      ],
+      "correctAnswer": "17",
+      "solution": "1. Kural 3n-2=49 denklemi kurulur.\n2. 3n=51.\n3. n=17 bulunur.\nDoğru Cevap: 17",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p01-q06.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.64,
+        0.98,
+        0.88
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Kazanım Kavrama Testi (Test 11)",
+      "page": 2,
+      "questionNumber": 7,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir örüntünün genel kuralı aşağıda verilmiştir: 10 - 4n. Bu örüntünün 8. adımı ile 15. adımındaki sayıların toplamı kaçtır?",
+      "options": [
+        "-76",
+        "-72",
+        "-62",
+        "-28"
+      ],
+      "correctAnswer": "-72",
+      "solution": "1. Kural 10-4n'de n=8 ve n=15 yazılır.\n2. 8. adım: 10-32=-22. 15. adım: 10-60=-50.\n3. Toplam: -22+(-50)=-72.\nDoğru Cevap: -72",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p02-q07.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.06,
+        0.075,
+        0.51,
+        0.22499999999999998
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Kazanım Kavrama Testi (Test 11)",
+      "page": 2,
+      "questionNumber": 8,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Özdeş boncuklarla oluşturulan bir örüntünün ilk üç adımı aşağıda verilmiştir. Buna göre bu örüntünün 50. adımında kullanılan boncuk sayısı kaçtır?",
+      "options": [
+        "151",
+        "154",
+        "201",
+        "249"
+      ],
+      "correctAnswer": "151",
+      "solution": "Boncuk sayıları 4, 7, 10 şeklindedir. Genel kural 3n+1; 50. adımda 151 boncuk vardır.",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p02-q08.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.06,
+        0.305,
+        0.51,
+        0.6
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Kazanım Kavrama Testi (Test 11)",
+      "page": 2,
+      "questionNumber": 9,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Üçgenlerle oluşturulan bir örüntünün ilk üç adımı aşağıda verilmiştir (trapez şeritleri). Buna göre bu örüntünün genel terimi aşağıdakilerden hangisidir?",
+      "options": [
+        "3n + 2",
+        "2n + 5",
+        "2n + 3",
+        "3n + 5"
+      ],
+      "correctAnswer": "2n + 3",
+      "solution": "Üçgen sayıları 5, 7, 9 şeklindedir. Her adımda 2 üçgen eklenir; kural 2n+3 olur.",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p02-q09.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.06,
+        0.635,
+        0.51,
+        0.88
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Kazanım Kavrama Testi (Test 11)",
+      "page": 2,
+      "questionNumber": 10,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Bir örüntünün 1. ve 4. terimi aşağıda verilmiştir: 5, ▲, ■, 26, ... Buna göre verilen örüntü ile ilgili aşağıdaki ifadelerden hangisi yanlıştır?",
+      "options": [
+        "Artış miktarı 7'dir.",
+        "Genel kuralı 7n + 5'tir.",
+        "6. terimi 40'tır.",
+        "■ yerine gelecek sayı 19'dur."
+      ],
+      "correctAnswer": "Genel kuralı 7n + 5'tir.",
+      "solution": "1. Fark = (26-5)/3 = 7, bu yüzden 'Artış miktarı 7'dir' ifadesi doğrudur.\n2. Doğru genel kural 7n-2'dir (n=1 için 7-2=5 doğrulanır); '7n+5' ifadesi n=1 için 12 verir, bu yanlıştır.\n3. 6. terim=7(6)-2=40 doğru, 3. terim (■)=7(3)-2=19 doğru; bu yüzden yanlış olan ifade 'Genel kuralı 7n+5'tir' cümlesidir.\nDoğru Cevap: Genel kuralı 7n + 5'tir.",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p02-q10.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.52,
+        0.075,
+        0.98,
+        0.295
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Kazanım Kavrama Testi (Test 11)",
+      "page": 2,
+      "questionNumber": 11,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Özdeş karelerle oluşturulan bir örüntünün ilk üç adımı aşağıda verilmiştir (haç/artı şekli). Buna göre bu örüntünün kaçıncı adımında 45 adet kare kullanılır?",
+      "options": [
+        "10",
+        "11",
+        "12",
+        "13"
+      ],
+      "correctAnswer": "12",
+      "solution": "1. Görseldeki haç (artı) şeklinde kare sayısı kuralı 4n-3'tür.\n2. 4n-3=45 denklemi kurulur.\n3. 4n=48 → n=12.\nDoğru Cevap: 12",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p02-q11.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.52,
+        0.305,
+        0.98,
+        0.6
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Kazanım Kavrama Testi (Test 11)",
+      "page": 2,
+      "questionNumber": 12,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Dört farklı örüntünün genel kuralı aşağıda verilmiştir. Bu örüntülerden hangisinin ilk terimi farklıdır?",
+      "options": [
+        "10n - 2",
+        "16n - 24",
+        "15 - 7n",
+        "5n + 3"
+      ],
+      "correctAnswer": "16n - 24",
+      "solution": "1. Her kuralda n=1 yazılarak ilk terimler bulunur.\n2. 10n-2→8, 16n-24→-8, 15-7n→8, 5n+3→8.\n3. İlk üçü 8 verirken 16n-24 farklı (-8) bir değer verdiğinden ilk terimi farklı olan odur.\nDoğru Cevap: 16n - 24",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p02-q12.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.635,
+        0.98,
+        0.895
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 12)",
+      "page": 3,
+      "questionNumber": 1,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Kibrit çöpleri ile geometrik şekiller yapılarak oluşturulan bir örüntünün ilk üç adımı aşağıda verilmiştir (kare, altıgen, sekizgen). Her kibrit çöpü bir kere kullanılarak örüntü 7. adım tamamlanana kadar devam ettiriliyor. Buna göre toplam kaç adet kibrit çöpü kullanılmıştır?",
+      "options": [
+        "66",
+        "70",
+        "80",
+        "88"
+      ],
+      "correctAnswer": "70",
+      "solution": "1. Adımlardaki çokgenlerin kenar sayısı kare(4), altıgen(6), sekizgen(8) şeklinde her adımda 2 artıyor: kural 2n+2.\n2. 1'den 7'ye kadar her adımın kenar sayısı toplanır.\n3. Bu toplam = 2×(1+2+...+7) + 2×7 = 56+14 = 70 kibrit çöpü.\nDoğru Cevap: 70",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p03-q01.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.06,
+        0.075,
+        0.51,
+        0.38999999999999996
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 12)",
+      "page": 3,
+      "questionNumber": 2,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Kibrit çöpleri ile oluşturulan bir örüntünün ilk üç adımı aşağıda verilmiştir (ev şekilleri). Buna göre bu örüntünün 24. adımında kullanılan kibrit çöpü sayısı ile ilgili verilenlerden hangisi doğrudur?",
+      "options": [
+        "İki basamaklı en büyük asal sayıdır.",
+        "İki basamaklı rakamları farklı en büyük sayıdır.",
+        "İki basamaklı en büyük sayıdır.",
+        "Üç basamaklı en küçük asal sayıdır."
+      ],
+      "correctAnswer": "İki basamaklı en büyük asal sayıdır.",
+      "solution": "İlk ev 5 kibrit çöpünden oluşur; çatının tabanında yatay çöp yoktur. Her yeni ev 4 çöp ekler. Kural 4n+1; 24. adımda 97 çöp vardır. 97 iki basamaklı en büyük asal sayıdır.",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p03-q02.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.075,
+        0.98,
+        0.38999999999999996
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 12)",
+      "page": 3,
+      "questionNumber": 3,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Kibrit çöpleri ile oluşturulan bir örüntünün ilk üç adımı aşağıda verilmiştir (bal peteği/altıgen zinciri). Buna göre bu örüntünün kaçıncı adımında 46 adet kibrit çöpü kullanılır?",
+      "options": [
+        "13",
+        "11",
+        "9",
+        "7"
+      ],
+      "correctAnswer": "9",
+      "solution": "1. Bal peteği zincirinde her yeni altıgen eklendiğinde 5 yeni kibrit çöpü eklenir (ilk altıgen 6 çöp, sonrakiler +5).\n2. Kural: 5n+1 (n=1→6, n=2→11, n=3→16 doğrulanır).\n3. 5n+1=46 → 5n=45 → n=9.\nDoğru Cevap: 9",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p03-q03.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.45499999999999996,
+        0.98,
+        0.885
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 12)",
+      "page": 4,
+      "questionNumber": 4,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir fidanın boyu dikildiğinde 24 cm'dir. Bu fidan her ay 16 cm uzadığına göre 5. ayın sonunda fidanın boyu kaç cm olur?",
+      "options": [
+        "88",
+        "96",
+        "104",
+        "120"
+      ],
+      "correctAnswer": "104",
+      "solution": "1. Fidan dikildiğinde 24 cm'dir ve her ay 16 cm uzuyor.\n2. 5 ayda toplam uzama: 5×16=80 cm.\n3. Son boy: 24+80=104 cm.\nDoğru Cevap: 104",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p04-q04.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.06,
+        0.075,
+        0.52,
+        0.38999999999999996
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 12)",
+      "page": 4,
+      "questionNumber": 5,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir su deposunun içinde başlangıçta 4 litre su bulunmaktadır. Bu depoya her geçen dakikada 6 litre su dolmaktadır. Her dakika sonunda depoda biriken su miktarının oluşturduğu örüntünün genel kuralı aşağıdakilerden hangisidir?",
+      "options": [
+        "4n - 2",
+        "6n + 4",
+        "4n + 6",
+        "6n - 2"
+      ],
+      "correctAnswer": "6n + 4",
+      "solution": "1. Depoda başlangıçta 4 litre su var ve her dakika 6 litre ekleniyor.\n2. n. dakika sonunda su miktarı: 4+6n.\n3. 6n+4 kuralı denendiğinde n=1→10 çıkar, bu da 4+6=10 ile örtüşür.\nDoğru Cevap: 6n + 4",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p04-q05.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.53,
+        0.075,
+        0.98,
+        0.38999999999999996
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 12)",
+      "page": 4,
+      "questionNumber": 6,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir çocuk boş olan kumbarasına ilk gün 12 TL, sonraki her gün ise 16 TL atmaktadır. Bu çocuk 300 TL'lik bir oyuncak almak için para biriktirdiğine göre en az kaç gün sonra bu oyuncağı alacak parayı biriktirmiş olur?",
+      "options": [
+        "16",
+        "17",
+        "18",
+        "19"
+      ],
+      "correctAnswer": "19",
+      "solution": "1. 1. gün 12 TL, sonraki her gün 16 TL ekleniyor; n. gün sonunda birikim: 12+16(n-1)=16n-4.\n2. 300 TL'ye ulaşmak için: 16n-4 ≥ 300 → 16n ≥ 304.\n3. n ≥ 19 çıkar, yani en az 19 gün gerekir.\nDoğru Cevap: 19",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p04-q06.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.45999999999999996,
+        0.98,
+        0.88
+      ]
+    },
+    {
+      "testCode": "BTT",
+      "testName": "Beceri Temelli Test (Test 13)",
+      "page": 5,
+      "questionNumber": 1,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Özdeş bardaklarla oluşturulan bir örüntünün ilk üç adımı aşağıda verilmiştir (yükseklikler 11 cm, 15 cm, 19 cm). Buna göre verilen örüntünün genel kuralı aşağıdakilerden hangisidir?",
+      "options": [
+        "4n + 8",
+        "4n + 7",
+        "5n + 1",
+        "5n + 6"
+      ],
+      "correctAnswer": "4n + 7",
+      "solution": "1. Bardak yükseklikleri 11, 15, 19 cm; sabit fark 4 cm.\n2. 4n+7 kuralı denendiğinde n=1→11, n=2→15 çıkar.\n3. Bu yüzden kural 4n+7'dir.\nDoğru Cevap: 4n + 7",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p05-q01.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.98,
+        0.38999999999999996
+      ]
+    },
+    {
+      "testCode": "BTT",
+      "testName": "Beceri Temelli Test (Test 13)",
+      "page": 5,
+      "questionNumber": 2,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Sınıflama (eşleştirme)",
+      "hasVisual": true,
+      "text": "Bir gruptaki çocukların her birine eşit uzunlukta ipler veriliyor ve çocuklar bu ipleri görseldeki gibi bir örüntü oluşturacak şekilde kesiyor. Gruptaki son çocuk kendisine verilen ipi 70 parçaya ayırdığına göre bu gruptaki çocuk sayısı kaçtır?",
+      "options": [
+        "11",
+        "12",
+        "13",
+        "14"
+      ],
+      "correctAnswer": "12",
+      "solution": "İpler sırasıyla 4, 10, 16 parçaya ayrılır. Her çocukta 6 parça artar; kural 6n−2 olur. 6n−2=70 denkleminden n=12 bulunur.",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p05-q02.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.46499999999999997,
+        0.98,
+        0.8450000000000001
+      ]
+    },
+    {
+      "testCode": "BTT",
+      "testName": "Beceri Temelli Test (Test 13)",
+      "page": 6,
+      "questionNumber": 3,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Yükseklikleri sırasıyla 2 cm ve 3 cm olan turuncu ile mavi pullarla oluşturulan bir örüntünün ilk üç adımı aşağıda verilmiştir. Rengi aynı olan pulların yüksekliği de aynı olduğuna göre örüntünün 18. adımında oluşturulan yapının yüksekliği kaç cm'dir?",
+      "options": [
+        "78",
+        "82",
+        "88",
+        "92"
+      ],
+      "correctAnswer": "88",
+      "solution": "n. adımda n mavi ve n−1 turuncu pul bulunur. Yükseklik 3n+2(n−1)=5n−2 cm olur. 18. adım 88 cm olur.",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p06-q03.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.98,
+        0.37
+      ]
+    },
+    {
+      "testCode": "BTT",
+      "testName": "Beceri Temelli Test (Test 13)",
+      "page": 6,
+      "questionNumber": 4,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Kare ve dairelerle oluşturulan bir örüntünün ilk üç adımı aşağıda verilmiştir. Verilenlere göre bu örüntünün kaçıncı adımında kare sayısı daire sayısının iki katına eşit olur?",
+      "options": [
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "correctAnswer": "6",
+      "solution": "Kare sayıları 3, 6, 9; daire sayıları 4, 5, 6 olur. Kare(n)=3n, daire(n)=n+3. 3n=2(n+3) denklemi n=6 verir.",
+      "needsReview": false,
+      "diagramFile": "7-sinif/source-p06-q04.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.46499999999999997,
+        0.98,
+        0.86
+      ]
+    }
+  ]
+}

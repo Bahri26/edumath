@@ -126,9 +126,9 @@ export default function StudentProgressDashboard() {
   );
 
   const classAverage = useMemo(() => {
-    if (!students.length) return null;
-    const sum = students.reduce((acc, s) => acc + (Number(s.averageScore) || 0), 0);
-    return (sum / students.length).toFixed(1);
+    const measured = students.filter(s => typeof s.averageScore === 'number');
+    if (!measured.length) return null;
+    return (measured.reduce((acc,s)=>acc+s.averageScore,0)/measured.length).toFixed(1);
   }, [students]);
 
   useEffect(() => {
@@ -250,7 +250,7 @@ export default function StudentProgressDashboard() {
     };
   }, [progress, exercises, exams]);
 
-  const displayAverage = detailAverageScore ?? selectedStudent?.averageScore ?? 0;
+  const displayAverage = detailAverageScore ?? selectedStudent?.averageScore ?? (language === 'EN' ? 'Not assessed yet' : 'Henüz ölçülmedi');
 
   const examTrendData = useMemo(
     () =>
@@ -385,7 +385,7 @@ export default function StudentProgressDashboard() {
                                 active ? 'text-teal-100' : 'text-slate-500 dark:text-slate-400'
                               }`}
                             >
-                              {s.grade || '—'} · {t.avgShort} {s.averageScore ?? 0}
+                              {s.grade || '—'} · {t.avgShort} {s.averageScore ?? (language === 'EN' ? 'Not assessed yet' : 'Henüz ölçülmedi')}
                             </span>
                           </span>
                         </button>

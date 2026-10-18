@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { apiErrorNotifier } from './apiErrorNotifier.js';
+export { registerApiErrorNotifier } from './apiErrorNotifier.js';
 
 const trimTrailingSlash = (value = '') => value.replace(/\/+$/, '');
 
@@ -139,12 +141,6 @@ const normalizeAssetUrls = (payload) => {
             return [key, normalizeAssetUrls(value)];
         })
     );
-};
-
-// Optional global error notifier registered from UI layer
-let apiErrorNotifier = null;
-export const registerApiErrorNotifier = (fn) => {
-    apiErrorNotifier = typeof fn === 'function' ? fn : null;
 };
 
 // Optional auth failure handler (e.g. 401 -> logout)

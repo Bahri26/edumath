@@ -19,6 +19,10 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), matovaSeoPlugin()],
     server: {
+      // Avoid service workers left by other apps on shared Vite ports.
+      port: 5180,
+      strictPort: true,
+      headers: { 'Cache-Control': 'no-store' },
       proxy: {
         '/api': 'http://localhost:8000',
         '/uploads': 'http://localhost:8000',

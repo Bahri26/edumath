@@ -11,6 +11,7 @@ const { gradeQuestionAnswer } = require('../utils/questionGrading');
 const { ensureStudentLinkedToTeacher } = require('../utils/studentRosterSync');
 const { recordUserActivity } = require('../services/activityLogger');
 const { canManageExam } = require('../utils/examAccess');
+const { validateExamBasics, validateManualQuestions, selectExamQuestions } = require('../utils/examComposition');
 const notificationController = require('../controllers/notificationController');
 const {
   syncExamStatusIfNeeded,
@@ -90,6 +91,17 @@ router.get('/:id/take', authMiddleware, roleMiddleware(['student']), async (req,
   }
 });
 
+// Preview uses the same readiness and duplicate rules as automatic selection.
+router.get('/pool-summary', authMiddleware, roleMiddleware(['teacher', 'admin']), async (req, res) => {
+  try {
+    const { subject, classLevel, topic } = req.query;
+    if (!subject || !classLevel) return res.status(400).json({ message: 'Ders ve sınıf seçiniz.' });
+    const pool = await Question.find({subject, classLevel, ...(topic ? {topic} : {})}).lean();
+    const { counts, sufficient } = selectExamQuestions(pool, () => 0.5);
+    res.json({ counts, sufficient, total: pool.length, excluded: pool.length - Object.values(counts).reduce((a,b) => a+b,0) });
+  } catch (err) { res.status(500).json({ message: 'Soru havuzu kontrol edilemedi.' }); }
+});
+
 // SINAV DETAYI GETİR (öğretmen / admin — cevap anahtarı dahil)
 router.get('/:id', authMiddleware, roleMiddleware(['teacher', 'admin']), async (req, res) => {
   try {
@@ -113,12 +125,17 @@ router.get('/:id', authMiddleware, roleMiddleware(['teacher', 'admin']), async (
 router.post('/', authMiddleware, roleMiddleware(['teacher']), async (req, res) => {
   try {
     const { name, description, classLevel, duration, questions, startAt, endAt } = req.body;
+    const basicsError = validateExamBasics({ title:name, classLevel, duration, startAt, endAt });
+    if (basicsError) return res.status(400).json({ message:basicsError });
 
-    if (!name || !questions || questions.length !== 21) {
+    if (!Array.isArray(questions) || questions.length !== 21) {
       return res.status(400).json({ message: 'Sınav adı ve 21 soru gerekli' });
     }
 
-    const questionIds = questions.map((q) => q._id || q);
+    const questionIds = questions.map((q) => q?._id || q);
+    if (questionIds.some(id => !mongoose.isValidObjectId(id)) || new Set(questionIds.map(String)).size !== 21) {
+      return res.status(400).json({ message:'21 farklı ve geçerli soru seçiniz.' });
+    }
     const questionsData = await Question.find({ _id: { $in: questionIds } });
 
     if (questionsData.length !== 21) {
@@ -132,6 +149,9 @@ router.post('/', authMiddleware, roleMiddleware(['teacher']), async (req, res) =
         subject = teacher.branch;
       }
     } catch {}
+    subject = subject || questionsData[0]?.subject || 'Matematik';
+    const selectionError = validateManualQuestions(questionsData,classLevel,subject);
+    if (selectionError) return res.status(400).json({ message:selectionError });
 
     const now = new Date();
     const newExam = await Exam.create({
@@ -144,7 +164,7 @@ router.post('/', authMiddleware, roleMiddleware(['teacher']), async (req, res) =
       ...(subject ? { subject } : {}),
       status: 'active',
       startAt: startAt ? new Date(startAt) : now,
-      endAt: endAt ? new Date(endAt) : new Date(now.getTime() + 90 * 86400000),
+      endAt: endAt ? new Date(endAt) : new Date((startAt ? new Date(startAt).getTime() : now.getTime()) + 90 * 86400000),
     });
 
     const actor = await User.findById(req.user.id).select('name email role').lean();
@@ -175,30 +195,24 @@ router.post('/', authMiddleware, roleMiddleware(['teacher']), async (req, res) =
 router.post('/auto-generate', authMiddleware, roleMiddleware(['teacher']), async (req, res) => {
   try {
     const { title, duration, classLevel, subject, topic, startAt, endAt } = req.body;
+    const basicsError = validateExamBasics({ title, classLevel, duration:duration ?? 25, startAt, endAt });
+    if (basicsError) return res.status(400).json({ message:basicsError });
     const matchStage = { classLevel };
-    if (subject) matchStage.subject = { $regex: subject, $options: 'i' };
+    if (!subject) return res.status(400).json({ message:'Sınav dersini seçiniz.' });
+    matchStage.subject = subject;
     if (topic) matchStage.topic = topic;
 
-    const easyQuestions = await Question.aggregate([
-      { $match: { ...matchStage, difficulty: 'Kolay' } },
-      { $sample: { size: 7 } },
-    ]);
-    const mediumQuestions = await Question.aggregate([
-      { $match: { ...matchStage, difficulty: 'Orta' } },
-      { $sample: { size: 7 } },
-    ]);
-    const hardQuestions = await Question.aggregate([
-      { $match: { ...matchStage, difficulty: 'Zor' } },
-      { $sample: { size: 7 } },
-    ]);
-
-    if (easyQuestions.length < 7 || mediumQuestions.length < 7 || hardQuestions.length < 7) {
+    const pool = await Question.find({ ...matchStage,
+      'assessmentMeta.needsReview': { $ne:true }, 'assessmentMeta.hasVisualPending': { $ne:true },
+    }).lean();
+    const selected = selectExamQuestions(pool);
+    if (!selected.sufficient) {
       return res.status(400).json({
-        message: `Her zorluk seviyesinden 7'şer soru bulunamadı! (Kolay: ${easyQuestions.length}, Orta: ${mediumQuestions.length}, Zor: ${hardQuestions.length})`,
+        message: `Doğrulanmış ve tekrarsız havuzda her seviyeden 7 soru gerekli. (Kolay: ${selected.counts.Kolay}, Orta: ${selected.counts.Orta}, Zor: ${selected.counts.Zor})`,
       });
     }
 
-    const allQuestions = [...easyQuestions, ...mediumQuestions, ...hardQuestions];
+    const allQuestions = selected.questions;
     const questionIds = allQuestions.map((q) => q._id);
     const learningOutcomes = Array.from(new Set(allQuestions.map((question) => question.learningOutcome).filter(Boolean)));
 
@@ -215,7 +229,7 @@ router.post('/auto-generate', authMiddleware, roleMiddleware(['teacher']), async
       ...(topic ? { topic } : {}),
       ...(learningOutcomes.length ? { learningOutcomes } : {}),
       startAt: startAt ? new Date(startAt) : now,
-      endAt: endAt ? new Date(endAt) : new Date(now.getTime() + 90 * 86400000),
+      endAt: endAt ? new Date(endAt) : new Date((startAt ? new Date(startAt).getTime() : now.getTime()) + 90 * 86400000),
     });
     await newExam.save();
     const notifyResult = await notificationController.notifyStudentsForExam(newExam);

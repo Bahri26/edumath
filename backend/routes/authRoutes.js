@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Joi = require('joi');
 const { performance } = require('perf_hooks');
+const { recordAuthDiagnostic } = require('../utils/authDiagnostics');
 const validate = require('../middlewares/validationMiddleware');
 const User = require('../models/User'); // User modelini çağırıyoruz
 const RefreshToken = require('../models/RefreshToken');
@@ -105,6 +106,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 /** İstemciye sızmaması gereken detayları gizler; geliştirmede mesaj bırakır. */
 const sendLoginUnexpectedError = (res, err) => {
+  recordAuthDiagnostic('login-unexpected', err);
   console.error('[auth/login] Beklenmeyen hata:', err?.message || err);
   if (err?.stack && !isProd) {
     console.error(err.stack);
@@ -288,6 +290,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     try {
       isMatch = await bcrypt.compare(password, storedHash);
     } catch (compareErr) {
+      recordAuthDiagnostic('password-verification', compareErr);
       console.error('[auth/login] bcrypt.compare hatası:', compareErr?.message || compareErr);
       outcome = 'bcrypt_error';
       statusCode = 500;
@@ -317,6 +320,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     try {
       await RefreshToken.create({ user: user._id, hashedToken: hashed, expiresAt });
     } catch (rtErr) {
+      recordAuthDiagnostic('session-storage', rtErr);
       console.error('[auth/login] RefreshToken kayıt hatası:', rtErr?.message || rtErr);
       outcome = 'refresh_store_failed';
       statusCode = 500;

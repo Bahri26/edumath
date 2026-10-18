@@ -8,7 +8,7 @@
  *  - Varsayılan olarak HİÇBİR ŞEYİ SİLMEZ — eski script'in aksine, mevcut "Örüntüler"
  *    sorularına (başka bir pipeline'dan gelmiş olabilir) DOKUNMAZ
  *  - Sadece kendi eklediği kayıtları (assessmentMeta.importSource = IMPORT_TAG) hedef
- *    alarak idempotent şekilde yeniden çalıştırılabilir (EXTRACTED_PATTERN_REPLACE_MINE)
+ *    alarak aynı soru kimlikleriyle yeniden çalıştırılabilir (silmeden upsert)
  *  - Bir sorunun JSON'unda "diagramFile" alanı varsa (örn. "5-sinif/ktt-q03.png"),
  *    o dosyayı backend/data/pattern-pdf-import/ altından okuyup mevcut
  *    STORAGE_PROVIDER'a (Drive/Cloudinary) yükler ve image/imageKey/imageProvider'ı
@@ -23,12 +23,11 @@
  *
  * Ortam değişkenleri:
  *   EXTRACTED_PATTERN_GRADES        virgülle sınıf filtresi, örn: "5,9" (boş = hepsi)
- *   EXTRACTED_PATTERN_REPLACE_MINE  true|false (varsayılan false) — sadece BU script'in
- *                                   daha önce eklediği kayıtları siler ve yeniden ekler
+ *   --local-preview                veritabanına bağlanmadan tüm paketleri doğrular
  *   EXTRACTED_PATTERN_CREATE_EXAM   true|false (varsayılan true) — sınıf başına, yalnızca
- *                                   yeni eklenen soruları içeren bir inceleme sınavı oluşturur/günceller
+ *                                   paketin tüm sorularını içeren bir inceleme sınavı oluşturur/günceller
  *   SEED_TEACHER_EMAIL              createdBy için öğretmen e-postası (opsiyonel)
- *   MONGODB_URI / MONGO_URI         zorunlu — inceleme modu bile DB'ye salt-okunur bağlanır
+ *   MONGODB_URI / MONGO_URI         DB aktarımı ve DB önizlemesi için zorunlu
  */
 
 const path = require('path');
@@ -42,6 +41,7 @@ const Question = require('../../models/Question');
 const Exam = require('../../models/Exam');
 const User = require('../../models/User');
 const { uploadBuffer } = require('../../services/storageService');
+const { sourceIdentity, validatePack } = require('./extractedPatternPack');
 
 const IMPORT_TAG = 'pattern-pdf-extracted-2026-08';
 const DATA_ROOT = path.join(__dirname, '..', '..', 'data', 'pattern-pdf-import');
@@ -69,7 +69,7 @@ async function uploadDiagramIfAny(q, { slug, classLevel }, warnings) {
     warnings.push(
       `${slug} · sayfa ${q.page ?? '?'} · soru ${q.questionNumber ?? '?'}: görsel/diyagram bekliyor ama diagramFile alanı yok (image boş kalacak).`
     );
-    return { image: '', imageKey: '', imageProvider: '', uploaded: false };
+    throw new Error(`${slug}: diagramFile eksik`);
   }
 
   const filePath = path.join(DATA_ROOT, relFile);
@@ -77,14 +77,14 @@ async function uploadDiagramIfAny(q, { slug, classLevel }, warnings) {
     warnings.push(
       `${slug} · sayfa ${q.page ?? '?'} · soru ${q.questionNumber ?? '?'}: diyagram dosyası bulunamadı (${relFile}) — image boş kalacak.`
     );
-    return { image: '', imageKey: '', imageProvider: '', uploaded: false };
+    throw new Error(`${slug}: görsel bulunamadı: ${relFile}`);
   }
 
   try {
     const buffer = fs.readFileSync(filePath);
     const safeClass = classLevel.replace(/\s+/g, '-').toLowerCase();
     const uploaded = await uploadBuffer(buffer, {
-      originalName: `${safeClass}-pattern-${slug}-q${q.questionNumber}.png`,
+      originalName: `${safeClass}-pattern-p${q.page}-q${q.questionNumber}.png`,
       mimeType: 'image/png',
       prefix: 'questions/pattern-pdf-extracted',
       extension: '.png',
@@ -94,7 +94,7 @@ async function uploadDiagramIfAny(q, { slug, classLevel }, warnings) {
     warnings.push(
       `${slug} · sayfa ${q.page ?? '?'} · soru ${q.questionNumber ?? '?'}: diyagram yüklenemedi (${uploadErr.message}) — image boş kalacak.`
     );
-    return { image: '', imageKey: '', imageProvider: '', uploaded: false };
+    throw new Error(`${slug}: görsel yüklenemedi: ${uploadErr.message}`);
   }
 }
 
@@ -109,12 +109,7 @@ async function buildQuestionDoc(q, { classLevel, mebReference, createdBy, slug }
   let correctAnswer = String(q.correctAnswer || '').trim();
   let needsReview = Boolean(q.needsReview);
   if (!correctAnswer) {
-    correctAnswer = String((q.options || []).find(Boolean) || 'A').trim();
-    needsReview = true;
-    warnings.push(
-      `${slug} · sayfa ${q.page ?? '?'} · soru ${q.questionNumber ?? '?'} (${q.testCode || ''}): ` +
-        `doğru cevap PDF/görselden netleştirilemedi, GEÇİCİ olarak ilk şık işaretlendi — öğretmen panelinden düzeltin.`
-    );
+    throw new Error(`${sourceIdentity(slug, q)}: doğru cevap eksik`);
   }
 
   const { image, imageKey, imageProvider, uploaded } = await uploadDiagramIfAny(q, { slug, classLevel }, warnings);
@@ -153,6 +148,9 @@ async function buildQuestionDoc(q, { classLevel, mebReference, createdBy, slug }
     createdBy: createdBy || undefined,
     assessmentMeta: {
       importSource: IMPORT_TAG,
+      sourceIdentity: sourceIdentity(slug, q),
+      imageRole: q.imageRole || 'diagram',
+      sourceCrop: q.sourceCrop || null,
       gradeSlug: slug,
       pageNumber: q.page ?? null,
       questionNumber: q.questionNumber ?? null,
@@ -178,27 +176,29 @@ async function inspectExisting(classLevel) {
 }
 
 async function main() {
+  const gradeFilter = String(process.env.EXTRACTED_PATTERN_GRADES || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
+  const files = gradeFilter.length
+    ? FILES.filter(f => gradeFilter.includes(f.slug.split('-')[0])) : FILES;
+  if (!files.length) throw new Error('Geçerli sınıf seçilmedi');
+  const packs = files.map(f => ({ ...f, data: loadJson(f.slug, f.file) }));
+  const summaries = packs.map(({slug,data}) => validatePack(data, DATA_ROOT, slug));
+  console.log(JSON.stringify(summaries, null, 2));
+  if (process.argv.includes('--local-preview')) return;
   const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
   if (!uri) {
     console.error('MONGODB_URI tanımlı değil (.env kontrol edin).');
     process.exit(1);
   }
   const dbName = (process.env.MONGODB_DB || process.env.MONGO_DB || 'Edumath').trim();
-  await mongoose.connect(uri, { dbName });
+  await mongoose.connect(uri, { dbName, serverSelectionTimeoutMS: 10000, connectTimeoutMS: 10000 });
   console.log(`Bağlandı: ${dbName}\n`);
 
   const confirmed = String(process.env.CONFIRM_EXTRACTED_PATTERN_IMPORT || '').trim() === 'YES';
-  const replaceMine = String(process.env.EXTRACTED_PATTERN_REPLACE_MINE || 'false').toLowerCase() === 'true';
+  if (String(process.env.EXTRACTED_PATTERN_REPLACE_MINE || 'false').toLowerCase() === 'true') {
+    throw new Error('Silerek yeniden aktarım kaldırıldı; mevcut kayıtlar kimlikleri korunarak güncellenir.');
+  }
   const createExam = String(process.env.EXTRACTED_PATTERN_CREATE_EXAM || 'true').toLowerCase() !== 'false';
-  const gradeFilter = String(process.env.EXTRACTED_PATTERN_GRADES || '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  const files = gradeFilter.length
-    ? FILES.filter((f) => gradeFilter.some((g) => f.slug.startsWith(g)))
-    : FILES;
-
   let teacher = await User.findOne({ email: String(process.env.SEED_TEACHER_EMAIL || '').trim() }).select('_id');
   if (!teacher) {
     teacher = await User.findOne({ role: 'teacher' }).sort({ createdAt: 1 }).select('_id');
@@ -220,10 +220,9 @@ async function main() {
     console.log(`  JSON'daki soru sayısı: ${questions.length}`);
     console.log(`  DB'de mevcut "Örüntüler" soruları: ${existing.total}`);
     console.log(`  Kaynağa göre dağılım:`, existing.bySource);
-    if (alreadyOurs > 0 && !replaceMine) {
+    if (alreadyOurs > 0) {
       console.log(
-        `  NOT: Bu script daha önce ${alreadyOurs} kayıt eklemiş görünüyor. Yeniden çalıştırırsanız ` +
-          `EXTRACTED_PATTERN_REPLACE_MINE=true vermezseniz DUPLICATE oluşabilir.`
+        `  Mevcut ${alreadyOurs} kayıt kaynak sayfası ve soru numarasına göre güncellenecek.`
       );
     }
 
@@ -233,17 +232,19 @@ async function main() {
       continue;
     }
 
-    if (replaceMine && alreadyOurs > 0) {
-      const del = await Question.deleteMany({ classLevel, 'assessmentMeta.importSource': IMPORT_TAG });
-      console.log(`  Silinen (yalnızca bu script'e ait) eski kayıt: ${del.deletedCount}`);
-    }
-
     const docs = [];
     for (const q of questions) {
       docs.push(await buildQuestionDoc(q, { classLevel, mebReference, createdBy: teacher?._id, slug }, allWarnings));
     }
-    const inserted = await Question.insertMany(docs);
-    console.log(`  Eklendi: ${inserted.length} soru`);
+    const inserted = [];
+    for (const doc of docs) {
+      inserted.push(await Question.findOneAndUpdate({
+        classLevel, 'assessmentMeta.importSource': IMPORT_TAG,
+        ...(slug === '9-sinif' ? {} : { 'assessmentMeta.pageNumber': doc.assessmentMeta.pageNumber }),
+        'assessmentMeta.questionNumber': doc.assessmentMeta.questionNumber,
+      }, { $set: doc }, { upsert: true, returnDocument: 'after', runValidators: true, setDefaultsOnInsert: true }));
+    }
+    console.log(`  Eklendi/güncellendi: ${inserted.length} soru`);
 
     if (createExam) {
       await Exam.findOneAndUpdate(
@@ -265,7 +266,7 @@ async function main() {
             createdBy: teacher?._id,
           },
         },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
       );
       console.log('  İnceleme sınavı oluşturuldu/güncellendi.');
     }
@@ -293,6 +294,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('HATA:', err);
+  console.error('HATA:', err.message);
   process.exit(1);
 });

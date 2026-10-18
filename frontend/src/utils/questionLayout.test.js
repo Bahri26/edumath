@@ -15,6 +15,22 @@ import {
   sanitizeStemPart,
 } from './questionLayout.js';
 
+describe('PDF kaynak soru görselleri', () => {
+  it('tam soru görseli yanında aynı metni tekrar göstermez', () => {
+    const stem = resolveQuestionStem({ text: 'Aranabilir özgün soru metni', image: '/uploads/source.png',
+      assessmentMeta: { imageRole: 'full-question' } });
+    expect(stem.imageOnly).toBe(true);
+    expect(stem.showQuestion).toBe(false);
+    expect(stem.showIntro).toBe(false);
+  });
+  it('görsel yüklenmediğinde soru metnini korur', () => {
+    const stem = resolveQuestionStem({ text: 'Örüntünün kuralı nedir?',
+      assessmentMeta: { imageRole: 'full-question' } });
+    expect(stem.imageOnly).toBe(false);
+    expect(stem.questionText).toContain('Örüntünün');
+  });
+});
+
 describe('getQuestionLayout', () => {
   it('uses structured Smart Paste layout fields', () => {
     const result = getQuestionLayout({

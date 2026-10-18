@@ -30,6 +30,8 @@ import { sourceFilterOptions, sourceFilterToApi } from '../../utils/questionSour
 import { useConfirmAction } from '../../hooks/useConfirmAction';
 import { useTranslation } from '../../i18n/useTranslation';
 import TeacherPageShell from '../../components/teacher/TeacherPageShell.jsx';
+import PreviewDialog from '../../components/ui/PreviewDialog.jsx';
+import { withLocalPatternSource } from '../../utils/localPatternSource.js';
 import {
   PATTERN_TOPIC_ORDER,
   PATTERN_TOPIC_ALL_UNDER,
@@ -75,25 +77,23 @@ const QuestionCard = ({ question, allQuestions = [], expanded, onToggle, onEdit,
   const groupLabel = formatGroupProgressLabel(displayQuestion);
 
   return (
-    <div className={expanded ? 'col-span-full' : ''}>
+    <div className="min-w-0">
       <div
         className={`group relative overflow-hidden rounded-2xl border bg-white/95 transition-all duration-300 dark:bg-surface-800/95 ${
-          expanded
-            ? 'border-teal-500 ring-4 ring-teal-500/10 shadow-soft'
-            : 'aspect-square border-surface-200 hover:border-teal-300 hover:shadow-md dark:border-surface-700'
+          'min-h-[15rem] border-surface-200 hover:border-teal-300 hover:shadow-md dark:border-surface-700'
         }`}
       >
         <button
           type="button"
           className={`w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
-            expanded ? 'p-4' : 'flex h-full flex-col p-3'
+            'flex h-full flex-col p-3'
           }`}
           onClick={onToggle}
           aria-expanded={expanded}
           aria-label={expanded ? 'Soru detayını gizle' : 'Soru detayını göster'}
         >
-          {!expanded ? (
-            <div className="flex h-full flex-col items-center justify-center gap-2 px-2 text-center">
+          {(
+            <div className="flex h-full flex-col items-center gap-2 px-2 pt-9 text-center">
               <span className="rounded-full bg-surface-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-surface-600 dark:bg-surface-700 dark:text-surface-300">
                 {displayQuestion.classLevel || 'Sınıf yok'}
               </span>
@@ -103,16 +103,15 @@ const QuestionCard = ({ question, allQuestions = [], expanded, onToggle, onEdit,
               <span className="max-w-full truncate rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-sky-800 dark:border-sky-800/40 dark:bg-sky-900/25 dark:text-sky-300">
                 {topicLabel || 'Konu yok'}
               </span>
+              <p className="line-clamp-3 w-full break-words text-sm font-medium text-slate-800 dark:text-slate-100">{getQuestionLayout(displayQuestion).questionText || displayQuestion.text || 'Görsel soru'}</p>
+              {withLocalPatternSource(displayQuestion).image && <img loading="lazy" src={withLocalPatternSource(displayQuestion).image} alt="Soru görselinin küçük önizlemesi" className="h-20 w-full rounded-lg object-contain" />}
+              {displayQuestion.assessmentMeta?.needsReview && <span className="text-xs font-semibold text-amber-700">İnceleme gerekiyor</span>}
               {groupLabel ? (
                 <span className="rounded-full border border-teal-100 bg-teal-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-teal-800 dark:border-teal-800/40 dark:bg-teal-900/25 dark:text-teal-300">
                   {groupLabel}
                 </span>
               ) : null}
             </div>
-          ) : (
-            <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">
-              {groupLabel ? `${groupLabel} — kapatmak için tıklayın` : 'Soru detayı — kapatmak için tıklayın'}
-            </p>
           )}
         </button>
 
@@ -120,17 +119,18 @@ const QuestionCard = ({ question, allQuestions = [], expanded, onToggle, onEdit,
           className="absolute right-2 top-2 flex gap-1 opacity-70 transition-opacity group-hover:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
-          <button type="button" onClick={() => onEdit(displayQuestion)} aria-label="Soruyu düzenle" className="rounded-lg border border-slate-200 bg-white p-2 text-slate-400 shadow-sm hover:text-teal-600 dark:border-slate-600 dark:bg-slate-800">
+          <button type="button" onClick={() => onEdit(displayQuestion)} aria-label="Soruyu düzenle" className="rounded-lg border border-slate-200 bg-white p-3 text-slate-400 shadow-sm hover:text-teal-600 dark:border-slate-600 dark:bg-slate-800">
             <Edit2 size={16} aria-hidden />
           </button>
-          <button type="button" onClick={() => onDelete(question._id)} aria-label="Soruyu sil" className="rounded-lg border border-slate-200 bg-white p-2 text-slate-400 shadow-sm hover:text-rose-600 dark:border-slate-600 dark:bg-slate-800">
+          <button type="button" onClick={() => onDelete(question._id)} aria-label="Soruyu sil" className="rounded-lg border border-slate-200 bg-white p-3 text-slate-400 shadow-sm hover:text-rose-600 dark:border-slate-600 dark:bg-slate-800">
             <Trash2 size={16} aria-hidden />
           </button>
         </div>
       </div>
 
       {expanded && (
-        <div className="mt-3 space-y-4 rounded-2xl border border-slate-100 bg-white/95 p-4 dark:border-slate-700 dark:bg-surface-800/95">
+        <PreviewDialog title={groupLabel || 'Soru önizleme'} onClose={onToggle}>
+        <div className="min-w-0 space-y-4">
           {isImageQuestion ? (
             <p className="text-base font-semibold text-surface-800 dark:text-white">
               {IMAGE_QUESTION_INSTRUCTION}
@@ -144,6 +144,7 @@ const QuestionCard = ({ question, allQuestions = [], expanded, onToggle, onEdit,
             </div>
           )}
           <QuestionOptionGrid
+            variant="list"
             options={displayQuestion.options}
             correctAnswer={displayQuestion.correctAnswer}
             showCorrect
@@ -174,6 +175,7 @@ const QuestionCard = ({ question, allQuestions = [], expanded, onToggle, onEdit,
             )}
           </CollapsiblePanel>
         </div>
+        </PreviewDialog>
       )}
     </div>
   );
@@ -285,6 +287,11 @@ export default function QuestionBank() {
     setSearchQuery(s);
     setFilters({ subject, classLevel, difficulty, topic });
     setPage(Number.isNaN(p) ? 1 : p);
+    if (searchParams.get('create') === '1') {
+      setEditingQuestion(null); setManualForm({classLevel:classLevel !== 'Tümü' ? classLevel : '5. Sınıf'});
+      setMainImage({file:null,preview:''}); setIsModalOpen(true);
+      const next = new URLSearchParams(searchParams); next.delete('create'); setSearchParams(next,{replace:true});
+    }
     if (searchParams.get('aiGenerate') === '1') {
       setIsAiGenerateOpen(true);
     }
@@ -638,13 +645,13 @@ export default function QuestionBank() {
                   onEdit={(question) => {
                     setEditingQuestion(question);
                     const opts = (question.options || []).map((o) => (typeof o === 'string' ? o : (o?.text ?? '')));
-                    const padded = [...opts, '', '', '', '', ''].slice(0, 5);
+                    const padded = opts.length >= 2 ? opts.slice(0, 5) : ['', '', '', ''];
                     const subj =
                       profile.branchApproval === 'approved' && profile.branch
                         ? profile.branch
                         : (question.subject || 'Matematik');
                     const stem = getQuestionLayout(question);
-                    const previewImage = question.image
+                    const previewImage = withLocalPatternSource(question).image
                       || question.assessmentMeta?.sharedImage
                       || '';
                     setManualForm({
@@ -660,7 +667,7 @@ export default function QuestionBank() {
                       solution: question.solution || '',
                       options: padded,
                       source: question.source || 'Manuel',
-                      assessmentMeta: question.assessmentMeta || null,
+                      assessmentMeta: withLocalPatternSource(question).assessmentMeta || null,
                     });
                     setMainImage(previewImage ? { file: null, preview: previewImage } : { file: null, preview: '' });
                     setIsModalOpen(true);

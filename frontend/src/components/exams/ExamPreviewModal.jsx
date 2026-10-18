@@ -1,19 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { X, Eye, Clock, Layers } from 'lucide-react';
+import { Clock, Layers } from 'lucide-react';
 import apiClient from '../../services/api';
 import { renderWithLatex } from '../../utils/latex.jsx';
-import Button from '../ui/Button.jsx';
 import Card from '../ui/Card.jsx';
-import QuestionVisual from '../questions/QuestionVisual.jsx';
-import QuestionTextWithPattern from '../questions/QuestionTextWithPattern.jsx';
-
-const normalizeOptions = (options) => {
-  if (!Array.isArray(options)) return [];
-  return options.map((opt) => {
-    if (typeof opt === 'string') return { text: opt };
-    return { text: opt?.text || '' };
-  });
-};
+import PreviewDialog from '../ui/PreviewDialog.jsx';
+import QuestionStemCard from '../questions/QuestionStemCard.jsx';
+import QuestionOptionGrid from '../questions/QuestionOptionGrid.jsx';
+import { shouldUseLetterOnlyOptions } from '../../utils/questionLayout.js';
 
 export default function ExamPreviewModal({ examId, onClose }) {
   const [exam, setExam] = useState(null);
@@ -36,20 +29,7 @@ export default function ExamPreviewModal({ examId, onClose }) {
   }, [examId]);
 
   return (
-    <div className="fixed inset-0 z-[150] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-5xl rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 bg-gradient-to-r from-teal-600 to-sky-600 text-white">
-          <div className="flex items-center gap-3">
-            <Eye size={22} />
-            <span className="font-black tracking-wide">Sınav Önizleme</span>
-          </div>
-          <Button variant="secondary" size="sm" onClick={onClose} ariaLabel="Kapat">
-            <X size={16} />
-          </Button>
-        </div>
-
-        <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+    <PreviewDialog title="Sınav önizleme" onClose={onClose}>
           {loading ? (
             <div className="space-y-8 animate-pulse">
               <div className="flex items-center justify-between flex-wrap gap-4">
@@ -99,7 +79,6 @@ export default function ExamPreviewModal({ examId, onClose }) {
               {/* Questions */}
               <div className="grid grid-cols-1 gap-5">
                 {exam.questions && exam.questions.map((q, idx) => {
-                  const opts = normalizeOptions(q.options);
                   const hintText = String(q?.assessmentMeta?.hint || '').trim();
                   return (
                     <Card key={q._id || idx} className="p-5">
@@ -107,20 +86,9 @@ export default function ExamPreviewModal({ examId, onClose }) {
                         <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded bg-teal-50 text-teal-700">Soru {idx + 1}</span>
                         <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded ${q.difficulty === 'Zor' ? 'bg-rose-50 text-rose-700' : q.difficulty === 'Orta' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>{q.difficulty}</span>
                       </div>
-                      <QuestionTextWithPattern
-                        text={q.text}
-                        mainClassName="text-sm text-slate-800 dark:text-slate-200 leading-relaxed"
-                        className="mb-4"
-                      />
-                      <QuestionVisual src={q.image} alt={`Soru ${idx + 1} gorseli`} className="mb-4" />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {opts.map((opt, i) => (
-                          <div key={i} className={`flex items-start gap-2 p-3 rounded-xl border ${opt.text === q.correctAnswer ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 dark:border-slate-700'}`}>
-                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-100 text-slate-700 font-bold">{String.fromCharCode(65 + i)}</span>
-                            <span className="text-sm flex-1 min-w-0">{opt.text}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <QuestionStemCard question={q} showMeta={false} className="mb-4" />
+                      <QuestionOptionGrid options={q.options} correctAnswer={q.correctAnswer}
+                        variant="list" showCorrect disabled letterOnly={shouldUseLetterOnlyOptions(q)} />
                       {hintText && (
                         <div className="mt-3 px-4 py-3 rounded-xl bg-amber-50/70 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/40 text-amber-800 dark:text-amber-200 text-sm">
                           <span className="font-black uppercase tracking-wider text-[10px] text-amber-700/80 dark:text-amber-200/80">İpucu</span>
@@ -133,8 +101,6 @@ export default function ExamPreviewModal({ examId, onClose }) {
               </div>
             </div>
           ) : null}
-        </div>
-      </div>
-    </div>
+    </PreviewDialog>
   );
 }

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { registerApiErrorNotifier } from "../services/api";
+import { registerApiErrorNotifier } from "../services/apiErrorNotifier.js";
 
 const ToastContext = createContext();
 
@@ -18,7 +18,7 @@ export const ToastProvider = ({ children }) => {
 
   // Register global API error notifier
   useEffect(() => {
-    registerApiErrorNotifier(showToast);
+    return registerApiErrorNotifier(showToast);
   }, [showToast]);
 
   return (

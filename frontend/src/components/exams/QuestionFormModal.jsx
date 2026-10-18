@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import {
   X, Save, Loader2, Image as ImageIcon,
   PlusCircle, Trash2, BookOpen, HelpCircle, Sparkles,
@@ -8,8 +10,9 @@ import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import QuestionSourceBadge from '../questions/QuestionSourceBadge.jsx';
 import QuestionStemCard from '../questions/QuestionStemCard.jsx';
+import QuestionOptionGrid from '../questions/QuestionOptionGrid.jsx';
 import SolutionDisplay from '../questions/SolutionDisplay.jsx';
-import { enrichQuestionForm, optionMatchesCorrect } from '../../utils/patternQuestionSolver';
+import { optionMatchesCorrect } from '../../utils/patternQuestionSolver';
 import {
   buildCombinedQuestionText,
   getQuestionLayout,
@@ -18,7 +21,7 @@ import {
 } from '../../utils/questionLayout.js';
 import { normalizeSolutionText } from '../../utils/latex.jsx';
 
-const LETTERS = ['A', 'B', 'C', 'D'];
+const LETTERS = ['A', 'B', 'C', 'D', 'E'];
 const CLASS_LEVELS = Array.from({ length: 12 }, (_, i) => `${i + 1}. Sınıf`);
 
 const emptyDraft = (index = 0) => ({
@@ -34,16 +37,15 @@ const emptyDraft = (index = 0) => ({
 const letterFromAnswer = (options = [], correctAnswer = '') => {
   const ca = String(correctAnswer || '').trim();
   if (!ca) return '';
-  if (/^[A-D]$/i.test(ca)) return ca.toUpperCase();
+  if (/^[A-E]$/i.test(ca)) return LETTERS.indexOf(ca.toUpperCase()) < options.length ? ca.toUpperCase() : '';
   const idx = options.findIndex((o) => optionMatchesCorrect(o, ca));
-  return idx >= 0 && idx < 4 ? LETTERS[idx] : '';
+  return idx >= 0 && idx < options.length ? LETTERS[idx] : '';
 };
 
-const answerFromLetter = (letter, options = [], imageMode = false) => {
+const answerFromLetter = (letter, options = []) => {
   const idx = LETTERS.indexOf(String(letter || '').toUpperCase());
   if (idx < 0) return '';
   const opt = String(options[idx] || '').trim();
-  if (imageMode) return LETTERS[idx];
   return opt || LETTERS[idx];
 };
 
@@ -62,9 +64,37 @@ const QuestionFormModal = ({
   lockedSubject,
 }) => {
   const firstInputRef = useRef(null);
+  const panelRef = useRef(null);
+  const titleId = useId();
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useFocusTrap(panelRef, isOpen);
+  useEffect(() => {
+    if (!isOpen) return;
+    const body = document.body;
+    const previousOverflow = body.style.overflow;
+    const previousPadding = body.style.paddingRight;
+    const scrollbar = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+    if (scrollbar) body.style.paddingRight = `${parseFloat(getComputedStyle(body).paddingRight || '0') + scrollbar}px`;
+    body.style.overflow = 'hidden';
+    const onKey = event => { if (event.key === 'Escape') closeRef.current?.(); };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      body.style.overflow = previousOverflow;
+      body.style.paddingRight = previousPadding;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [isOpen]);
   const { showToast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [markAsExpert, setMarkAsExpert] = useState(false);
+  const [imageRole, setImageRole] = useState('full-question');
+  const [dirty, setDirty] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
+  const savedRows = useRef(new Map());
+  const groupIdRef = useRef('');
+  const requestClose = () => { if (isSaving) return; if (dirty) setConfirmClose(true); else onClose?.(); };
+  closeRef.current = requestClose;
 
   const [wizardStep, setWizardStep] = useState('format'); // format | count | form
   const [contentMode, setContentMode] = useState('image'); // image | text
@@ -110,7 +140,7 @@ const QuestionFormModal = ({
     difficulty: effectiveForm?.difficulty || 'Orta',
     correctAnswer: effectiveForm?.correctAnswer || '',
     solution: effectiveForm?.solution || '',
-    options: (effectiveForm?.options || ['', '', '', '']).slice(0, 4),
+    options: (effectiveForm?.options || ['', '', '', '']).slice(0, 5),
     source: effectiveForm?.source || 'Manuel',
     assessmentMeta: effectiveForm?.assessmentMeta || null,
   }), [effectiveForm, layoutFromForm.introText, layoutFromForm.questionText, lockedSubject]);
@@ -118,21 +148,13 @@ const QuestionFormModal = ({
   const isImageMode = contentMode === 'image';
   const isMulti = !editingId && questionCount > 1 && wizardStep === 'form';
 
-  const applyContentMode = (mode) => {
-    setContentMode(mode);
-    if (mode === 'text') {
-      effectiveSetMainImage({ file: null, preview: '' });
-    }
-    if (mode === 'image') {
-      setDrafts((prev) => prev.map((row) => ({
-        ...row,
-        options: ['', '', '', ''],
-      })));
-    }
-  };
+  const applyContentMode = (mode) => { setContentMode(mode); setDirty(true); };
 
   useEffect(() => {
     if (!isOpen) return;
+    setDirty(false); setConfirmClose(false); setMarkAsExpert(Boolean(manualForm?.assessmentMeta?.expertVerified));
+    savedRows.current = new Map(); groupIdRef.current = `manual-multi-${Date.now().toString(36)}`;
+    setImageRole(manualForm?.assessmentMeta?.imageRole === 'full-question' ? 'full-question' : 'diagram');
     // AI aktarımı gibi önceden doldurulmuş formlar da doğrudan form adımına gitsin
     const prefilled = Boolean(
       String(manualForm?.text || '').trim()
@@ -154,7 +176,7 @@ const QuestionFormModal = ({
       setDrafts([{
         questionText: manualForm?.questionText || layoutFromForm.questionText || '',
         correctLetter: letterFromAnswer(manualForm?.options || [], manualForm?.correctAnswer || ''),
-        options: (manualForm?.options || ['', '', '', '']).slice(0, 4),
+        options: (manualForm?.options || ['', '', '', '']).slice(0, 5),
         difficulty: manualForm?.difficulty || 'Orta',
         learningOutcome: manualForm?.learningOutcome || '',
         solution: manualForm?.solution || '',
@@ -181,20 +203,21 @@ const QuestionFormModal = ({
     }
   }, [isOpen, wizardStep]);
 
-  const setField = (k, v) => effectiveSetForm((prev) => ({ ...(prev || {}), [k]: v }));
+  const setField = (k, v) => { setDirty(true); effectiveSetForm((prev) => ({ ...(prev || {}), [k]: v })); };
 
   const updateDraft = (index, patch) => {
+    setDirty(true);
     setDrafts((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   };
 
   const buildSlots = (count) => {
-    const next = Array.from({ length: count }, (_, i) => emptyDraft(i));
+    const next = Array.from({ length: count }, (_, i) => drafts[i] || emptyDraft(i));
     setDrafts(next);
     setQuestionCount(count);
     setWizardStep('form');
     showToast(
       count > 1
-        ? `${count} soruluk form hazır. Her madde için metin ve A–D cevap girin.`
+        ? `${count} soruluk form hazır. Her madde için metin ve A–E cevap girin.`
         : 'Soru formu hazır.',
       'success',
     );
@@ -214,7 +237,7 @@ const QuestionFormModal = ({
     attachImage,
   }) => {
     const text = buildCombinedQuestionText(introText, questionText);
-    let payload = enrichQuestionForm({
+    const payload = {
       text,
       introText,
       questionText,
@@ -225,19 +248,19 @@ const QuestionFormModal = ({
       difficulty,
       topic,
       classLevel,
-      subject: lockedSubject || 'Matematik',
-      source: 'Manuel',
+      subject: form.subject,
+      source: form.source,
       type: 'multiple-choice',
-    });
+    };
 
     const formData = new FormData();
     const skip = new Set(['options', 'assessmentMeta', 'introText', 'questionText', 'optionImagePreviews']);
-    (payload.options || []).slice(0, 4).forEach((opt) => formData.append('options', opt));
+    (payload.options || []).slice(0, 5).forEach((opt) => formData.append('options', opt));
     Object.keys(payload).forEach((key) => {
       if (skip.has(key) || payload[key] == null) return;
       formData.append(key, payload[key]);
     });
-    formData.append('source', markAsExpert || payload.source !== 'AI' ? 'Manuel' : payload.source);
+
     formData.append('assessmentMeta', JSON.stringify({
       ...(assessmentMeta || {}),
       parseLayout: {
@@ -246,6 +269,9 @@ const QuestionFormModal = ({
         stemText: text,
       },
       contentMode,
+      imageRole: isImageMode ? imageRole : undefined,
+      localSourceDisabled: Boolean(assessmentMeta?.localSourceDisabled || effectiveMainImage?.file || contentMode === 'text'),
+      expertVerified: markAsExpert,
     }));
     if (attachImage && effectiveMainImage?.file) {
       formData.append('image', effectiveMainImage.file);
@@ -263,62 +289,37 @@ const QuestionFormModal = ({
 
   const handleFormSubmit = async (e) => {
     e?.preventDefault?.();
-    if (wizardStep !== 'form') return;
+    if (wizardStep !== 'form' || isSaving) return;
 
     if (isImageMode && !(effectiveMainImage?.file || effectiveMainImage?.preview)) {
       return showToast('Resimli soru için görsel yükleyin.', 'error');
     }
 
-    if (!isMulti) {
-      const d = drafts[0] || emptyDraft(0);
-      const intro = String(sharedIntro || form.introText || '').trim();
-      const question = String(d.questionText || form.questionText || '').trim();
-      if (!isImageMode && !intro && !question) {
-        return showToast('Metin sorusu için soru metni girin.', 'error');
-      }
-      if (!d.correctLetter && !form.correctAnswer) {
-        return showToast('Doğru cevabı (A–D) seçin.', 'error');
-      }
-      const previewOptions = isImageMode
-        ? [...LETTERS]
-        : (d.options?.length ? d.options : form.options).map((o, idx) => String(o || '').trim() || LETTERS[idx]).slice(0, 4);
-      if (!isImageMode && previewOptions.filter((o) => o && !/^[A-D]$/i.test(o)).length < 2) {
-        return showToast('En az 2 şık metni girin.', 'error');
-      }
+    const resolvedOptions = row => row.options.map((o, i) => String(o || '').trim() || (isImageMode && imageRole === 'full-question' ? LETTERS[i] : ''));
+    for (const [i, row] of drafts.entries()) {
+      const options = resolvedOptions(row);
+      if (!isImageMode && !String(row.questionText || '').trim()) return showToast(`${i + 1}. soru metni boş.`, 'error');
+      if (!row.correctLetter || !options[LETTERS.indexOf(row.correctLetter)]) return showToast(`${i + 1}. sorunun doğru cevabını seçin.`, 'error');
+      if (options.length < 2 || options.length > 5 || options.some(o => !o)) return showToast(`${i + 1}. sorunun tüm şıklarını doldurun.`, 'error');
+      if (new Set(options).size !== options.length) return showToast(`${i + 1}. soruda aynı şık birden fazla kullanılmış.`, 'error');
     }
 
     setIsSaving(true);
     try {
       if (isMulti) {
-        const groupId = `manual-multi-${Date.now().toString(36)}`;
+        const groupId = groupIdRef.current;
         const stem = String(sharedIntro || '').trim();
-        let sharedImageUrl = '';
+        let sharedImageUrl = savedRows.current.get(0)?.image || '';
         for (let i = 0; i < drafts.length; i += 1) {
+          if (savedRows.current.has(i)) continue;
           const d = drafts[i];
           const qLine = String(d.questionText || '').trim();
-          if (!isImageMode && !qLine) {
-            showToast(`${i + 1}. soru metni boş.`, 'error');
-            setIsSaving(false);
-            return;
-          }
-          if (!d.correctLetter) {
-            showToast(`${i + 1}. soru için doğru cevabı (A–D) seçin.`, 'error');
-            setIsSaving(false);
-            return;
-          }
-          const options = isImageMode
-            ? [...LETTERS]
-            : (d.options || []).map((o, idx) => String(o || '').trim() || LETTERS[idx]).slice(0, 4);
-          if (!isImageMode && options.filter((o) => o && !/^[A-D]$/i.test(o)).length < 2) {
-            showToast(`${i + 1}. soruda en az 2 şık metni girin.`, 'error');
-            setIsSaving(false);
-            return;
-          }
+          const options = resolvedOptions(d);
           const saved = await postOneQuestion({
             introText: stem,
             questionText: qLine || (isImageMode ? 'Aşağıdaki soruyu çözünüz.' : ''),
             options,
-            correctAnswer: answerFromLetter(d.correctLetter, options, isImageMode),
+            correctAnswer: answerFromLetter(d.correctLetter, options),
             solution: d.solution || '',
             learningOutcome: d.learningOutcome || '',
             difficulty: d.difficulty || 'Orta',
@@ -336,6 +337,7 @@ const QuestionFormModal = ({
             },
             attachImage: isImageMode && i === 0,
           });
+          savedRows.current.set(i, saved);
           if (i === 0 && isImageMode) {
             sharedImageUrl = String(saved?.image || '').trim();
           }
@@ -347,21 +349,19 @@ const QuestionFormModal = ({
 
       // Single (new or edit)
       const d = drafts[0] || emptyDraft(0);
-      const intro = String(sharedIntro || form.introText || '').trim();
-      const question = String(d.questionText || form.questionText || '').trim();
-      const options = isImageMode
-        ? [...LETTERS]
-        : (d.options?.length ? d.options : form.options).map((o, idx) => String(o || '').trim() || LETTERS[idx]).slice(0, 4);
+      const intro = String(sharedIntro || '').trim();
+      const question = String(d.questionText || '').trim();
+      const options = resolvedOptions(d);
       const letter = d.correctLetter || letterFromAnswer(options, form.correctAnswer);
       await postOneQuestion({
         introText: intro,
         questionText: question || (isImageMode ? 'Aşağıdaki soruyu çözünüz.' : ''),
         options,
-        correctAnswer: answerFromLetter(letter, options, isImageMode),
-        solution: d.solution || form.solution || '',
-        learningOutcome: d.learningOutcome || form.learningOutcome || '',
+        correctAnswer: answerFromLetter(letter, options),
+        solution: d.solution || '',
+        learningOutcome: d.learningOutcome || '',
         difficulty: d.difficulty || form.difficulty || 'Orta',
-        topic: sharedTopic || form.topic || '',
+        topic: sharedTopic || '',
         classLevel: sharedClassLevel || form.classLevel || '9. Sınıf',
         assessmentMeta: {
           ...(form.assessmentMeta || {}),
@@ -372,7 +372,7 @@ const QuestionFormModal = ({
       showToast(editingId ? 'Soru güncellendi!' : 'Soru bankasına eklendi!', 'success');
       onSave();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Soru kaydedilemedi', 'error');
+      showToast(`${savedRows.current.size ? `${savedRows.current.size} soru kaydedildi. Tekrar denediğinizde kalan sorular kaydedilecek. ` : ''}${err.response?.data?.message || 'Soru kaydedilemedi'}`, 'error');
     } finally {
       setIsSaving(false);
     }
@@ -382,11 +382,11 @@ const QuestionFormModal = ({
 
   const renderLetterPicker = (draft, index) => (
     <div>
-      <label className="mb-2 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
-        {isMulti ? `${index + 1}. sorunun doğru cevabı (A–D)` : 'Doğru cevap (A–D)'}
+      <label className="mb-2 ml-1 block text-xs font-black uppercase tracking-widest text-slate-400">
+        {isMulti ? `${index + 1}. sorunun doğru cevabı (A–E)` : 'Doğru cevap (A–E)'}
       </label>
-      <div className="flex flex-wrap gap-2" role="group" aria-label={`${index + 1}. soru A–D şıkları`}>
-        {LETTERS.map((letter) => {
+      <div className="flex flex-wrap gap-2" role="group" aria-label={`${index + 1}. soru A–E şıkları`}>
+        {LETTERS.slice(0, draft.options.length).map((letter) => {
           const selected = draft.correctLetter === letter;
           return (
             <button
@@ -407,18 +407,18 @@ const QuestionFormModal = ({
       </div>
       {isMulti ? (
         <p className="mt-2 text-[11px] text-slate-500">
-          Bu maddenin A–D şıkları yalnızca bu soruya aittir; diğer maddelerden ayrıdır.
+          Bu maddenin A–E şıkları yalnızca bu soruya aittir; diğer maddelerden ayrıdır.
         </p>
       ) : null}
     </div>
   );
 
-  return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4 animate-fade-in">
-      <div className="bg-white dark:bg-surface-800 w-full max-w-4xl max-h-[90vh] rounded-[2rem] shadow-soft overflow-hidden flex flex-col animate-scale-in border border-white/20">
-        <div className="p-8 bg-gradient-to-r from-teal-700 to-sky-700 text-white flex justify-between items-center relative overflow-hidden shrink-0">
-          <div className="z-10">
-            <h3 className="font-display text-2xl font-semibold flex items-center gap-3">
+  return createPortal(
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-2 sm:p-4 animate-fade-in">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-white dark:bg-surface-800 w-full min-w-0 max-w-6xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] rounded-2xl sm:rounded-[2rem] shadow-soft overflow-hidden flex flex-col animate-scale-in border border-white/20">
+        <div className="p-4 sm:p-6 bg-gradient-to-r from-teal-700 to-sky-700 text-white flex justify-between gap-3 items-center relative overflow-hidden shrink-0">
+          <div className="z-10 min-w-0">
+            <h3 id={titleId} className="font-display text-xl sm:text-2xl font-semibold flex items-center gap-3">
               {editingId ? <Sparkles /> : <PlusCircle />}
               {editingId ? 'Soruyu Güncelle' : 'Soru Bankasına Ekle'}
             </h3>
@@ -426,17 +426,17 @@ const QuestionFormModal = ({
               {wizardStep === 'format' && 'Soru resimli mi, metin mi? İşaretleyin'}
               {wizardStep === 'count' && 'Tek soru mu, birden fazla mı?'}
               {wizardStep === 'form' && (isImageMode
-                ? 'Resimli soru — görsel yükleyin, doğru cevabı A–D işaretleyin'
+                ? 'Resimli soru — görsel yükleyin, doğru cevabı A–E işaretleyin'
                 : 'Metin sorusu — soru ve şık metinlerini girin')}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="z-10 p-2 hover:bg-white/20 rounded-full transition-colors" aria-label="Kapat">
+          <button type="button" onClick={requestClose} disabled={isSaving} className="z-10 p-2 hover:bg-white/20 rounded-full transition-colors" aria-label="Kapat">
             <X size={24} />
           </button>
           <BookOpen className="absolute -right-6 -bottom-6 w-32 h-32 opacity-10 rotate-12" />
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
+        <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain break-words p-3 sm:p-6 space-y-6 custom-scrollbar">
           {!editingId && wizardStep === 'format' ? (
             <div className="space-y-4">
               <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -452,7 +452,7 @@ const QuestionFormModal = ({
                   <div>
                     <p className="font-display text-lg font-semibold text-slate-900 dark:text-white">Resimli soru</p>
                     <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                      Soru görseli yüklenir. Şık metni girilmez; yalnızca A–D doğru cevap işaretlenir.
+                      Şekil veya tam soru görseli yükleyin; 2–5 şık ve doğru cevabı düzenleyin.
                     </p>
                   </div>
                 </button>
@@ -465,7 +465,7 @@ const QuestionFormModal = ({
                   <div>
                     <p className="font-display text-lg font-semibold text-slate-900 dark:text-white">Metin soru</p>
                     <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                      Soru metni ve A–D şık metinleri yazılır. Görsel gerekmez.
+                      Soru metni ve A–E şık metinleri yazılır. Görsel gerekmez.
                     </p>
                   </div>
                 </button>
@@ -475,7 +475,7 @@ const QuestionFormModal = ({
 
           {!editingId && wizardStep === 'count' ? (
             <div className="space-y-4">
-              <button type="button" onClick={() => setWizardStep('format')} className="text-sm font-semibold text-teal-700">
+              <button type="button" disabled={savedRows.current.size > 0} onClick={() => setWizardStep('format')} className="text-sm font-semibold text-teal-700">
                 ← Geri
               </button>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -520,14 +520,16 @@ const QuestionFormModal = ({
 
           {wizardStep === 'form' ? (
             <form onSubmit={handleFormSubmit} className="space-y-6">
+              <fieldset disabled={isSaving} className="min-w-0 grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+                <div className="min-w-0 space-y-6">
               {!editingId ? (
-                <button type="button" onClick={() => setWizardStep('format')} className="text-sm font-semibold text-teal-700">
+                <button type="button" disabled={savedRows.current.size > 0} onClick={() => setWizardStep('format')} className="text-sm font-semibold text-teal-700">
                   ← Tür seçimine dön
                 </button>
               ) : null}
 
               <section className="rounded-[1.5rem] border border-slate-200 p-4 dark:border-slate-700">
-                <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <p className="mb-3 text-xs font-black uppercase tracking-widest text-slate-400">
                   Soru türü
                 </p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Soru türü">
@@ -535,7 +537,7 @@ const QuestionFormModal = ({
                     type="button"
                     role="radio"
                     aria-checked={isImageMode}
-                    onClick={() => applyContentMode('image')}
+                    disabled={savedRows.current.size > 0} onClick={() => applyContentMode('image')}
                     className={`flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all ${
                       isImageMode
                         ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-300/30 dark:bg-teal-950/30'
@@ -545,14 +547,14 @@ const QuestionFormModal = ({
                     <Images className={isImageMode ? 'text-teal-600' : 'text-slate-400'} size={22} />
                     <span>
                       <span className="block font-bold text-slate-900 dark:text-white">Resimli</span>
-                      <span className="mt-0.5 block text-xs text-slate-500">Görsel yüklenir, şıklar A–D</span>
+                      <span className="mt-0.5 block text-xs text-slate-500">Şekil veya tam soru görseli</span>
                     </span>
                   </button>
                   <button
                     type="button"
                     role="radio"
                     aria-checked={!isImageMode}
-                    onClick={() => applyContentMode('text')}
+                    disabled={savedRows.current.size > 0} onClick={() => applyContentMode('text')}
                     className={`flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all ${
                       !isImageMode
                         ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-300/30 dark:bg-sky-950/30'
@@ -570,12 +572,12 @@ const QuestionFormModal = ({
 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <QuestionSourceBadge
-                  question={{ source: markAsExpert ? 'Manuel' : form.source, assessmentMeta: form.assessmentMeta }}
+                  question={{ source: form.source, assessmentMeta: {...form.assessmentMeta, expertVerified:markAsExpert} }}
                   size="lg"
                 />
-                {form.source === 'AI' && !markAsExpert ? (
+                {form.source === 'AI' ? (
                   <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-teal-800">
-                    <input type="checkbox" checked={markAsExpert} onChange={(e) => setMarkAsExpert(e.target.checked)} />
+                    <input type="checkbox" checked={markAsExpert} disabled={savedRows.current.size > 0} onChange={(e) => { setMarkAsExpert(e.target.checked); setDirty(true); }} />
                     Uzman olarak doğruladım
                   </label>
                 ) : null}
@@ -583,16 +585,23 @@ const QuestionFormModal = ({
 
               {isImageMode ? (
                 <section className="space-y-3 rounded-[1.5rem] border border-teal-200 bg-teal-50/30 p-5 dark:border-teal-900/40 dark:bg-teal-950/10">
-                  <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-teal-700 dark:text-teal-300">
+                  <label className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-teal-700 dark:text-teal-300">
                     <ImageIcon size={14} /> Soru görseli (zorunlu)
+                  </label>
+                  <label className="block text-sm font-medium">Görselin içeriği
+                    <select disabled={savedRows.current.size > 0} aria-label="Görselin içeriği" value={imageRole} onChange={e => {setImageRole(e.target.value); setDirty(true);}} className="ml-3 rounded-lg border p-2">
+                      <option value="diagram">Şekil / şema — şıklar ayrıca yazılır</option>
+                      <option value="full-question">Tam soru — şıklar görselde bulunur</option>
+                    </select>
                   </label>
                   <div className="relative flex h-44 items-center justify-center overflow-hidden rounded-[1.5rem] border-4 border-dashed border-teal-200 transition-all hover:border-teal-400 dark:border-teal-800">
                     <input
                       type="file"
+                      disabled={savedRows.current.size > 0}
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) effectiveSetMainImage({ file, preview: URL.createObjectURL(file) });
+                        if (file) { setDirty(true); effectiveSetMainImage({ file, preview: URL.createObjectURL(file) }); }
                       }}
                       className="absolute inset-0 z-20 cursor-pointer opacity-0"
                     />
@@ -601,7 +610,8 @@ const QuestionFormModal = ({
                         <img src={effectiveMainImage.preview} alt="Önizleme" className="h-full w-full object-contain p-2" />
                         <button
                           type="button"
-                          onClick={(e) => { e.preventDefault(); effectiveSetMainImage({ file: null, preview: '' }); }}
+                          disabled={savedRows.current.size > 0}
+                          onClick={(e) => { e.preventDefault(); setDirty(true); effectiveSetMainImage({ file: null, preview: '' }); }}
                           className="absolute right-2 top-2 z-30 rounded-lg bg-rose-500 p-1.5 text-white"
                         >
                           <Trash2 size={14} />
@@ -624,13 +634,13 @@ const QuestionFormModal = ({
               <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {!isImageMode || isMulti ? (
                   <div className="sm:col-span-3">
-                    <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <label className="mb-1 ml-1 block text-xs font-black uppercase tracking-widest text-slate-400">
                       {isMulti ? 'Ortak giriş / üst açıklama' : 'Giriş metni (isteğe bağlı)'}
                     </label>
                     <textarea
                       ref={firstInputRef}
                       rows={2}
-                      value={sharedIntro}
+                      disabled={savedRows.current.size > 0} aria-label="Giriş metni" value={sharedIntro}
                       onChange={(e) => {
                         setSharedIntro(e.target.value);
                         setField('introText', e.target.value);
@@ -641,18 +651,18 @@ const QuestionFormModal = ({
                   </div>
                 ) : null}
                 <div>
-                  <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">Konu</label>
+                  <label className="mb-1 ml-1 block text-xs font-black uppercase tracking-widest text-slate-400">Konu</label>
                   <input
                     ref={isImageMode && !isMulti ? firstInputRef : undefined}
-                    value={sharedTopic}
+                    disabled={savedRows.current.size > 0} aria-label="Konu" value={sharedTopic}
                     onChange={(e) => { setSharedTopic(e.target.value); setField('topic', e.target.value); }}
                     className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm font-medium outline-none dark:bg-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">Sınıf</label>
+                  <label className="mb-1 ml-1 block text-xs font-black uppercase tracking-widest text-slate-400">Sınıf</label>
                   <select
-                    value={sharedClassLevel}
+                    disabled={savedRows.current.size > 0} aria-label="Sınıf" value={sharedClassLevel}
                     onChange={(e) => { setSharedClassLevel(e.target.value); setField('classLevel', e.target.value); }}
                     className="w-full rounded-xl border-none bg-white p-3 text-sm font-bold outline-none dark:bg-slate-800"
                   >
@@ -662,22 +672,22 @@ const QuestionFormModal = ({
               </section>
 
               {drafts.map((draft, index) => (
-                <section
+                <fieldset disabled={savedRows.current.has(index)}
                   key={`draft-${index}`}
                   className="space-y-4 rounded-[1.5rem] border-2 border-teal-200/70 bg-white p-5 dark:border-teal-900/40 dark:bg-surface-800"
                 >
                   <h4 className="font-display text-lg font-semibold text-teal-800 dark:text-teal-200">
-                    {index + 1}. Soru
+                    {index + 1}. Soru {savedRows.current.has(index) ? "· Kaydedildi" : ""}
                   </h4>
 
                   {!isImageMode ? (
                     <div>
-                      <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <label className="mb-1 ml-1 block text-xs font-black uppercase tracking-widest text-slate-400">
                         Soru metni
                       </label>
                       <textarea
                         rows={3}
-                        value={draft.questionText}
+                        aria-label={`${index + 1}. soru metni`} value={draft.questionText}
                         onChange={(e) => updateDraft(index, { questionText: e.target.value })}
                         className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm font-medium outline-none dark:bg-slate-900"
                         placeholder={PATTERN_QUESTION_PLACEHOLDER}
@@ -685,12 +695,12 @@ const QuestionFormModal = ({
                     </div>
                   ) : (
                     <div>
-                      <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <label className="mb-1 ml-1 block text-xs font-black uppercase tracking-widest text-slate-400">
                         Soru cümlesi (isteğe bağlı)
                       </label>
                       <textarea
                         rows={2}
-                        value={draft.questionText}
+                        aria-label={`${index + 1}. soru metni`} value={draft.questionText}
                         onChange={(e) => updateDraft(index, { questionText: e.target.value })}
                         className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm font-medium outline-none dark:bg-slate-900"
                         placeholder="Boş bırakılabilir — görseldeki soru yeterlidir"
@@ -698,17 +708,26 @@ const QuestionFormModal = ({
                     </div>
                   )}
 
+                  <label className="block text-sm font-medium">
+                    Şık sayısı
+                    <select aria-label={`${index + 1}. soru şık sayısı`} value={draft.options.length} disabled={isSaving || savedRows.current.has(index)} onChange={e => {
+                      const count = Number(e.target.value);
+                      updateDraft(index, { options: Array.from({length:count}, (_, i) => draft.options[i] || ''), correctLetter: LETTERS.indexOf(draft.correctLetter) >= count ? '' : draft.correctLetter });
+                    }} className="ml-3 rounded-lg border p-2">
+                      {[2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </label>
                   {renderLetterPicker(draft, index)}
 
-                  {!isImageMode ? (
+                  {(!isImageMode || imageRole === 'diagram' || draft.options.some(o => String(o).trim())) ? (
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {LETTERS.map((letter, optIdx) => (
+                      {LETTERS.slice(0, draft.options.length).map((letter, optIdx) => (
                         <div key={letter} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2 dark:border-slate-700">
                           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-black dark:bg-slate-700">
                             {letter}
                           </span>
                           <input
-                            value={draft.options[optIdx] || ''}
+                            aria-label={`${index + 1}. soru ${letter} şıkkı`} value={draft.options[optIdx] || ''}
                             onChange={(e) => {
                               const next = [...(draft.options || ['', '', '', ''])];
                               next[optIdx] = e.target.value;
@@ -722,17 +741,17 @@ const QuestionFormModal = ({
                     </div>
                   ) : (
                     <p className="text-xs text-slate-500">
-                      Resimli soruda şık metni girilmez; öğrenciler görseldeki A–D şıklarını kullanır.
+                      Tam soru görselinde boş şıklar harf olarak kaydedilir. Mevcut şık metinleri korunur.
                     </p>
                   )}
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <label className="mb-1 ml-1 block text-xs font-black uppercase tracking-widest text-slate-400">
                         Zorluk seviyesi
                       </label>
                       <select
-                        value={draft.difficulty}
+                        aria-label={`${index + 1}. soru zorluğu`} value={draft.difficulty}
                         onChange={(e) => updateDraft(index, { difficulty: e.target.value })}
                         className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm font-bold outline-none dark:bg-slate-900"
                       >
@@ -740,11 +759,11 @@ const QuestionFormModal = ({
                       </select>
                     </div>
                     <div>
-                      <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <label className="mb-1 ml-1 block text-xs font-black uppercase tracking-widest text-slate-400">
                         Kazanım
                       </label>
                       <input
-                        value={draft.learningOutcome}
+                        aria-label={`${index + 1}. soru kazanımı`} value={draft.learningOutcome}
                         onChange={(e) => updateDraft(index, { learningOutcome: e.target.value })}
                         className="w-full rounded-xl border-none bg-slate-50 p-3 text-sm outline-none dark:bg-slate-900"
                         placeholder="Öğrenme kazanımı"
@@ -753,12 +772,12 @@ const QuestionFormModal = ({
                   </div>
 
                   <div>
-                    <label className="mb-1 ml-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <label className="mb-1 ml-1 block text-xs font-black uppercase tracking-widest text-slate-400">
                       Çözüm
                     </label>
                     <textarea
                       rows={2}
-                      value={draft.solution}
+                      aria-label={`${index + 1}. soru çözümü`} value={draft.solution}
                       onChange={(e) => updateDraft(index, { solution: e.target.value })}
                       onBlur={(e) => {
                         const next = normalizeSolutionText(e.target.value);
@@ -782,12 +801,13 @@ const QuestionFormModal = ({
                       </div>
                     ) : null}
                   </div>
-                </section>
+                </fieldset>
               ))}
 
+                </div>
               {(sharedIntro.trim() || drafts.some((d) => d.questionText?.trim()) || effectiveMainImage?.preview) ? (
-                <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-600 dark:bg-slate-900/40">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <div className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 lg:sticky lg:top-0 dark:border-slate-600 dark:bg-slate-900/40">
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">
                     Önizleme{isMulti ? ` · ${drafts.length} madde` : ' (1. soru)'}
                   </p>
                   {isMulti ? (
@@ -820,7 +840,7 @@ const QuestionFormModal = ({
                             {draft.questionText?.trim() || (isImageMode ? 'Görseldeki soru' : 'Soru metni')}
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            {LETTERS.map((letter) => (
+                            {LETTERS.slice(0, draft.options.length).map((letter) => (
                               <span
                                 key={letter}
                                 className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 text-sm font-black ${
@@ -835,7 +855,7 @@ const QuestionFormModal = ({
                           </div>
                           {!isImageMode ? (
                             <ul className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-300">
-                              {LETTERS.map((letter, optIdx) => (
+                              {LETTERS.slice(0, draft.options.length).map((letter, optIdx) => (
                                 <li key={letter}>
                                   <strong>{letter})</strong> {draft.options[optIdx] || '—'}
                                 </li>
@@ -846,7 +866,7 @@ const QuestionFormModal = ({
                       ))}
                     </div>
                   ) : (
-                    <QuestionStemCard
+                    <div className="space-y-4"><QuestionStemCard
                       question={{
                         topic: sharedTopic,
                         classLevel: sharedClassLevel,
@@ -855,28 +875,38 @@ const QuestionFormModal = ({
                         text: buildCombinedQuestionText(sharedIntro, drafts[0]?.questionText),
                         image: isImageMode ? (effectiveMainImage?.preview || '') : '',
                         assessmentMeta: {
-                          contentMode,
+                          contentMode, imageRole: isImageMode ? imageRole : undefined,
                           parseLayout: { introText: sharedIntro, questionLine: drafts[0]?.questionText },
                         },
                       }}
                       showMeta={Boolean(sharedTopic)}
                       showImageInstruction={false}
                     />
+                    <QuestionOptionGrid options={drafts[0]?.options.map((o,i) => o || (isImageMode && imageRole === 'full-question' ? LETTERS[i] : '')) || []} correctAnswer={drafts[0]?.correctLetter} showCorrect disabled letterOnly={isImageMode && imageRole === 'full-question'} />
+                    </div>
                   )}
                 </div>
               ) : null}
+              </fieldset>
             </form>
           ) : null}
         </div>
 
-        <div className="p-8 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-700 shrink-0">
+        {confirmClose && <div role="alert" className="border-t bg-amber-50 p-4 text-sm text-amber-900">
+          Kaydedilmemiş değişiklikler var. Kapatırsanız bu taslak kaybolur.
+          <div className="mt-2 flex gap-3">
+            <button type="button" onClick={() => setConfirmClose(false)} className="rounded-lg border p-2">Düzenlemeye devam et</button>
+            <button type="button" onClick={onClose} className="rounded-lg border p-2">Değişiklikleri bırak ve kapat</button>
+          </div>
+        </div>}
+        <div className="p-3 sm:p-6 bg-slate-50 dark:bg-slate-900 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-700 shrink-0">
           {!editingId ? (
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Adım {WIZARD_STEP_NUMBERS[wizardStep] || 1} / {WIZARD_STEP_COUNT}
             </span>
-          ) : <span />}
-          <div className="flex items-center gap-4">
-          <button type="button" onClick={onClose} className="px-8 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-200 transition-all">
+          ) : null}
+          <div className="ml-auto flex min-w-0 flex-wrap justify-end items-center gap-2 sm:gap-4">
+          <button type="button" onClick={requestClose} disabled={isSaving} className="px-3 sm:px-6 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-200 transition-all">
             İptal
           </button>
           {wizardStep === 'form' ? (
@@ -884,7 +914,7 @@ const QuestionFormModal = ({
               type="button"
               onClick={handleFormSubmit}
               disabled={isSaving}
-              className="px-10 py-3 rounded-2xl bg-teal-600 text-white font-black flex items-center gap-2 shadow-xl shadow-teal-100 hover:bg-teal-700 disabled:opacity-50 transition-all"
+              className="px-3 sm:px-6 py-3 rounded-2xl bg-teal-600 text-white font-black flex items-center gap-2 shadow-xl shadow-teal-100 hover:bg-teal-700 disabled:opacity-50 transition-all"
             >
               {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
               {editingId
@@ -895,7 +925,7 @@ const QuestionFormModal = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>, document.body,
   );
 };
 

@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { describeApiError } from '../../utils/errorMessage';
 import QuestionSourceBadge from '../questions/QuestionSourceBadge.jsx';
 import Button from '../ui/Button.jsx';
+import PreviewDialog from '../ui/PreviewDialog.jsx';
 import { PATTERN_TOPIC_ORDER, PATTERN_TOPIC_ALL_UNDER } from '../../constants/patternTopicsUi';
 
 const CLASS_OPTS = Array.from({ length: 12 }, (_, i) => `${i + 1}. Sınıf`);
@@ -102,7 +103,7 @@ export default function AiGenerateQuizModal({
   const mapBatchItem = (q) => ({
     text: q.text || '',
     options: (q.options || [])
-      .slice(0, 4)
+      .slice(0, 5)
       .map((opt) => ({ text: String(typeof opt === 'string' ? opt : opt?.text ?? '') })),
     correctAnswer: String(q.correctAnswer || '').trim(),
     solution: String(q.explanation ?? q.solution ?? '').trim(),
@@ -141,7 +142,7 @@ export default function AiGenerateQuizModal({
     const q = generated[0];
     if (!q || typeof onRequestEditOne !== 'function') return;
     const opts = (q.options || []).map((o) => String(typeof o === 'string' ? o : o?.text ?? ''));
-    const padded = [...opts, '', '', '', '', ''].slice(0, 5);
+    const padded = opts.length >= 2 ? opts.slice(0,5) : ['', '', '', ''];
     onRequestEditOne({
       text: q.text || '',
       subject: resolvedSubject,
@@ -159,14 +160,8 @@ export default function AiGenerateQuizModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="AI ile çoktan seçmeli soru üret"
-      onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
-    >
-      <div className="bg-white dark:bg-surface-800 w-full max-w-3xl rounded-[2rem] shadow-soft overflow-hidden flex flex-col max-h-[90vh] border border-white/10">
+    <PreviewDialog title="AI ile çoktan seçmeli soru üret" onClose={() => {if (!saving && !loading) onClose();}}>
+      <div className="bg-white dark:bg-surface-800 w-full max-w-3xl rounded-[2rem] shadow-soft overflow-hidden flex flex-col  border border-white/10">
         <div className="p-6 bg-gradient-to-r from-teal-700 to-sky-700 text-white flex justify-between items-center gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="p-2 rounded-xl bg-white/20 shrink-0">
@@ -174,7 +169,7 @@ export default function AiGenerateQuizModal({
             </div>
             <div className="min-w-0">
               <h3 className="font-display text-lg font-semibold truncate">AI ile çoktan seçmeli üret</h3>
-              <p className="text-[10px] font-bold opacity-85 uppercase tracking-widest">
+              <p className="text-xs font-bold opacity-85 uppercase tracking-widest">
                 {step === 'form' ? 'Konu seç → üret → metin şıklarla havuza ekle' : 'Önizleme · şıklar metin'}
               </p>
             </div>
@@ -188,7 +183,7 @@ export default function AiGenerateQuizModal({
           {step === 'form' ? (
             <>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-surface-400">Konu veya ünite</label>
+                <label className="text-xs font-black uppercase tracking-widest text-surface-400">Konu veya ünite</label>
                 <input
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
@@ -202,7 +197,7 @@ export default function AiGenerateQuizModal({
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-surface-400">Sınıf</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-surface-400">Sınıf</label>
                   <select
                     value={classLevel}
                     onChange={(e) => setClassLevel(e.target.value)}
@@ -216,7 +211,7 @@ export default function AiGenerateQuizModal({
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-surface-400">Zorluk</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-surface-400">Zorluk</label>
                   <select
                     value={difficulty}
                     onChange={(e) => setDifficulty(e.target.value)}
@@ -230,7 +225,7 @@ export default function AiGenerateQuizModal({
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-surface-400">Adet (1–15)</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-surface-400">Adet (1–15)</label>
                   <input
                     type="number"
                     min={1}
@@ -275,7 +270,7 @@ export default function AiGenerateQuizModal({
                   className="rounded-2xl border border-surface-100 dark:border-surface-700 p-4 bg-surface-50/80 dark:bg-surface-900/40"
                 >
                   <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="text-[10px] font-black text-teal-600 uppercase tracking-wider">#{i + 1}</span>
+                    <span className="text-xs font-black text-teal-600 uppercase tracking-wider">#{i + 1}</span>
                     <QuestionSourceBadge
                       question={{ source: 'AI', assessmentMeta: { origin: 'ai-generate' } }}
                       size="sm"
@@ -346,6 +341,6 @@ export default function AiGenerateQuizModal({
           </div>
         </div>
       </div>
-    </div>
+    </PreviewDialog>
   );
 }

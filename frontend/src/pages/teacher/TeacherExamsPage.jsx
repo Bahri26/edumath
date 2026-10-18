@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import {
   Plus, FileText, Trash2, Eye, Search,
   Clock, Award, Layers, Save,
@@ -105,6 +105,7 @@ const DropZone = ({ questions, onDropQuestion, onRemove, label, colorClass, icon
 
 // --- Ana Sayfa Bileşeni ---
 export default function TeacherExamsPage() {
+  const [overviewParams, setOverviewParams] = useSearchParams();
   const { showToast } = useToast();
   const { askConfirm, ConfirmDialog } = useConfirmAction();
   const [profile, setProfile] = useState({ branch: '', branchApproval: 'none' });
@@ -123,6 +124,17 @@ export default function TeacherExamsPage() {
   const [previewId, setPreviewId] = useState(null);
   const [resultsId, setResultsId] = useState(null);
   const [showQuickExam, setShowQuickExam] = useState(false);
+
+  useEffect(() => {
+    if (overviewParams.get('create') === '1') setShowQuickExam(true);
+    if (overviewParams.get('results')) setResultsId(overviewParams.get('results'));
+    if (overviewParams.get('preview')) setPreviewId(overviewParams.get('preview'));
+    if (overviewParams.get('classLevel')) setExamClassFilter(overviewParams.get('classLevel'));
+    if (overviewParams.has('create') || overviewParams.has('results') || overviewParams.has('preview')) {
+      const next = new URLSearchParams(overviewParams); ['create','results','preview'].forEach(k=>next.delete(k));
+      setOverviewParams(next,{replace:true});
+    }
+  }, [overviewParams,setOverviewParams]);
 
   // Stüdyo State'leri
   const [examName, setExamName] = useState('');
@@ -381,8 +393,8 @@ export default function TeacherExamsPage() {
       showToast('Sınav yayınlandı!', 'success');
       setView('list');
       fetchExams();
-    } catch {
-      showToast('Hata oluştu', 'error');
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Sınav oluşturulamadı.', 'error');
     }
   };
 
@@ -783,6 +795,8 @@ export default function TeacherExamsPage() {
       {resultsId && <ExamResultsModal examId={resultsId} onClose={() => setResultsId(null)} />}
       {showQuickExam && (
         <CreateExamModal
+          initialClassLevel={examClassFilter !== 'Tümü' ? examClassFilter : '9. Sınıf'}
+          initialSubject={profile.branchApproval === 'approved' ? profile.branch : ''}
           onClose={() => setShowQuickExam(false)}
           onSuccess={fetchExams}
         />

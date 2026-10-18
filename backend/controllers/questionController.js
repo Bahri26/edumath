@@ -1,3 +1,4 @@
+const { validateQuestionEdit } = require('../utils/questionEditValidation');
 const {
   buildTopicMongoClause,
   applyPatternQuestionBankScope,
@@ -397,6 +398,10 @@ exports.createQuestion = async (req, res, next) => {
     }
 
     let resolvedAssessmentMeta = parseAssessmentMeta(assessmentMeta);
+    if (resolvedAssessmentMeta?.source === 'manual-multi' && resolvedAssessmentMeta.groupId && resolvedAssessmentMeta.groupIndex) {
+      const existing = await Question.findOne({ createdBy, 'assessmentMeta.groupId': resolvedAssessmentMeta.groupId, 'assessmentMeta.groupIndex': resolvedAssessmentMeta.groupIndex });
+      if (existing) return res.status(200).json({ success: true, data: mapQuestionRecord(existing.toObject()) });
+    }
     if (resolvedAssessmentMeta) {
       try {
         resolvedAssessmentMeta = await promoteAssessmentMetaAssets(resolvedAssessmentMeta);
@@ -563,6 +568,10 @@ exports.batchCreateQuestions = async (req, res, next) => {
       };
     }));
 
+    for (const [i, item] of payload.entries()) {
+      const error = validateQuestionEdit(item);
+      if (error) return res.status(400).json({success:false,message:`${i+1}. soru: ${error}`});
+    }
     const savedQuestions = await Question.insertMany(payload);
 
     res.status(201).json({
@@ -585,9 +594,17 @@ exports.updateQuestion = async (req, res, next) => {
       return res.status(403).json({ message: 'Bu soruyu düzenleme yetkiniz yok.' });
     }
 
+    const validationError = validateQuestionEdit({
+      text: req.body.text !== undefined ? req.body.text : question.text,
+      type: req.body.type || question.type,
+      options: req.body.options !== undefined ? toTextOnlyOptions(req.body.options) : question.options,
+      correctAnswer: req.body.correctAnswer !== undefined ? req.body.correctAnswer : question.correctAnswer,
+    });
+    if (validationError) return res.status(400).json({ message: validationError });
+
     // Temel alanları güncelle
     const fields = ['text', 'subject', 'classLevel', 'difficulty', 'type', 'correctAnswer', 'solution', 'source', 'topic', 'learningOutcome', 'mebReference', 'curriculumNote', 'visualPrompt', 'interactiveType'];
-    fields.forEach(f => { if(req.body[f]) question[f] = req.body[f]; });
+    fields.forEach(f => { if (Object.prototype.hasOwnProperty.call(req.body, f)) question[f] = req.body[f]; });
     if (req.body.interactionData) {
       question.interactionData = parseInteractionData(req.body.interactionData);
     }
@@ -646,8 +663,10 @@ exports.updateQuestion = async (req, res, next) => {
       visualPrompt: question.visualPrompt,
     });
     question.correctAnswer = autoEnriched.correctAnswer || question.correctAnswer;
-    question.solution = autoEnriched.solution || question.solution;
+    question.solution = Object.prototype.hasOwnProperty.call(req.body, 'solution') ? req.body.solution : (autoEnriched.solution || question.solution);
     question.assessmentMeta = autoEnriched.assessmentMeta || nextAssessmentMeta;
+    if (mainImgFile || removeImage) question.assessmentMeta = { ...(question.assessmentMeta || {}), localSourceDisabled: true };
+    if (removeImage) { question.assessmentMeta.imageRole = undefined; question.assessmentMeta.contentMode = 'text'; }
 
     await question.save();
     res.status(200).json({

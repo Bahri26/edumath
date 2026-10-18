@@ -1,0 +1,823 @@
+{
+  "source": {
+    "pdfName": "6 sınıf örüntü - başlık.pdf",
+    "classLevel": "6. Sınıf",
+    "subject": "Matematik",
+    "mebReference": "MEB Matematik Öğretim Programı (2018) — 6. sınıf örüntü kazanımı",
+    "note": "Bu dosyada 4 ayrı test var, 3 renk kodunda: KKT turuncu (Test 6: 'İşlemlerle Cebirsel Düşünme ve Değişimler / Örüntüler', 11 soru + Test 7: 'Çokgenlerin Özellikleri ile Oluşturulan Örüntüler', 9 soru = toplam 20) -> Kolay, YGT mavi (Test 8, 6 soru) -> Orta, BTT kırmızı (Test 9, 4 soru) -> Zor. Toplam 30 soru (5. sınıftaki 22'den farklı — her PDF'in gerçek soru sayısı farklı, sabit '21' varsayımı bu dosya için de geçersiz).",
+    "answerKeyAvailable": false,
+    "extractionMethod": "Claude görsel okuma + elle matematiksel çözüm. Cevap anahtarı PDF'te yok."
+  },
+  "questions": [
+    {
+      "testCode": "KKT",
+      "testName": "Konu Kavrama Testi (Test 6)",
+      "page": 1,
+      "questionNumber": 1,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Bir örüntünün ilk beş adımındaki sayılar aşağıda verilmiştir: 3 - 5 - 7 - 9 - 11. Buna göre örüntünün kuralını veren sözel ifade aşağıdakilerden hangisidir?",
+      "options": [
+        "Adım sayısının 2 katının 1 fazlası",
+        "Adım sayısının 2 katının 3 fazlası",
+        "Adım sayısının 3 katının 1 fazlası",
+        "Adım sayısının 3 katının 3 fazlası"
+      ],
+      "correctAnswer": "Adım sayısının 2 katının 1 fazlası",
+      "solution": "1. Dizi 3,5,7,9,11 şeklinde her terim bir öncekinden 2 fazla.\n2. 1. terim=3=2(1)+1, 2. terim=5=2(2)+1 şeklinde kural 2n+1 olarak yazılabilir.\n3. Bu kuralın sözel ifadesi 'Adım sayısının 2 katının 1 fazlası'dır.\nDoğru Cevap: Adım sayısının 2 katının 1 fazlası",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p01-q01.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.5,
+        0.33999999999999997
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Konu Kavrama Testi (Test 6)",
+      "page": 1,
+      "questionNumber": 2,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Kuralı \"4n + 2\" olan bir örüntünün ilk üç terimi sırasıyla aşağıdakilerden hangisidir?",
+      "options": [
+        "6 - 8 - 10",
+        "4 - 6 - 8",
+        "6 - 10 - 14",
+        "4 - 10 - 16"
+      ],
+      "correctAnswer": "6 - 10 - 14",
+      "solution": "1. Kural 4n+2'de n yerine 1, 2, 3 yazılır.\n2. n=1: 4(1)+2=6, n=2: 4(2)+2=10, n=3: 4(3)+2=14.\n3. İlk üç terim: 6-10-14.\nDoğru Cevap: 6 - 10 - 14",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p01-q02.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.375,
+        0.5,
+        0.555
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Konu Kavrama Testi (Test 6)",
+      "page": 1,
+      "questionNumber": 3,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Kumbarasında 10 TL olan Ahmet kumbarasına her gün 20 TL para atmaktadır. Buna göre her gün sonunda kumbarada biriken TL cinsinden para miktarları ile oluşturulan örüntünün kuralı aşağıdakilerden hangisidir?",
+      "options": [
+        "10n + 20",
+        "20n + 10",
+        "20n + 20",
+        "10n + 10"
+      ],
+      "correctAnswer": "20n + 10",
+      "solution": "1. Ahmet'in kumbarasında başlangıçta 10 TL var ve her gün 20 TL ekliyor.\n2. 1. gün sonunda: 10+20=30 TL. 2. gün sonunda: 10+40=50 TL.\n3. 20n+10 kuralı denendiğinde n=1→30, n=2→50 çıkar; bu yüzden kural 20n+10'dur.\nDoğru Cevap: 20n + 10",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p01-q03.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.61,
+        0.5,
+        0.91
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Konu Kavrama Testi (Test 6)",
+      "page": 1,
+      "questionNumber": 4,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Kibrit çöpleri ile oluşturulmuş bir örüntünün ilk üç adımı aşağıda verilmiştir (yan yana dörtgenler). Buna göre adımlardaki kibrit çöpü sayıları ile oluşturulan örüntünün kuralı aşağıdakilerden hangisidir?",
+      "options": [
+        "4n - 1",
+        "4n - 2",
+        "3n + 1",
+        "3n + 2"
+      ],
+      "correctAnswer": "3n + 1",
+      "solution": "1. Görseldeki her adımda bir kare daha ekleniyor ve kareler bitişik duruyor.\n2. n bitişik kareden oluşan şeritte üst+alt yatay çöpler 2n, dikey bölme çöpleri n+1 tanedir.\n3. Toplam kibrit çöpü = 2n + (n+1) = 3n+1.\nDoğru Cevap: 3n + 1",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p01-q04.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.075,
+        0.98,
+        0.36
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Konu Kavrama Testi (Test 6)",
+      "page": 1,
+      "questionNumber": 5,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Kuralı \"2n + 3\" bir şekil örüntüsünün ilk üç adımı aşağıdakilerden hangisi olabilir? (A, B, C, D seçeneklerinde renkli daire kümeleri gösterilmiştir)",
+      "options": [
+        "A seçeneği",
+        "B seçeneği",
+        "C seçeneği",
+        "D seçeneği"
+      ],
+      "correctAnswer": "D seçeneği",
+      "solution": "2n+3 kuralı ilk üç adımda 5, 7, 9 daire verir. Görselde D seçeneği sırasıyla 5, 7, 9 daire içerir.",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p01-q05.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.44999999999999996,
+        0.98,
+        0.91
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Konu Kavrama Testi (Test 6)",
+      "page": 2,
+      "questionNumber": 6,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir örüntünün genel kuralı aşağıda verilmiştir: 3n + 5. Buna göre örüntünün 15. terimi aşağıdakilerden hangisine eşittir?",
+      "options": [
+        "45",
+        "50",
+        "55",
+        "60"
+      ],
+      "correctAnswer": "50",
+      "solution": "1. Kural 3n+5'te n yerine 15 yazılır.\n2. 3×15=45.\n3. 45+5=50 bulunur.\nDoğru Cevap: 50",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p02-q06.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.5,
+        0.29
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Konu Kavrama Testi (Test 6)",
+      "page": 2,
+      "questionNumber": 7,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Bir şekil örüntüsünün ilk üç adımı aşağıda verilmiştir (üçgenlerle oluşturulan trapez şeritleri). Buna göre bu örüntünün 10. adımında kullanılan üçgen sayısı kaçtır?",
+      "options": [
+        "17",
+        "19",
+        "21",
+        "23"
+      ],
+      "correctAnswer": "21",
+      "solution": "1. Trapez şeklindeki üçgen şeritlerinde üçgen sayısı genelde 2n+1 kuralına uyar.\n2. n=1,2,3 için 3,5,7 üçgen olması bu kuralla tutarlıdır.\n3. 10. adım için: 2×10+1=21 üçgen kullanılır.\nDoğru Cevap: 21",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p02-q07.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.315,
+        0.5,
+        0.5650000000000001
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Konu Kavrama Testi (Test 6)",
+      "page": 2,
+      "questionNumber": 8,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir örüntünün 1. ve 4. adımları aşağıda verilmiştir: 8, A, B, 17. Buna göre bu örüntünün 17. adımı aşağıdakilerden hangisine eşittir?",
+      "options": [
+        "51",
+        "54",
+        "56",
+        "59"
+      ],
+      "correctAnswer": "56",
+      "solution": "1. 1. adım 8, 4. adım 17 olarak verilmiş; aradaki fark 3 adımda 9'dur, yani sabit fark 3'tür.\n2. Kural: 3n+5 (n=1 için 3+5=8 doğrulanır).\n3. 17. adım için: 3×17+5=51+5=56.\nDoğru Cevap: 56",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p02-q08.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.59,
+        0.5,
+        0.86
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Konu Kavrama Testi (Test 6)",
+      "page": 2,
+      "questionNumber": 9,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Aşağıda genel kuralı verilen örüntülerden hangisinin 6. adımındaki sayı diğerlerinden farklıdır?",
+      "options": [
+        "4n + 8",
+        "5n + 2",
+        "6n - 4",
+        "7n - 8"
+      ],
+      "correctAnswer": "7n - 8",
+      "solution": "1. Her kuralda n=6 yazılarak sonuçlar karşılaştırılır.\n2. 4n+8=32, 5n+2=32, 6n-4=32, 7n-8=34.\n3. İlk üç kural aynı sonucu (32) verirken 7n-8 farklı (34) sonuç verir.\nDoğru Cevap: 7n - 8",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p02-q09.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.075,
+        0.98,
+        0.285
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Konu Kavrama Testi (Test 6)",
+      "page": 2,
+      "questionNumber": 10,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Kibrit çöpleri ile oluşturulan bir örüntünün ilk üç adımı aşağıda verilmiştir (üçgen çatılı ev şekilleri). Buna göre bu örüntünün kaçıncı adımında 51 adet kibrit çöpü kullanılmıştır?",
+      "options": [
+        "9",
+        "10",
+        "11",
+        "12"
+      ],
+      "correctAnswer": "10",
+      "solution": "İlk ev 6 kibrit çöpünden oluşur; her yeni ev ortak kenar nedeniyle 5 çöp ekler. Kural 5n+1 olur. 5n+1=51 denklemi n=10 verir.",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p02-q10.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.315,
+        0.98,
+        0.59
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Konu Kavrama Testi (Test 6)",
+      "page": 2,
+      "questionNumber": 11,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Bir şekil örüntüsünün 2. ve 4. adımları aşağıda verilmiştir (karelerden oluşan haç/artı şekli). Buna göre bu örüntünün 50. adımında kullanılan kare sayısı kaçtır?",
+      "options": [
+        "197",
+        "200",
+        "203",
+        "206"
+      ],
+      "correctAnswer": "197",
+      "solution": "1. Görseldeki haç (artı) şeklinin merkezi kare sayısı örüntülerinde kural genelde 4n-3'tür (1, 5, 9, 13, ...).\n2. n=50 için: 4×50-3=200-3=197.\n3. 50. adımda 197 kare kullanılır.\nDoğru Cevap: 197",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p02-q11.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.59,
+        0.98,
+        0.91
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Çokgenlerin Özellikleri ile Oluşturulan Örüntüler (Test 7)",
+      "page": 3,
+      "questionNumber": 1,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Kenar uzunlukları birer artan çokgenler yan yana çizilerek birer köşesinden geçen köşegenlerin tamamı çizilmiş ve çokgenlerde oluşan köşegen ve üçgen sayıları belirlenmiştir (Üçgen: kenar 3, köşegen 0, üçgen 1; Dörtgen: kenar 4, köşegen 1, üçgen 2; Beşgen: kenar 5, köşegen 2, üçgen 3; Altıgen: kenar 6, köşegen 3, üçgen 4). Kenar sayısı n olmak üzere bir çokgende bir köşeden çizilebilecek köşegen sayısını veren cebirsel ifade aşağıdakilerden hangisidir?",
+      "options": [
+        "n - 3",
+        "n - 2",
+        "n + 2",
+        "n + 3"
+      ],
+      "correctAnswer": "n - 3",
+      "solution": "1. Tablodaki verilere bakılır: üçgen(n=3)→0, dörtgen(n=4)→1, beşgen(n=5)→2, altıgen(n=6)→3 köşegen.\n2. Bu değerler n-3 kuralına uyar.\n3. Bu yüzden bir köşeden çizilebilecek köşegen sayısı n-3'tür.\nDoğru Cevap: n - 3",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p03-q01.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.36,
+        0.98,
+        0.525
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Çokgenlerin Özellikleri ile Oluşturulan Örüntüler (Test 7)",
+      "page": 3,
+      "questionNumber": 2,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Kenar sayısı n olmak üzere bir çokgende bir köşeden çizilebilecek köşegenlerin tamamı çizildiğinde oluşan üçgen sayısını veren cebirsel ifade aşağıdakilerden hangisidir?",
+      "options": [
+        "n - 3",
+        "n - 2",
+        "n + 2",
+        "n + 3"
+      ],
+      "correctAnswer": "n - 2",
+      "solution": "1. Tablodaki üçgen sayıları: n=3→1, n=4→2, n=5→3, n=6→4.\n2. Bu değerler n-2 kuralına uyar.\n3. Bu yüzden oluşan üçgen sayısı n-2'dir.\nDoğru Cevap: n - 2",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p03-q02.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.5499999999999999,
+        0.98,
+        0.7100000000000001
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Çokgenlerin Özellikleri ile Oluşturulan Örüntüler (Test 7)",
+      "page": 3,
+      "questionNumber": 3,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Kenar sayısı n olmak üzere bir çokgenin iç açıları toplamını veren cebirsel ifade aşağıdakilerden hangisidir?",
+      "options": [
+        "(n - 3) . 180",
+        "(n - 2) . 180",
+        "(n + 2) . 180",
+        "(n + 3) . 180"
+      ],
+      "correctAnswer": "(n - 2) . 180",
+      "solution": "1. Bir çokgenin iç açılar toplamı, çokgenin (n-2) tane üçgene bölünebilmesinden gelir.\n2. Her üçgenin iç açı toplamı 180° olduğundan toplam (n-2)×180° olur.\n3. Bu yüzden kural (n-2).180'dir.\nDoğru Cevap: (n - 2) . 180",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p03-q03.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.715,
+        0.98,
+        0.885
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Çokgenlerin Özellikleri ile Oluşturulan Örüntüler (Test 7)",
+      "page": 4,
+      "questionNumber": 4,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Bir sekizgenin iç açıları toplamı kaç derecedir?",
+      "options": [
+        "900",
+        "1080",
+        "1260",
+        "1440"
+      ],
+      "correctAnswer": "1080",
+      "solution": "1. Sekizgende n=8'dir.\n2. İç açılar toplamı formülü: (n-2)×180.\n3. (8-2)×180 = 6×180 = 1080°.\nDoğru Cevap: 1080",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p04-q04.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.5,
+        0.2
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Çokgenlerin Özellikleri ile Oluşturulan Örüntüler (Test 7)",
+      "page": 4,
+      "questionNumber": 5,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Aşağıda bir düzgün altıgen verilmiştir (köşeler A, B, C, D, E, F). Buna göre m(AFE) kaç derecedir?",
+      "options": [
+        "60",
+        "100",
+        "120",
+        "135"
+      ],
+      "correctAnswer": "120",
+      "solution": "Düzgün altıgende bir iç açı (6−2)×180/6=120° olur.",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p04-q05.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.27499999999999997,
+        0.5,
+        0.66
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Çokgenlerin Özellikleri ile Oluşturulan Örüntüler (Test 7)",
+      "page": 4,
+      "questionNumber": 6,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Bir köşesinden geçen köşegen sayısı 6 olan bir çokgenin iç açıları toplamı kaç derecedir?",
+      "options": [
+        "1080",
+        "1260",
+        "1440",
+        "1620"
+      ],
+      "correctAnswer": "1260",
+      "solution": "1. Bir köşeden çizilebilecek köşegen sayısı n-3'tür; bu değer 6 olarak verilmiş.\n2. n-3=6 → n=9.\n3. İç açılar toplamı: (9-2)×180=7×180=1260°.\nDoğru Cevap: 1260",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p04-q06.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.69,
+        0.5,
+        0.905
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Çokgenlerin Özellikleri ile Oluşturulan Örüntüler (Test 7)",
+      "page": 4,
+      "questionNumber": 7,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Bir çokgenin dış açılarının toplamı 360° olduğuna göre n kenarlı bir çokgenin bir dış açısının ölçüsünü veren cebirsel ifade aşağıdakilerden hangisidir?",
+      "options": [
+        "n / 360",
+        "360 / n",
+        "360 / (n-2)",
+        "360 / (n-3)"
+      ],
+      "correctAnswer": "360 / n",
+      "solution": "1. Düzgün bir çokgende dış açıların toplamı her zaman 360°'dir.\n2. Bu toplam n eşit parçaya (her köşede bir dış açı) bölünür.\n3. Bir dış açının ölçüsü: 360/n.\nDoğru Cevap: 360 / n",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p04-q07.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.075,
+        0.98,
+        0.29
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Çokgenlerin Özellikleri ile Oluşturulan Örüntüler (Test 7)",
+      "page": 4,
+      "questionNumber": 8,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Aşağıda bir dış açısının ölçüsü 30° olan bir düzgün çokgenin bir bölümü verilmiştir. Buna göre bu çokgenin ismi aşağıdakilerden hangisidir?",
+      "options": [
+        "Düzgün dokuzgen",
+        "Düzgün ongen",
+        "Düzgün onikigen",
+        "Düzgün onbeşgen"
+      ],
+      "correctAnswer": "Düzgün onikigen",
+      "solution": "1. Dış açı 30° olarak verilmiş ve dış açılar toplamı 360°'dir.\n2. Kenar sayısı: n=360/30=12.\n3. 12 kenarlı düzgün çokgenin adı düzgün onikigendir.\nDoğru Cevap: Düzgün onikigen",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p04-q08.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.27499999999999997,
+        0.98,
+        0.655
+      ]
+    },
+    {
+      "testCode": "KKT",
+      "testName": "Çokgenlerin Özellikleri ile Oluşturulan Örüntüler (Test 7)",
+      "page": 4,
+      "questionNumber": 9,
+      "difficulty": "Kolay",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "n kenarlı düzgün bir çokgenin bir iç açısının ölçüsünü veren cebirsel ifade aşağıdakilerden hangisidir?",
+      "options": [
+        "n . 180 / (n-3)",
+        "n . 180 / (n-2)",
+        "(n-2) . 180 / n",
+        "(n-3) . 180 / n"
+      ],
+      "correctAnswer": "(n-2) . 180 / n",
+      "solution": "1. İç açılar toplamı (n-2)×180'dir ve bu toplam n eşit köşeye paylaştırılır (düzgün çokgen olduğu için).\n2. Bir iç açının ölçüsü: [(n-2)×180] / n.\n3. Bu yüzden doğru ifade (n-2).180/n'dir.\nDoğru Cevap: (n-2) . 180 / n",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p04-q09.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.69,
+        0.98,
+        0.91
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 8)",
+      "page": 5,
+      "questionNumber": 1,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir örüntünün ilk beş adımı aşağıda verilmiştir: 100 - 110 - 120 - 130 - 140. Buna göre bu örüntünün kuralı aşağıdakilerden hangisidir?",
+      "options": [
+        "10n + 90",
+        "10n + 100",
+        "100 - 10n",
+        "90 + 20n"
+      ],
+      "correctAnswer": "10n + 90",
+      "solution": "1. Dizi 100,110,120,130,140 şeklinde sabit fark 10'dur.\n2. n=1 için terim 100 olmalı; 10n+90 kuralı denendiğinde 10(1)+90=100 çıkar.\n3. Bu yüzden kural 10n+90'dır.\nDoğru Cevap: 10n + 90",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p05-q01.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.5,
+        0.295
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 8)",
+      "page": 5,
+      "questionNumber": 2,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir örüntünün 2. ve 3. adımları aşağıda verilmiştir: ... - 8 - 10 - ... Buna göre bu örüntünün kuralı aşağıdakilerden hangisidir?",
+      "options": [
+        "2n + 4",
+        "2n + 6",
+        "4n + 2",
+        "4n + 4"
+      ],
+      "correctAnswer": "2n + 4",
+      "solution": "1. 2. adım 8, 3. adım 10 olarak verilmiş; aradaki fark 2'dir.\n2. 2n+4 kuralı denendiğinde n=2→8, n=3→10 çıkar.\n3. Bu yüzden kural 2n+4'tür.\nDoğru Cevap: 2n + 4",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p05-q02.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.075,
+        0.98,
+        0.295
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 8)",
+      "page": 5,
+      "questionNumber": 3,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Vagonlarında yazan sayıların bir örüntü oluşturduğu bir trenin tünelden geçerken oluşturduğu görünüm verilmiştir (tünelden önceki vagonda 15, tünelden sonraki vagonda 30 yazmaktadır). Bu trende altı tane vagon olduğuna göre vagonlardaki örüntünün kuralı aşağıdakilerden hangisidir?",
+      "options": [
+        "3n + 9",
+        "3n + 12",
+        "5n + 10",
+        "5n + 15"
+      ],
+      "correctAnswer": "3n + 12",
+      "solution": "Altı vagonun ilkinde 15, sonuncusunda 30 vardır. Beş aralıkta artış 15 olduğundan adım farkı 3 olur. Genel kural 15+3(n−1)=3n+12 olur.",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p05-q03.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.495,
+        0.98,
+        0.8450000000000001
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 8)",
+      "page": 6,
+      "questionNumber": 4,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sayı (karma kural)",
+      "hasVisual": true,
+      "text": "Farklı renklerdeki dört kartona dört örüntünün kuralları yazılmıştır: Mor 10n+2, Sarı 12n-13, Yeşil 11n-4, Mavi 9n+13. Buna göre hangi renkteki kartonun üzerinde yazan kurala ait örüntünün 8. adımındaki sayı diğerlerinden daha büyüktür?",
+      "options": [
+        "Mor",
+        "Sarı",
+        "Yeşil",
+        "Mavi"
+      ],
+      "correctAnswer": "Mavi",
+      "solution": "1. Her kartondaki kuralda n=8 yazılır.\n2. Mor: 10(8)+2=82. Sarı: 12(8)-13=83. Yeşil: 11(8)-4=84. Mavi: 9(8)+13=85.\n3. En büyük değer 85 ile Mavi renktedir.\nDoğru Cevap: Mavi",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p06-q04.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.5,
+        0.45999999999999996
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 8)",
+      "page": 6,
+      "questionNumber": 5,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir basketbol takımındaki 20 oyuncunun forma numaraları yan yana dizildiğinde bir örüntü oluşturmaktadır. Ardışık iki forma numarası 17 ve 20 olarak verilmiştir. Bu takımda en küçük forma numarası 8 olduğuna göre en büyük forma numarası kaçtır?",
+      "options": [
+        "68",
+        "65",
+        "62",
+        "59"
+      ],
+      "correctAnswer": "65",
+      "solution": "1. Ardışık iki forma numarası 17 ve 20 olduğuna göre sabit fark 3'tür.\n2. En küçük forma numarası 8 (1. oyuncu) ise 20. oyuncunun numarası: 8 + 3×(20-1).\n3. 8 + 3×19 = 8+57 = 65.\nDoğru Cevap: 65",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p06-q05.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.51,
+        0.075,
+        0.98,
+        0.45999999999999996
+      ]
+    },
+    {
+      "testCode": "YGT",
+      "testName": "Yeni Nesile Geçiş Testi (Test 8)",
+      "page": 6,
+      "questionNumber": 6,
+      "difficulty": "Orta",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Bir bisiklet yarışında sporcuların su ihtiyaçlarını karşılamak için eşit aralıklarla su istasyonları yerleştirilmiştir. 1. ve 3. istasyonların başlangıç noktasına uzaklıkları sırasıyla 10 km ve 22 km olduğuna göre 9. istasyonun başlangıç noktasına uzaklığı kaç kilometredir?",
+      "options": [
+        "52",
+        "58",
+        "64",
+        "70"
+      ],
+      "correctAnswer": "58",
+      "solution": "1. 1. istasyon 10 km, 3. istasyon 22 km; aradaki fark 2 istasyonda 12 km, yani sabit fark 6 km'dir.\n2. Kural: 6n+4 (n=1 için 6+4=10 doğrulanır).\n3. 9. istasyon için: 6×9+4=54+4=58 km.\nDoğru Cevap: 58",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p06-q06.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.46499999999999997,
+        0.98,
+        0.885
+      ]
+    },
+    {
+      "testCode": "BTT",
+      "testName": "Beceri Temelli Test (Test 9)",
+      "page": 7,
+      "questionNumber": 1,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Yüksekliği 30 cm olan trafik dubaları üst üste takıldığında birinin 20 cm'lik kısmı diğerinin içine girmektedir. Bu dubalar ile oluşturulan bir örüntünün ilk üç adımı verilmiştir. Buna göre adımlarda oluşan yapıların yükseklikleri ile oluşturulan örüntünün kuralı aşağıdakilerden hangisidir?",
+      "options": [
+        "10n + 20",
+        "10n + 10",
+        "20n + 20",
+        "20n + 10"
+      ],
+      "correctAnswer": "10n + 20",
+      "solution": "1. Dubalar üst üste takıldığında her ekleme yükseklik olarak sadece 30-20=10 cm katkı sağlar.\n2. 1 duba tek başına 30 cm'dir; her ek duba 10 cm daha ekler.\n3. Kural: 10n+20 (n=1 için 10+20=30 doğrulanır).\nDoğru Cevap: 10n + 20",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p07-q01.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.98,
+        0.385
+      ]
+    },
+    {
+      "testCode": "BTT",
+      "testName": "Beceri Temelli Test (Test 9)",
+      "page": 7,
+      "questionNumber": 2,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Kare ve daire biçiminde kartonlarla oluşturulan bir örüntünün ilk üç adımı verilmiştir. Buna göre aşağıdaki ifadelerden hangisi yanlıştır?",
+      "options": [
+        "Örüntünün 80. adımında kullanılan kare sayısı 81'dir.",
+        "95 tane daire kullanılan örüntünün adımı 95'tir.",
+        "Örüntünün 100. adımında kullanılan karton sayısı 201'dir.",
+        "105 tane dairenin kullanıldığı adımda 212 tane köşesi olan karton kullanılmıştır."
+      ],
+      "correctAnswer": "105 tane dairenin kullanıldığı adımda 212 tane köşesi olan karton kullanılmıştır.",
+      "solution": "n. adımda n daire ve n+1 kare vardır. 105 daire kullanılan adımda 106 kare ve bu karelerin toplam 424 köşesi bulunur. 212 köşe ifadesi yanlıştır; diğer ifadeler doğrudur.",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p07-q02.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.485,
+        0.98,
+        0.91
+      ]
+    },
+    {
+      "testCode": "BTT",
+      "testName": "Beceri Temelli Test (Test 9)",
+      "page": 8,
+      "questionNumber": 3,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Geometrik (şekil)",
+      "hasVisual": true,
+      "text": "Yükseklikleri sırasıyla 10 cm ve 12 cm olan sarı ve mavi renkli kutularla oluşturulan bir örüntünün ilk üç adımı verilmiştir. Buna göre bu örüntünün 20. adımında oluşan yapının yüksekliği kaç santimetredir?",
+      "options": [
+        "462",
+        "440",
+        "428",
+        "496"
+      ],
+      "correctAnswer": "428",
+      "solution": "1. Adım n'de n tane sarı (10cm) ve (n-1) tane mavi (12cm) kutu olduğu varsayılıyor.\n2. Yükseklik = 10n + 12(n-1) = 22n - 12.\n3. 20. adım için: 22×20-12=440-12=428 cm.\nDoğru Cevap: 428",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p08-q03.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.075,
+        0.98,
+        0.385
+      ]
+    },
+    {
+      "testCode": "BTT",
+      "testName": "Beceri Temelli Test (Test 9)",
+      "page": 8,
+      "questionNumber": 4,
+      "difficulty": "Zor",
+      "topic": "Örüntüler — Sayı (sabit adım)",
+      "hasVisual": true,
+      "text": "Düzenli aralıklarla her seferinde eşit hacimde su damlatan bir musluğun altına boş bir kap yerleştirilmiş ve bazı saatlerin sonunda kapta biriken suyun hacmi ölçülmüştür (saat 12.00'de 20 ml, saat 14.00'te 24 ml). Kaptaki suyun hacmi ilk kez saat 06.00'da ölçüldüğüne göre aynı gün içinde saat 23.00'te kapta bulunan suyun hacmi kaç mililitredir?",
+      "options": [
+        "40",
+        "42",
+        "44",
+        "46"
+      ],
+      "correctAnswer": "42",
+      "solution": "1. Saat 12.00'de 20 ml, saat 14.00'te 24 ml ölçülmüş; 2 saatte 4 ml artış olduğuna göre saatte 2 ml artıyor.\n2. 06.00'da ölçülen ilk değer: 20 - 6×2 = 8 ml (06.00'dan 12.00'ye 6 saat var).\n3. 23.00, 06.00'dan 17 saat sonra olduğundan: 8 + 17×2 = 42 ml.\nDoğru Cevap: 42",
+      "needsReview": false,
+      "diagramFile": "6-sinif/source-p08-q04.png",
+      "imageRole": "full-question",
+      "sourceCrop": [
+        0.03,
+        0.485,
+        0.98,
+        0.875
+      ]
+    }
+  ]
+}

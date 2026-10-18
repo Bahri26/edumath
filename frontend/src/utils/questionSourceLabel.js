@@ -38,7 +38,7 @@ export function getQuestionSourceMeta(question, lang = 'TR') {
     return {
       source: 'AI',
       label: lang === 'EN' ? 'AI' : 'AI',
-      detail: methodMap[method] || (method ? String(method) : lang === 'EN' ? 'Generated' : 'Üretildi'),
+      detail: question?.assessmentMeta?.expertVerified ? (lang === 'EN' ? 'Teacher verified' : 'Öğretmen doğruladı') : methodMap[method] || (method ? String(method) : lang === 'EN' ? 'Generated' : 'Üretildi'),
       badgeClass:
         'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-950/50 dark:text-sky-200 dark:border-sky-800/50',
       icon: 'sparkles',
@@ -47,13 +47,13 @@ export function getQuestionSourceMeta(question, lang = 'TR') {
 
   return {
     source: 'Manuel',
-    label: lang === 'EN' ? 'Expert' : 'Uzman',
+    label: question?.assessmentMeta?.expertVerified ? (lang === 'EN' ? 'Expert' : 'Uzman') : (lang === 'EN' ? 'Manual' : 'Manuel'),
     detail:
       method === 'smart-parse'
         ? methodMap['smart-parse']
         : lang === 'EN'
-          ? 'Teacher verified'
-          : 'Öğretmen doğruladı',
+          ? 'Teacher entered'
+          : 'Öğretmen ekledi',
     badgeClass:
       'bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-950/50 dark:text-teal-200 dark:border-teal-800/50',
     icon: 'user',
@@ -62,13 +62,13 @@ export function getQuestionSourceMeta(question, lang = 'TR') {
 
 export function sourceFilterOptions(lang = 'TR') {
   if (lang === 'EN') {
-    return ['All', 'AI', 'Expert'];
+    return ['All', 'AI', 'Manual'];
   }
-  return ['Tümü', 'AI', 'Uzman'];
+  return ['Tümü', 'AI', 'Manuel'];
 }
 
 export function sourceFilterToApi(value) {
   if (value === 'AI') return 'AI';
-  if (value === 'Uzman' || value === 'Expert') return 'Manuel';
+  if (value === 'Manuel' || value === 'Manual' || value === 'Uzman' || value === 'Expert') return 'Manuel';
   return '';
 }
