@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, Fragment, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, Fragment, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import QuestionFormModal from '../../components/exams/QuestionFormModal';
 import AiGenerateQuizModal from '../../components/modals/AiGenerateQuizModal';
@@ -9,6 +9,7 @@ import {
   LayoutGrid, Wand2,
 } from 'lucide-react';
 import apiClient from '../../services/api';
+import QuestionThumbnail from '../../components/questions/QuestionThumbnail.jsx';
 import { useToast } from '../../context/ToastContext';
 import 'katex/dist/katex.min.css';
 import Button from '../../components/ui/Button.jsx';
@@ -62,7 +63,7 @@ const extractTopicAndCode = (question) => {
 const getHintText = (question) => String(question?.assessmentMeta?.hint || '').trim();
 const getCodeText = (question) => String(question?.assessmentMeta?.code || '').trim();
 
-const QuestionCard = ({ question, allQuestions = [], expanded, onToggle, onEdit, onDelete }) => {
+export const QuestionCard = ({ question, allQuestions = [], expanded, onToggle, onEdit, onDelete }) => {
   const difficultyStyles = {
     'Kolay': 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400',
     'Orta': 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400',
@@ -70,7 +71,7 @@ const QuestionCard = ({ question, allQuestions = [], expanded, onToggle, onEdit,
   };
 
   const displayQuestion = resolveGroupedDisplayQuestion(question, allQuestions);
-  const { topicLabel, code: topicCode } = extractTopicAndCode(displayQuestion);
+  const { code: topicCode } = extractTopicAndCode(displayQuestion);
   const hintText = getHintText(displayQuestion);
   const codeText = getCodeText(displayQuestion) || topicCode;
   const isImageQuestion = hasQuestionImage(displayQuestion.image);
@@ -78,55 +79,24 @@ const QuestionCard = ({ question, allQuestions = [], expanded, onToggle, onEdit,
 
   return (
     <div className="min-w-0">
-      <div
-        className={`group relative overflow-hidden rounded-2xl border bg-white/95 transition-all duration-300 dark:bg-surface-800/95 ${
-          'min-h-[15rem] border-surface-200 hover:border-teal-300 hover:shadow-md dark:border-surface-700'
-        }`}
-      >
-        <button
-          type="button"
-          className={`w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
-            'flex h-full flex-col p-3'
-          }`}
-          onClick={onToggle}
-          aria-expanded={expanded}
-          aria-label={expanded ? 'Soru detayını gizle' : 'Soru detayını göster'}
-        >
-          {(
-            <div className="flex h-full flex-col items-center gap-2 px-2 pt-9 text-center">
-              <span className="rounded-full bg-surface-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-surface-600 dark:bg-surface-700 dark:text-surface-300">
-                {displayQuestion.classLevel || 'Sınıf yok'}
-              </span>
-              <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${difficultyStyles[displayQuestion.difficulty] || difficultyStyles['Orta']}`}>
-                {displayQuestion.difficulty || 'Orta'}
-              </span>
-              <span className="max-w-full truncate rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-sky-800 dark:border-sky-800/40 dark:bg-sky-900/25 dark:text-sky-300">
-                {topicLabel || 'Konu yok'}
-              </span>
-              <p className="line-clamp-3 w-full break-words text-sm font-medium text-slate-800 dark:text-slate-100">{getQuestionLayout(displayQuestion).questionText || displayQuestion.text || 'Görsel soru'}</p>
-              {withLocalPatternSource(displayQuestion).image && <img loading="lazy" src={withLocalPatternSource(displayQuestion).image} alt="Soru görselinin küçük önizlemesi" className="h-20 w-full rounded-lg object-contain" />}
-              {displayQuestion.assessmentMeta?.needsReview && <span className="text-xs font-semibold text-amber-700">İnceleme gerekiyor</span>}
-              {groupLabel ? (
-                <span className="rounded-full border border-teal-100 bg-teal-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-teal-800 dark:border-teal-800/40 dark:bg-teal-900/25 dark:text-teal-300">
-                  {groupLabel}
-                </span>
-              ) : null}
-            </div>
-          )}
-        </button>
-
-        <div
-          className="absolute right-2 top-2 flex gap-1 opacity-70 transition-opacity group-hover:opacity-100"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button type="button" onClick={() => onEdit(displayQuestion)} aria-label="Soruyu düzenle" className="rounded-lg border border-slate-200 bg-white p-3 text-slate-400 shadow-sm hover:text-teal-600 dark:border-slate-600 dark:bg-slate-800">
-            <Edit2 size={16} aria-hidden />
-          </button>
-          <button type="button" onClick={() => onDelete(question._id)} aria-label="Soruyu sil" className="rounded-lg border border-slate-200 bg-white p-3 text-slate-400 shadow-sm hover:text-rose-600 dark:border-slate-600 dark:bg-slate-800">
-            <Trash2 size={16} aria-hidden />
-          </button>
+      <article className="overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-sm transition hover:border-teal-300 hover:shadow-md dark:border-surface-700 dark:bg-surface-800">
+        <div className="flex items-center justify-between gap-2 border-b border-surface-100 px-3 py-2 dark:border-surface-700">
+          <div className="flex min-w-0 flex-wrap gap-1.5">
+            <span className="rounded-md bg-surface-100 px-2 py-1 text-xs font-semibold text-surface-600 dark:bg-surface-700 dark:text-surface-200">{displayQuestion.classLevel || 'Sınıf yok'}</span>
+            <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${difficultyStyles[displayQuestion.difficulty] || difficultyStyles.Orta}`}>{displayQuestion.difficulty || 'Orta'}</span>
+          </div>
+          <div className="flex shrink-0 gap-1">
+            <button type="button" onClick={()=>onEdit(displayQuestion)} aria-label="Soruyu düzenle" className="rounded-lg p-3 text-slate-500 hover:bg-teal-50 hover:text-teal-700 focus-visible:outline focus-visible:outline-teal-500"><Edit2 size={18}/></button>
+            <button type="button" onClick={()=>onDelete(question._id)} aria-label="Soruyu sil" className="rounded-lg p-3 text-slate-500 hover:bg-rose-50 hover:text-rose-700 focus-visible:outline focus-visible:outline-teal-500"><Trash2 size={18}/></button>
+          </div>
         </div>
-      </div>
+        <button type="button" className="block w-full text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500" onClick={onToggle} aria-expanded={expanded} aria-label={expanded?'Soru detayını gizle':'Soru detayını göster'}>
+          <QuestionThumbnail question={displayQuestion}/>
+          <span className="flex min-h-11 items-center justify-between gap-2 border-t border-surface-100 px-3 text-xs font-semibold text-teal-800 dark:border-surface-700 dark:text-teal-200">
+            <span className="min-w-0 truncate">{groupLabel || (displayQuestion.assessmentMeta?.questionNumber ? `Soru ${displayQuestion.assessmentMeta.questionNumber}` : 'Soru')}</span><span>Önizle →</span>
+          </span>
+        </button>
+      </article>
 
       {expanded && (
         <PreviewDialog title={groupLabel || 'Soru önizleme'} onClose={onToggle}>
@@ -197,15 +167,15 @@ export default function QuestionBank() {
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [manualForm, setManualForm] = useState(null);
   const [mainImage, setMainImage] = useState({ file: null, preview: '' });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [filters, setFilters] = useState({
-    subject: 'Tümü',
-    difficulty: 'Tümü',
-    classLevel: 'Tümü',
-    topic: PATTERN_TOPIC_ALL_UNDER,
-    source: 'Tümü',
-  });
+  const [searchQuery, setSearchQuery] = useState(()=>searchParams.get('search') || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(()=>searchParams.get('search') || '');
+  const [filters, setFilters] = useState(()=>({
+    subject:searchParams.get('subject') || 'Tümü', classLevel:searchParams.get('classLevel') || 'Tümü',
+    difficulty:searchParams.get('difficulty') || 'Tümü', source:searchParams.get('source') || 'Tümü',
+    topic:searchParams.get('topic') && searchParams.get('topic') !== 'Tümü' ? searchParams.get('topic') : PATTERN_TOPIC_ALL_UNDER,
+  }));
+  const requestId=useRef(0);
+  useEffect(()=>()=>{requestId.current+=1;},[]);
   const [topics, setTopics] = useState([]);
     // Load teacher profile for branch/approval
     useEffect(() => {
@@ -259,8 +229,8 @@ export default function QuestionBank() {
         timer = setInterval(tick, 8000);
       }
       return () => { if (timer) clearInterval(timer); };
-    }, [profile.branch, profile.branchApproval, showToast]);
-  const [page, setPage] = useState(1);
+    }, [profile.branch, profile.branchApproval, showToast, t]);
+  const [page, setPage] = useState(()=>Math.max(1,parseInt(searchParams.get('page')) || 1));
   const [totalPages, setTotalPages] = useState(1);
   const [totalQuestions, setTotalQuestions] = useState(0);
 
@@ -270,23 +240,9 @@ export default function QuestionBank() {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  // Reset pagination on filter changes
-  useEffect(() => {
-    setPage(1);
-  }, [filters]);
-
   // URL'den ilk değerleri al
   useEffect(() => {
-    const s = searchParams.get('search') || '';
-    const subject = searchParams.get('subject') || 'Tümü';
     const classLevel = searchParams.get('classLevel') || 'Tümü';
-    const difficulty = searchParams.get('difficulty') || 'Tümü';
-    const topicRaw = searchParams.get('topic') || PATTERN_TOPIC_ALL_UNDER;
-    const topic = topicRaw === 'Tümü' ? PATTERN_TOPIC_ALL_UNDER : topicRaw;
-    const p = parseInt(searchParams.get('page') || '1');
-    setSearchQuery(s);
-    setFilters({ subject, classLevel, difficulty, topic });
-    setPage(Number.isNaN(p) ? 1 : p);
     if (searchParams.get('create') === '1') {
       setEditingQuestion(null); setManualForm({classLevel:classLevel !== 'Tümü' ? classLevel : '5. Sınıf'});
       setMainImage({file:null,preview:''}); setIsModalOpen(true);
@@ -367,6 +323,7 @@ export default function QuestionBank() {
       return;
     }
 
+    const current=++requestId.current;
     setLoading(true);
     setFetchError(null);
     try {
@@ -405,16 +362,18 @@ export default function QuestionBank() {
       } else {
         res = await apiClient.get('/teacher/questions', { params });
       }
+      if (current !== requestId.current) return;
       if (res.data.data) {
         setQuestions(res.data.data);
         setTotalPages(res.data.totalPages || 1);
         setTotalQuestions(res.data.total || 0);
       }
     } catch {
+      if (current !== requestId.current) return;
       setFetchError(t('questionBank.errSyncInline'));
       showToast(t('questionBank.errSync'), 'error');
     } finally {
-      setLoading(false);
+      if (current === requestId.current) setLoading(false);
     }
   }, [page, debouncedSearch, filters, profile, profileLoaded, showToast, t]);
 
@@ -520,7 +479,6 @@ export default function QuestionBank() {
       maxWidthClass="max-w-7xl"
       className="pb-24 sm:pb-32"
       title={t('questionBank.title')}
-      subtitle={t('questionBank.subtitle')}
       headerAside={(
         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3 w-full lg:w-auto lg:justify-end">
           <Button
@@ -562,7 +520,7 @@ export default function QuestionBank() {
 
       {/* Filtre Paneli */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-center bg-white/70 dark:bg-surface-800/60 backdrop-blur-md p-3 sm:p-4 rounded-card border border-surface-200 dark:border-surface-700 shadow-card">
-        <div className="lg:col-span-5 relative">
+        <div className="lg:col-span-12 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400" size={20} />
           <input 
             type="text"
@@ -572,21 +530,21 @@ export default function QuestionBank() {
             className="w-full pl-12 pr-4 py-4 bg-white dark:bg-surface-900 border-none rounded-2xl focus:ring-4 focus:ring-teal-500/15 font-medium outline-none"
           />
         </div>
-        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3">
-          <FilterSelect icon={<Hash size={14}/>} value={filters.classLevel} onChange={(v) => setFilters({...filters, classLevel: v})} options={['Tümü', ...Array.from({length:12}, (_,i)=>`${i+1}. Sınıf`)]} />
+        <div className="lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3">
+          <FilterSelect icon={<Hash size={14}/>} value={filters.classLevel} label="Sınıf" onChange={(v) => {setFilters({...filters, classLevel:v});setPage(1);}} options={['Tümü', ...Array.from({length:12}, (_,i)=>`${i+1}. Sınıf`)]} />
           {isPatternBankView ? (
             <FilterSelect
-              icon={<LayoutGrid size={14} />}
+              label="Konu" icon={<LayoutGrid size={14} />}
               value={filters.topic}
               onChange={(v) => { setFilters({ ...filters, topic: v }); setPage(1); }}
               options={topicFilterOptions}
             />
           ) : null}
-          <FilterSelect icon={<Star size={14}/>} value={filters.difficulty} onChange={(v) => setFilters({...filters, difficulty: v})} options={['Tümü', 'Kolay', 'Orta', 'Zor']} />
-          <FilterSelect icon={<Sparkles size={14}/>} value={filters.source} onChange={(v) => { setFilters({ ...filters, source: v }); setPage(1); }} options={sourceFilterOptions()} />
+          <FilterSelect icon={<Star size={14}/>} value={filters.difficulty} label="Zorluk" onChange={(v) => {setFilters({...filters, difficulty:v});setPage(1);}} options={['Tümü', 'Kolay', 'Orta', 'Zor']} />
+          <FilterSelect label="Kaynak" icon={<Sparkles size={14}/>} value={filters.source} onChange={(v) => { setFilters({ ...filters, source: v }); setPage(1); }} options={sourceFilterOptions()} />
         </div>
       </div>
-      <p className="text-xs text-surface-400 px-1 lg:hidden">{t('questionBank.filterScrollHint')}</p>
+
 
       {/* Approval gate */}
       {profile.branchApproval !== 'approved' && (
@@ -598,7 +556,7 @@ export default function QuestionBank() {
       {/* Soru Listesi */}
       <div>
         {loading ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
@@ -621,7 +579,7 @@ export default function QuestionBank() {
             }
           />
         ) : (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {questions.map((q, idx) => {
             const topicLine = q.topic || 'Konu belirtilmemiş';
             const showTopicHeading = [PATTERN_TOPIC_ALL_UNDER, 'Örüntüler'].includes(filters.topic)
@@ -731,17 +689,19 @@ export default function QuestionBank() {
 }
 
 // --- Yardımcı Küçük Bileşenler ---
-const FilterSelect = ({ icon, value, onChange, options }) => (
-  <div className="relative group">
+const FilterSelect = ({ label, icon, value, onChange, options }) => (
+  <label className="block min-w-0 text-xs font-semibold text-slate-600 dark:text-slate-300">{label}
+  <div className="relative mt-1 group">
     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-teal-600 group-hover:scale-110 transition-transform">{icon}</div>
     <select 
-      value={value} 
+      value={value} title={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full pl-9 pr-4 py-3 bg-white dark:bg-surface-900 border-none rounded-xl text-[10px] font-black uppercase tracking-wider outline-none cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors shadow-sm"
+      className="w-full pl-9 pr-4 py-3 bg-white dark:bg-surface-900 border-none rounded-xl text-sm font-medium outline-none cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors shadow-sm"
     >
-      {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+      {options.map(opt => <option key={opt} value={opt}>{opt === PATTERN_TOPIC_ALL_UNDER ? 'Tüm örüntüler' : label === 'Konu' ? opt.replace(/^Örüntüler\s*[—-]\s*/, '') : opt}</option>)}
     </select>
   </div>
+  </label>
 );
 
 const PaginationButton = ({ onClick, disabled, icon, ariaLabel }) => (

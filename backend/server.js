@@ -129,16 +129,8 @@ ensureLocalUploadDirs();
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Geriye dönük uyumluluk: eski kayıtlar /api/uploads ile gelebilir
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
-// Local PDF source images avoid third-party Drive restrictions during development.
-if (process.env.NODE_ENV !== 'production') {
-  app.get('/uploads/pattern-pdf-source/:grade/:file', (req, res) => {
-    const { grade, file } = req.params;
-    if (!/^(5|6|7|9)-sinif$/.test(grade) || !/^source-p\d+-q\d+\.png$/.test(file)) {
-      return res.sendStatus(404);
-    }
-    return res.sendFile(path.join(__dirname, 'data', 'pattern-pdf-import', grade, file));
-  });
-}
+// Bundled source crops work in production without a third-party image redirect.
+require('./utils/patternSourceImages').registerPatternSourceImages(app);
 
 // --- VERİTABANI BAĞLANTISI ---
 let dbConnected = false;

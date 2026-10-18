@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Wand2, Loader2, Check, ChevronRight } from 'lucide-react';
+import { Wand2, Loader2, Check, ChevronRight } from 'lucide-react';
 import { generateQuiz } from '../../services/aiService';
 import apiClient from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -160,46 +160,26 @@ export default function AiGenerateQuizModal({
   };
 
   return (
-    <PreviewDialog title="AI ile çoktan seçmeli soru üret" onClose={() => {if (!saving && !loading) onClose();}}>
-      <div className="bg-white dark:bg-surface-800 w-full max-w-3xl rounded-[2rem] shadow-soft overflow-hidden flex flex-col  border border-white/10">
-        <div className="p-6 bg-gradient-to-r from-teal-700 to-sky-700 text-white flex justify-between items-center gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 rounded-xl bg-white/20 shrink-0">
-              <Wand2 size={20} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="font-display text-lg font-semibold truncate">AI ile çoktan seçmeli üret</h3>
-              <p className="text-xs font-bold opacity-85 uppercase tracking-widest">
-                {step === 'form' ? 'Konu seç → üret → metin şıklarla havuza ekle' : 'Önizleme · şıklar metin'}
-              </p>
-            </div>
-          </div>
-          <Button variant="secondary" size="sm" onClick={onClose} ariaLabel="Kapat">
-            <X size={16} />
-          </Button>
-        </div>
-
-        <div className="p-6 overflow-y-auto flex-1 space-y-4">
+    <PreviewDialog title="AI ile soru hazırla" onClose={() => {if (!saving && !loading) onClose();}}>
+      <div className="w-full min-w-0">
+        <div className="space-y-5">
           {step === 'form' ? (
             <>
               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-surface-400">Konu veya ünite</label>
                 <input
-                  value={topic}
+                  aria-label="Konu veya ünite" value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder="Örn. Doğrusal fonksiyonlar, üçgende alan..."
                   className="mt-2 w-full px-4 py-3 rounded-2xl bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium"
                 />
-                <p className="mt-2 text-xs text-surface-500 dark:text-surface-400">
-                  Ders: <span className="font-bold text-surface-700 dark:text-surface-200">{resolvedSubject}</span> — üretilen sorular bu branşa kaydedilir.
-                  Örnek alınırken yalnızca metin tabanlı sorular kullanılır; görselli sorular havuz örneği sayılmaz.
-                </p>
+                <p className="mt-2 text-xs text-surface-500 dark:text-surface-400">Ders: <strong>{resolvedSubject}</strong></p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="text-xs font-black uppercase tracking-widest text-surface-400">Sınıf</label>
                   <select
-                    value={classLevel}
+                    aria-label="Sınıf" value={classLevel}
                     onChange={(e) => setClassLevel(e.target.value)}
                     className="mt-2 w-full px-4 py-3 rounded-2xl bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 outline-none text-sm font-bold"
                   >
@@ -213,7 +193,7 @@ export default function AiGenerateQuizModal({
                 <div>
                   <label className="text-xs font-black uppercase tracking-widest text-surface-400">Zorluk</label>
                   <select
-                    value={difficulty}
+                    aria-label="Zorluk" value={difficulty}
                     onChange={(e) => setDifficulty(e.target.value)}
                     className="mt-2 w-full px-4 py-3 rounded-2xl bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 outline-none text-sm font-bold"
                   >
@@ -230,7 +210,7 @@ export default function AiGenerateQuizModal({
                     type="number"
                     min={1}
                     max={15}
-                    value={count}
+                    aria-label="Soru sayısı" value={count}
                     onChange={(e) => setCount(e.target.value)}
                     className="mt-2 w-full px-4 py-3 rounded-2xl bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 outline-none text-sm font-bold"
                   />
@@ -244,11 +224,8 @@ export default function AiGenerateQuizModal({
                   onChange={(e) => setUseGoogleGrounding(e.target.checked)}
                 />
                 <span>
-                  <span className="font-bold text-surface-800 dark:text-surface-100">Google araması ile kaynaklama</span>
-                  <span className="block text-xs text-surface-500 dark:text-surface-400 mt-0.5">
-                    MEB müfredatı ile uyum için güvenilir web özetlerini kullanmayı dener (biraz daha yavaş olabilir; sunucuda
-                    GEMINI_GOOGLE_GROUNDING=0 ile tamamen kapatılabilir).
-                  </span>
+                  <span className="font-medium text-surface-800 dark:text-surface-100">Web kaynaklarından yararlan</span>
+                  <span className="mt-1 block text-xs text-surface-500">Hazırlama süresi biraz uzayabilir.</span>
                 </span>
               </label>
             </>
@@ -293,7 +270,7 @@ export default function AiGenerateQuizModal({
           )}
         </div>
 
-        <div className="p-6 pt-0 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-700">
+        <div className="mt-5 pt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-700">
           <span className="text-xs font-bold uppercase tracking-wider text-surface-400">
             Adım {step === 'form' ? 1 : 2} / 2
           </span>

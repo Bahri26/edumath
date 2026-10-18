@@ -1,6 +1,6 @@
 import sourceImages from '../data/patternPdfSourceImages.json';
 
-export function withLocalPatternSource(question, enabled = import.meta.env.DEV) {
+export function withLocalPatternSource(question, enabled = true) {
   const meta = question?.assessmentMeta;
   if (!enabled || meta?.localSourceDisabled || meta?.contentMode === 'text' || meta?.importSource !== 'pattern-pdf-extracted-2026-08') return question;
   const source = sourceImages.find(entry => entry.gradeSlug === meta.gradeSlug

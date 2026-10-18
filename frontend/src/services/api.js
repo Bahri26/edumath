@@ -29,15 +29,12 @@ const AUTH_TIMEOUT = parseTimeout(import.meta.env?.VITE_AUTH_TIMEOUT_MS, 60000);
 const AI_TIMEOUT = parseTimeout(import.meta.env?.VITE_AI_TIMEOUT_MS, 45000);
 
 const getAssetBaseUrl = () => {
-    const explicitAssetBase = trimTrailingSlash(import.meta.env?.VITE_ASSET_BASE_URL || '');
-    if (explicitAssetBase) {
-        return explicitAssetBase;
-    }
-
+    // /uploads is served by the API. A stale asset-host environment value must
+    // not send application images to a different Render service.
     const apiOrigin = getBackendOrigin();
-    if (apiOrigin) {
-        return apiOrigin;
-    }
+    if (apiOrigin) return apiOrigin;
+    const explicitAssetBase = trimTrailingSlash(import.meta.env?.VITE_ASSET_BASE_URL || '');
+    if (explicitAssetBase) return explicitAssetBase;
 
     // Build zamanında tam API adresi verilmişse (https://…/api)
     if (/^https?:\/\//i.test(API_BASE)) {
